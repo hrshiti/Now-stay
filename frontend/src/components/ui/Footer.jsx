@@ -12,7 +12,7 @@ const Footer = () => {
 
     // Only show on desktop/webview as requested (hidden on mobile)
     return (
-        <footer className="hidden md:block w-full py-6 mt-auto bg-white border-t border-gray-100">
+        <footer className="w-full py-6 mt-auto bg-white border-t border-gray-100 pb-24 md:pb-6">
             <div className="container mx-auto px-4">
                 <div className="flex flex-col items-center justify-center text-center space-y-2">
                     <p className="text-sm text-gray-500 font-medium">
