@@ -9,6 +9,7 @@ import BottomNavbar from './components/ui/BottomNavbar';
 import TopNavbar from './components/ui/TopNavbar';
 import PartnerBottomNavbar from './app/partner/components/PartnerBottomNavbar';
 import ScrollToTop from './components/ui/ScrollToTop';
+import Footer from './components/ui/Footer';
 
 // Hooks & Services
 import { useLenis } from './app/shared/hooks/useLenis';
@@ -192,7 +193,7 @@ const Layout = ({ children }) => {
     <>
       {showUserNavs && <TopNavbar />}
 
-      <div className={`min-h-screen md:pt-24 ${showUserBottomNav || showPartnerBottomNav ? 'pb-20 md:pb-0' : ''}`}>
+      <div className={`min-h-screen flex flex-col md:pt-24 ${showUserBottomNav || showPartnerBottomNav ? 'pb-20 md:pb-0' : ''}`}>
         {showMaintenanceOverlay ? (
           <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-6 py-10 text-center bg-gradient-to-b from-[#111827] via-[#0f172a] to-black">
             <div className="flex flex-col items-center justify-center max-w-md w-full">
@@ -216,7 +217,12 @@ const Layout = ({ children }) => {
             </div>
           </div>
         ) : (
-          children
+          <>
+            <div className="flex-grow">
+              {children}
+            </div>
+            {!isPartnerApp && <Footer />}
+          </>
         )}
       </div>
 
