@@ -23,8 +23,9 @@ const io = new Server(server, {
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://rukkoo.in',
-      'https://www.rukkoo.in',
-      'https://rukkoo-project.vercel.app'
+      'https://nowstay.in',
+      'https://www.nowstay.in',
+      'nowstay.in'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
