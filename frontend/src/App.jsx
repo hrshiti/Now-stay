@@ -475,15 +475,21 @@ function App() {
               </Route>
             </Route>
 
+            {/* Public User Pages */}
+            <Route path="/" element={<Home />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/hotel/:id" element={<UserPropertyDetailsPage />} />
+            <Route path="/hotel/:id/amenities" element={<AmenitiesPage />} />
+            <Route path="/hotel/:id/reviews" element={<ReviewsPage />} />
+            <Route path="/hotel/:id/offers" element={<OffersPage />} />
+            <Route path="/partner-landing" element={<PartnerLandingPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/serviced" element={<div className="pt-20 text-center text-surface font-bold">Serviced Page</div>} />
+
             {/* Protected User Pages */}
             <Route element={<UserProtectedRoute />}>
-              <Route path="/" element={<Home />} />
               <Route path="/profile/edit" element={<ProfileEdit />} />
-              <Route path="/hotel/:id" element={<UserPropertyDetailsPage />} />
-              <Route path="/hotel/:id/amenities" element={<AmenitiesPage />} />
-              <Route path="/hotel/:id/reviews" element={<ReviewsPage />} />
-              <Route path="/hotel/:id/offers" element={<OffersPage />} />
-              <Route path="/search" element={<SearchPage />} />
               <Route path="/bookings" element={<BookingsPage />} />
               <Route path="/listings" element={<Navigate to="/search" replace />} />
               <Route path="/wallet" element={<WalletPage />} />
@@ -496,10 +502,6 @@ function App() {
               <Route path="/saved-places" element={<SavedPlacesPage />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/partner-landing" element={<PartnerLandingPage />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/serviced" element={<div className="pt-20 text-center text-surface font-bold">Serviced Page</div>} />
             </Route>
           </Routes>
         </Suspense>
