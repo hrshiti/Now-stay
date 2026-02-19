@@ -7,6 +7,7 @@ import { PROPERTY_DOCUMENTS } from '../config/propertyDocumentRules.js';
 import emailService from '../services/emailService.js';
 import User from '../models/User.js'; // Needed to find Admins? Or Admin model
 import Admin from '../models/Admin.js';
+import AvailabilityLedger from '../models/AvailabilityLedger.js';
 
 const notifyAdminOfNewProperty = async (property) => {
   try {
@@ -462,34 +463,40 @@ export const getPublicProperties = async (req, res) => {
       lat,
       lng,
       radius = 50, // default 50km
-      guests,
-      sort
+      guests, // Legacy field (total pax)
+      sort,
+      checkIn,
+      checkOut,
+      adults,
+      children,
+      rooms,
+      petFriendly
     } = req.query;
 
     const pipeline = [];
 
-    // 1. Geospatial Search (Must be first if used)
+    // --- 1. Basic Filters & Geo ---
+
+    // Geospatial Search (Must be first if used)
     if (lat && lng) {
       pipeline.push({
         $geoNear: {
           near: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
           distanceField: "distance",
-          maxDistance: parseFloat(radius) * 1000, // convert km to meters
+          maxDistance: parseFloat(radius) * 1000,
           spherical: true,
           query: { status: 'approved', isLive: true }
         }
       });
     } else {
-      // Basic match if no geo
       pipeline.push({ $match: { status: 'approved', isLive: true } });
     }
 
-    // 2. Text/Filter Match
     const matchConditions = {};
 
+    // Type Filter
     if (type && type !== 'all') {
       const typesList = type.split(',').map(t => t.trim()).filter(Boolean);
-
       const dynamicTypes = typesList.filter(t => mongoose.Types.ObjectId.isValid(t));
       const staticTypes = typesList.filter(t => !mongoose.Types.ObjectId.isValid(t)).map(t => t.toLowerCase());
 
@@ -505,6 +512,7 @@ export const getPublicProperties = async (req, res) => {
       }
     }
 
+    // Keyword Search
     if (search) {
       const regex = new RegExp(search, 'i');
       const searchOr = [
@@ -516,7 +524,7 @@ export const getPublicProperties = async (req, res) => {
 
       if (matchConditions.$or) {
         matchConditions.$and = [
-          { $or: matchConditions.$or },
+          { $or: matchConditions.$or }, // Wrap existing $or
           { $or: searchOr }
         ];
         delete matchConditions.$or;
@@ -525,6 +533,7 @@ export const getPublicProperties = async (req, res) => {
       }
     }
 
+    // Amenities
     if (amenities) {
       const amList = Array.isArray(amenities) ? amenities : amenities.split(',');
       if (amList.length > 0) {
@@ -532,85 +541,160 @@ export const getPublicProperties = async (req, res) => {
       }
     }
 
+    // Pet Friendly Filter (searches keywords in description or amenities if specific flag doesn't exist)
+    if (petFriendly === 'true') {
+      const petRegex = /pet|dog|cat|animal/i;
+      // Check house rules or amenities or description
+      const petOr = [
+        { "amenities": { $regex: petRegex } },
+        { "houseRules": { $regex: petRegex } },
+        // If explicit field exists (none in schema shown, so falling back to text search)
+        { "description": { $regex: petRegex } }
+      ];
+      if (matchConditions.$or) {
+        matchConditions.$and = matchConditions.$and || [];
+        if (!matchConditions.$and.length && matchConditions.$or) {
+          matchConditions.$and.push({ $or: matchConditions.$or });
+          delete matchConditions.$or;
+        } else if (matchConditions.$or) { // If $or was just set
+          // complex merge logic needed, simplify:
+          // The earlier block handles basic search $or. If we add another check:
+        }
+        // For safety, add petOr as a mandatory AND condition
+        matchConditions.$and = matchConditions.$and || [];
+        matchConditions.$and.push({ $or: petOr });
+
+      } else {
+        matchConditions.$or = petOr;
+      }
+    }
+
     if (Object.keys(matchConditions).length > 0) {
       pipeline.push({ $match: matchConditions });
     }
 
-    // 3. Lookup Room Types (For Price & Guest Capacity)
-    // Use dynamic collection name for robustness
+    // --- 2. Advanced Room Availability & Capacity Check ---
+
+    // Parse Search Params
+    const reqAdults = parseInt(adults) || parseInt(guests) || 1;
+    const reqChildren = parseInt(children) || 0;
+    const reqRooms = parseInt(rooms) || 1;
+
+    let startDate = null;
+    let endDate = null;
+    let askingForDate = false;
+
+    if (checkIn && checkOut) {
+      const d1 = new Date(checkIn);
+      const d2 = new Date(checkOut);
+      if (!isNaN(d1) && !isNaN(d2) && d2 > d1) {
+        startDate = d1;
+        endDate = d2;
+        askingForDate = true;
+      }
+    }
+
+    // Lookup RoomTypes with Pipeline to Filter Availability
     const roomTypeCollection = RoomType.collection.name;
+    const ledgerCollection = AvailabilityLedger.collection.name;
+
+    const roomLookupPipeline = [
+      { $match: { $expr: { $eq: ["$propertyId", "$$pid"] }, isActive: true } },
+
+      // Capacity Filter
+      {
+        $match: {
+          maxAdults: { $gte: reqAdults },
+          // maxChildren: { $gte: reqChildren } // Optional: strict children check
+        }
+      },
+    ];
+
+    if (askingForDate) {
+      // Availability Logic:
+      // 1. Join with Ledger to find blocks overlapping the date range
+      // 2. Sum the blocked units
+      // 3. Subtract from totalInventory
+      // 4. Check if available >= reqRooms
+
+      roomLookupPipeline.push({
+        $lookup: {
+          from: ledgerCollection,
+          let: { rtid: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$roomTypeId", "$$rtid"] },
+                    // Overlap Condition: (StartA < EndB) and (EndA > StartB)
+                    { $lt: ["$startDate", endDate] },
+                    { $gt: ["$endDate", startDate] }
+                  ]
+                }
+              }
+            },
+            { $group: { _id: null, blocked: { $sum: "$units" } } }
+          ],
+          as: "blocks"
+        }
+      });
+
+      roomLookupPipeline.push({
+        $addFields: {
+          blockedCount: { $ifNull: [{ $arrayElemAt: ["$blocks.blocked", 0] }, 0] }
+        }
+      });
+
+      // Filter out room types that don't have enough availability
+      roomLookupPipeline.push({
+        $match: {
+          $expr: {
+            $gte: [{ $subtract: ["$totalInventory", "$blockedCount"] }, reqRooms]
+          }
+        }
+      });
+    }
 
     pipeline.push({
       $lookup: {
         from: roomTypeCollection,
-        localField: '_id',
-        foreignField: 'propertyId',
-        as: 'roomTypes'
+        let: { pid: "$_id" },
+        pipeline: roomLookupPipeline,
+        as: "roomTypes"
       }
     });
 
-    // 4. Filter Active Room Types & Guest Capacity
-    let roomFilter = { $eq: ['$$rt.isActive', true] };
-
-    if (guests) {
-      const guestCount = parseInt(guests);
-      // Room must accommodate guests (base adults + children? simplified to maxAdults for now)
-      // Usually users search by "2 adults", so check maxAdults
-      roomFilter = {
-        $and: [
-          { $eq: ['$$rt.isActive', true] },
-          { $gte: ['$$rt.maxAdults', guestCount] }
-        ]
-      };
-    }
-
+    // --- 3. Filter Properties with NO matching rooms ---
+    // If user asked for specific capacity/dates, properties with empty roomTypes array should be removed
+    // If simplified search, we might keep them, but generally show only bookable ones
     pipeline.push({
-      $addFields: {
-        roomTypes: {
-          $filter: {
-            input: '$roomTypes',
-            as: 'rt',
-            cond: roomFilter
-          }
-        }
-      }
+      $match: { $expr: { $gt: [{ $size: "$roomTypes" }, 0] } }
     });
 
-    // 5. Calculate Starting Price (Min Price of valid rooms)
+
+    // --- 4. Starting Price Calculation ---
     pipeline.push({
       $addFields: {
-        startingPrice: {
-          $cond: {
-            if: { $gt: [{ $size: "$roomTypes" }, 0] },
-            then: { $min: "$roomTypes.pricePerNight" },
-            else: null // Will filter out properties with no matching rooms later if strictly needed
-          }
-        },
+        startingPrice: { $min: "$roomTypes.pricePerNight" },
         hasMatchingRooms: { $gt: [{ $size: "$roomTypes" }, 0] }
       }
     });
 
-    // 6. Filter by Price Range
+    // --- 5. Price Range Filter ---
     const priceMatch = {};
-
-    // Only require rooms if filtering by price or guests
-    if (minPrice || maxPrice || guests) {
-      priceMatch.hasMatchingRooms = true;
-    }
-
     if (minPrice) {
-      priceMatch.startingPrice = { ...priceMatch.startingPrice, $gte: parseInt(minPrice) };
+      priceMatch.startingPrice = { $gte: parseInt(minPrice) };
     }
     if (maxPrice) {
-      priceMatch.startingPrice = { ...priceMatch.startingPrice, ...(priceMatch.startingPrice || {}), $lte: parseInt(maxPrice) };
+      priceMatch.startingPrice = { ...priceMatch.startingPrice, $lte: parseInt(maxPrice) };
     }
-
     if (Object.keys(priceMatch).length > 0) {
       pipeline.push({ $match: priceMatch });
     }
 
-    // 7. Sorting
-    let sortStage = { createdAt: -1 }; // Default new
+    // --- 6. Sorting ---
+    let sortStage = { createdAt: -1 };
     if (sort) {
       if (sort === 'newest') sortStage = { createdAt: -1 };
       if (sort === 'price_low') sortStage = { startingPrice: 1 };
@@ -618,10 +702,8 @@ export const getPublicProperties = async (req, res) => {
       if (sort === 'rating') sortStage = { avgRating: -1 };
       if (sort === 'distance' && lat && lng) sortStage = { distance: 1 };
     }
-
     pipeline.push({ $sort: sortStage });
 
-    // Execute
     const list = await Property.aggregate(pipeline);
     res.json(list);
 
