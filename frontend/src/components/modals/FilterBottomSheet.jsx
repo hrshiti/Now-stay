@@ -40,7 +40,7 @@ const FilterBottomSheet = ({
     ];
 
     const trendingFilters = [
-        "Rukkos welcome couples", "Local IDs accepted", "Flagship"
+        "NowStays welcome couples", "Local IDs accepted", "Flagship"
     ];
 
     const categories = [
@@ -49,7 +49,7 @@ const FilterBottomSheet = ({
     ];
 
     const collections = [
-        "Family Rukkos", "For Group Travellers", "Business Travellers"
+        "Family NowStays", "For Group Travellers", "Business Travellers"
     ];
 
     // Price Range Constants
@@ -141,8 +141,8 @@ const FilterBottomSheet = ({
                             {/* Highest Rated Toggle */}
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h3 className="font-medium text-surface text-base">Highest rated Rukkos</h3>
-                                    <p className="text-xs text-gray-400">Show Rukkos with rating &gt;4.0</p>
+                                    <h3 className="font-medium text-surface text-base">Highest rated NowStays</h3>
+                                    <p className="text-xs text-gray-400">Show NowStays with rating &gt;4.0</p>
                                 </div>
                                 <button
                                     onClick={() => setHighRated(!highRated)}
@@ -321,7 +321,7 @@ const FilterBottomSheet = ({
                                 onClick={onClose}
                                 className="w-full bg-surface text-white font-bold py-3.5 rounded-lg shadow-lg hover:bg-black/90 transition-colors"
                             >
-                                Show {filteredCount > 0 ? filteredCount : ''} Rukkos
+                                Show {filteredCount > 0 ? filteredCount : ''} NowStays
                             </button>
                         </div>
 

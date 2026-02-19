@@ -36,7 +36,7 @@ const RazorpayButton = ({
         key: razorpayKeyId,
         amount: order.amount,
         currency: order.currency,
-        name: 'Rukkoin',
+        name: 'NowStay',
         description: `Booking Payment - ${booking.bookingId}`,
         order_id: order.id,
         prefill: {

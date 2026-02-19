@@ -11,6 +11,7 @@ const LegalPage = () => {
 
     const [privacy, setPrivacy] = useState(null);
     const [terms, setTerms] = useState(null);
+    const [cancellation, setCancellation] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -19,9 +20,10 @@ const LegalPage = () => {
 
         const loadData = async () => {
             try {
-                const [privacyRes, termsRes] = await Promise.allSettled([
+                const [privacyRes, termsRes, cancellationRes] = await Promise.allSettled([
                     legalService.getPage(audience, 'privacy'),
-                    legalService.getPage(audience, 'terms')
+                    legalService.getPage(audience, 'terms'),
+                    legalService.getPage(audience, 'cancellation')
                 ]);
 
                 if (!isMounted) return;
@@ -31,6 +33,9 @@ const LegalPage = () => {
                 }
                 if (termsRes.status === 'fulfilled' && termsRes.value?.page) {
                     setTerms(termsRes.value.page);
+                }
+                if (cancellationRes.status === 'fulfilled' && cancellationRes.value?.page) {
+                    setCancellation(cancellationRes.value.page);
                 }
             } catch (e) {
                 if (!isMounted) return;
@@ -51,7 +56,7 @@ const LegalPage = () => {
 
     // Handle scroll to section if tab is present
     useEffect(() => {
-        if (!loading && (terms || privacy)) {
+        if (!loading && (terms || privacy || cancellation)) {
             const timer = setTimeout(() => {
                 const element = document.getElementById(activeTab);
                 if (element) {
@@ -60,7 +65,7 @@ const LegalPage = () => {
             }, 100);
             return () => clearTimeout(timer);
         }
-    }, [loading, terms, privacy, activeTab]);
+    }, [loading, terms, privacy, cancellation, activeTab]);
 
     const renderContent = (fallbackTitle, fallbackContent, page) => {
         const title = page?.title || fallbackTitle;
@@ -112,7 +117,7 @@ const LegalPage = () => {
                     </div>
                     {renderContent(
                         'Privacy Policy',
-                        'At Rukko, we take your privacy seriously. This policy describes how we collect, use, and handle your data.',
+                        'At NowStay, we take your privacy seriously. This policy describes how we collect, use, and handle your data.',
                         privacy
                     )}
                 </div>
@@ -126,8 +131,22 @@ const LegalPage = () => {
                     </div>
                     {renderContent(
                         'Terms & Conditions',
-                        'By using Rukko, you agree to the latest booking, cancellation and usage terms defined by the platform.',
+                        'By using NowStay, you agree to the latest booking, cancellation and usage terms defined by the platform.',
                         terms
+                    )}
+                </div>
+
+                <div id="cancellation" className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 scroll-mt-32">
+                    <div className="flex items-center gap-3 mb-4 text-surface border-b border-gray-100 pb-3">
+                        <FileText size={24} />
+                        <span className="font-bold text-lg">
+                            {cancellation?.title || 'Cancellation & Refund Policy'}
+                        </span>
+                    </div>
+                    {renderContent(
+                        'Cancellation & Refund Policy',
+                        'Read our cancellation and refund policy to understand how we handle booking modifications and refunds.',
+                        cancellation
                     )}
                 </div>
 

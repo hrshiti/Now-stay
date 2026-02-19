@@ -71,7 +71,7 @@ const ContactPage = () => {
             </div>
             <div>
               <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Email</p>
-              <p className="text-xs text-gray-500">support@rukko.in</p>
+              <p className="text-xs text-gray-500">Nowstayindia@gmail.com</p>
             </div>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
@@ -80,7 +80,7 @@ const ContactPage = () => {
             </div>
             <div>
               <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Phone</p>
-              <p className="text-xs text-gray-500">+91-6232314147</p>
+              <p className="text-xs text-gray-500">9970907005</p>
             </div>
           </div>
         </div>

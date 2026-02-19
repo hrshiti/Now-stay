@@ -14,10 +14,10 @@ const SettingsPage = () => {
         {
             title: "About & Legal",
             items: [
-                { icon: Info, label: "About Rukko", type: "nav", path: "/about" },
+                { icon: Info, label: "About NowStay", type: "nav", path: "/about" },
                 { icon: Phone, label: "Contact Us", type: "nav", path: "/contact" },
-                { icon: Shield, label: "Privacy Policy", type: "nav", path: "/legal" },
-                { icon: FileText, label: "Terms & Conditions", type: "nav", path: "/legal" },
+                { icon: Shield, label: "Privacy Policy", type: "nav", path: "/legal?tab=privacy" },
+                { icon: FileText, label: "Terms & Conditions", type: "nav", path: "/legal?tab=terms" },
             ]
         },
     ];
