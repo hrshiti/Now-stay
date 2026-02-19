@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { propertyService, legalService, reviewService, offerService, availabilityService, userService } from '../../services/apiService';
 import {
   MapPin, Star, Share2, Heart, ArrowLeft,
@@ -13,11 +13,23 @@ import ModernDatePicker from '../../components/ui/ModernDatePicker';
 const PropertyDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
-  const [guests, setGuests] = useState({ rooms: 1, adults: 2, children: 0 });
+
+  // Initialize dates from URL params or default to empty
+  const [dates, setDates] = useState({
+    checkIn: searchParams.get('checkIn') || '',
+    checkOut: searchParams.get('checkOut') || ''
+  });
+
+  // Initialize guests from URL params or default
+  const [guests, setGuests] = useState({
+    rooms: parseInt(searchParams.get('rooms')) || 1,
+    adults: parseInt(searchParams.get('adults')) || 2,
+    children: parseInt(searchParams.get('children')) || 0
+  });
   const [bookingLoading, setBookingLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [taxRate, setTaxRate] = useState(0); // Fetched from backend

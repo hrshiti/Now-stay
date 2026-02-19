@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Star, IndianRupee, Heart } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,8 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
       setIsSaved(initialIsSaved);
     }
   }, [initialIsSaved]);
+
+  const location = useLocation();
 
   const item = property || data;
 
@@ -125,7 +127,7 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
 
   return (
     <div
-      onClick={() => navigate(`/hotel/${_id}`)}
+      onClick={() => navigate(`/hotel/${_id}${location.search}`)}
       className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-0 cursor-pointer active:scale-95 transition-transform duration-200 hover:shadow-md ${className}`}
     >
       <div className="relative h-40 w-full bg-gray-50 flex items-center justify-center overflow-hidden">
