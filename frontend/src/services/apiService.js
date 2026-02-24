@@ -230,6 +230,14 @@ export const bookingService = {
 
 // Property Services (New)
 export const propertyService = {
+  create: async (propertyData) => {
+    try {
+      const response = await api.post('/properties', propertyData);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
   createProperty: async (propertyData) => {
     try {
       // Ensure structureDetails is included if present

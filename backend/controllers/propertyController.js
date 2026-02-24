@@ -82,7 +82,7 @@ export const createProperty = async (req, res) => {
       });
     }
 
-    const { propertyName, contactNumber, propertyType, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, familyFriendly, resortType, activities, hotelCategory, starRating } = req.body;
+    const { propertyName, contactNumber, propertyType, dynamicCategory, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, familyFriendly, resortType, activities, hotelCategory, starRating } = req.body;
     if (!propertyName || !propertyType || !coverImage) return res.status(400).json({ message: 'Missing required fields' });
     const lowerType = propertyType.toLowerCase();
     const requiredDocs = PROPERTY_DOCUMENTS[lowerType] || [];
@@ -113,7 +113,8 @@ export const createProperty = async (req, res) => {
       resortType: lowerType === 'resort' ? resortType : undefined,
       activities: lowerType === 'resort' ? activities : undefined,
       hotelCategory: lowerType === 'hotel' ? hotelCategory : undefined,
-      starRating: lowerType === 'hotel' ? starRating : undefined
+      starRating: lowerType === 'hotel' ? starRating : undefined,
+      dynamicCategory: dynamicCategory || undefined
     });
     // Pricing is now handled in RoomType for ALL types
     await doc.save();
@@ -206,7 +207,8 @@ export const updateProperty = async (req, res) => {
       'hotelCategory',
       'starRating',
       'contactNumber',
-      'isLive'
+      'isLive',
+      'dynamicCategory'
     ];
 
     updatableFields.forEach(field => {
@@ -704,6 +706,22 @@ export const getPublicProperties = async (req, res) => {
     }
     pipeline.push({ $sort: sortStage });
 
+    // --- 7. Populate dynamicCategory ---
+    pipeline.push({
+      $lookup: {
+        from: 'propertycategories',
+        localField: 'dynamicCategory',
+        foreignField: '_id',
+        as: 'dynamicCategoryArr'
+      }
+    });
+    pipeline.push({
+      $addFields: {
+        dynamicCategory: { $arrayElemAt: ['$dynamicCategoryArr', 0] }
+      }
+    });
+    pipeline.push({ $project: { dynamicCategoryArr: 0 } });
+
     const list = await Property.aggregate(pipeline);
     res.json(list);
 
@@ -719,7 +737,7 @@ export const getMyProperties = async (req, res) => {
     if (req.query.type) {
       query.propertyType = String(req.query.type).toLowerCase();
     }
-    const properties = await Property.find(query).sort({ createdAt: -1 });
+    const properties = await Property.find(query).populate('dynamicCategory').sort({ createdAt: -1 });
     res.json({ success: true, properties });
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -729,7 +747,7 @@ export const getMyProperties = async (req, res) => {
 export const getPropertyDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const property = await Property.findById(id);
+    const property = await Property.findById(id).populate('dynamicCategory');
     if (!property) return res.status(404).json({ message: 'Property not found' });
     const roomTypes = await RoomType.find({ propertyId: id, isActive: true });
     const documents = await PropertyDocument.findOne({ propertyId: id });

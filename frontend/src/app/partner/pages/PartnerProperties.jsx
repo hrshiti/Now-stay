@@ -23,7 +23,9 @@ const PartnerProperties = () => {
       const res = await propertyService.getMy();
       const grouped = {};
       (res.properties || []).forEach(p => {
-        const type = p.propertyType || 'other';
+        // Group by dynamic category ID if present, else by propertyType
+        const catObj = p.dynamicCategory;
+        const type = (catObj && catObj._id) ? `dynamic_${catObj._id}` : (p.propertyType || 'other');
         if (!grouped[type]) grouped[type] = [];
         grouped[type].push(p);
       });

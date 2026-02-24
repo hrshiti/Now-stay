@@ -656,8 +656,19 @@ const AddDynamicWizard = () => {
     setLoading(true);
     setError('');
     try {
+      const getBaseType = (name) => {
+        const n = (name || '').toLowerCase();
+        if (n.includes('villa')) return 'villa';
+        if (n.includes('resort')) return 'resort';
+        if (n.includes('hostel')) return 'hostel';
+        if (n.includes('pg')) return 'pg';
+        if (n.includes('homestay')) return 'homestay';
+        if (n.includes('tent') || n.includes('camp')) return 'tent';
+        return 'hotel';
+      };
+
       const propertyPayload = {
-        propertyType: isTent ? 'tent' : 'hotel',
+        propertyType: getBaseType(categoryName),
         dynamicCategory: categoryId,
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
@@ -690,12 +701,15 @@ const AddDynamicWizard = () => {
         const updated = await propertyService.update(propId, propertyPayload);
         propId = updated.property?._id || propId;
 
+        const pType = getBaseType(categoryName);
+        const invType = (pType === 'villa') ? 'entire' : (pType === 'hostel' || pType === 'pg') ? 'bed' : (pType === 'tent') ? 'tent' : 'room';
+
         const existingIds = new Set(isEditMode ? originalRoomTypeIds : []);
         const persistedIds = [];
         for (const rt of roomTypes) {
           const payload = {
             name: rt.name,
-            inventoryType: isTent ? 'tent' : 'room',
+            inventoryType: invType,
             roomCategory: rt.roomCategory,
             maxAdults: Number(rt.maxAdults),
             maxChildren: Number(rt.maxChildren || 0),
@@ -721,9 +735,19 @@ const AddDynamicWizard = () => {
         }
       } else {
         // Atomic Create
+        const getInventoryType = (pType) => {
+          if (pType === 'villa') return 'entire';
+          if (pType === 'hostel' || pType === 'pg') return 'bed';
+          if (pType === 'tent') return 'tent';
+          return 'room';
+        };
+
+        const pType = getBaseType(categoryName);
+        const invType = getInventoryType(pType);
+
         propertyPayload.roomTypes = roomTypes.map(rt => ({
           name: rt.name,
-          inventoryType: isTent ? 'tent' : 'room',
+          inventoryType: invType,
           roomCategory: rt.roomCategory,
           bathroomType: rt.bathroomType,
           maxAdults: Number(rt.maxAdults),

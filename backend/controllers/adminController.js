@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Partner from '../models/Partner.js';
 import InfoPage from '../models/InfoPage.js';
@@ -325,13 +326,19 @@ export const getAllHotels = async (req, res) => {
     }
 
     if (type) {
-      query.propertyType = String(type).toLowerCase();
+      // If type is a valid ObjectId, it's a dynamic category filter
+      if (mongoose.Types.ObjectId.isValid(type)) {
+        query.dynamicCategory = type;
+      } else {
+        query.propertyType = String(type).toLowerCase();
+      }
     }
 
     const total = await Property.countDocuments(query);
 
     const hotels = await Property.find(query)
       .populate('partnerId', 'name email phone')
+      .populate('dynamicCategory')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -693,7 +700,7 @@ export const getPartnerDetails = async (req, res) => {
 export const getHotelDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const property = await Property.findById(id).populate('partnerId', 'name email phone');
+    const property = await Property.findById(id).populate('partnerId', 'name email phone').populate('dynamicCategory');
     if (!property) return res.status(404).json({ success: false, message: 'Property not found' });
 
     const roomTypes = await RoomType.find({ propertyId: id, isActive: true });
