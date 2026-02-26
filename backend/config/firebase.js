@@ -8,17 +8,30 @@ const __dirname = path.dirname(__filename);
 
 let firebaseAdmin = null;
 
+/**
+ * Resolve path to Firebase service account JSON.
+ * Priority: FIREBASE_SERVICE_ACCOUNT_PATH > GOOGLE_APPLICATION_CREDENTIALS > legacy backend/serviceAccountKey.json
+ * - Use FIREBASE_SERVICE_ACCOUNT_PATH in .env (dev: ./secrets/firebase-service-account.json, prod: /var/run/secrets/...)
+ */
+function getServiceAccountPath() {
+  const envPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+  if (envPath) {
+    return path.isAbsolute(envPath) ? envPath : path.resolve(process.cwd(), envPath);
+  }
+  return path.join(__dirname, '../serviceAccountKey.json');
+}
+
 export const initializeFirebase = () => {
   try {
-    // Path to service account key - assuming it's in the root backend folder
-    const serviceAccountPath = path.join(__dirname, '../serviceAccountKey.json');
+    const serviceAccountPath = getServiceAccountPath();
 
-    // Check if service account file exists
     if (!fs.existsSync(serviceAccountPath)) {
-      throw new Error(`serviceAccountKey.json file not found at ${serviceAccountPath}`);
+      throw new Error(
+        `Firebase service account file not found at ${serviceAccountPath}. ` +
+        'Set FIREBASE_SERVICE_ACCOUNT_PATH in .env (e.g. ./secrets/firebase-service-account.json or absolute path in production).'
+      );
     }
 
-    // Read service account key
     const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
     // Initialize Firebase Admin
