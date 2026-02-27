@@ -17,6 +17,7 @@ import emailService from '../services/emailService.js';
 import notificationService from '../services/notificationService.js';
 import Wallet from '../models/Wallet.js';
 import Transaction from '../models/Transaction.js';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 
 
@@ -1202,5 +1203,29 @@ export const getFinanceStats = async (req, res) => {
   } catch (error) {
     console.error('Get Finance Stats Error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching finance stats' });
+  }
+};
+
+/**
+ * @desc    Upload Single Image (Admin Panel)
+ * @route   POST /api/admin/upload-image
+ * @access  Private (Admin Only)
+ */
+export const uploadImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No image provided' });
+    }
+
+    const { url, publicId } = await uploadToCloudinary(req.file.path, 'admin');
+
+    res.json({
+      success: true,
+      files: [{ url, publicId }],
+      urls: [url]
+    });
+  } catch (error) {
+    console.error('Admin Upload Error:', error);
+    res.status(500).json({ message: error.message || 'Upload failed' });
   }
 };

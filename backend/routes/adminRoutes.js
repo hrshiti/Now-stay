@@ -33,9 +33,11 @@ import {
   createBroadcastNotification,
   markAllAdminNotificationsRead,
   deleteAdminNotifications,
-  getFinanceStats
+  getFinanceStats,
+  uploadImage
 } from '../controllers/adminController.js';
 import { protect, authorizedRoles } from '../middlewares/authMiddleware.js';
+import upload from '../utils/multer.js';
 
 const router = express.Router();
 
@@ -80,5 +82,6 @@ router.get('/contact-messages', getContactMessages);
 router.put('/contact-messages/:id/status', updateContactStatus);
 router.get('/platform-settings', getPlatformSettings);
 router.put('/platform-settings', updatePlatformSettings);
+router.post('/upload-image', upload.single('images'), uploadImage);
 
 export default router;

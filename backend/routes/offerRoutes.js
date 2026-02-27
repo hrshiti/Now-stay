@@ -10,8 +10,8 @@ router.post('/validate', protect, validateOffer);
 
 // Admin Routes
 router.get('/all', protect, authorizedRoles('admin', 'superadmin'), getAllOffers);
-router.post('/', protect, authorizedRoles('admin', 'superadmin'), upload.single('image'), createOffer);
-router.put('/:id', protect, authorizedRoles('admin', 'superadmin'), upload.single('image'), updateOffer);
+router.post('/', protect, authorizedRoles('admin', 'superadmin'), upload.single('images'), createOffer);
+router.put('/:id', protect, authorizedRoles('admin', 'superadmin'), upload.single('images'), updateOffer);
 router.delete('/:id', protect, authorizedRoles('admin', 'superadmin'), deleteOffer);
 
 export default router;

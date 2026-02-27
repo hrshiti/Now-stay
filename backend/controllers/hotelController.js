@@ -56,17 +56,39 @@ export const uploadImages = async (req, res) => {
  */
 export const uploadImagesBase64 = async (req, res) => {
   try {
-    const { images } = req.body; // Array of {base64, mimeType, fileName}
+    let { images } = req.body;
 
-    console.log(`[Upload Images Base64] Received ${images ? images.length : 0} images`);
-
-    if (!images || !Array.isArray(images) || images.length === 0) {
+    // Normalizing highly flexible input formats (as per Flutter Bridge documentation)
+    let imagesArray = [];
+    if (!images) {
       return res.status(400).json({ message: 'No images provided' });
     }
 
-    const uploadPromises = images.map(async (img, index) => {
+    // 1. If it's a single string (Base64)
+    if (typeof images === 'string') {
+      imagesArray = [{ base64: images }];
+    }
+    // 2. If it's a single object
+    else if (typeof images === 'object' && !Array.isArray(images) && images.base64) {
+      imagesArray = [images];
+    }
+    // 3. If it's an array
+    else if (Array.isArray(images)) {
+      imagesArray = images.map(item => {
+        if (typeof item === 'string') return { base64: item };
+        return item; // assuming it's {base64, fileName, etc.}
+      });
+    }
+
+    console.log(`[Upload Images Base64] Processing ${imagesArray.length} items (Flexible Format)`);
+
+    if (imagesArray.length === 0) {
+      return res.status(400).json({ message: 'No valid images provided' });
+    }
+
+    const uploadPromises = imagesArray.map(async (img, index) => {
       if (!img.base64) {
-        throw new Error(`Image ${index + 1} missing base64 data`);
+        throw new Error(`Item ${index + 1} missing base64 data`);
       }
 
       const publicId = img.fileName

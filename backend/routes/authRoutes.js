@@ -11,7 +11,7 @@ router.post('/partner/register', registerPartner);
 router.post('/partner/verify-otp', verifyPartnerOtp);
 
 // Upload routes for partner registration
-router.post('/partner/upload-docs', uploadDocuments.array('files', 5), uploadDocs);
+router.post('/partner/upload-docs', uploadDocuments.array('images', 5), uploadDocs);
 router.post('/partner/upload-docs-base64', uploadDocsBase64); // Flutter camera upload
 router.post('/partner/delete-doc', deleteDoc);
 
