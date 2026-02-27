@@ -116,12 +116,16 @@ const UserLogin = () => {
 
             // Update FCM Token
             try {
+                console.log('UserLogin: Requesting notification permission...');
                 const token = await requestNotificationPermission();
                 if (token) {
+                    console.log('UserLogin: FCM Token obtained, updating backend...');
                     await userService.updateFcmToken(token, 'web');
+                } else {
+                    console.warn('UserLogin: Notification permission denied or token is null');
                 }
             } catch (fcmError) {
-                console.warn('FCM update failed', fcmError);
+                console.warn('UserLogin: FCM update failed', fcmError);
             }
 
             // Redirect to previous page if available

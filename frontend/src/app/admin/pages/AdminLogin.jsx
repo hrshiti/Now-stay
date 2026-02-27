@@ -59,12 +59,16 @@ const AdminLogin = () => {
 
             // Update FCM Token
             try {
+                console.log('AdminLogin: Requesting notification permission...');
                 const token = await requestNotificationPermission();
                 if (token) {
+                    console.log('AdminLogin: FCM Token obtained, updating backend...');
                     await adminService.updateFcmToken(token, 'web');
+                } else {
+                    console.warn('AdminLogin: Notification permission denied or token is null');
                 }
             } catch (fcmError) {
-                console.warn('FCM update failed', fcmError);
+                console.warn('AdminLogin: FCM update failed', fcmError);
             }
 
             navigate('/admin/dashboard');

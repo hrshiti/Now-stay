@@ -114,12 +114,16 @@ const HotelLoginPage = () => {
 
             // Update FCM Token for Partner
             try {
+                console.log('HotelLogin: Requesting notification permission...');
                 const token = await requestNotificationPermission();
                 if (token) {
+                    console.log('HotelLogin: FCM Token obtained, updating backend...');
                     await userService.updateFcmToken(token, 'web');
+                } else {
+                    console.warn('HotelLogin: Notification permission denied or token is null');
                 }
             } catch (fcmError) {
-                console.warn('FCM update failed', fcmError);
+                console.warn('HotelLogin: FCM update failed', fcmError);
             }
 
             navigate('/hotel/dashboard');

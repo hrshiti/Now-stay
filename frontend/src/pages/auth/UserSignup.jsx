@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, Mail, ArrowRight, Loader2, Shield, User } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../../assets/rokologin-removebg-preview.png';
-import { authService } from '../../services/apiService';
+import { authService, userService } from '../../services/apiService';
+import { requestNotificationPermission } from '../../utils/firebase';
 import toast from 'react-hot-toast';
 
 const UserSignup = () => {
@@ -127,6 +128,21 @@ const UserSignup = () => {
                 name: formData.name,
                 email: formData.email || undefined // Only send if provided
             });
+
+            // Update FCM Token
+            try {
+                console.log('UserSignup: Requesting notification permission...');
+                const token = await requestNotificationPermission();
+                if (token) {
+                    console.log('UserSignup: FCM Token obtained, updating backend...');
+                    await userService.updateFcmToken(token, 'web');
+                } else {
+                    console.warn('UserSignup: Notification permission denied or token is null');
+                }
+            } catch (fcmError) {
+                console.warn('UserSignup: FCM update failed', fcmError);
+            }
+
             navigate('/');
         } catch (err) {
             setError(err.message || 'Verification failed');

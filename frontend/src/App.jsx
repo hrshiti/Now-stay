@@ -302,6 +302,27 @@ function App() {
   }, []);
 
   React.useEffect(() => {
+    // Helper to send FCM token to backend if user is logged in
+    const sendFcmTokenToBackend = async (fcmToken) => {
+      const adminToken = localStorage.getItem('adminToken');
+      if (adminToken) {
+        console.log('App: Updating FCM token for Admin');
+        await adminService.updateFcmToken(fcmToken, 'web');
+        return true;
+      }
+      const tokenAuth = localStorage.getItem('token');
+      const userStr = localStorage.getItem('user');
+      if (tokenAuth && userStr) {
+        const user = JSON.parse(userStr);
+        console.log('App: Updating FCM token for role:', user.role);
+        await userService.updateFcmToken(fcmToken, 'web');
+        return true;
+      }
+      return false;
+    };
+
+    let cachedFcmToken = null;
+
     const initFcm = async () => {
       // 1. Check if running in a WebView with a native bridge (e.g. Flutter)
       if (window.NativeApp && window.NativeApp.getFcmToken) {
@@ -343,22 +364,21 @@ function App() {
       try {
         const token = await requestNotificationPermission();
         if (token) {
-          // Check for Admin Token first
-          const adminToken = localStorage.getItem('adminToken');
-          if (adminToken) {
-            console.log('FCM Token received, updating for Admin');
-            await adminService.updateFcmToken(token, 'web');
-            return;
-          }
+          cachedFcmToken = token;
+          console.log('FCM Token received, attempting to send to backend...');
 
-          // Check for User/Partner Token
-          const tokenAuth = localStorage.getItem('token');
-          const userStr = localStorage.getItem('user');
+          const sent = await sendFcmTokenToBackend(token);
 
-          if (tokenAuth && userStr) {
-            const user = JSON.parse(userStr);
-            console.log('FCM Token received, updating backend for role:', user.role);
-            await userService.updateFcmToken(token, 'web');
+          if (!sent) {
+            console.log('App: User not logged in yet, FCM token cached for later use.');
+            // Listen for when user logs in (localStorage changes)
+            window.addEventListener('storage', async function onLogin(event) {
+              if (event.key === 'token' && event.newValue) {
+                console.log('App: Auth token detected in storage, sending cached FCM token...');
+                await sendFcmTokenToBackend(cachedFcmToken);
+                window.removeEventListener('storage', onLogin);
+              }
+            });
           }
         }
       } catch (error) {

@@ -194,40 +194,50 @@ export const toggleSavedHotel = async (req, res) => {
 };
 
 // @desc    Update FCM Token
-// @route   POST /api/users/fcm-token
+// @route   PUT /api/users/fcm-token
 // @access  Private
 export const updateFcmToken = async (req, res) => {
   try {
     const { fcmToken, platform } = req.body;
+    const userId = req.user?._id;
+
+    console.log('--- BACKEND: updateFcmToken started ---');
+    console.log('User ID:', userId);
+    console.log('Payload:', { fcmToken: fcmToken ? 'Present' : 'Missing', platform });
 
     if (!fcmToken) {
+      console.warn('BACKEND: Missing FCM token in request');
       return res.status(400).json({ success: false, message: 'Please provide FCM token' });
     }
 
     const targetPlatform = platform === 'app' ? 'app' : 'web';
+    const fcmField = `fcmTokens.${targetPlatform}`;
 
-    // Try to find user first
-    let user = await User.findById(req.user._id);
+    // 1. Try to update User model
+    console.log(`BACKEND: Attempting to update User ${userId} with ${fcmField}`);
+    let user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { [fcmField]: fcmToken } },
+      { new: true, runValidators: true }
+    );
 
-    // If not found, check Partner model
+    // 2. If not found in User, try Partner model
     if (!user) {
-      user = await Partner.findById(req.user._id);
+      console.log('BACKEND: User not found, trying Partner model...');
+      user = await Partner.findByIdAndUpdate(
+        userId,
+        { $set: { [fcmField]: fcmToken } },
+        { new: true, runValidators: true }
+      );
     }
 
     if (!user) {
+      console.error('BACKEND: User/Partner not found for ID:', userId);
       return res.status(404).json({ message: 'User not found' });
     }
 
-    if (!user.fcmTokens) {
-      user.fcmTokens = {
-        app: null,
-        web: null
-      };
-    }
-
-    // Update the token for the specific platform
-    user.fcmTokens[targetPlatform] = fcmToken;
-    await user.save();
+    console.log(`BACKEND: Successfully updated FCM token for ${user.name} (${user.role}) on ${targetPlatform}`);
+    console.log('Updated fcmTokens state:', JSON.stringify(user.fcmTokens, null, 2));
 
     res.json({
       success: true,
@@ -239,8 +249,14 @@ export const updateFcmToken = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Update FCM Token Error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('--- BACKEND: updateFcmToken ERROR ---');
+    console.error('Error Message:', error.message);
+    console.error('Full Error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error while updating FCM token',
+      error: error.message
+    });
   }
 };
 
