@@ -76,7 +76,7 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:5173',
       'http://127.0.0.1:5173',
-      
+
       'https://nowstay.in',
       'https://www.nowstay.in'
     ];
@@ -116,6 +116,7 @@ import referralRoutes from './routes/referralRoutes.js';
 import faqRoutes from './routes/faqRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
+import whatsappBookingRoutes from './routes/whatsappBookingRoutes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -134,6 +135,7 @@ app.use('/api/referrals', referralRoutes);
 app.use('/api/faqs', faqRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
+app.use('/api/book-hotel', whatsappBookingRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

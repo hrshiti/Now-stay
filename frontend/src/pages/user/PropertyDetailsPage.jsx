@@ -184,11 +184,13 @@ const PropertyDetailsPage = () => {
           }
         };
         setProperty(adapted);
-        // Only set selected room on first load if not set
-        // REMOVED: Do NOT auto select room, so Property Images show first by default.
-        // if (!selectedRoom && adapted.inventory && adapted.inventory.length > 0) {
-        //   setSelectedRoom(adapted.inventory[0]);
-        // }
+        // Auto select first room/unit for specific types or single-inventory properties
+        if (adapted.inventory && adapted.inventory.length > 0) {
+          const isSingleOrWhole = adapted.inventory.length === 1 || ['Villa', 'Homestay', 'Apartment', 'Tent'].includes(adapted.propertyType);
+          if (isSingleOrWhole) {
+            setSelectedRoom(adapted.inventory[0]);
+          }
+        }
       } else {
         setProperty(response);
       }

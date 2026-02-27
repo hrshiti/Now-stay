@@ -12,6 +12,7 @@ import emailService from '../services/emailService.js';
 import notificationService from '../services/notificationService.js';
 import smsService from '../utils/smsService.js';
 import referralService from '../services/referralService.js';
+import { sendWhatsAppMessage } from '../services/whatsapp.js';
 
 // Initialize Razorpay
 let razorpay;
@@ -305,6 +306,21 @@ export const verifyPayment = async (req, res) => {
           smsService.sendSMS(partnerUser.phone, `New Booking Alert! Booking #${populatedBooking.bookingId} at ${property.name}. Check App for details.`)
             .catch(err => console.error('Partner SMS failed:', err));
         }
+      }
+
+      // 4. WhatsApp Confirmation
+      if (user && user.phone) {
+        sendWhatsAppMessage({
+          phone: user.phone,
+          name: user.name,
+          hotel: property.propertyName || property.name,
+          date: populatedBooking.checkInDate.toISOString().split('T')[0],
+          mapLink: property.location?.coordinates && property.location.coordinates.length === 2
+            ? `https://www.google.com/maps/dir/?api=1&destination=${property.location.coordinates[1]},${property.location.coordinates[0]}`
+            : ''
+        })
+          .then(msgId => console.log(`[WA] Payment Success Message Sent: ${msgId}`))
+          .catch(err => console.error('[WA] Payment Success Message Failed:', err.message));
       }
     } catch (notifErr) {
       console.error('Notification Trigger Custom Error:', notifErr);
