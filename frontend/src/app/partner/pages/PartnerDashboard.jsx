@@ -6,13 +6,13 @@ import usePartnerDashboard from '../hooks/usePartnerDashboard';
 import DashboardStatCard from '../components/dashboard/DashboardStatCard';
 import RecentBookingsTable from '../components/dashboard/RecentBookingsTable';
 import ActionRequired from '../components/dashboard/ActionRequired';
-import { Calendar, Wallet, Building2, Star, Plus } from 'lucide-react';
+import { Calendar, Wallet, Building2, Star, Plus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const PartnerDashboard = () => {
     useLenis();
     const navigate = useNavigate();
-    const { stats, recentBookings, actionItems, loading, user } = usePartnerDashboard();
+    const { stats, recentBookings, actionItems, loading, user, isRefreshing, refresh } = usePartnerDashboard();
 
     // Init Notifications
     React.useEffect(() => {
@@ -69,6 +69,16 @@ const PartnerDashboard = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        {/* Refresh Button */}
+                        <button
+                            onClick={refresh}
+                            disabled={isRefreshing}
+                            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+                            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                        </button>
+
                         {/* Add Property - High Visible */}
                         <button
                             onClick={() => navigate('/hotel/join')}

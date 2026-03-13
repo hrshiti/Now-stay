@@ -18,6 +18,7 @@ const generateToken = (id, role) => {
 
 export const sendOtp = async (req, res) => {
   try {
+    console.log('📱 sendOtp called with body:', req.body);
     const { phone, type, role = 'user' } = req.body; // type: 'login' or 'register'
 
     if (!phone) {
@@ -54,7 +55,7 @@ export const sendOtp = async (req, res) => {
     }
 
     // TEST NUMBERS - Bypass OTP with default 123456
-    const testNumbers = ['9685974247', '6261096283', '9752275626', '6268455411'];
+    const testNumbers = ['9685974247', '6261096283', '9752275626', '6268455411', '7777777777'];
     const isTestNumber = testNumbers.includes(phone);
 
     // Generate OTP - Use 123456 for test numbers, random for others
@@ -86,8 +87,8 @@ export const sendOtp = async (req, res) => {
       expiresIn: 600 // 10 minutes in seconds
     });
   } catch (error) {
-    console.error('Send OTP Error:', error);
-    res.status(500).json({ message: 'Server error sending OTP' });
+    console.error('❌ Send OTP Error:', error);
+    res.status(500).json({ message: 'Server error sending OTP', error: error.message });
   }
 };
 

@@ -33,6 +33,9 @@ const AddHotelWizard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [createdProperty, setCreatedProperty] = useState(null);
+  const [stateError, setStateError] = useState('');
+  const [cityError, setCityError] = useState('');
+  const [pincodeError, setPincodeError] = useState('');
   const [nearbySearchQuery, setNearbySearchQuery] = useState('');
   const [nearbyResults, setNearbyResults] = useState([]);
   const [editingNearbyIndex, setEditingNearbyIndex] = useState(null);
@@ -295,14 +298,6 @@ const AddHotelWizard = () => {
     setError('');
   };
 
-  const nextFromNearbyPlaces = () => {
-    if (propertyForm.nearbyPlaces.length < 1) {
-      setError('Please add at least 1 nearby place');
-      return;
-    }
-    setStep(5);
-  };
-
   const startAddRoomType = () => {
     setError('');
     setEditingRoomTypeIndex(-1);
@@ -367,6 +362,10 @@ const AddHotelWizard = () => {
     const imageCount = (editingRoomType.images || []).filter(Boolean).length;
     if (imageCount < 3) {
       setError('Please upload at least 3 room images');
+      return;
+    }
+    if (!editingRoomType.amenities || editingRoomType.amenities.length === 0) {
+      setError('Please select at least 1 amenity');
       return;
     }
     const next = [...roomTypes];
@@ -583,43 +582,357 @@ const AddHotelWizard = () => {
 
   const nextFromProperty = () => {
     setError('');
-    if (!propertyForm.propertyName) {
-      setError('Property name required');
+    
+    // Property Name validation
+    if (!propertyForm.propertyName || !propertyForm.propertyName.trim()) {
+      setError('Hotel name is required');
       return;
     }
+    if (propertyForm.propertyName.trim().length < 3) {
+      setError('Hotel name must be at least 3 characters');
+      return;
+    }
+    if (propertyForm.propertyName.trim().length > 100) {
+      setError('Hotel name cannot exceed 100 characters');
+      return;
+    }
+    if (!/[a-zA-Z]/.test(propertyForm.propertyName)) {
+      setError('Hotel name must contain at least one letter');
+      return;
+    }
+    
+    // Short Description validation
+    if (!propertyForm.shortDescription || !propertyForm.shortDescription.trim()) {
+      setError('Short description is required');
+      return;
+    }
+    if (propertyForm.shortDescription.trim().length < 10) {
+      setError('Short description must be at least 10 characters');
+      return;
+    }
+    if (propertyForm.shortDescription.trim().length > 200) {
+      setError('Short description cannot exceed 200 characters');
+      return;
+    }
+    
+    // Contact Number validation
+    if (!propertyForm.contactNumber || !propertyForm.contactNumber.trim()) {
+      setError('Contact number is required');
+      return;
+    }
+    const contactDigitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
+    if (contactDigitsOnly.length !== 10) {
+      setError('Contact number must be exactly 10 digits');
+      return;
+    }
+    
     setStep(2);
+  };
+
+  const nextFromLocation = () => {
+    setError('');
+    setStateError('');
+    setCityError('');
+    setPincodeError('');
+    const { country, state, city, area, fullAddress, pincode } = propertyForm.address;
+    
+    // Full Address validation
+    if (!fullAddress || !fullAddress.trim()) {
+      setError('Full address is required');
+      return;
+    }
+    if (fullAddress.trim().length < 10) {
+      setError('Full address must be at least 10 characters');
+      return;
+    }
+    if (fullAddress.trim().length > 500) {
+      setError('Full address cannot exceed 500 characters');
+      return;
+    }
+    
+    // Country validation
+    if (!country || !country.trim()) {
+      setError('Country is required');
+      return;
+    }
+    if (country.trim().length < 2) {
+      setError('Country must be at least 2 characters');
+      return;
+    }
+    if (!/^[a-zA-Z\s\-]+$/.test(country)) {
+      setError('Country can only contain letters, spaces, and hyphens');
+      return;
+    }
+    
+    // State validation
+    if (!state || !state.trim()) {
+      setError('State is required');
+      setStateError('State is required');
+      return;
+    }
+    if (state.trim().length < 2) {
+      setError('State must be at least 2 characters');
+      setStateError('Minimum 2 characters required');
+      return;
+    }
+    if (!/^[a-zA-Z\s\-]+$/.test(state)) {
+      setError('State can only contain letters, spaces, and hyphens');
+      setStateError('Letters and spaces only');
+      return;
+    }
+    
+    // City validation
+    if (!city || !city.trim()) {
+      setError('City is required');
+      setCityError('City is required');
+      return;
+    }
+    if (city.trim().length < 2) {
+      setError('City must be at least 2 characters');
+      setCityError('Minimum 2 characters required');
+      return;
+    }
+    if (!/^[a-zA-Z\s\-]+$/.test(city)) {
+      setError('City can only contain letters, spaces, and hyphens');
+      setCityError('Letters and spaces only');
+      return;
+    }
+    
+    // Area/Locality validation
+    if (!area || !area.trim()) {
+      setError('Area/Locality is required');
+      return;
+    }
+    if (area.trim().length < 2) {
+      setError('Area/Locality must be at least 2 characters');
+      return;
+    }
+    
+    // Pincode validation
+    if (!pincode || !pincode.trim()) {
+      setError('Pincode is required');
+      setPincodeError('Pincode is required');
+      return;
+    }
+    const pincodeDigitsOnly = pincode.replace(/\D/g, '');
+    if (pincodeDigitsOnly.length !== 6) {
+      setError('Pincode must be exactly 6 digits');
+      setPincodeError(`Must be exactly 6 digits (found: ${pincodeDigitsOnly.length})`);
+      return;
+    }
+    
+    // Coordinates validation
+    const lat = Number(propertyForm.location.coordinates[1]);
+    const lng = Number(propertyForm.location.coordinates[0]);
+    if (!lat || !lng || lat === 0 || lng === 0) {
+      setError('Location coordinates are required. Please use "Use Current Location" or search for an address');
+      return;
+    }
+    
+    setStep(3);
   };
 
   const nextFromImages = () => {
     setError('');
-    if (!propertyForm.coverImage) {
+    
+    // Cover image validation
+    if (!propertyForm.coverImage || !propertyForm.coverImage.trim()) {
       setError('Cover image is required');
       return;
     }
-    if (propertyForm.propertyImages.length < 4) {
-      setError('Please upload at least 4 property images');
+    
+    // Property images validation
+    const validImages = (propertyForm.propertyImages || []).filter(img => img && img.trim());
+    if (validImages.length < 4) {
+      setError(`At least 4 property images required (uploaded: ${validImages.length})`);
       return;
     }
+    if (validImages.length > 20) {
+      setError('Maximum 20 property images allowed');
+      return;
+    }
+    
     setStep(6);
   };
 
   const nextFromRoomTypes = () => {
     setError('');
-    if (!roomTypes.length) {
-      setError(`At least one ${propertyForm.propertyType === 'tent' ? 'Tent' : 'Room'} Type required`);
+    
+    // Room types existence validation
+    if (!roomTypes || roomTypes.length === 0) {
+      setError('At least one room type is required');
       return;
     }
-    for (const rt of roomTypes) {
-      if (!rt.name || !rt.pricePerNight) {
-        setError(`${propertyForm.propertyType === 'tent' ? 'Tent' : 'Room'} type name and price required`);
+    
+    // Validate each room type
+    for (let i = 0; i < roomTypes.length; i++) {
+      const rt = roomTypes[i];
+      
+      // Name validation
+      if (!rt.name || !rt.name.trim()) {
+        setError(`Room type ${i + 1}: Name is required`);
         return;
       }
-      if (!rt.images || rt.images.filter(Boolean).length < 3) {
-        setError(`Each ${propertyForm.propertyType === 'tent' ? 'tent' : 'room'} type must have at least 3 images`);
+      if (rt.name.trim().length < 3) {
+        setError(`Room type ${i + 1}: Name must be at least 3 characters`);
+        return;
+      }
+      if (rt.name.trim().length > 100) {
+        setError(`Room type ${i + 1}: Name cannot exceed 100 characters`);
+        return;
+      }
+      
+      // Price validation
+      if (!rt.pricePerNight || rt.pricePerNight === '') {
+        setError(`Room type ${i + 1}: Price per night is required`);
+        return;
+      }
+      const price = Number(rt.pricePerNight);
+      if (isNaN(price) || price <= 0) {
+        setError(`Room type ${i + 1}: Price must be a positive number`);
+        return;
+      }
+      if (price > 1000000) {
+        setError(`Room type ${i + 1}: Price cannot exceed ₹10,00,000`);
+        return;
+      }
+      
+      // Max Adults validation
+      if (!rt.maxAdults || rt.maxAdults === '') {
+        setError(`Room type ${i + 1}: Max occupancy is required`);
+        return;
+      }
+      const maxAdults = Number(rt.maxAdults);
+      if (isNaN(maxAdults) || maxAdults < 1) {
+        setError(`Room type ${i + 1}: Max occupancy must be at least 1`);
+        return;
+      }
+      if (maxAdults > 20) {
+        setError(`Room type ${i + 1}: Max occupancy cannot exceed 20`);
+        return;
+      }
+      
+      // Images validation
+      const validImages = (rt.images || []).filter(img => img && img.trim());
+      if (validImages.length < 3) {
+        setError(`Room type ${i + 1}: At least 3 images required (uploaded: ${validImages.length})`);
+        return;
+      }
+      if (validImages.length > 15) {
+        setError(`Room type ${i + 1}: Maximum 15 images allowed`);
+        return;
+      }
+      
+      // Amenities validation
+      if (!rt.amenities || rt.amenities.length === 0) {
+        setError(`Room type ${i + 1}: At least 1 amenity must be selected`);
         return;
       }
     }
+    
     setStep(7);
+  };
+
+  const nextFromAmenities = () => {
+    setError('');
+    
+    // Amenities validation - hotel requires at least 3 amenities
+    if (!propertyForm.amenities || propertyForm.amenities.length === 0) {
+      setError('Please select at least 1 amenity');
+      return;
+    }
+    
+    setStep(4);
+  };
+
+  const nextFromNearbyPlaces = () => {
+    setError('');
+    
+    // Nearby places validation
+    if (!propertyForm.nearbyPlaces || propertyForm.nearbyPlaces.length === 0) {
+      setError('Please add at least 1 nearby place');
+      return;
+    }
+    
+    // Validate each nearby place
+    for (let i = 0; i < propertyForm.nearbyPlaces.length; i++) {
+      const place = propertyForm.nearbyPlaces[i];
+      if (!place.name || !place.name.trim()) {
+        setError(`Nearby place ${i + 1}: Name is required`);
+        return;
+      }
+      if (place.name.trim().length < 3) {
+        setError(`Nearby place ${i + 1}: Name must be at least 3 characters`);
+        return;
+      }
+      if (!place.distanceKm || place.distanceKm === '') {
+        setError(`Nearby place ${i + 1}: Distance is required`);
+        return;
+      }
+      const distance = Number(place.distanceKm);
+      if (isNaN(distance) || distance <= 0) {
+        setError(`Nearby place ${i + 1}: Distance must be a positive number`);
+        return;
+      }
+      if (distance > 100) {
+        setError(`Nearby place ${i + 1}: Distance cannot exceed 100 km`);
+        return;
+      }
+    }
+    
+    setStep(5);
+  };
+
+  const nextFromRules = () => {
+    setError('');
+    
+    // Check-in time validation
+    if (!propertyForm.checkInTime || !propertyForm.checkInTime.trim()) {
+      setError('Check-in time is required');
+      return;
+    }
+    
+    // Check-out time validation
+    if (!propertyForm.checkOutTime || !propertyForm.checkOutTime.trim()) {
+      setError('Check-out time is required');
+      return;
+    }
+    
+    // Check-in and Check-out times must be different
+    if (propertyForm.checkInTime.trim() === propertyForm.checkOutTime.trim()) {
+      setError('Check-in and Check-out times must be different');
+      return;
+    }
+    
+    // Cancellation policy validation
+    if (!propertyForm.cancellationPolicy || !propertyForm.cancellationPolicy.trim()) {
+      setError('Cancellation policy is required');
+      return;
+    }
+    if (propertyForm.cancellationPolicy.trim().length < 10) {
+      setError('Cancellation policy must be at least 10 characters');
+      return;
+    }
+    if (propertyForm.cancellationPolicy.trim().length > 1000) {
+      setError('Cancellation policy cannot exceed 1000 characters');
+      return;
+    }
+    
+    setStep(8);
+  };
+
+  const nextFromDocuments = () => {
+    setError('');
+    
+    // Check if all required documents are uploaded
+    const missingDocs = propertyForm.documents.filter(doc => !doc.fileUrl || !doc.fileUrl.trim());
+    if (missingDocs.length > 0) {
+      const missingNames = missingDocs.map(d => d.name).join(', ');
+      setError(`Please upload all required documents: ${missingNames}`);
+      return;
+    }
+    
+    setStep(9);
   };
 
   const submitAll = async () => {
@@ -704,8 +1017,16 @@ const AddHotelWizard = () => {
           amenities: rt.amenities
         }));
         const res = await propertyService.create(propertyPayload);
-        propId = res.property?._id;
-        setCreatedProperty(res.property);
+        console.log('Create response:', res);
+        
+        // Extract property ID from response - handle different response structures
+        propId = res.property?._id || res._id || res.id;
+        
+        if (!propId) {
+          throw new Error('Failed to create property - no ID returned from server');
+        }
+        
+        setCreatedProperty(res.property || res);
       }
       localStorage.removeItem(STORAGE_KEY);
       setStep(10);
@@ -754,10 +1075,10 @@ const AddHotelWizard = () => {
         nextFromProperty();
         break;
       case 2:
-        setStep(3); // Location next
+        nextFromLocation();
         break;
       case 3:
-        setStep(4); // Amenities next
+        nextFromAmenities();
         break;
       case 4:
         nextFromNearbyPlaces();
@@ -769,10 +1090,10 @@ const AddHotelWizard = () => {
         nextFromRoomTypes();
         break;
       case 7:
-        setStep(8); // Rules next
+        nextFromRules();
         break;
       case 8:
-        setStep(9); // Docs next - validation removed/optional
+        nextFromDocuments();
         break;
       case 9:
         submitAll();
@@ -844,6 +1165,9 @@ const AddHotelWizard = () => {
                     value={propertyForm.propertyName}
                     onChange={e => updatePropertyForm('propertyName', e.target.value)}
                   />
+                  {propertyForm.propertyName && !/[a-zA-Z]/.test(propertyForm.propertyName) && (
+                    <p className="text-xs text-red-500 mt-1">⚠️ Must contain at least one letter</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">Short Description</label>
@@ -866,6 +1190,14 @@ const AddHotelWizard = () => {
                     value={propertyForm.contactNumber}
                     onChange={e => updatePropertyForm('contactNumber', e.target.value)}
                   />
+                  {propertyForm.contactNumber && (() => {
+                    const digitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
+                    return digitsOnly.length !== 10 ? (
+                      <p className="text-xs text-red-500 mt-1">⚠️ Must contain exactly 10 digits (found: {digitsOnly.length})</p>
+                    ) : (
+                      <p className="text-xs text-green-600 mt-1">✓ Valid contact number</p>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -974,6 +1306,17 @@ const AddHotelWizard = () => {
                     </button>
                   );
                 })}
+              </div>
+              <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                <p className="text-xs font-semibold text-blue-700">
+                  Selected: {propertyForm.amenities?.length || 0} / 3 (minimum required)
+                </p>
+                {propertyForm.amenities?.length < 3 && (
+                  <p className="text-xs text-blue-600 mt-1">⚠️ Please select at least {3 - (propertyForm.amenities?.length || 0)} more amenities</p>
+                )}
+                {propertyForm.amenities?.length >= 3 && (
+                  <p className="text-xs text-green-600 mt-1">✓ Minimum amenities requirement met</p>
+                )}
               </div>
             </div>
           )}
@@ -1208,6 +1551,17 @@ const AddHotelWizard = () => {
                 <input ref={propertyImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => {
                   if (e.target.files?.length) uploadImages(e.target.files, 'gallery', urls => updatePropertyForm('propertyImages', [...propertyForm.propertyImages, ...urls]));
                 }} />
+                <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700">
+                    Uploaded: {propertyForm.propertyImages.length} / 4 (minimum required)
+                  </p>
+                  {propertyForm.propertyImages.length < 4 && (
+                    <p className="text-xs text-blue-600 mt-1">⚠️ Please upload at least {4 - propertyForm.propertyImages.length} more image{4 - propertyForm.propertyImages.length !== 1 ? 's' : ''}</p>
+                  )}
+                  {propertyForm.propertyImages.length >= 4 && (
+                    <p className="text-xs text-green-600 mt-1">✓ Minimum images requirement met</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1297,8 +1651,11 @@ const AddHotelWizard = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Price / Night (₹)</label>
-                        <input className="input w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value }))} />
+                        <label className="text-xs font-semibold text-gray-500">Price / Night</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-semibold">₹</span>
+                          <input className="input w-full pl-10" type="number" placeholder=" 5000" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value }))} style={{paddingLeft: '2.5rem'}} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Total Rooms</label>
@@ -1331,7 +1688,7 @@ const AddHotelWizard = () => {
                     <div className="space-y-2 pt-2 border-t border-gray-100">
                       <div className="flex justify-between items-center">
                         <label className="text-xs font-semibold text-gray-500">Room Photos</label>
-                        <span className="text-[10px] text-gray-400">{(editingRoomType.images || []).filter(Boolean).length} / 3 min</span>
+                        <span className="text-[10px] text-gray-400">{(editingRoomType.images || []).filter(Boolean).length} / 5 max</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {(editingRoomType.images || []).filter(Boolean).map((img, i) => (
@@ -1342,11 +1699,28 @@ const AddHotelWizard = () => {
                             </button>
                           </div>
                         ))}
-                        <button type="button" onClick={() => isFlutter ? handleCameraUpload('room', url => setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), url] }))) : roomImagesFileInputRef.current?.click()} disabled={!!uploading} className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50 transition-all">
+                        <button type="button" onClick={() => {
+                          const currentCount = (editingRoomType.images || []).filter(Boolean).length;
+                          if (currentCount >= 5) {
+                            setError('Maximum 5 images allowed');
+                            return;
+                          }
+                          isFlutter ? handleCameraUpload('room', url => setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), url] }))) : roomImagesFileInputRef.current?.click();
+                        }} disabled={!!uploading || (editingRoomType.images || []).filter(Boolean).length >= 5} className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                           {uploading === 'room' ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Plus size={20} />}
                         </button>
                         <input ref={roomImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => {
-                          if (e.target.files?.length) uploadImages(e.target.files, 'room', urls => urls.length && setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), ...urls.filter(Boolean)] })));
+                          if (e.target.files?.length) {
+                            const currentCount = (editingRoomType.images || []).filter(Boolean).length;
+                            const remainingSlots = 5 - currentCount;
+                            const filesToUpload = Array.from(e.target.files).slice(0, remainingSlots);
+                            if (filesToUpload.length > 0) {
+                              uploadImages(filesToUpload, 'room', urls => urls.length && setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), ...urls.filter(Boolean)] })));
+                            }
+                            if (filesToUpload.length < e.target.files.length) {
+                              setError(`Only ${remainingSlots} more image${remainingSlots !== 1 ? 's' : ''} can be added (max 5)`);
+                            }
+                          }
                         }}
                         />
                       </div>
@@ -1367,6 +1741,11 @@ const AddHotelWizard = () => {
                           );
                         })}
                       </div>
+                      {editingRoomType.amenities && editingRoomType.amenities.length > 0 ? (
+                        <p className="text-xs text-green-600 mt-2">✓ {editingRoomType.amenities.length} amenity{editingRoomType.amenities.length !== 1 ? 'ies' : ''} selected</p>
+                      ) : (
+                        <p className="text-xs text-red-500 mt-2">⚠️ Please select at least 1 amenity</p>
+                      )}
                     </div>
 
                     <div className="flex gap-3 pt-4">
@@ -1589,13 +1968,15 @@ const AddHotelWizard = () => {
 
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 md:px-6 z-40 bg-white/80 backdrop-blur-md">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <button
-            onClick={handleBack}
-            disabled={step === 1 || loading}
-            className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Back
-          </button>
+          {step !== 10 && (
+            <button
+              onClick={handleBack}
+              disabled={step === 1 || loading}
+              className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Back
+            </button>
+          )}
           {step < 9 && (
             <button
               onClick={clearCurrentStep}

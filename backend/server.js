@@ -118,6 +118,8 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import whatsappBookingRoutes from './routes/whatsappBookingRoutes.js';
 
+console.log('✅ All routes imported successfully');
+
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
@@ -136,6 +138,8 @@ app.use('/api/faqs', faqRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/book-hotel', whatsappBookingRoutes);
+
+console.log('✅ All routes registered successfully');
 
 // Global Error Handler
 app.use((err, req, res, next) => {
