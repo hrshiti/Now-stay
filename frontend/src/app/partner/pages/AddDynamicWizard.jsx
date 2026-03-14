@@ -400,6 +400,10 @@ const AddDynamicWizard = () => {
       setError('Please upload at least 3 room images');
       return;
     }
+    if (!editingRoomType.amenities || editingRoomType.amenities.length === 0) {
+      setError('Please select at least 1 amenity');
+      return;
+    }
     const next = [...roomTypes];
     if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
       next.push(editingRoomType);
@@ -617,6 +621,21 @@ const AddDynamicWizard = () => {
       setError('Property name required');
       return;
     }
+    // Validate: Property name must contain at least one letter (not only numbers)
+    if (!/[a-zA-Z]/.test(propertyForm.propertyName)) {
+      setError('Property name must contain at least one letter (not only numbers)');
+      return;
+    }
+    // Validate: Contact number must be exactly 10 digits
+    if (!propertyForm.contactNumber) {
+      setError('Contact number is required');
+      return;
+    }
+    const contactDigitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
+    if (contactDigitsOnly.length !== 10) {
+      setError('Contact number must contain exactly 10 digits');
+      return;
+    }
     setStep(2);
   };
 
@@ -803,6 +822,15 @@ const AddDynamicWizard = () => {
     }
   };
 
+  const nextFromAmenities = () => {
+    setError('');
+    if (!propertyForm.amenities || propertyForm.amenities.length < 3) {
+      setError(`Please select at least 3 amenities (selected: ${propertyForm.amenities?.length || 0})`);
+      return;
+    }
+    setStep(4);
+  };
+
   const handleNext = () => {
     if (loading) return;
     switch (step) {
@@ -813,7 +841,7 @@ const AddDynamicWizard = () => {
         setStep(3); // Location next
         break;
       case 3:
-        setStep(4); // Amenities next
+        nextFromAmenities();
         break;
       case 4:
         nextFromNearbyPlaces();
@@ -900,6 +928,9 @@ const AddDynamicWizard = () => {
                     value={propertyForm.propertyName}
                     onChange={e => updatePropertyForm('propertyName', e.target.value)}
                   />
+                  {propertyForm.propertyName && !/[a-zA-Z]/.test(propertyForm.propertyName) && (
+                    <p className="text-xs text-red-500 mt-1">⚠️ Must contain at least one letter</p>
+                  )}
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">Short Description</label>
@@ -922,6 +953,14 @@ const AddDynamicWizard = () => {
                     value={propertyForm.contactNumber}
                     onChange={e => updatePropertyForm('contactNumber', e.target.value)}
                   />
+                  {propertyForm.contactNumber && (() => {
+                    const digitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
+                    return digitsOnly.length !== 10 ? (
+                      <p className="text-xs text-red-500 mt-1">⚠️ Must contain exactly 10 digits (found: {digitsOnly.length})</p>
+                    ) : (
+                      <p className="text-xs text-green-600 mt-1">✓ Valid contact number</p>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -1030,6 +1069,17 @@ const AddDynamicWizard = () => {
                     </button>
                   );
                 })}
+              </div>
+              <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                <p className="text-xs font-semibold text-blue-700">
+                  Selected: {propertyForm.amenities?.length || 0} / 3 (minimum required)
+                </p>
+                {propertyForm.amenities?.length < 3 && (
+                  <p className="text-xs text-blue-600 mt-1">⚠️ Please select at least {3 - (propertyForm.amenities?.length || 0)} more amenities</p>
+                )}
+                {propertyForm.amenities?.length >= 3 && (
+                  <p className="text-xs text-green-600 mt-1">✓ Minimum amenities requirement met</p>
+                )}
               </div>
             </div>
           )}
@@ -1264,6 +1314,17 @@ const AddDynamicWizard = () => {
                 <input ref={propertyImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => {
                   if (e.target.files?.length) uploadImages(e.target.files, 'gallery', urls => updatePropertyForm('propertyImages', [...propertyForm.propertyImages, ...urls]));
                 }} />
+                <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                  <p className="text-xs font-semibold text-blue-700">
+                    Uploaded: {propertyForm.propertyImages.length} / 4 (minimum required)
+                  </p>
+                  {propertyForm.propertyImages.length < 4 && (
+                    <p className="text-xs text-blue-600 mt-1">⚠️ Please upload at least {4 - propertyForm.propertyImages.length} more image{4 - propertyForm.propertyImages.length !== 1 ? 's' : ''}</p>
+                  )}
+                  {propertyForm.propertyImages.length >= 4 && (
+                    <p className="text-xs text-green-600 mt-1">✓ Minimum images requirement met</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1384,8 +1445,11 @@ const AddDynamicWizard = () => {
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Price / Night (₹)</label>
-                        <input className="input w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value }))} />
+                        <label className="text-xs font-semibold text-gray-500">Price / Night</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 font-semibold">₹</span>
+                          <input className="input w-full pl-10" type="number" placeholder=" 5000" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value }))} style={{paddingLeft: '2.5rem'}} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">{isTent ? 'Total Units' : 'Total Rooms'}</label>
@@ -1418,7 +1482,7 @@ const AddDynamicWizard = () => {
                     <div className="space-y-2 pt-2 border-t border-gray-100">
                       <div className="flex justify-between items-center">
                         <label className="text-xs font-semibold text-gray-500">{isTent ? 'Tent Photos' : 'Room Photos'}</label>
-                        <span className="text-[10px] text-gray-400">{(editingRoomType.images || []).filter(Boolean).length} / 3 min</span>
+                        <span className="text-[10px] text-gray-400">{(editingRoomType.images || []).filter(Boolean).length} / 5 max</span>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {(editingRoomType.images || []).filter(Boolean).map((img, i) => (
@@ -1429,11 +1493,28 @@ const AddDynamicWizard = () => {
                             </button>
                           </div>
                         ))}
-                        <button type="button" onClick={() => isFlutter ? handleCameraUpload('room', url => setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), url] }))) : roomImagesFileInputRef.current?.click()} disabled={!!uploading} className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50 transition-all">
+                        <button type="button" onClick={() => {
+                          const currentCount = (editingRoomType.images || []).filter(Boolean).length;
+                          if (currentCount >= 5) {
+                            setError('Maximum 5 images allowed');
+                            return;
+                          }
+                          isFlutter ? handleCameraUpload('room', url => setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), url] }))) : roomImagesFileInputRef.current?.click();
+                        }} disabled={!!uploading || (editingRoomType.images || []).filter(Boolean).length >= 5} className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                           {uploading === 'room' ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Plus size={20} />}
                         </button>
                         <input ref={roomImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => {
-                          if (e.target.files?.length) uploadImages(e.target.files, 'room', urls => urls.length && setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), ...urls.filter(Boolean)] })));
+                          if (e.target.files?.length) {
+                            const currentCount = (editingRoomType.images || []).filter(Boolean).length;
+                            const remainingSlots = 5 - currentCount;
+                            const filesToUpload = Array.from(e.target.files).slice(0, remainingSlots);
+                            if (filesToUpload.length > 0) {
+                              uploadImages(filesToUpload, 'room', urls => urls.length && setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), ...urls.filter(Boolean)] })));
+                            }
+                            if (filesToUpload.length < e.target.files.length) {
+                              setError(`Only ${remainingSlots} more image${remainingSlots !== 1 ? 's' : ''} can be added (max 5)`);
+                            }
+                          }
                         }}
                         />
                       </div>
@@ -1454,6 +1535,11 @@ const AddDynamicWizard = () => {
                           );
                         })}
                       </div>
+                      {editingRoomType.amenities && editingRoomType.amenities.length > 0 ? (
+                        <p className="text-xs text-green-600 mt-2">✓ {editingRoomType.amenities.length} amenity{editingRoomType.amenities.length !== 1 ? 'ies' : ''} selected</p>
+                      ) : (
+                        <p className="text-xs text-red-500 mt-2">⚠️ Please select at least 1 amenity</p>
+                      )}
                     </div>
 
                     <div className="flex gap-3 pt-4">

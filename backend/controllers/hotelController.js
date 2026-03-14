@@ -128,6 +128,28 @@ export const getAddressFromCoordinates = async (req, res) => {
     }
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${key}`;
     const { data } = await axios.get(url);
+    
+    // Check if API returned an error
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      console.error('Google Maps Geocode API Error:', data.status, data.error_message);
+      // Return a generic response if API is not enabled
+      if (data.status === 'REQUEST_DENIED') {
+        return res.status(200).json({
+          success: true,
+          country: 'India',
+          state: '',
+          city: '',
+          area: '',
+          fullAddress: `Coordinates: ${lat}, ${lng}`,
+          pincode: '',
+          latitude: lat,
+          longitude: lng,
+          note: 'Geocoding API not enabled. Please enable it in Google Cloud Console.'
+        });
+      }
+      return res.status(400).json({ message: `Maps API error: ${data.status}` });
+    }
+    
     const first = Array.isArray(data.results) ? data.results[0] : null;
     if (!first) return res.status(404).json({ message: 'Address not found' });
     const { country, state, city, area, pincode } = mapAddressComponents(first.address_components || []);
@@ -143,7 +165,8 @@ export const getAddressFromCoordinates = async (req, res) => {
       longitude: lng
     });
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    console.error('Address lookup error:', e.message);
+    res.status(500).json({ message: e.message || 'Address lookup failed' });
   }
 };
 
@@ -160,7 +183,19 @@ export const searchLocation = async (req, res) => {
     const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
       query
     )}&key=${key}`;
+    
     const { data } = await axios.get(url);
+    
+    // Check if API returned an error
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+      console.error('Google Maps API Error:', data.status, data.error_message);
+      // Return empty results if API is not enabled
+      if (data.status === 'REQUEST_DENIED') {
+        return res.json({ success: true, results: [], note: 'Places API not enabled. Please enable it in Google Cloud Console.' });
+      }
+      return res.status(400).json({ message: `Maps API error: ${data.status}` });
+    }
+    
     const results = (data.results || []).map((r) => {
       const types = Array.isArray(r.types) ? r.types : [];
       let type = 'tourist';
@@ -176,7 +211,8 @@ export const searchLocation = async (req, res) => {
     });
     res.json({ success: true, results });
   } catch (e) {
-    res.status(500).json({ message: e.message });
+    console.error('Location search error:', e.message);
+    res.status(500).json({ message: e.message || 'Location search failed' });
   }
 };
 

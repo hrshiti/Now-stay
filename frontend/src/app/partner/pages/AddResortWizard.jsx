@@ -400,12 +400,26 @@ const AddResortWizard = () => {
 
   const saveRoomType = () => {
     if (!editingRoomType) return;
-    if (!editingRoomType.name || !editingRoomType.pricePerNight) {
-      setError('Room type name and price required');
+    if (!editingRoomType.name || !editingRoomType.name.trim()) {
+      setError('Room type name is required');
       return;
     }
-    if ((editingRoomType.images || []).filter(Boolean).length < 3) {
-      setError('Please upload at least 3 room images');
+    if (!editingRoomType.pricePerNight) {
+      setError('Price per night is required');
+      return;
+    }
+    const imageCount = (editingRoomType.images || []).filter(Boolean).length;
+    if (imageCount < 3) {
+      setError(`Please upload at least 3 room images (uploaded: ${imageCount})`);
+      return;
+    }
+    if (!editingRoomType.amenities || editingRoomType.amenities.length === 0) {
+      setError('Please select at least 1 amenity for this room type');
+      return;
+    }
+    const maxAdults = Number(editingRoomType.maxAdults);
+    if (isNaN(maxAdults) || maxAdults < 1) {
+      setError('Max adults must be at least 1');
       return;
     }
     const next = [...roomTypes];
@@ -629,27 +643,82 @@ const AddResortWizard = () => {
   // --- Strict Validation ---
   const nextFromBasic = () => {
     setError('');
-    if (!propertyForm.propertyName || !propertyForm.shortDescription) {
-      setError('Property Name and Short Description required');
+    if (!propertyForm.propertyName || !propertyForm.propertyName.trim()) {
+      setError('Property Name is required');
+      return;
+    }
+    if (propertyForm.propertyName.trim().length < 3) {
+      setError('Property Name must be at least 3 characters');
+      return;
+    }
+    if (!propertyForm.shortDescription || !propertyForm.shortDescription.trim()) {
+      setError('Short Description is required');
       return;
     }
     if (!propertyForm.resortType) {
       setError('Please select a Resort Type');
       return;
     }
+    if (!propertyForm.contactNumber || !propertyForm.contactNumber.trim()) {
+      setError('Contact Number is required');
+      return;
+    }
+    const digitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
+    if (digitsOnly.length !== 10) {
+      setError('Contact Number must be exactly 10 digits');
+      return;
+    }
     setStep(2);
   };
   const nextFromLocation = () => {
     setError('');
-    if (!propertyForm.address.fullAddress || !propertyForm.address.city || !propertyForm.location.coordinates[0]) {
-      setError('Full Address and Map Location are required');
+    if (!propertyForm.address.fullAddress || !propertyForm.address.fullAddress.trim()) {
+      setError('Full Address is required');
+      return;
+    }
+    if (propertyForm.address.fullAddress.trim().length < 10) {
+      setError('Full Address must be at least 10 characters');
+      return;
+    }
+    if (!propertyForm.address.city || !propertyForm.address.city.trim()) {
+      setError('City is required');
+      return;
+    }
+    if (!propertyForm.address.state || !propertyForm.address.state.trim()) {
+      setError('State is required');
+      return;
+    }
+    if (!propertyForm.address.country || !propertyForm.address.country.trim()) {
+      setError('Country is required');
+      return;
+    }
+    if (!propertyForm.address.pincode || !propertyForm.address.pincode.trim()) {
+      setError('Pincode is required');
+      return;
+    }
+    const pincodeDigits = propertyForm.address.pincode.replace(/\D/g, '');
+    if (pincodeDigits.length < 5 || pincodeDigits.length > 6) {
+      setError('Pincode must be 5-6 digits');
+      return;
+    }
+    if (!propertyForm.address.area || !propertyForm.address.area.trim()) {
+      setError('Area/Locality is required');
+      return;
+    }
+    const lat = Number(propertyForm.location.coordinates[1]);
+    const lng = Number(propertyForm.location.coordinates[0]);
+    if (!lat || !lng || lat === 0 || lng === 0) {
+      setError('Location coordinates are required. Please use "Use Current Location" or search for an address');
       return;
     }
     setStep(3);
   };
   const nextFromAmenities = () => {
     setError('');
-    // Resort might not strictly require amenities, but usually good to have.
+    if (!propertyForm.amenities || propertyForm.amenities.length < 1) {
+      setError('Please select at least 1 amenity');
+      return;
+    }
     setStep(4);
   };
   const nextFromNearby = () => {
@@ -683,19 +752,46 @@ const AddResortWizard = () => {
   };
   const nextFromRules = () => {
     setError('');
-    if (!propertyForm.checkInTime || !propertyForm.checkOutTime) {
-      setError('Check-in and Check-out times required');
+    if (!propertyForm.checkInTime || !propertyForm.checkInTime.trim()) {
+      setError('Check-in time is required');
       return;
     }
-    if (!propertyForm.cancellationPolicy) {
-      setError('Cancellation Policy required');
+    if (!propertyForm.checkOutTime || !propertyForm.checkOutTime.trim()) {
+      setError('Check-out time is required');
+      return;
+    }
+    if (propertyForm.checkInTime.trim() === propertyForm.checkOutTime.trim()) {
+      setError('Check-in and Check-out times must be different');
+      return;
+    }
+    if (!propertyForm.cancellationPolicy || !propertyForm.cancellationPolicy.trim()) {
+      setError('Cancellation Policy is required');
+      return;
+    }
+    if (propertyForm.cancellationPolicy.trim().length < 20) {
+      setError('Cancellation Policy must be at least 20 characters');
+      return;
+    }
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](\s?(AM|PM|am|pm))?$/;
+    if (!timeRegex.test(propertyForm.checkInTime.trim())) {
+      setError('Check-in time format is invalid (use HH:MM or HH:MM AM/PM)');
+      return;
+    }
+    if (!timeRegex.test(propertyForm.checkOutTime.trim())) {
+      setError('Check-out time format is invalid (use HH:MM or HH:MM AM/PM)');
       return;
     }
     setStep(8);
   };
-  const nextFromDocs = () => {
+  const nextFromDocuments = () => {
     setError('');
-    // Optional
+    // Check if all required documents are uploaded
+    const missingDocs = propertyForm.documents.filter(doc => !doc.fileUrl || !doc.fileUrl.trim());
+    if (missingDocs.length > 0) {
+      const missingNames = missingDocs.map(d => d.name).join(', ');
+      setError(`Please upload all required documents: ${missingNames}`);
+      return;
+    }
     setStep(9);
   };
 
@@ -827,10 +923,10 @@ const AddResortWizard = () => {
         nextFromBasic();
         break;
       case 2:
-        setStep(3);
+        nextFromLocation();
         break;
       case 3:
-        setStep(4);
+        nextFromAmenities();
         break;
       case 4:
         nextFromNearby();
@@ -842,10 +938,10 @@ const AddResortWizard = () => {
         nextFromRoomTypes();
         break;
       case 7:
-        setStep(8);
+        nextFromRules();
         break;
       case 8:
-        setStep(9);
+        nextFromDocuments();
         break;
       case 9:
         submitAll();
@@ -872,6 +968,124 @@ const AddResortWizard = () => {
 
   const isEditingSubItem = (step === 4 && editingNearbyIndex !== null) || (step === 6 && editingRoomType !== null);
 
+  // ===== FIELD VALIDATION HELPERS =====
+  const validatePropertyName = (name) => {
+    if (!name || !name.trim()) return { valid: false, message: 'Property name is required' };
+    if (name.trim().length < 3) return { valid: false, message: 'Minimum 3 characters required' };
+    if (name.trim().length > 100) return { valid: false, message: 'Maximum 100 characters allowed' };
+    if (!/[a-zA-Z]/.test(name)) return { valid: false, message: 'Must contain at least one letter' };
+    if (!/^[a-zA-Z0-9\s\-']+$/.test(name)) return { valid: false, message: 'Invalid characters' };
+    return { valid: true, message: '✓ Valid property name' };
+  };
+
+  const validateContactNumber = (number) => {
+    if (!number || !number.trim()) return { valid: false, message: 'Contact number is required' };
+    const digitsOnly = number.replace(/\D/g, '');
+    if (digitsOnly.length !== 10) return { valid: false, message: `Must be exactly 10 digits (found: ${digitsOnly.length})` };
+    return { valid: true, message: '✓ Valid contact number' };
+  };
+
+  const validateShortDescription = (desc) => {
+    if (!desc) return { valid: true, message: '' };
+    if (desc.trim().length > 200) return { valid: false, message: 'Maximum 200 characters allowed' };
+    return { valid: true, message: `${desc.length}/200 characters` };
+  };
+
+  const validateDetailedDescription = (desc) => {
+    if (!desc) return { valid: true, message: '' };
+    if (desc.trim().length > 2000) return { valid: false, message: 'Maximum 2000 characters allowed' };
+    return { valid: true, message: `${desc.length}/2000 characters` };
+  };
+
+  const validateFullAddress = (addr) => {
+    if (!addr || !addr.trim()) return { valid: false, message: 'Full address is required' };
+    if (addr.trim().length < 10) return { valid: false, message: 'Minimum 10 characters required' };
+    return { valid: true, message: '✓ Valid address' };
+  };
+
+  const validateCity = (city) => {
+    if (!city || !city.trim()) return { valid: false, message: 'City is required' };
+    if (city.trim().length < 2) return { valid: false, message: 'Minimum 2 characters required' };
+    if (!/^[a-zA-Z\s\-]+$/.test(city)) return { valid: false, message: 'Only letters, spaces, and hyphens allowed' };
+    return { valid: true, message: '✓ Valid city' };
+  };
+
+  const validateState = (state) => {
+    if (!state || !state.trim()) return { valid: false, message: 'State is required' };
+    if (state.trim().length < 2) return { valid: false, message: 'Minimum 2 characters required' };
+    if (!/^[a-zA-Z\s\-]+$/.test(state)) return { valid: false, message: 'Only letters, spaces, and hyphens allowed' };
+    return { valid: true, message: '✓ Valid state' };
+  };
+
+  const validateCountry = (country) => {
+    if (!country || !country.trim()) return { valid: false, message: 'Country is required' };
+    if (country.trim().length < 2) return { valid: false, message: 'Minimum 2 characters required' };
+    if (!/^[a-zA-Z\s\-]+$/.test(country)) return { valid: false, message: 'Only letters, spaces, and hyphens allowed' };
+    return { valid: true, message: '✓ Valid country' };
+  };
+
+  const validatePincode = (pincode) => {
+    if (!pincode || !pincode.trim()) return { valid: false, message: 'Pincode is required' };
+    const digitsOnly = pincode.replace(/\D/g, '');
+    if (digitsOnly.length < 5 || digitsOnly.length > 6) return { valid: false, message: 'Pincode must be 5-6 digits' };
+    return { valid: true, message: '✓ Valid pincode' };
+  };
+
+  const validateArea = (area) => {
+    if (!area || !area.trim()) return { valid: false, message: 'Area/Locality is required' };
+    if (area.trim().length < 2) return { valid: false, message: 'Minimum 2 characters required' };
+    return { valid: true, message: '✓ Valid area' };
+  };
+
+  const validateCheckInTime = (time) => {
+    if (!time || !time.trim()) return { valid: false, message: 'Check-in time is required' };
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](\s?(AM|PM|am|pm))?$/;
+    if (!timeRegex.test(time.trim())) return { valid: false, message: 'Invalid format (use HH:MM or HH:MM AM/PM)' };
+    return { valid: true, message: '✓ Valid check-in time' };
+  };
+
+  const validateCheckOutTime = (time) => {
+    if (!time || !time.trim()) return { valid: false, message: 'Check-out time is required' };
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](\s?(AM|PM|am|pm))?$/;
+    if (!timeRegex.test(time.trim())) return { valid: false, message: 'Invalid format (use HH:MM or HH:MM AM/PM)' };
+    return { valid: true, message: '✓ Valid check-out time' };
+  };
+
+  const validateCancellationPolicy = (policy) => {
+    if (!policy || !policy.trim()) return { valid: false, message: 'Cancellation policy is required' };
+    if (policy.trim().length < 20) return { valid: false, message: 'Minimum 20 characters required' };
+    if (policy.trim().length > 1000) return { valid: false, message: 'Maximum 1000 characters allowed' };
+    return { valid: true, message: `${policy.length}/1000 characters` };
+  };
+
+  const validateRoomTypeName = (name) => {
+    if (!name || !name.trim()) return { valid: false, message: 'Room type name is required' };
+    if (name.trim().length < 3) return { valid: false, message: 'Minimum 3 characters required' };
+    return { valid: true, message: '✓ Valid room type name' };
+  };
+
+  const validateRoomPrice = (price) => {
+    if (!price) return { valid: false, message: 'Price is required' };
+    const priceNum = Number(price);
+    if (isNaN(priceNum) || priceNum <= 0) return { valid: false, message: 'Price must be a positive number' };
+    if (priceNum > 1000000) return { valid: false, message: 'Price cannot exceed ₹10,00,000' };
+    return { valid: true, message: `✓ ₹${priceNum.toLocaleString()}` };
+  };
+
+  const validateNearbyPlaceName = (name) => {
+    if (!name || !name.trim()) return { valid: false, message: 'Place name is required' };
+    if (name.trim().length < 3) return { valid: false, message: 'Minimum 3 characters required' };
+    return { valid: true, message: '✓ Valid place name' };
+  };
+
+  const validateNearbyPlaceDistance = (distance) => {
+    if (!distance) return { valid: false, message: 'Distance is required' };
+    const distNum = Number(distance);
+    if (isNaN(distNum) || distNum <= 0) return { valid: false, message: 'Distance must be positive' };
+    if (distNum > 100) return { valid: false, message: 'Distance cannot exceed 100 km' };
+    return { valid: true, message: `✓ ${distNum} km` };
+  };
+
   const handleExit = () => {
     localStorage.removeItem(STORAGE_KEY);
     navigate(-1);
@@ -895,7 +1109,7 @@ const AddResortWizard = () => {
         <div className="h-full bg-emerald-600 transition-all duration-500 ease-out" style={{ width: `${(step / 9) * 100}%` }} />
       </div>
 
-      <main className="flex-1 w-full max-w-2xl mx-auto p-4 md:p-6 pb-32">
+      <main className="flex-1 w-full max-w-2xl mx-auto p-4 md:p-6 pb-32 overflow-y-auto">
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-gray-900 mb-2">{getStepTitle()}</h1>
         </div>
@@ -907,8 +1121,25 @@ const AddResortWizard = () => {
 
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Resort Name</label>
-                  <input className="input w-full" placeholder="e.g. Blue Lagoon Resort" value={propertyForm.propertyName} onChange={e => updatePropertyForm('propertyName', e.target.value)} />
+                  <label className="text-xs font-semibold text-gray-500">Resort Name * <span className="text-gray-400 text-[10px]">(letters, numbers, spaces only)</span></label>
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.propertyName ? (validatePropertyName(propertyForm.propertyName).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="e.g. Blue Lagoon Resort"
+                    value={propertyForm.propertyName}
+                    onChange={e => {
+                      const value = e.target.value.replace(/[^a-zA-Z0-9\s\-']/g, '').slice(0, 100);
+                      updatePropertyForm('propertyName', value);
+                    }}
+                    maxLength="100"
+                  />
+                  {propertyForm.propertyName && (
+                    <p className={`text-xs mt-1 ${validatePropertyName(propertyForm.propertyName).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validatePropertyName(propertyForm.propertyName).valid ? '✓' : '⚠️'} {validatePropertyName(propertyForm.propertyName).message}
+                    </p>
+                  )}
+                  {propertyForm.propertyName.length > 0 && (
+                    <p className="text-xs mt-1 text-gray-500">{propertyForm.propertyName.length}/100 characters</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -955,23 +1186,64 @@ const AddResortWizard = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Short Description</label>
-                  <textarea className="input w-full" placeholder="Brief summary for listings..." value={propertyForm.shortDescription} onChange={e => updatePropertyForm('shortDescription', e.target.value)} />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Detailed Description</label>
-                  <textarea className="input w-full min-h-[100px]" placeholder="Tell guests what makes your resort unique..." value={propertyForm.description} onChange={e => updatePropertyForm('description', e.target.value)} />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Contact Number (For Guest Inquiries)</label>
-                  <input
-                    className="input w-full"
-                    placeholder="e.g. +91 9876543210"
-                    value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                  <label className="text-xs font-semibold text-gray-500">Short Description <span className="text-gray-400 text-[10px]">(max 200 chars)</span></label>
+                  <textarea
+                    className={`input w-full border-2 transition-colors ${propertyForm.shortDescription ? (validateShortDescription(propertyForm.shortDescription).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="Brief summary for listings..."
+                    value={propertyForm.shortDescription}
+                    onChange={e => {
+                      const value = e.target.value.slice(0, 200);
+                      updatePropertyForm('shortDescription', value);
+                    }}
+                    maxLength="200"
                   />
+                  {propertyForm.shortDescription && (
+                    <p className={`text-xs mt-1 ${validateShortDescription(propertyForm.shortDescription).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateShortDescription(propertyForm.shortDescription).valid ? '✓' : '⚠️'} {validateShortDescription(propertyForm.shortDescription).message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500">Detailed Description <span className="text-gray-400 text-[10px]">(max 2000 chars)</span></label>
+                  <textarea
+                    className={`input w-full min-h-[100px] border-2 transition-colors ${propertyForm.description ? (validateDetailedDescription(propertyForm.description).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="Tell guests what makes your resort unique..."
+                    value={propertyForm.description}
+                    onChange={e => {
+                      const value = e.target.value.slice(0, 2000);
+                      updatePropertyForm('description', value);
+                    }}
+                    maxLength="2000"
+                  />
+                  {propertyForm.description && (
+                    <p className={`text-xs mt-1 ${validateDetailedDescription(propertyForm.description).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateDetailedDescription(propertyForm.description).valid ? '✓' : '⚠️'} {validateDetailedDescription(propertyForm.description).message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500">Contact Number (For Guest Inquiries) * <span className="text-gray-400 text-[10px]">(10 digits only)</span></label>
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.contactNumber ? (validateContactNumber(propertyForm.contactNumber).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="9876543210"
+                    value={propertyForm.contactNumber}
+                    onChange={e => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', value);
+                    }}
+                    maxLength="10"
+                    inputMode="numeric"
+                  />
+                  {propertyForm.contactNumber && (
+                    <p className={`text-xs mt-1 ${validateContactNumber(propertyForm.contactNumber).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateContactNumber(propertyForm.contactNumber).valid ? '✓' : '⚠️'} {validateContactNumber(propertyForm.contactNumber).message}
+                    </p>
+                  )}
+                  {propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
+                    <p className="text-xs mt-1 text-gray-500">{propertyForm.contactNumber.length}/10 digits</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -1019,12 +1291,103 @@ const AddResortWizard = () => {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <input className="input col-span-2" placeholder="Full Address" value={propertyForm.address.fullAddress} onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)} />
-                <input className="input" placeholder="City" value={propertyForm.address.city} onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} />
-                <input className="input" placeholder="State" value={propertyForm.address.state} onChange={e => updatePropertyForm(['address', 'state'], e.target.value)} />
-                <input className="input" placeholder="Country" value={propertyForm.address.country} onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} />
-                <input className="input" placeholder="Pincode" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
-                <input className="input" placeholder="Area" value={propertyForm.address.area} onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} />
+                <div className="col-span-2 space-y-1">
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.address.fullAddress ? (validateFullAddress(propertyForm.address.fullAddress).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="Full Address *"
+                    value={propertyForm.address.fullAddress}
+                    onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)}
+                  />
+                  {propertyForm.address.fullAddress && (
+                    <p className={`text-xs ${validateFullAddress(propertyForm.address.fullAddress).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateFullAddress(propertyForm.address.fullAddress).valid ? '✓' : '⚠️'} {validateFullAddress(propertyForm.address.fullAddress).message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.address.city ? (validateCity(propertyForm.address.city).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="City *"
+                    value={propertyForm.address.city}
+                    onChange={e => {
+                      const value = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'city'], value);
+                    }}
+                  />
+                  {propertyForm.address.city && (
+                    <p className={`text-xs ${validateCity(propertyForm.address.city).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateCity(propertyForm.address.city).valid ? '✓' : '⚠️'} {validateCity(propertyForm.address.city).message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.address.state ? (validateState(propertyForm.address.state).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="State *"
+                    value={propertyForm.address.state}
+                    onChange={e => {
+                      const value = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'state'], value);
+                    }}
+                  />
+                  {propertyForm.address.state && (
+                    <p className={`text-xs ${validateState(propertyForm.address.state).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateState(propertyForm.address.state).valid ? '✓' : '⚠️'} {validateState(propertyForm.address.state).message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.address.country ? (validateCountry(propertyForm.address.country).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="Country *"
+                    value={propertyForm.address.country}
+                    onChange={e => {
+                      const value = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'country'], value);
+                    }}
+                  />
+                  {propertyForm.address.country && (
+                    <p className={`text-xs ${validateCountry(propertyForm.address.country).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateCountry(propertyForm.address.country).valid ? '✓' : '⚠️'} {validateCountry(propertyForm.address.country).message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.address.pincode ? (validatePincode(propertyForm.address.pincode).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="Pincode *"
+                    value={propertyForm.address.pincode}
+                    onChange={e => {
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      updatePropertyForm(['address', 'pincode'], value);
+                    }}
+                    maxLength="6"
+                    inputMode="numeric"
+                  />
+                  {propertyForm.address.pincode && (
+                    <p className={`text-xs ${validatePincode(propertyForm.address.pincode).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validatePincode(propertyForm.address.pincode).valid ? '✓' : '⚠️'} {validatePincode(propertyForm.address.pincode).message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <input
+                    className={`input w-full border-2 transition-colors ${propertyForm.address.area ? (validateArea(propertyForm.address.area).valid ? 'border-emerald-500 bg-emerald-50' : 'border-red-500 bg-red-50') : 'border-gray-300'}`}
+                    placeholder="Area/Locality *"
+                    value={propertyForm.address.area}
+                    onChange={e => updatePropertyForm(['address', 'area'], e.target.value)}
+                  />
+                  {propertyForm.address.area && (
+                    <p className={`text-xs ${validateArea(propertyForm.address.area).valid ? 'text-green-600' : 'text-red-500'}`}>
+                      {validateArea(propertyForm.address.area).valid ? '✓' : '⚠️'} {validateArea(propertyForm.address.area).message}
+                    </p>
+                  )}
+                </div>
               </div>
 
               <button
@@ -1050,6 +1413,8 @@ const AddResortWizard = () => {
 
           {step === 3 && (
             <div className="space-y-4">
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg mb-4">{error}</div>}
+              
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {RESORT_AMENITIES.map(am => {
                   const isSelected = propertyForm.amenities.includes(am);
@@ -1074,6 +1439,18 @@ const AddResortWizard = () => {
                     </button>
                   );
                 })}
+              </div>
+
+              <div className="mt-4 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                <p className="text-xs font-semibold text-blue-700">
+                  Selected: {propertyForm.amenities?.length || 0} / 1 (minimum required)
+                </p>
+                {propertyForm.amenities?.length < 1 && (
+                  <p className="text-xs text-blue-600 mt-1">⚠️ Please select at least 1 amenity to continue</p>
+                )}
+                {propertyForm.amenities?.length >= 1 && (
+                  <p className="text-xs text-green-600 mt-1">✓ Minimum amenities requirement met</p>
+                )}
               </div>
             </div>
           )}
@@ -1141,8 +1518,8 @@ const AddResortWizard = () => {
 
               {/* Editing Mode */}
               {isEditingSubItem && (
-                <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+                <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col">
+                  <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between shrink-0">
                     <span className="font-bold text-emerald-800 text-sm">
                       {editingNearbyIndex === -1 ? 'Add New Place' : 'Edit Place'}
                     </span>
@@ -1151,7 +1528,7 @@ const AddResortWizard = () => {
                     </button>
                   </div>
 
-                  <div className="p-4 space-y-4">
+                  <div className="p-4 space-y-4 overflow-y-auto flex-1">
                     <div className="relative">
                       <label className="text-xs font-semibold text-gray-500 mb-1 block">Search Place</label>
                       <div className="flex gap-2">
@@ -1212,7 +1589,7 @@ const AddResortWizard = () => {
                       </div>
                     </div>
 
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-3 pt-2 sticky bottom-0 bg-white border-t border-gray-100 p-3 -mx-4 px-4 z-30">
                       <button type="button" onClick={cancelEditNearbyPlace} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
                       <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save Place</button>
                     </div>
@@ -1255,8 +1632,8 @@ const AddResortWizard = () => {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-gray-900">Property Gallery</label>
-                    <span className="text-xs text-gray-500">{propertyForm.propertyImages.length} images</span>
+                    <label className="text-sm font-bold text-gray-900">Property Gallery *</label>
+                    <span className="text-xs text-gray-500">{propertyForm.propertyImages.length} / 4 minimum</span>
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                     {propertyForm.propertyImages.map((img, i) => (
@@ -1265,9 +1642,9 @@ const AddResortWizard = () => {
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(img, 'gallery', i)}
-                          className="absolute top-1 right-1 bg-white/90 p-1 rounded-full text-red-500 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                          className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-2 shadow-lg hover:bg-red-700 transition-all z-10"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     ))}
@@ -1279,6 +1656,17 @@ const AddResortWizard = () => {
                     >
                       {uploading === 'gallery' ? <Loader2 className="animate-spin text-emerald-600" size={24} /> : (isFlutter ? <Camera size={24} /> : <Plus size={24} />)}
                     </button>
+                  </div>
+                  <div className="mt-3 p-3 rounded-lg bg-blue-50 border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-700">
+                      Uploaded: {propertyForm.propertyImages.length} / 4 (minimum required)
+                    </p>
+                    {propertyForm.propertyImages.length < 4 && (
+                      <p className="text-xs text-blue-600 mt-1">⚠️ Please upload at least {4 - propertyForm.propertyImages.length} more image{4 - propertyForm.propertyImages.length !== 1 ? 's' : ''}</p>
+                    )}
+                    {propertyForm.propertyImages.length >= 4 && (
+                      <p className="text-xs text-green-600 mt-1">✓ Minimum gallery images requirement met</p>
+                    )}
                   </div>
                   <input ref={propertyImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'gallery')} />
                 </div>
@@ -1348,8 +1736,8 @@ const AddResortWizard = () => {
               )}
 
               {editingRoomType && (
-                <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+                <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col">
+                  <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between shrink-0">
                     <span className="font-bold text-emerald-800 text-sm">
                       {editingRoomTypeIndex === -1 || editingRoomTypeIndex == null ? 'Add Cottage/Room' : 'Edit Cottage/Room'}
                     </span>
@@ -1358,7 +1746,7 @@ const AddResortWizard = () => {
                     </button>
                   </div>
 
-                  <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+                  <div className="p-4 space-y-4 overflow-y-auto flex-1">
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-gray-500">Name</label>
                       <input
@@ -1440,12 +1828,17 @@ const AddResortWizard = () => {
                           );
                         })}
                       </div>
+                      {editingRoomType.amenities && editingRoomType.amenities.length > 0 ? (
+                        <p className="text-xs text-green-600 mt-2">✓ {editingRoomType.amenities.length} amenity{editingRoomType.amenities.length !== 1 ? 'ies' : ''} selected</p>
+                      ) : (
+                        <p className="text-xs text-red-500 mt-2">⚠️ Please select at least 1 amenity</p>
+                      )}
                     </div>
+                  </div>
 
-                    <div className="flex gap-3 pt-4">
-                      <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save</button>
-                    </div>
+                  <div className="flex gap-3 p-4 border-t border-gray-100 bg-white sticky bottom-0 z-30 shrink-0">
+                    <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+                    <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save</button>
                   </div>
                 </div>
               )}
@@ -1461,15 +1854,15 @@ const AddResortWizard = () => {
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">Check-in Time</label>
                     <div className="relative">
-                      <input className="input w-full pl-9" placeholder="3:00 PM" value={propertyForm.checkInTime} onChange={e => updatePropertyForm('checkInTime', e.target.value)} />
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><span className="text-xs">🕒</span></div>
+                      <input className="input w-full pl-12" placeholder="    3:00 PM" value={propertyForm.checkInTime} onChange={e => updatePropertyForm('checkInTime', e.target.value)} />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><span className="text-sm">🕒</span></div>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">Check-out Time</label>
                     <div className="relative">
-                      <input className="input w-full pl-9" placeholder="11:00 AM" value={propertyForm.checkOutTime} onChange={e => updatePropertyForm('checkOutTime', e.target.value)} />
-                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><span className="text-xs">🕒</span></div>
+                      <input className="input w-full pl-12" placeholder="    11:00 AM" value={propertyForm.checkOutTime} onChange={e => updatePropertyForm('checkOutTime', e.target.value)} />
+                      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><span className="text-sm">🕒</span></div>
                     </div>
                   </div>
                 </div>
@@ -1513,14 +1906,14 @@ const AddResortWizard = () => {
             <div className="space-y-6">
               {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
               <div className="space-y-4">
-                <div className="text-sm font-semibold text-gray-700">Please provide the following documents</div>
+                <div className="text-sm font-semibold text-gray-700">Please provide all required documents to continue</div>
                 <div className="grid gap-3">
                   {propertyForm.documents.map((doc, idx) => (
                     <div key={idx} className="p-4 border border-gray-200 rounded-2xl bg-white hover:border-emerald-200 transition-colors shadow-sm">
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="font-bold text-gray-900">{doc.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">Optional document</div>
+                          <div className="text-xs text-red-500 mt-0.5 font-semibold">Required document *</div>
                         </div>
                         {doc.fileUrl ? (
                           <div className="bg-emerald-50 text-emerald-700 p-1.5 rounded-full"><CheckCircle size={18} /></div>
@@ -1660,31 +2053,33 @@ const AddResortWizard = () => {
         </div>
       </main>
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 md:px-6 z-40 bg-white/80 backdrop-blur-md">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <button
-            onClick={handleBack}
-            disabled={step === 1 || loading}
-            className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Back
-          </button>
+      <footer className={`fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 md:p-6 z-40 shadow-lg transition-all duration-300 ${isEditingSubItem ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          {step !== 10 && (
+            <button
+              onClick={handleBack}
+              disabled={step === 1 || loading}
+              className="px-4 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm"
+            >
+              Back
+            </button>
+          )}
           {step < 9 && (
             <button
               onClick={clearCurrentStep}
               disabled={loading}
-              className="px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-sm"
+              className="px-3 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-xs"
             >
-              Clear Step
+              Clear
             </button>
           )}
           <button
             onClick={handleNext}
             disabled={loading || (step === 6 && roomTypes.length === 0)}
-            className="flex-1 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 text-sm"
           >
             {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            {step === 9 ? (loading ? 'Submitting...' : 'Submit Property') : 'Continue'}
+            {step === 9 ? (loading ? 'Submitting...' : 'Submit') : 'Continue'}
           </button>
         </div>
       </footer>

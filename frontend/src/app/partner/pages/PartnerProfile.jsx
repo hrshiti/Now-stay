@@ -6,13 +6,14 @@ import { userService, authService, hotelService } from '../../../services/apiSer
 import PartnerHeader from '../components/PartnerHeader';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../../utils/flutterBridge';
 
-const Field = ({ label, value, icon: Icon, isEditing, onChange }) => (
+const Field = ({ label, value, icon: Icon, isEditing, onChange, validation, error }) => (
     <div className="mb-6 group">
         <div className="flex items-center justify-between mb-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{label}</label>
+            {error && <span className="text-[10px] font-bold text-red-500">{error}</span>}
         </div>
-        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${isEditing ? 'bg-white border-[#004F4D] ring-4 ring-[#004F4D]/5 shadow-inner' : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isEditing ? 'bg-[#004F4D] text-white' : 'bg-white text-gray-400 shadow-sm'}`}>
+        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${error ? 'border-red-300 bg-red-50/30' : isEditing ? 'bg-white border-[#004F4D] ring-4 ring-[#004F4D]/5 shadow-inner' : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${error ? 'bg-red-100 text-red-500' : isEditing ? 'bg-[#004F4D] text-white' : 'bg-white text-gray-400 shadow-sm'}`}>
                 <Icon size={18} />
             </div>
             {isEditing ? (
@@ -50,6 +51,7 @@ const PartnerProfile = () => {
     });
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef(null);
+    const [emailError, setEmailError] = useState('');
 
     useEffect(() => {
         gsap.fromTo(containerRef.current, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' });
@@ -88,7 +90,18 @@ const PartnerProfile = () => {
     }, []);
 
     const handleChange = (field, e) => {
-        setProfile({ ...profile, [field]: e.target.value });
+        const value = e.target.value;
+        setProfile({ ...profile, [field]: value });
+        
+        // Email validation
+        if (field === 'email') {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (value && !emailRegex.test(value)) {
+                setEmailError('Please enter a valid email address');
+            } else {
+                setEmailError('');
+            }
+        }
     };
 
     const parseAddress = (str) => {
@@ -104,6 +117,13 @@ const PartnerProfile = () => {
 
     const handleToggleEdit = async () => {
         if (isEditing) {
+            // Validate email before saving
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (profile.email && !emailRegex.test(profile.email)) {
+                setEmailError('Please enter a valid email address');
+                return;
+            }
+            
             const addressObj = parseAddress(profile.address);
             try {
                 const res = await authService.updateProfile({
@@ -132,6 +152,7 @@ const PartnerProfile = () => {
                 localStorage.setItem('user', JSON.stringify(updatedUser));
 
                 setIsEditing(false);
+                setEmailError('');
             } catch {
                 setIsEditing(false);
             }
@@ -296,6 +317,7 @@ const PartnerProfile = () => {
                         icon={Mail}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('email', e)}
+                        error={emailError}
                     />
                     <Field
                         label="Phone Number"
@@ -317,15 +339,15 @@ const PartnerProfile = () => {
                         label="Aadhaar Number"
                         value={profile.aadhaarNumber}
                         icon={CreditCard}
-                        isEditing={false} // Always read-only
-                        onChange={() => { }}
+                        isEditing={isEditing}
+                        onChange={(e) => handleChange('aadhaarNumber', e)}
                     />
                     <Field
                         label="PAN Number"
                         value={profile.panNumber}
                         icon={CreditCard}
-                        isEditing={false} // Always read-only
-                        onChange={() => { }}
+                        isEditing={isEditing}
+                        onChange={(e) => handleChange('panNumber', e)}
                     />
                 </div>
 

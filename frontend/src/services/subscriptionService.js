@@ -34,10 +34,16 @@ const subscriptionService = {
     },
 
     getCurrentSubscription: async () => {
-        const response = await axios.get(`${API_URL}/subscriptions/current`, {
-            withCredentials: true
-        });
-        return response.data;
+        try {
+            const response = await axiosInstance.get('/subscriptions/current');
+            return response.data;
+        } catch (error) {
+            // If 401, return null subscription (user not subscribed yet)
+            if (error.response?.status === 401) {
+                return { success: true, subscription: null };
+            }
+            throw error;
+        }
     },
 
     createSubscriptionOrder: async (planId) => {
