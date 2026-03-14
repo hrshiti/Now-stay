@@ -96,7 +96,12 @@ const SupportPage = () => {
                 </div>
 
                 <div className="text-center mt-4">
-                    <button className="text-xs font-bold text-surface underline">View all FAQs</button>
+                    <button
+                        onClick={() => navigate('/terms')}
+                        className="text-xs font-bold text-surface underline"
+                    >
+                        View all FAQs
+                    </button>
                 </div>
 
             </div>

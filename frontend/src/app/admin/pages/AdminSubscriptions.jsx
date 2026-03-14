@@ -106,7 +106,20 @@ const PlanModal = ({ plan, onClose, onSuccess }) => {
                                     required
                                     min="0"
                                     value={formData.price}
-                                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData({ ...formData, price: val === '' ? '' : Number(val) });
+                                    }}
+                                    onFocus={() => {
+                                        if (formData.price === 0 || formData.price === '0') {
+                                            setFormData({ ...formData, price: '' });
+                                        }
+                                    }}
+                                    onBlur={(e) => {
+                                        if (e.target.value === '') {
+                                            setFormData({ ...formData, price: 0 });
+                                        }
+                                    }}
                                     className="w-full pl-8 pr-3 py-2 border rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
                                 />
                             </div>
