@@ -30,6 +30,7 @@ const AddVillaWizard = () => {
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [contactNumberError, setContactNumberError] = useState('');
   const [createdProperty, setCreatedProperty] = useState(null);
   const [nearbySearchQuery, setNearbySearchQuery] = useState('');
   const [nearbyResults, setNearbyResults] = useState([]);
@@ -566,6 +567,7 @@ const AddVillaWizard = () => {
 
   const nextFromBasic = () => {
     setError('');
+    setContactNumberError('');
     
     // Property Name validation
     if (!propertyForm.propertyName || !propertyForm.propertyName.trim()) {
@@ -602,11 +604,13 @@ const AddVillaWizard = () => {
     // Contact Number validation
     if (!propertyForm.contactNumber || !propertyForm.contactNumber.trim()) {
       setError('Contact number is required');
+      setContactNumberError('Contact number is required');
       return;
     }
     const digitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
     if (digitsOnly.length !== 10) {
       setError('Contact number must be exactly 10 digits');
+      setContactNumberError(`Must contain exactly 10 digits (found: ${digitsOnly.length})`);
       return;
     }
     
@@ -1147,11 +1151,24 @@ const AddVillaWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Number (For Guest Inquiries)</label>
                   <input
-                    className="input"
-                    placeholder="e.g. +91 9876543210"
+                    className={`input ${contactNumberError ? 'border-red-300 bg-red-50' : ''}`}
+                    placeholder="e.g. 9876543210"
+                    inputMode="numeric"
+                    maxLength="10"
                     value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                    onChange={e => {
+                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', numericOnly);
+                      // Real-time validation
+                      if (numericOnly && numericOnly.length !== 10) {
+                        setContactNumberError(`Must contain exactly 10 digits (found: ${numericOnly.length})`);
+                      } else {
+                        setContactNumberError('');
+                      }
+                    }}
                   />
+                  {contactNumberError && <p className="text-xs text-red-500 mt-1">⚠️ {contactNumberError}</p>}
+                  {propertyForm.contactNumber && !contactNumberError && <p className="text-xs text-green-600 mt-1">✓ Valid contact number</p>}
                 </div>
               </div>
 
@@ -1204,7 +1221,10 @@ const AddVillaWizard = () => {
                   <input 
                     className={`input border-2 transition-colors ${propertyForm.address.country ? (!/^[a-zA-Z\s\-]+$/.test(propertyForm.address.country) ? 'border-red-500 bg-red-50' : 'border-emerald-500 bg-emerald-50') : 'border-gray-300'}`}
                     value={propertyForm.address.country} 
-                    onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} 
+                    onChange={e => {
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'country'], alphabetOnly);
+                    }}
                   />
                   {propertyForm.address.country && (
                     <p className={`text-xs mt-1 ${!/^[a-zA-Z\s\-]+$/.test(propertyForm.address.country) ? 'text-red-500' : 'text-green-600'}`}>
@@ -1217,7 +1237,10 @@ const AddVillaWizard = () => {
                   <input 
                     className={`input border-2 transition-colors ${propertyForm.address.state ? (!/^[a-zA-Z\s\-]+$/.test(propertyForm.address.state) ? 'border-red-500 bg-red-50' : 'border-emerald-500 bg-emerald-50') : 'border-gray-300'}`}
                     value={propertyForm.address.state} 
-                    onChange={e => updatePropertyForm(['address', 'state'], e.target.value)} 
+                    onChange={e => {
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'state'], alphabetOnly);
+                    }}
                   />
                   {propertyForm.address.state && (
                     <p className={`text-xs mt-1 ${!/^[a-zA-Z\s\-]+$/.test(propertyForm.address.state) ? 'text-red-500' : 'text-green-600'}`}>
@@ -1230,7 +1253,10 @@ const AddVillaWizard = () => {
                   <input 
                     className={`input border-2 transition-colors ${propertyForm.address.city ? (!/^[a-zA-Z\s\-]+$/.test(propertyForm.address.city) ? 'border-red-500 bg-red-50' : 'border-emerald-500 bg-emerald-50') : 'border-gray-300'}`}
                     value={propertyForm.address.city} 
-                    onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} 
+                    onChange={e => {
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'city'], alphabetOnly);
+                    }}
                   />
                   {propertyForm.address.city && (
                     <p className={`text-xs mt-1 ${!/^[a-zA-Z\s\-]+$/.test(propertyForm.address.city) ? 'text-red-500' : 'text-green-600'}`}>
@@ -1267,8 +1293,13 @@ const AddVillaWizard = () => {
                   <label className="text-xs font-semibold text-gray-500">Pincode/Zip *</label>
                   <input 
                     className={`input border-2 transition-colors ${propertyForm.address.pincode ? (!/^\d{5,6}$/.test(propertyForm.address.pincode.replace(/\D/g, '')) ? 'border-red-500 bg-red-50' : 'border-emerald-500 bg-emerald-50') : 'border-gray-300'}`}
-                    value={propertyForm.address.pincode} 
-                    onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} 
+                    value={propertyForm.address.pincode}
+                    inputMode="numeric"
+                    maxLength="6"
+                    onChange={e => {
+                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      updatePropertyForm(['address', 'pincode'], numericOnly);
+                    }}
                   />
                   {propertyForm.address.pincode && (
                     <p className={`text-xs mt-1 ${!/^\d{5,6}$/.test(propertyForm.address.pincode.replace(/\D/g, '')) ? 'text-red-500' : 'text-green-600'}`}>

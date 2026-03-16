@@ -36,6 +36,7 @@ const AddHotelWizard = () => {
   const [stateError, setStateError] = useState('');
   const [cityError, setCityError] = useState('');
   const [pincodeError, setPincodeError] = useState('');
+  const [contactNumberError, setContactNumberError] = useState('');
   const [nearbySearchQuery, setNearbySearchQuery] = useState('');
   const [nearbyResults, setNearbyResults] = useState([]);
   const [editingNearbyIndex, setEditingNearbyIndex] = useState(null);
@@ -582,6 +583,7 @@ const AddHotelWizard = () => {
 
   const nextFromProperty = () => {
     setError('');
+    setContactNumberError('');
     
     // Property Name validation
     if (!propertyForm.propertyName || !propertyForm.propertyName.trim()) {
@@ -618,11 +620,13 @@ const AddHotelWizard = () => {
     // Contact Number validation
     if (!propertyForm.contactNumber || !propertyForm.contactNumber.trim()) {
       setError('Contact number is required');
+      setContactNumberError('Contact number is required');
       return;
     }
     const contactDigitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
     if (contactDigitsOnly.length !== 10) {
       setError('Contact number must be exactly 10 digits');
+      setContactNumberError(`Must contain exactly 10 digits (found: ${contactDigitsOnly.length})`);
       return;
     }
     
@@ -1185,19 +1189,24 @@ const AddHotelWizard = () => {
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">Contact Number (For Guest Inquiries)</label>
                   <input
-                    className="input w-full"
-                    placeholder="e.g. +91 9876543210"
+                    className={`input w-full ${contactNumberError ? 'border-red-300 bg-red-50' : ''}`}
+                    placeholder="e.g. 9876543210"
+                    inputMode="numeric"
+                    maxLength="10"
                     value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                    onChange={e => {
+                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', numericOnly);
+                      // Real-time validation
+                      if (numericOnly && numericOnly.length !== 10) {
+                        setContactNumberError(`Must contain exactly 10 digits (found: ${numericOnly.length})`);
+                      } else {
+                        setContactNumberError('');
+                      }
+                    }}
                   />
-                  {propertyForm.contactNumber && (() => {
-                    const digitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
-                    return digitsOnly.length !== 10 ? (
-                      <p className="text-xs text-red-500 mt-1">⚠️ Must contain exactly 10 digits (found: {digitsOnly.length})</p>
-                    ) : (
-                      <p className="text-xs text-green-600 mt-1">✓ Valid contact number</p>
-                    );
-                  })()}
+                  {contactNumberError && <p className="text-xs text-red-500 mt-1">⚠️ {contactNumberError}</p>}
+                  {propertyForm.contactNumber && !contactNumberError && <p className="text-xs text-green-600 mt-1">✓ Valid contact number</p>}
                 </div>
               </div>
             </div>
@@ -1252,10 +1261,50 @@ const AddHotelWizard = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <input className="input col-span-2" placeholder="Full Address" value={propertyForm.address.fullAddress} onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)} />
-                <input className="input" placeholder="City" value={propertyForm.address.city} onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} />
-                <input className="input" placeholder="State" value={propertyForm.address.state} onChange={e => updatePropertyForm(['address', 'state'], e.target.value)} />
-                <input className="input" placeholder="Country" value={propertyForm.address.country} onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} />
-                <input className="input" placeholder="Pincode" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
+                <input 
+                  className="input" 
+                  placeholder="City" 
+                  value={propertyForm.address.city} 
+                  onChange={e => {
+                    const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                    updatePropertyForm(['address', 'city'], alphabetOnly);
+                  }} 
+                />
+                <input 
+                  className="input" 
+                  placeholder="State" 
+                  value={propertyForm.address.state} 
+                  onChange={e => {
+                    const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                    updatePropertyForm(['address', 'state'], alphabetOnly);
+                  }} 
+                />
+                <input 
+                  className="input" 
+                  placeholder="Country" 
+                  value={propertyForm.address.country} 
+                  onChange={e => {
+                    const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                    updatePropertyForm(['address', 'country'], alphabetOnly);
+                  }} 
+                />
+                <input 
+                  className={`input ${pincodeError ? 'border-red-300 bg-red-50' : ''}`}
+                  placeholder="Pincode" 
+                  inputMode="numeric"
+                  maxLength="6"
+                  value={propertyForm.address.pincode} 
+                  onChange={e => {
+                    const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    updatePropertyForm(['address', 'pincode'], numericOnly);
+                    // Real-time validation
+                    if (numericOnly && numericOnly.length !== 6) {
+                      setPincodeError(`Must contain exactly 6 digits (found: ${numericOnly.length})`);
+                    } else {
+                      setPincodeError('');
+                    }
+                  }}
+                />
                 <input className="input" placeholder="Area" value={propertyForm.address.area} onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} />
               </div>
 

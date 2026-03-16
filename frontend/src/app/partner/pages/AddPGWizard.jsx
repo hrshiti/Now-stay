@@ -1224,14 +1224,16 @@ const AddPGWizard = () => {
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Number (For Guest Inquiries)</label>
                   <input
                     className={`input ${contactNumberError ? 'border-red-300 bg-red-50' : ''}`}
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="e.g. 9876543210"
+                    inputMode="numeric"
+                    maxLength="10"
                     value={propertyForm.contactNumber}
                     onChange={e => {
-                      updatePropertyForm('contactNumber', e.target.value);
+                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', numericOnly);
                       // Real-time validation
-                      const digitsOnly = e.target.value.replace(/\D/g, '');
-                      if (e.target.value && digitsOnly.length !== 10) {
-                        setContactNumberError(`Must contain exactly 10 digits (found: ${digitsOnly.length})`);
+                      if (numericOnly && numericOnly.length !== 10) {
+                        setContactNumberError(`Must contain exactly 10 digits (found: ${numericOnly.length})`);
                       } else {
                         setContactNumberError('');
                       }
@@ -1318,7 +1320,14 @@ const AddPGWizard = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Country</label>
-                  <input className="input" value={propertyForm.address.country} onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} />
+                  <input 
+                    className="input" 
+                    value={propertyForm.address.country} 
+                    onChange={e => {
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'country'], alphabetOnly);
+                    }} 
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">State/Province</label>
@@ -1326,10 +1335,11 @@ const AddPGWizard = () => {
                     className={`input ${stateError ? 'border-red-300 bg-red-50' : ''}`}
                     value={propertyForm.address.state} 
                     onChange={e => {
-                      updatePropertyForm(['address', 'state'], e.target.value);
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'state'], alphabetOnly);
                       // Real-time validation
-                      const stateRegex = /^[a-zA-Z\s]*$/;
-                      if (e.target.value && !stateRegex.test(e.target.value)) {
+                      const stateRegex = /^[a-zA-Z\s\-]*$/;
+                      if (alphabetOnly && !stateRegex.test(alphabetOnly)) {
                         setStateError('State must contain only alphabetic characters');
                       } else {
                         setStateError('');
@@ -1344,10 +1354,11 @@ const AddPGWizard = () => {
                     className={`input ${cityError ? 'border-red-300 bg-red-50' : ''}`}
                     value={propertyForm.address.city} 
                     onChange={e => {
-                      updatePropertyForm(['address', 'city'], e.target.value);
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'city'], alphabetOnly);
                       // Real-time validation
-                      const cityRegex = /^[a-zA-Z\s]*$/;
-                      if (e.target.value && !cityRegex.test(e.target.value)) {
+                      const cityRegex = /^[a-zA-Z\s\-]*$/;
+                      if (alphabetOnly && !cityRegex.test(alphabetOnly)) {
                         setCityError('City must contain only alphabetic characters');
                       } else {
                         setCityError('');

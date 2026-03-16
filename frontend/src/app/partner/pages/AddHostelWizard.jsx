@@ -1317,8 +1317,13 @@ const AddHostelWizard = () => {
                   <input
                     className={`input w-full ${fieldErrors.contactNumber ? 'border-red-300 bg-red-50' : ''}`}
                     placeholder="e.g. 9876543210"
+                    inputMode="numeric"
+                    maxLength="10"
                     value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                    onChange={e => {
+                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', numericOnly);
+                    }}
                   />
                   {fieldErrors.contactNumber && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.contactNumber}</span>}
                   {!fieldErrors.contactNumber && propertyForm.contactNumber && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
@@ -1373,7 +1378,10 @@ const AddHostelWizard = () => {
                   <input 
                     className={`input ${fieldErrors.country ? 'border-red-300 bg-red-50' : ''}`}
                     value={propertyForm.address.country} 
-                    onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} 
+                    onChange={e => {
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'country'], alphabetOnly);
+                    }}
                   />
                   {fieldErrors.country && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.country}</span>}
                 </div>
@@ -1382,7 +1390,10 @@ const AddHostelWizard = () => {
                   <input 
                     className={`input ${fieldErrors.state ? 'border-red-300 bg-red-50' : ''}`}
                     value={propertyForm.address.state} 
-                    onChange={e => updatePropertyForm(['address', 'state'], e.target.value)} 
+                    onChange={e => {
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'state'], alphabetOnly);
+                    }}
                   />
                   {fieldErrors.state && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.state}</span>}
                 </div>
@@ -1391,7 +1402,10 @@ const AddHostelWizard = () => {
                   <input 
                     className={`input ${fieldErrors.city ? 'border-red-300 bg-red-50' : ''}`}
                     value={propertyForm.address.city} 
-                    onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} 
+                    onChange={e => {
+                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                      updatePropertyForm(['address', 'city'], alphabetOnly);
+                    }}
                   />
                   {fieldErrors.city && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.city}</span>}
                 </div>
@@ -1417,8 +1431,13 @@ const AddHostelWizard = () => {
                   <label className="text-xs font-semibold text-gray-500">Pincode / Zip * (6 digits)</label>
                   <input 
                     className={`input ${fieldErrors.pincode ? 'border-red-300 bg-red-50' : ''}`}
-                    value={propertyForm.address.pincode} 
-                    onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} 
+                    value={propertyForm.address.pincode}
+                    inputMode="numeric"
+                    maxLength="6"
+                    onChange={e => {
+                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      updatePropertyForm(['address', 'pincode'], numericOnly);
+                    }}
                   />
                   {fieldErrors.pincode && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.pincode}</span>}
                 </div>

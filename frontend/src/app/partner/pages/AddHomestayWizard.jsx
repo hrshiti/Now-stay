@@ -52,6 +52,7 @@ const AddHomestayWizard = () => {
   const [stateError, setStateError] = useState('');
   const [cityError, setCityError] = useState('');
   const [pincodeError, setPincodeError] = useState('');
+  const [contactNumberError, setContactNumberError] = useState('');
 
   // Maps / Location State
   const [nearbySearchQuery, setNearbySearchQuery] = useState('');
@@ -578,6 +579,7 @@ const AddHomestayWizard = () => {
   // --- Strict Validation ---
   const nextFromBasic = () => {
     setError('');
+    setContactNumberError('');
     
     // Property Name validation
     if (!propertyForm.propertyName || !propertyForm.propertyName.trim()) {
@@ -614,11 +616,13 @@ const AddHomestayWizard = () => {
     // Contact Number validation
     if (!propertyForm.contactNumber || !propertyForm.contactNumber.trim()) {
       setError('Contact number is required');
+      setContactNumberError('Contact number is required');
       return;
     }
     const contactDigitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
     if (contactDigitsOnly.length !== 10) {
       setError('Contact number must be exactly 10 digits');
+      setContactNumberError(`Must contain exactly 10 digits (found: ${contactDigitsOnly.length})`);
       return;
     }
     
@@ -1187,11 +1191,24 @@ const AddHomestayWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Contact Number (For Guest Inquiries)</label>
                   <input
-                    className="input w-full"
-                    placeholder="e.g. +91 9876543210"
+                    className={`input w-full ${contactNumberError ? 'border-red-300 bg-red-50' : ''}`}
+                    placeholder="e.g. 9876543210"
+                    inputMode="numeric"
+                    maxLength="10"
                     value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                    onChange={e => {
+                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', numericOnly);
+                      // Real-time validation
+                      if (numericOnly && numericOnly.length !== 10) {
+                        setContactNumberError(`Must contain exactly 10 digits (found: ${numericOnly.length})`);
+                      } else {
+                        setContactNumberError('');
+                      }
+                    }}
                   />
+                  {contactNumberError && <span className="text-xs font-semibold text-red-500">{contactNumberError}</span>}
+                  {propertyForm.contactNumber && !contactNumberError && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
                 </div>
               </div>
             </div>
@@ -1240,7 +1257,10 @@ const AddHomestayWizard = () => {
                       className="input" 
                       placeholder="Country" 
                       value={propertyForm.address.country} 
-                      onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} 
+                      onChange={e => {
+                        const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                        updatePropertyForm(['address', 'country'], alphabetOnly);
+                      }}
                     />
                   </div>
                   <div className="space-y-1">
@@ -1250,10 +1270,11 @@ const AddHomestayWizard = () => {
                       placeholder="State/Province" 
                       value={propertyForm.address.state} 
                       onChange={e => {
-                        updatePropertyForm(['address', 'state'], e.target.value);
+                        const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                        updatePropertyForm(['address', 'state'], alphabetOnly);
                         // Real-time validation
-                        const stateRegex = /^[a-zA-Z\s]*$/;
-                        if (e.target.value && !stateRegex.test(e.target.value)) {
+                        const stateRegex = /^[a-zA-Z\s\-]*$/;
+                        if (alphabetOnly && !stateRegex.test(alphabetOnly)) {
                           setStateError('State must contain only alphabetic characters');
                         } else {
                           setStateError('');
@@ -1269,10 +1290,11 @@ const AddHomestayWizard = () => {
                       placeholder="City" 
                       value={propertyForm.address.city} 
                       onChange={e => {
-                        updatePropertyForm(['address', 'city'], e.target.value);
+                        const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
+                        updatePropertyForm(['address', 'city'], alphabetOnly);
                         // Real-time validation
-                        const cityRegex = /^[a-zA-Z\s]*$/;
-                        if (e.target.value && !cityRegex.test(e.target.value)) {
+                        const cityRegex = /^[a-zA-Z\s\-]*$/;
+                        if (alphabetOnly && !cityRegex.test(alphabetOnly)) {
                           setCityError('City must contain only alphabetic characters');
                         } else {
                           setCityError('');
