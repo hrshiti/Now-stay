@@ -9,7 +9,7 @@ import {
     ChevronRight, Wallet, Bell, Settings, Edit3, Info, Phone, Calendar, ShieldCheck
 } from 'lucide-react';
 import usePartnerStore from '../store/partnerStore';
-import NowStayLogo from '../../components/ui/NowStayLogo';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 
 const PartnerSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, Wallet, Bell, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import NowStayLogo from '../../components/ui/NowStayLogo';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 import PartnerSidebar from './PartnerSidebar';
 import { hotelService } from '../../../services/apiService';
 import walletService from '../../../services/walletService';
