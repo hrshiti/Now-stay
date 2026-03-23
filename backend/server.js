@@ -26,8 +26,9 @@ const io = new Server(server, {
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://rukkoo.in',
-      'https://www.rukkoo.in',
-      'https://rukkoo-project.vercel.app'
+      'https://nowstay.in',
+      'https://www.nowstay.in',
+      'nowstay.in'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
@@ -79,9 +80,9 @@ app.use(cors({
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://rukkoo.in',
-      'https://www.rukkoo.in',
-      'https://rukkoo-project.vercel.app',
-      'https://rukooin-ijcelh2vj-appzetos-projects-73814664.vercel.app'
+      'https://nowstay.in',
+      'https://www.nowstay.in',
+      'nowstay.in'
     ];
     // Add 172.16-31 range (often used by hotspots) and 10.x
     const isLocalNetwork =
