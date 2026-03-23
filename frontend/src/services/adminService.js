@@ -80,8 +80,10 @@ const adminService = {
     return response.data;
   },
 
-  updateBookingStatus: async (bookingId, status) => {
-    const response = await axiosInstance.put('/admin/update-booking-status', { bookingId, status });
+  updateBookingStatus: async (bookingId, status, reason) => {
+    const body = { bookingId, status };
+    if (reason != null && String(reason).trim() !== '') body.reason = String(reason).trim();
+    const response = await axiosInstance.put('/admin/update-booking-status', body);
     return response.data;
   },
 
@@ -107,6 +109,13 @@ const adminService = {
 
   getBookingDetails: async (bookingId) => {
     const response = await axiosInstance.get(`/admin/booking-details/${bookingId}`);
+    return response.data;
+  },
+
+  downloadReceipt: async (bookingId) => {
+    const response = await axiosInstance.get(`/bookings/${bookingId}/receipt`, {
+      responseType: 'blob'
+    });
     return response.data;
   },
 
@@ -142,6 +151,11 @@ const adminService = {
 
   updateAdminProfile: async (payload) => {
     const response = await axiosInstance.put('/auth/admin/update-profile', payload);
+    return response.data;
+  },
+
+  updateAdminPassword: async (payload) => {
+    const response = await axiosInstance.put('/auth/admin/update-password', payload);
     return response.data;
   },
 
@@ -201,30 +215,45 @@ const adminService = {
     const response = await axiosInstance.get('/admin/finance');
     return response.data;
   },
-
-  // Category Management
-  getAllCategories: async () => {
-    const response = await axiosInstance.get('/categories/all');
+  updateProperty: async (id, payload) => {
+    const response = await axiosInstance.put(`/admin/update-property/${id}`, payload);
+    return response.data;
+  },
+  uploadImage: async (formData) => {
+    const response = await axiosInstance.post('/admin/upload-image', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
     return response.data;
   },
 
+  // Withdrawal Management
+  getWithdrawals: async (params) => {
+    const response = await axiosInstance.get('/admin/withdrawals', { params });
+    return response.data;
+  },
+
+  updateWithdrawalStatus: async (id, payload) => {
+    const response = await axiosInstance.put(`/admin/withdrawals/${id}/status`, payload);
+    return response.data;
+  },
+
+  // Categories
+  getCategories: async () => {
+    const response = await axiosInstance.get('/categories/admin');
+    return response.data;
+  },
   createCategory: async (data) => {
     const response = await axiosInstance.post('/categories', data);
     return response.data;
   },
-
   updateCategory: async (id, data) => {
     const response = await axiosInstance.put(`/categories/${id}`, data);
     return response.data;
   },
-
   deleteCategory: async (id) => {
     const response = await axiosInstance.delete(`/categories/${id}`);
-    return response.data;
-  },
-
-  reorderCategories: async (categories) => {
-    const response = await axiosInstance.put('/categories/reorder', { categories });
     return response.data;
   }
 };

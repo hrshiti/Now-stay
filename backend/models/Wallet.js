@@ -70,8 +70,8 @@ walletSchema.pre('save', async function () {
 // Methods
 walletSchema.methods.credit = async function (amount, description, reference, type = 'booking_payment') {
   this.balance += amount;
-  // Only add to totalEarnings for actual earnings (bookings), not topups or refunds
-  if (type !== 'topup' && type !== 'refund' && type !== 'commission_refund') {
+  // Only add to totalEarnings for actual earnings (bookings), not topups, refunds or admin adjustments
+  if (type !== 'topup' && type !== 'refund' && type !== 'commission_refund' && type !== 'admin_adjustment') {
     this.totalEarnings += amount;
   }
   this.lastTransactionAt = new Date();
@@ -96,8 +96,8 @@ walletSchema.methods.credit = async function (amount, description, reference, ty
 };
 
 walletSchema.methods.debit = async function (amount, description, reference, type = 'withdrawal') {
-  // Allow overdraft for commission deductions or penalties
-  const allowOverdraft = ['commission_deduction', 'no_show_penalty', 'refund_deduction'].includes(type);
+  // Allow overdraft for commission deductions, penalties, refunds, or admin adjustments
+  const allowOverdraft = ['commission_deduction', 'no_show_penalty', 'refund_deduction', 'commission_refund', 'admin_adjustment'].includes(type);
 
   if (!allowOverdraft && this.balance < amount) {
     throw new Error('Insufficient balance');

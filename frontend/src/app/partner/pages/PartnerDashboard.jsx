@@ -6,7 +6,7 @@ import usePartnerDashboard from '../hooks/usePartnerDashboard';
 import DashboardStatCard from '../components/dashboard/DashboardStatCard';
 import RecentBookingsTable from '../components/dashboard/RecentBookingsTable';
 import ActionRequired from '../components/dashboard/ActionRequired';
-import { Calendar, Wallet, Building2, Star, Plus } from 'lucide-react';
+import { Calendar, Wallet, Building2, Star, Plus, Clock, XCircle, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const PartnerDashboard = () => {
@@ -14,24 +14,16 @@ const PartnerDashboard = () => {
     const navigate = useNavigate();
     const { stats, recentBookings, actionItems, loading, user } = usePartnerDashboard();
 
-    // Init Notifications
+    // Init Notifications — fire when user data is available (partner is logged in)
     React.useEffect(() => {
-        const initNotifications = async () => {
-            try {
-                // Import dynamically to avoid circular deps if any, or just standard import
-                const { requestNotificationPermission } = await import('../../../utils/firebase');
-                const { userService } = await import('../../../services/apiService');
-
-                const token = await requestNotificationPermission();
-                if (token) {
-                    await userService.updateFcmToken(token, 'web');
-                }
-            } catch (error) {
-                console.error("Partner Notification Init Failed:", error);
-            }
-        };
         if (user) {
-            initNotifications();
+            // Dispatch the FCM register event so App.jsx can handle registration centrally
+            // This is a backup for when: partner was already logged in when the page first loaded
+            try {
+                window.dispatchEvent(new CustomEvent('fcm:register'));
+            } catch (error) {
+                console.warn('[FCM] Could not dispatch register event from PartnerDashboard:', error);
+            }
         }
     }, [user]);
 
@@ -84,7 +76,7 @@ const PartnerDashboard = () => {
                 <ActionRequired items={actionItems} />
 
                 {/* KPI Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
                     <DashboardStatCard
                         icon={Calendar}
                         label="Total Bookings"
@@ -105,13 +97,33 @@ const PartnerDashboard = () => {
                     />
 
                     <DashboardStatCard
-                        icon={Building2}
-                        label="Active Properties"
-                        value={stats.activeProperties}
+                        icon={CheckCircle2}
+                        label="Approved"
+                        value={stats.approvedProperties}
                         subtext="Online & Bookable"
                         actionLabel="Manage"
                         onAction={() => navigate('/hotel/properties')}
-                        colorClass="text-purple-600"
+                        colorClass="text-green-600"
+                    />
+
+                    <DashboardStatCard
+                        icon={Clock}
+                        label="Pending"
+                        value={stats.pendingProperties}
+                        subtext="Under verification"
+                        actionLabel="Check Status"
+                        onAction={() => navigate('/hotel/properties')}
+                        colorClass="text-orange-500"
+                    />
+
+                    <DashboardStatCard
+                        icon={XCircle}
+                        label="Rejected"
+                        value={stats.rejectedProperties}
+                        subtext="Needs attention"
+                        actionLabel="Fix Issues"
+                        onAction={() => navigate('/hotel/properties')}
+                        colorClass="text-red-500"
                     />
 
                     <DashboardStatCard
@@ -121,7 +133,7 @@ const PartnerDashboard = () => {
                         subtext="Action required"
                         actionLabel="Reply"
                         onAction={() => navigate('/hotel/reviews')}
-                        colorClass="text-orange-500"
+                        colorClass="text-purple-600"
                     />
                 </div>
 

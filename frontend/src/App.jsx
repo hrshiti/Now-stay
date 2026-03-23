@@ -7,16 +7,21 @@ import { Clock, Loader2 } from 'lucide-react';
 // Eager Imports (Critical UI)
 import BottomNavbar from './components/ui/BottomNavbar';
 import TopNavbar from './components/ui/TopNavbar';
-import PartnerBottomNavbar from './app/partner/components/PartnerBottomNavbar';
-import ScrollToTop from './components/ui/ScrollToTop';
 import Footer from './components/ui/Footer';
+import PartnerBottomNavbar from './app/partner/components/PartnerBottomNavbar';
+
+import ScrollToTop from './components/ui/ScrollToTop';
 
 // Hooks & Services
 import { useLenis } from './app/shared/hooks/useLenis';
-import { legalService, userService } from './services/apiService';
+import { legalService, userService, hotelService } from './services/apiService';
 import adminService from './services/adminService';
 import { requestNotificationPermission, onMessageListener } from './utils/firebase';
-import logo from './assets/rokologin-removebg-preview.png';
+import NowStayLogo from './components/ui/NowStayLogo';
+import { initAppMode, isWebView } from './utils/deviceDetect';
+
+// Init app mode from URL params on very first load
+initAppMode();
 
 // Lazy Imports - User Pages
 const Home = React.lazy(() => import('./pages/user/Home'));
@@ -40,11 +45,16 @@ const TermsPage = React.lazy(() => import('./pages/user/TermsPage'));
 const PrivacyPage = React.lazy(() => import('./pages/user/PrivacyPage'));
 const AboutPage = React.lazy(() => import('./pages/user/AboutPage'));
 const ContactPage = React.lazy(() => import('./pages/user/ContactPage'));
+const BlogsPage = React.lazy(() => import('./pages/user/BlogsPage'));
 const AmenitiesPage = React.lazy(() => import('./pages/user/AmenitiesPage'));
 const ReviewsPage = React.lazy(() => import('./pages/user/ReviewsPage'));
 const OffersPage = React.lazy(() => import('./pages/user/OffersPage'));
 const ProfileEdit = React.lazy(() => import('./pages/user/ProfileEdit'));
 const BookingCheckoutPage = React.lazy(() => import('./pages/user/BookingCheckoutPage'));
+const CareersPage = React.lazy(() => import('./pages/user/CareersPage'));
+const CancellationPage = React.lazy(() => import('./pages/user/CancellationPage'));
+const ReferralHandler = React.lazy(() => import('./pages/auth/ReferralHandler'));
+
 
 // Lazy Imports - Admin Pages
 const AdminLogin = React.lazy(() => import('./app/admin/pages/AdminLogin'));
@@ -67,8 +77,8 @@ const AdminLegalPages = React.lazy(() => import('./app/admin/pages/AdminLegalPag
 const AdminContactMessages = React.lazy(() => import('./app/admin/pages/AdminContactMessages'));
 const AdminNotifications = React.lazy(() => import('./app/admin/pages/AdminNotifications'));
 const AdminFaqs = React.lazy(() => import('./app/admin/pages/AdminFaqs'));
-const AdminCategories = React.lazy(() => import('./app/admin/pages/AdminCategories'));
 const AdminSubscriptions = React.lazy(() => import('./app/admin/pages/AdminSubscriptions'));
+const AdminCategories = React.lazy(() => import('./app/admin/pages/AdminCategories'));
 
 // Lazy Imports - Partner Pages
 const HotelLogin = React.lazy(() => import('./pages/auth/HotelLoginPage'));
@@ -80,7 +90,7 @@ const AddHostelWizard = React.lazy(() => import('./app/partner/pages/AddHostelWi
 const AddPGWizard = React.lazy(() => import('./app/partner/pages/AddPGWizard'));
 const AddResortWizard = React.lazy(() => import('./app/partner/pages/AddResortWizard'));
 const AddHomestayWizard = React.lazy(() => import('./app/partner/pages/AddHomestayWizard'));
-const AddDynamicWizard = React.lazy(() => import('./app/partner/pages/AddDynamicWizard'));
+const AddTentWizard = React.lazy(() => import('./app/partner/pages/AddTentWizard'));
 const PartnerDashboard = React.lazy(() => import('./app/partner/pages/PartnerDashboard'));
 const PartnerBookings = React.lazy(() => import('./app/partner/pages/PartnerBookings'));
 const PartnerWallet = React.lazy(() => import('./app/partner/pages/PartnerWallet'));
@@ -104,6 +114,8 @@ const PartnerAbout = React.lazy(() => import('./app/partner/pages/PartnerAbout')
 const PartnerPrivacy = React.lazy(() => import('./app/partner/pages/PartnerPrivacy'));
 const PartnerContact = React.lazy(() => import('./app/partner/pages/PartnerContact'));
 const PartnerBankDetails = React.lazy(() => import('./app/partner/pages/PartnerBankDetails'));
+const BlogManager = React.lazy(() => import('./pages/manager/BlogManager'));
+const BlogDetail = React.lazy(() => import('./pages/user/BlogDetail'));
 const PartnerSubscriptions = React.lazy(() => import('./app/partner/pages/PartnerSubscriptions'));
 
 // Lazy Imports - Layouts
@@ -133,6 +145,16 @@ const Layout = ({ children }) => {
   // Disable Lenis on Admin routes only (as requested)
   const isCmsRoute = location.pathname.startsWith('/admin');
   useLenis(isCmsRoute);
+
+  const [hideNavsDueToSlider, setHideNavsDueToSlider] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleSliderChange = (e) => {
+      setHideNavsDueToSlider(!!e.detail);
+    };
+    window.addEventListener('rukkoo:slider', handleSliderChange);
+    return () => window.removeEventListener('rukkoo:slider', handleSliderChange);
+  }, []);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -175,10 +197,11 @@ const Layout = ({ children }) => {
 
   // Specific user pages where BottomNav is hidden
   const hideUserBottomNavOn = ['/booking-confirmation', '/payment', '/support', '/refer', '/hotel/', '/legal', '/terms', '/privacy'];
-  const showUserBottomNav = showUserNavs && !hideUserBottomNavOn.some(r => location.pathname.includes(r));
+  const showUserBottomNav = showUserNavs && !hideUserBottomNavOn.some(r => location.pathname.includes(r)) && !hideNavsDueToSlider;
 
   // Partner Bottom Nav should show in Partner App (authenticated pages)
-  const showPartnerBottomNav = isPartnerApp && location.pathname !== '/hotel';
+  const isPartnerPublic = location.pathname === '/hotel/privacy' || location.pathname === '/hotel/contact';
+  const showPartnerBottomNav = isPartnerApp && location.pathname !== '/hotel' && !isPartnerPublic && !hideNavsDueToSlider;
 
   const isAuthRoute = ['/login', '/signup', '/hotel/login', '/hotel/register'].some(route =>
     location.pathname.startsWith(route)
@@ -193,7 +216,7 @@ const Layout = ({ children }) => {
     <>
       {showUserNavs && <TopNavbar />}
 
-      <div className={`min-h-screen flex flex-col md:pt-24 ${showUserBottomNav || showPartnerBottomNav ? 'pb-20 md:pb-0' : ''}`}>
+      <div className={`min-h-screen md:pt-24 ${showUserBottomNav || showPartnerBottomNav ? 'pb-20 md:pb-0' : ''}`}>
         {showMaintenanceOverlay ? (
           <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-6 py-10 text-center bg-gradient-to-b from-[#111827] via-[#0f172a] to-black">
             <div className="flex flex-col items-center justify-center max-w-md w-full">
@@ -201,12 +224,7 @@ const Layout = ({ children }) => {
                 <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
                   <Clock className="w-8 h-8 md:w-9 md:h-9 text-teal-400" />
                 </div>
-                <div className="flex flex-col items-center leading-none">
-                  <span className="text-3xl font-black tracking-tighter text-white flex items-center gap-1 uppercase">
-                    STAY<span className="text-teal-400">NOW</span>
-                  </span>
-                  <div className="h-1 w-8 bg-teal-400 rounded-full mt-1"></div>
-                </div>
+                <NowStayLogo size="md" />
               </div>
               <h1 className="text-2xl md:text-3xl font-black text-white mb-3 leading-snug">
                 {platformStatus.maintenanceTitle}
@@ -217,32 +235,76 @@ const Layout = ({ children }) => {
             </div>
           </div>
         ) : (
-          <>
-            <div className="flex-grow">
-              {children}
-            </div>
-            {!isPartnerApp && <Footer />}
-          </>
+          children
         )}
       </div>
 
       {showUserBottomNav && <BottomNavbar />}
       {showPartnerBottomNav && <PartnerBottomNavbar />}
+      {showUserNavs && <Footer />}
     </>
+
   );
 };
 
 // Simple Protected Route for Users
+// In WebView (Flutter app): always require login → redirect to /login
+// In Browser: allow access; partner-logged-in users are redirected to partner dashboard
 const UserProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
+  const userRaw = localStorage.getItem('user');
+  const user = userRaw ? JSON.parse(userRaw) : null;
   const location = useLocation();
 
   if (!token) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // If partner is logged in but tries to access user routes, redirect to partner dashboard
+  if (user?.role === 'partner') {
+    console.warn(`[AUTH] Partner ${user._id} attempted to access user route: ${location.pathname}. Redirecting to /hotel/dashboard.`);
+    return <Navigate to="/hotel/dashboard" replace />;
+  }
+
   return children ? children : <Outlet />;
 };
+
+const PublicOrProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  const userRaw = localStorage.getItem('user');
+  const user = userRaw ? JSON.parse(userRaw) : null;
+  // For both Browser and WebView:
+  // If a partner is logged in and tries to access user-facing public routes,
+  // redirect them to the partner dashboard. Otherwise allow access.
+  if (token && user?.role === 'partner') {
+    return <Navigate to="/hotel/dashboard" replace />;
+  }
+
+  return children ? children : <Outlet />;
+};
+
+/**
+ * UserPrivateRoute — always requires authentication (both WebView and Browser)
+ * Used for pages that require the user to be logged in: Bookings, Wallet, Checkout, etc.
+ * On redirect, preserves location so login can send you back.
+ */
+const UserPrivateRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
+  const userRaw = localStorage.getItem('user');
+  const user = userRaw ? JSON.parse(userRaw) : null;
+  const location = useLocation();
+
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (user?.role === 'partner') {
+    return <Navigate to="/hotel/dashboard" replace />;
+  }
+
+  return children ? children : <Outlet />;
+};
+
 
 // Partner Protected Route
 const PartnerProtectedRoute = ({ children }) => {
@@ -251,8 +313,8 @@ const PartnerProtectedRoute = ({ children }) => {
   const user = userRaw ? JSON.parse(userRaw) : null;
   const location = useLocation();
 
-  // Allow access to login/register/join
-  const publicPartnerPaths = ['/hotel/login', '/hotel/register'];
+  // Allow access to login/register/join/privacy/contact
+  const publicPartnerPaths = ['/hotel/login', '/hotel/register', '/hotel/privacy', '/hotel/contact'];
   if (publicPartnerPaths.some(p => location.pathname.startsWith(p))) {
     return children ? children : <Outlet />;
   }
@@ -273,7 +335,8 @@ const PartnerProtectedRoute = ({ children }) => {
       '/hotel/join-hostel',
       '/hotel/join-villa',
       '/hotel/join-pg',
-      '/hotel/join-homestay'
+      '/hotel/join-homestay',
+      '/hotel/join-tent'
     ];
     if (!allowedPending.some(p => location.pathname.startsWith(p))) {
       return <Navigate to="/hotel/dashboard" replace />;
@@ -301,96 +364,97 @@ function App() {
     }
   }, []);
 
+  // One-time cleanup: remove the legacy persisted WebView flag.
+  // Old deviceDetect.js stored '__rukkoo_app_mode__ = "1"' in localStorage permanently.
+  // This caused isWebView() to return true in real browsers that share storage with the app,
+  // blocking web push registration. Safe to remove — detection is now done via live UA/URL check.
   React.useEffect(() => {
-    // Helper to send FCM token to backend if user is logged in
-    const sendFcmTokenToBackend = async (fcmToken) => {
+    localStorage.removeItem('__rukkoo_app_mode__');
+  }, []);
+
+
+  // ─── WEB PUSH NOTIFICATIONS (Browser only) ──────────────────────────────────
+  // Flutter WebView users: FCM tokens are managed ENTIRELY by the Flutter native
+  // code. Flutter hits /api/users/fcm-token or /api/partners/fcm-token directly
+  // with platform='app'. The React frontend has NO role in app token management.
+  //
+  // Real browser users: We request web push permission here, get a web FCM token,
+  // and register it with the backend using platform='web'.
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  // Register the web FCM token with the correct backend endpoint based on logged-in role.
+  const registerWebToken = React.useCallback(async (fcmToken) => {
+    try {
       const adminToken = localStorage.getItem('adminToken');
       if (adminToken) {
-        console.log('App: Updating FCM token for Admin');
         await adminService.updateFcmToken(fcmToken, 'web');
-        return true;
+        console.log('[FCM] ✓ Admin web token registered.');
+        return;
       }
       const tokenAuth = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
       if (tokenAuth && userStr) {
         const user = JSON.parse(userStr);
-        console.log('App: Updating FCM token for role:', user.role);
-        await userService.updateFcmToken(fcmToken, 'web');
-        return true;
+        if (user.role === 'partner') {
+          await hotelService.updateFcmToken(fcmToken, 'web');
+          console.log('[FCM] ✓ Partner web token registered.');
+        } else {
+          await userService.updateFcmToken(fcmToken, 'web');
+          console.log('[FCM] ✓ User web token registered.');
+        }
+      } else {
+        console.log('[FCM] No logged-in session — web token will be registered on login.');
       }
-      return false;
+    } catch (err) {
+      console.warn('[FCM] Failed to register web token:', err);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    let cachedWebToken = null;
+
+    const initWebFcm = async () => {
+      // requestNotificationPermission() returns null in WebView (handled in firebase.js).
+      // Only proceeds in real browser environments.
+      const token = await requestNotificationPermission();
+      if (token) {
+        cachedWebToken = token;
+        await registerWebToken(token);
+      }
     };
 
-    let cachedFcmToken = null;
+    initWebFcm();
 
-    const initFcm = async () => {
-      // 1. Check if running in a WebView with a native bridge (e.g. Flutter)
-      if (window.NativeApp && window.NativeApp.getFcmToken) {
-        try {
-          const appToken = await window.NativeApp.getFcmToken();
-          if (appToken) {
-            console.log('Received App Token from Native Bridge:', appToken);
-            // Perform update for 'app' platform
-            const adminToken = localStorage.getItem('adminToken');
-            if (adminToken) {
-              await adminService.updateFcmToken(appToken, 'app');
-            } else {
-              const tokenAuth = localStorage.getItem('token');
-              if (tokenAuth) {
-                await userService.updateFcmToken(appToken, 'app');
-              }
-            }
-            return;
-          }
-        } catch (err) {
-          console.error('Error getting token from native bridge:', err);
-        }
-      }
-
-      // 2. Also listen for window message events from the native app
-      window.addEventListener('message', async (event) => {
-        if (event.data && event.data.type === 'FCM_TOKEN_UPDATE') {
-          const appToken = event.data.token;
-          console.log('Received App Token via postMessage:', appToken);
-          const adminToken = localStorage.getItem('adminToken');
-          if (adminToken) {
-            await adminService.updateFcmToken(appToken, 'app');
-          } else if (localStorage.getItem('token')) {
-            await userService.updateFcmToken(appToken, 'app');
-          }
-        }
-      });
-
-      try {
+    // Re-register web token after login/signup.
+    // Dispatched from: UserLogin.jsx, HotelLoginPage.jsx, AdminLogin.jsx, UserSignup.jsx
+    const handleLoginEvent = async () => {
+      console.log('[FCM] Login event — re-registering web token.');
+      if (cachedWebToken) {
+        await registerWebToken(cachedWebToken);
+      } else {
+        // Permission not yet obtained — try now (user may have enabled it after loading)
         const token = await requestNotificationPermission();
         if (token) {
-          cachedFcmToken = token;
-          console.log('FCM Token received, attempting to send to backend...');
-
-          const sent = await sendFcmTokenToBackend(token);
-
-          if (!sent) {
-            console.log('App: User not logged in yet, FCM token cached for later use.');
-            // Listen for when user logs in (localStorage changes)
-            window.addEventListener('storage', async function onLogin(event) {
-              if (event.key === 'token' && event.newValue) {
-                console.log('App: Auth token detected in storage, sending cached FCM token...');
-                await sendFcmTokenToBackend(cachedFcmToken);
-                window.removeEventListener('storage', onLogin);
-              }
-            });
-          }
+          cachedWebToken = token;
+          await registerWebToken(token);
         }
-      } catch (error) {
-        console.error("Error initializing FCM:", error);
       }
     };
 
-    initFcm();
+    window.addEventListener('fcm:register', handleLoginEvent);
 
-    // Listen for foreground messages
+    // Cross-tab login sync
+    const handleStorage = (e) => {
+      if ((e.key === 'token' || e.key === 'adminToken') && e.newValue) {
+        handleLoginEvent();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    // Foreground messages — shows in-app toast in browser.
+    // In Flutter WebView, onMessageListener is a no-op (firebase.js checks isWebView()).
     onMessageListener((payload) => {
-      console.log('Foreground Message:', payload);
+      console.log('[FCM] Foreground message:', payload);
       toast((t) => (
         <div className="flex flex-col">
           <span className="font-bold">{payload.notification?.title || 'Notification'}</span>
@@ -399,27 +463,40 @@ function App() {
       ), {
         duration: 5000,
         position: 'top-right',
-        style: {
-          background: '#333',
-          color: '#fff',
-        },
+        style: { background: '#333', color: '#fff' },
       });
     });
-  }, []);
+
+    return () => {
+      window.removeEventListener('fcm:register', handleLoginEvent);
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [registerWebToken]);
+
 
   return (
     <Router>
       <ScrollToTop />
-      <Toaster position="top-center" reverseOrder={false} />
+      <Toaster
+        position="top-center"
+        reverseOrder={false}
+        containerStyle={{
+          zIndex: 10000
+        }}
+      />
       <Layout>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* User Auth Routes (Public Only) */}
             <Route path="/login" element={<PublicRoute><UserLogin /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><UserSignup /></PublicRoute>} />
+            <Route path="/r/:referralCode" element={<ReferralHandler />} />
             <Route path="/legal" element={<LegalPage />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/cancellation" element={<CancellationPage />} />
+            <Route path="/careers" element={<CareersPage />} />
+
 
             {/* Hotel/Partner Module Routes */}
             <Route path="/hotel/login" element={<HotelLogin />} />
@@ -436,7 +513,7 @@ function App() {
                 <Route path="join-villa" element={<AddVillaWizard />} />
                 <Route path="join-pg" element={<AddPGWizard />} />
                 <Route path="join-homestay" element={<AddHomestayWizard />} />
-                <Route path="join-dynamic/:categoryId" element={<AddDynamicWizard />} />
+                <Route path="join-tent" element={<AddTentWizard />} />
                 <Route path="partner-dashboard" element={<PartnerDashboard />} />
                 <Route path="dashboard" element={<PartnerDashboard />} />
 
@@ -456,13 +533,15 @@ function App() {
                 <Route path="support" element={<PartnerSupport />} />
                 <Route path="terms" element={<PartnerTerms />} />
                 <Route path="about" element={<PartnerAbout />} />
-                <Route path="privacy" element={<PartnerPrivacy />} />
-                <Route path="contact" element={<PartnerContact />} />
                 <Route path="settings" element={<PartnerSettings />} />
                 <Route path="bank-details" element={<PartnerBankDetails />} />
                 <Route path="profile" element={<PartnerProfile />} />
                 <Route path="subscriptions" element={<PartnerSubscriptions />} />
               </Route>
+
+              {/* Public Partner Pages — accessible without login */}
+              <Route path="privacy" element={<PartnerPrivacy />} />
+              <Route path="contact" element={<PartnerContact />} />
             </Route>
 
             {/* Admin Auth Routes */}
@@ -490,30 +569,44 @@ function App() {
                 <Route path="offers" element={<AdminOffers />} />
                 <Route path="notifications" element={<AdminNotifications />} />
                 <Route path="faqs" element={<AdminFaqs />} />
-                <Route path="categories" element={<AdminCategories />} />
                 <Route path="subscriptions" element={<AdminSubscriptions />} />
+                <Route path="categories" element={<AdminCategories />} />
               </Route>
             </Route>
 
-            {/* Public User Pages */}
-            <Route path="/" element={<Home />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/hotel/:id" element={<UserPropertyDetailsPage />} />
-            <Route path="/hotel/:id/amenities" element={<AmenitiesPage />} />
-            <Route path="/hotel/:id/reviews" element={<ReviewsPage />} />
-            <Route path="/hotel/:id/offers" element={<OffersPage />} />
-            <Route path="/partner-landing" element={<PartnerLandingPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/contact" element={<ContactPage />} />
-            <Route path="/serviced" element={<div className="pt-20 text-center text-surface font-bold">Serviced Page</div>} />
+            {/* ──────────────────────────────────────
+                PUBLIC / SEMI-PROTECTED USER ROUTES
+                Browser: accessible without login
+                WebView: require login (same as before)
+            ────────────────────────────────────── */}
+            <Route element={<PublicOrProtectedRoute />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/hotel/:id" element={<UserPropertyDetailsPage />} />
+              <Route path="/hotel/:id/amenities" element={<AmenitiesPage />} />
+              <Route path="/hotel/:id/reviews" element={<ReviewsPage />} />
+              <Route path="/hotel/:id/offers" element={<OffersPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/listings" element={<Navigate to="/search" replace />} />
+              <Route path="/partner-landing" element={<PartnerLandingPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/blogs" element={<BlogsPage />} />
+              <Route path="/blogs/:id" element={<BlogDetail />} />
+              <Route path="/manage-blogs" element={<BlogManager />} />
+              <Route path="/serviced" element={<div className="pt-20 text-center text-surface font-bold">Serviced Page</div>} />
+            </Route>
 
-            {/* Protected User Pages */}
-            <Route element={<UserProtectedRoute />}>
+            {/* ──────────────────────────────────────
+                PRIVATE USER ROUTES
+                Always require login (WebView + Browser)
+                After login, redirected back via location.state.from
+            ────────────────────────────────────── */}
+            <Route element={<UserPrivateRoute />}>
               <Route path="/profile/edit" element={<ProfileEdit />} />
               <Route path="/bookings" element={<BookingsPage />} />
-              <Route path="/listings" element={<Navigate to="/search" replace />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/payment" element={<PaymentPage />} />
+              <Route path="/payment/:id" element={<PaymentPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/checkout" element={<BookingCheckoutPage />} />
               <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />

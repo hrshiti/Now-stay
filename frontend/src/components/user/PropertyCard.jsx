@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Star, IndianRupee, Heart } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
 
@@ -15,8 +15,6 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
       setIsSaved(initialIsSaved);
     }
   }, [initialIsSaved]);
-
-  const location = useLocation();
 
   const item = property || data;
 
@@ -63,8 +61,8 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
     // Remove backticks, single quotes, double quotes, and surrounding whitespace
     return url.replace(/[`'"]/g, '').trim();
   };
+
   const displayName = name || item.propertyName || 'Untitled';
-  const dynamicCatName = item.dynamicCategory?.displayName || item.dynamicCategory?.name;
 
   const typeRaw = (propertyType || item.propertyType || '').toString();
   const normalizedType = typeRaw
@@ -72,9 +70,8 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
       ? 'PG'
       : typeRaw.charAt(0).toUpperCase() + typeRaw.slice(1).toLowerCase()
     : '';
-
-  const typeLabel = dynamicCatName ? dynamicCatName.toUpperCase() : (normalizedType || typeRaw).toString().toUpperCase();
-
+  const typeForBadge = normalizedType || typeRaw;
+  const typeLabel = typeForBadge ? typeForBadge.toString().toUpperCase() : '';
 
   // Improved Rating Logic
   const rawRating =
@@ -127,7 +124,7 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
 
   return (
     <div
-      onClick={() => navigate(`/hotel/${_id}${location.search}`)}
+      onClick={() => navigate(`/hotel/${_id}`)}
       className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-0 cursor-pointer active:scale-95 transition-transform duration-200 hover:shadow-md ${className}`}
     >
       <div className="relative h-40 w-full bg-gray-50 flex items-center justify-center overflow-hidden">
@@ -162,6 +159,12 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
           <Star size={10} className="fill-honey text-honey" />
           {displayRating}
         </div>
+
+        {item.suitability && item.suitability !== 'none' && (
+          <div className="absolute bottom-2 left-2 bg-emerald-500/90 text-white px-2 py-0.5 rounded-md text-[10px] font-bold shadow-sm z-10">
+            {item.suitability === 'Both' ? 'Family Friendly, Couple Friendly' : item.suitability}
+          </div>
+        )}
       </div>
 
       <div className="px-3 py-2">
@@ -172,7 +175,15 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
         <div className="flex items-start gap-1 text-gray-500 text-[10px] mb-2 min-h-[2em]">
           <MapPin size={12} className="mt-0.3 shrink-0" />
           <span className="leading-tight line-clamp-2">
-            {address?.city || item.city}, {address?.state || item.state || 'India'}
+            {(() => {
+              const area = address?.area || item.area;
+              const city = address?.city || item.city;
+              
+              if (area && area.trim()) {
+                return `${area}, ${city}`;
+              }
+              return city || 'Location not available';
+            })()}
           </span>
         </div>
 

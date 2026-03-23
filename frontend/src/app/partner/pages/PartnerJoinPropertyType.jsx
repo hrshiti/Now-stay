@@ -1,11 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, Home, Users, BedDouble, ArrowLeft, ChevronRight, X } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
-import { categoryService } from '../../../services/categoryService';
+import { 
+  Building2, Home, Users, BedDouble, ArrowLeft, ChevronRight, X, Tent, 
+  Palmtree, Hotel, Building, Trees, Mountain, Waves, Umbrella, 
+  Coffee, Snowflake, MapPin, Globe, Zap, Shield, Heart, Star, Camera, Compass, Loader2
+} from 'lucide-react';
+import { api } from '../../../services/apiService';
+
+const STATIC_ICONS = {
+  Building2, Home, Palmtree, Hotel, Building, BedDouble, Tent, 
+  Trees, Mountain, Waves, Umbrella, Coffee, Snowflake, MapPin, 
+  Globe, Zap, Shield, Heart, Star, Camera, Compass, Users
+};
 
 const PartnerJoinPropertyType = () => {
   const navigate = useNavigate();
+  const [dynamicCategories, setDynamicCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/categories');
+        if (res.data.success) {
+          setDynamicCategories(res.data.categories);
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const staticTypes = [
     {
@@ -22,7 +49,7 @@ const PartnerJoinPropertyType = () => {
       label: 'Resort',
       description: 'Destination stays with activities and experiences',
       badge: 'Vacation',
-      icon: Home,
+      icon: Palmtree,
       route: '/hotel/join-resort',
       color: 'bg-orange-50 text-orange-600',
     },
@@ -58,34 +85,34 @@ const PartnerJoinPropertyType = () => {
       label: 'Homestay',
       description: 'Live-with-host or family-run stays',
       badge: 'Experience',
-      icon: Home,
+      icon: Hotel,
       route: '/hotel/join-homestay',
       color: 'bg-rose-50 text-rose-600',
     },
+    {
+      key: 'tent',
+      label: 'Tent / Campsite',
+      description: 'Glamping, safari or basic campsites',
+      badge: 'Adventure',
+      icon: Tent,
+      route: '/hotel/join-tent',
+      color: 'bg-green-50 text-green-600',
+    },
   ];
 
-  const [allTypes, setAllTypes] = useState(staticTypes);
-
-  useEffect(() => {
-    const fetchDynamicCategories = async () => {
-      try {
-        const categories = await categoryService.getActiveCategories();
-        const dynamicTypes = categories.map(cat => ({
-          key: cat._id,
-          label: cat.displayName,
-          description: cat.description || 'Discover our unique stays',
-          badge: cat.badge || 'New',
-          icon: LucideIcons[cat.icon] || LucideIcons.Star,
-          route: `/hotel/join-dynamic/${cat._id}`,
-          color: 'bg-teal-50 text-teal-600' // Use teal to differentiate
-        }));
-        setAllTypes([...staticTypes, ...dynamicTypes]);
-      } catch (error) {
-        console.error("Failed to load dynamic categories", error);
-      }
-    };
-    fetchDynamicCategories();
-  }, []);
+  const combinedTypes = [
+    ...staticTypes,
+    ...dynamicCategories.map(cat => ({
+      key: cat.slug,
+      label: cat.name,
+      description: cat.description || `List your ${cat.name} and reach more guests.`,
+      badge: 'New Category',
+      icon: STATIC_ICONS[cat.icon] || Building2,
+      route: `/hotel/join-${cat.templateType}?type=${cat.slug}`,
+      color: 'bg-indigo-50 text-indigo-600',
+      isDynamic: true
+    }))
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
@@ -94,53 +121,62 @@ const PartnerJoinPropertyType = () => {
           <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
             <ArrowLeft size={20} />
           </button>
-          <div className="font-bold text-lg text-gray-800">Select Property Type</div>
-          <button onClick={() => navigate('/partner/dashboard')} className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+          <div className="font-bold text-lg text-gray-800 uppercase tracking-tight">Select Property Type</div>
+          <button onClick={() => navigate('/hotel/dashboard')} className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
             <X size={20} />
           </button>
         </div>
       </div>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full p-4 md:p-6">
-        <div className="space-y-2 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">What keeps you busy?</h1>
-          <p className="text-gray-500 text-sm">Select the type of property you want to list on Rukkoin.</p>
+      <main className="flex-1 max-w-2xl mx-auto w-full p-4 md:p-6 pb-20">
+        <div className="space-y-2 mb-8">
+          <h1 className="text-3xl font-black text-gray-900 uppercase">What keeps you busy?</h1>
+          <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Select the type of property you want to list on Rukkoin.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {allTypes.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                onClick={() => navigate(item.route, { state: { categoryName: item.label } })}
-                className="group relative flex items-start gap-4 p-4 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md hover:border-emerald-200 transition-all duration-200 text-left active:scale-[0.98]"
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${item.color}`}>
-                  <Icon size={24} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-bold text-gray-900 group-hover:text-emerald-700 transition-colors">
-                      {item.label}
-                    </h3>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="animate-spin text-emerald-500" size={40} />
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest animate-pulse">Scanning available categories...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {combinedTypes.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => navigate(item.route)}
+                  className="group relative flex items-start gap-4 p-5 bg-white border border-gray-200 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-black/5 hover:border-black transition-all duration-300 text-left active:scale-[0.98]"
+                >
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all ${item.color} group-hover:bg-black group-hover:text-white group-hover:rotate-6 shadow-sm`}>
+                    <Icon size={28} />
                   </div>
-                  <p className="text-xs text-gray-500 leading-relaxed mb-2 line-clamp-2">
-                    {item.description}
-                  </p>
-                  <span className="inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-500 bg-gray-100 rounded-md">
-                    {item.badge}
-                  </span>
-                </div>
 
-                <div className="absolute top-4 right-4 text-gray-300 group-hover:text-emerald-500 transition-colors">
-                  <ChevronRight size={16} />
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div className="flex-1 min-w-0 pr-4">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-bold text-gray-900 group-hover:text-black transition-colors uppercase text-sm">
+                        {item.label}
+                      </h3>
+                    </div>
+                    <p className="text-[10px] text-gray-500 leading-relaxed font-bold uppercase line-clamp-2">
+                      {item.description}
+                    </p>
+                    <div className="mt-3">
+                      <span className="inline-block px-2 py-1 text-[9px] font-black uppercase tracking-widest text-gray-400 bg-gray-100 rounded-lg group-hover:bg-black/5 group-hover:text-black transition-all">
+                        {item.badge}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="absolute top-1/2 -translate-y-1/2 right-4 text-gray-200 group-hover:text-black transition-all group-hover:translate-x-1">
+                    <ChevronRight size={20} />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </main>
     </div>
   );

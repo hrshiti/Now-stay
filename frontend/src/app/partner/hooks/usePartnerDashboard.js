@@ -8,7 +8,9 @@ const usePartnerDashboard = () => {
   const [stats, setStats] = useState({
     totalBookings: 0,
     walletBalance: 0,
-    activeProperties: 0,
+    approvedProperties: 0,
+    pendingProperties: 0,
+    rejectedProperties: 0,
     pendingReviews: 0,
     bookingsThisWeek: 0,
   });
@@ -32,14 +34,15 @@ const usePartnerDashboard = () => {
         const [propertiesData, bookingsData, walletData, reviewStats] = await Promise.all([
           hotelService.getMyHotels(),
           bookingService.getPartnerBookings(),
-          walletService.getWallet(),
+          walletService.getWallet({ viewAs: 'partner' }), // Explicitly specify partner role
           reviewService.getPartnerStats().catch(() => ({ pendingReviews: 0 })) // Handle error gracefully
         ]);
 
         // 1. Process Properties
         const properties = propertiesData.properties || [];
-        // Fix: Backend uses 'status': 'approved' and 'isLive': true
-        const activeProperties = properties.filter(p => p.status === 'approved' && p.isLive).length;
+        const approvedProperties = properties.filter(p => p.status === 'approved').length;
+        const pendingProperties = properties.filter(p => p.status === 'pending').length;
+        const rejectedProperties = properties.filter(p => p.status === 'rejected').length;
 
         // 2. Process Bookings
         // API returns an array directly for bookings
@@ -89,7 +92,9 @@ const usePartnerDashboard = () => {
         setStats({
           totalBookings: bookings.length,
           walletBalance,
-          activeProperties,
+          approvedProperties,
+          pendingProperties,
+          rejectedProperties,
           pendingReviews: reviewStats?.pendingReviews || 0,
           bookingsThisWeek
         });

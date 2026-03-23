@@ -7,14 +7,12 @@ import {
   BedDouble, Wifi, Tv, Snowflake, Coffee, ShowerHead, Umbrella, Waves, Mountain, Trees, Sun, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X
 } from 'lucide-react';
 
-import logo from '../../../assets/rokologin-removebg-preview.png';
+
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
 const REQUIRED_DOCS_RESORT = [
-  { type: "trade_license", name: "Trade License" },
-  { type: "gst_certificate", name: "GST Certificate" },
-  { type: "fssai_license", name: "FSSAI License" },
-  { type: "fire_safety", name: "Fire Safety Certificate" }
+  { type: "trade_license", name: "Trade License", required: true },
+  { type: "electricity_bill", name: "Electricity Bill", required: false }
 ];
 
 const RESORT_AMENITIES = ["Swimming Pool", "Restaurant", "Bar", "Parking"];
@@ -33,7 +31,7 @@ const ROOM_AMENITIES_OPTIONS = [
   { key: 'tv', label: 'TV', icon: Tv },
   { key: 'geyser', label: 'Geyser', icon: ShowerHead }
 ];
-const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in"];
+const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in", "Visitors not allowed"];
 
 const AddResortWizard = () => {
   const navigate = useNavigate();
@@ -84,8 +82,9 @@ const AddResortWizard = () => {
     checkOutTime: '',
     contactNumber: '',
     cancellationPolicy: '',
+    suitability: 'none',
     houseRules: [],
-    documents: REQUIRED_DOCS_RESORT.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+    documents: REQUIRED_DOCS_RESORT.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
   });
 
   const [roomTypes, setRoomTypes] = useState([]);
@@ -121,6 +120,33 @@ const AddResortWizard = () => {
     }, 1000);
     return () => clearTimeout(timeout);
   }, [step, propertyForm, roomTypes, createdProperty]);
+
+  // --- WebView History / Back Button Fix ---
+  useEffect(() => {
+    const currentHash = window.location.hash;
+    const targetHash = `#step${step}`;
+    if (currentHash !== targetHash) {
+      if (step === 1 && (!currentHash || currentHash === '#step1')) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      } else {
+        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      }
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#step')) {
+        const hashStep = parseInt(hash.replace('#step', ''), 10);
+        if (!isNaN(hashStep)) {
+          setStep(hashStep);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Helper Functions
   const updatePropertyForm = (path, value) => {
@@ -437,11 +463,11 @@ const AddResortWizard = () => {
 
   const handleCameraUpload = async (type, onDone) => {
     try {
-      setUploading(type);
       setError('');
       console.log('[Camera] Opening Flutter camera...');
 
       const result = await openFlutterCamera();
+      setUploading(type);
 
       if (!result.success || !result.base64) {
         throw new Error('Camera capture failed');
@@ -451,14 +477,16 @@ const AddResortWizard = () => {
 
       const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
 
-      const res = await hotelService.uploadImagesBase64([result]);
+      const res = await hotelService.uploadImagesBase64(result.images || [result]);
       console.log('[Camera] Upload success:', res);
 
       if (res && res.success && res.files && res.files.length > 0) {
         if (isSingle) {
           onDone(res.files[0].url);
         } else {
-          onDone([res.files[0].url]);
+          // Pass all uploaded URLs
+          const urls = res.files.map(f => f.url);
+          onDone(urls);
         }
       } else {
         throw new Error('Upload failed');
@@ -494,8 +522,8 @@ const AddResortWizard = () => {
       console.log(`Processing ${fileArray.length} images...`);
 
       for (const file of fileArray) {
-        if (!file.type.startsWith('image/')) {
-          throw new Error(`File ${file.name} is not an image`);
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+          throw new Error(`File ${file.name} must be an image or PDF`);
         }
         if (file.size > 10 * 1024 * 1024) {
           throw new Error(`Image ${file.name} is too large. Maximum 10MB allowed.`);
@@ -596,9 +624,10 @@ const AddResortWizard = () => {
           cancellationPolicy: prop.cancellationPolicy || '',
           houseRules: prop.houseRules || [],
           contactNumber: prop.contactNumber || '',
+          suitability: prop.suitability || 'none',
           documents: docs.length
-            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '' }))
-            : REQUIRED_DOCS_RESORT.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '', required: REQUIRED_DOCS_RESORT.find(rd => rd.type === (d.type || d.name))?.required || false }))
+            : REQUIRED_DOCS_RESORT.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
         });
 
         if (rts.length) {
@@ -695,7 +724,11 @@ const AddResortWizard = () => {
   };
   const nextFromDocs = () => {
     setError('');
-    // Optional
+    const missing = propertyForm.documents.filter(d => d.required && !d.fileUrl);
+    if (missing.length > 0) {
+      setError(`Please upload required documents: ${missing.map(d => d.name).join(', ')}`);
+      return;
+    }
     setStep(9);
   };
 
@@ -703,8 +736,11 @@ const AddResortWizard = () => {
     setLoading(true);
     setError('');
     try {
+      const searchParams = new URLSearchParams(location.search);
+      const queryType = searchParams.get('type');
       const propertyPayload = {
-        propertyType: 'resort',
+        propertyType: queryType || 'resort',
+        propertyTemplate: 'resort',
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
         description: propertyForm.description,
@@ -725,6 +761,7 @@ const AddResortWizard = () => {
         checkInTime: propertyForm.checkInTime,
         checkOutTime: propertyForm.checkOutTime,
         cancellationPolicy: propertyForm.cancellationPolicy,
+        suitability: propertyForm.suitability,
         houseRules: propertyForm.houseRules,
         documents: propertyForm.documents
       };
@@ -845,7 +882,7 @@ const AddResortWizard = () => {
         setStep(8);
         break;
       case 8:
-        setStep(9);
+        nextFromDocs();
         break;
       case 9:
         submitAll();
@@ -955,11 +992,11 @@ const AddResortWizard = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Short Description</label>
-                  <textarea className="input w-full" placeholder="Brief summary for listings..." value={propertyForm.shortDescription} onChange={e => updatePropertyForm('shortDescription', e.target.value)} />
+                  <label className="text-xs font-semibold text-gray-500">Description</label>
+                  <textarea className="input w-full h-24" placeholder="Brief summary for listings..." value={propertyForm.shortDescription} onChange={e => updatePropertyForm('shortDescription', e.target.value)} />
                 </div>
 
-                <div className="space-y-1">
+                <div className="hidden">
                   <label className="text-xs font-semibold text-gray-500">Detailed Description</label>
                   <textarea className="input w-full min-h-[100px]" placeholder="Tell guests what makes your resort unique..." value={propertyForm.description} onChange={e => updatePropertyForm('description', e.target.value)} />
                 </div>
@@ -967,11 +1004,47 @@ const AddResortWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Contact Number (For Guest Inquiries)</label>
                   <input
+                    type="tel"
                     className="input w-full"
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="9876543210"
                     value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                    onChange={e => {
+                      // Filter non-digits and limit to 10 digits
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', digitsOnly);
+                    }}
+                    maxLength={10}
                   />
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length === 10 && (
+                    /^[6-9]\d{9}$/.test(propertyForm.contactNumber) ? (
+                      <p className="text-[10px] text-green-600 font-medium flex items-center gap-1 mt-1">
+                        <span>✓</span> Valid mobile number
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-red-500 font-medium flex items-center gap-1 mt-1">
+                        <span>⚠</span> Mobile number must start with 6, 7, 8, or 9
+                      </p>
+                    )
+                  )}
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
+                    <p className="text-[10px] text-gray-500 font-medium mt-1">
+                      {10 - propertyForm.contactNumber.length} more digit(s) required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500">Suitability</label>
+                  <select
+                    className="input w-full appearance-none"
+                    value={propertyForm.suitability}
+                    onChange={e => updatePropertyForm('suitability', e.target.value)}
+                  >
+                    <option value="none">None</option>
+                    <option value="Couple Friendly">Couple Friendly</option>
+                    <option value="Family Friendly">Family Friendly</option>
+                    <option value="Both">Both</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1411,8 +1484,8 @@ const AddResortWizard = () => {
                         {(editingRoomType.images || []).filter(Boolean).map((img, i) => (
                           <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
                             <img src={img} alt="" className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-0.5 right-0.5 bg-white/90 text-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Trash2 size={12} />
+                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                              <X size={12} />
                             </button>
                           </div>
                         ))}
@@ -1520,7 +1593,9 @@ const AddResortWizard = () => {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="font-bold text-gray-900">{doc.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">Optional document</div>
+                          <div className={`text-xs mt-0.5 ${doc.required ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                            {doc.required ? 'Required *' : 'Optional'}
+                          </div>
                         </div>
                         {doc.fileUrl ? (
                           <div className="bg-emerald-50 text-emerald-700 p-1.5 rounded-full"><CheckCircle size={18} /></div>
@@ -1563,6 +1638,7 @@ const AddResortWizard = () => {
                       <input
                         type="file"
                         className="hidden"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf"
                         ref={el => (documentInputRefs.current[idx] = el)}
                         onChange={e => {
                           const file = e.target.files[0];

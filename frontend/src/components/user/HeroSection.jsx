@@ -1,16 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Menu, Wallet } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import NowStayLogo from '../ui/NowStayLogo';
 import MobileMenu from '../../components/ui/MobileMenu';
 import { useNavigate } from 'react-router-dom';
 import walletService from '../../services/walletService';
-import SearchWidget from './SearchWidget';
+import HomeSearchModal from '../../components/modals/HomeSearchModal';
 
 const HeroSection = () => {
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isSticky, setIsSticky] = useState(false);
     const [walletBalance, setWalletBalance] = useState(0);
-    const [isSearchOpen, setIsSearchOpen] = useState(false); // New State for Modal
+
+    const placeholders = [
+        "Search in Bucharest...",
+        "Find luxury hotels...",
+        "Book villas in Bali...",
+        "Couple friendly stays...",
+        "Search near Red Square..."
+    ];
+
+    useEffect(() => {
+        const fetchWallet = async () => {
+            try {
+                const user = JSON.parse(localStorage.getItem('user'));
+                if (user) {
+                    const walletData = await walletService.getWallet();
+                    if (walletData.success && walletData.wallet) {
+                        setWalletBalance(walletData.wallet.balance);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch wallet', error);
+            }
+        };
+        fetchWallet();
+    }, []);
 
     useEffect(() => {
         const fetchWallet = async () => {
@@ -44,38 +71,24 @@ const HeroSection = () => {
     };
 
     return (
-        <section className={`relative w-full pb-2 flex flex-col gap-4 md:gap-6 bg-transparent`}>
+        <section className={`relative w-full px-5 pt-4 pb-2 flex flex-col gap-4 md:gap-6 md:pt-8 md:pb-10 bg-transparent transition-all duration-300`}>
 
-            {/* 1. Header Row (Hides when Sticky Header appears) */}
-            <div className={`
-                flex md:hidden items-center justify-between relative h-20 px-5 pt-4 transition-opacity duration-300 z-40
-                ${isSticky ? 'opacity-0 pointer-events-none' : 'opacity-100'}
-            `}>
-                {/* Menu Button */}
-                <button
-                    onClick={() => setIsMenuOpen(true)}
-                    className="p-2 rounded-full bg-white/40 hover:bg-white/60 transition shadow-sm backdrop-blur-md"
-                >
-                    <Menu size={20} className="text-surface" />
-                </button>
+            {/* 1. Header Row (Hides on Scroll) */}
+            <div className={`flex md:hidden items-center justify-between relative h-24 transition-all duration-300 ${isSticky ? 'opacity-0 h-0 overflow-hidden mb-0' : 'opacity-100 mb-0'}`}>
+                
+                <div className="flex items-center gap-4">
+                    {/* Menu Button */}
+                    <button
+                        onClick={() => setIsMenuOpen(true)}
+                        className="p-1.5 rounded-full bg-white/40 hover:bg-white/60 transition shadow-sm"
+                    >
+                        <Menu size={18} className="text-surface" />
+                    </button>
 
-                {/* Logo */}
-                <div className="flex flex-col items-start leading-none ml-3">
-                    <span className="text-xl font-black tracking-tighter text-slate-900 flex items-center gap-0.5">
-                        NOW<span className="text-teal-600">STAY</span>
-                    </span>
-                    <div className="h-1 w-6 bg-teal-600 rounded-full"></div>
+                    <div className="flex items-center">
+                        <NowStayLogo size="md" />
+                    </div>
                 </div>
-
-                <div className="flex-1" />
-
-                {/* Search Trigger Icon (Header) */}
-                <button
-                    onClick={() => setIsSearchOpen(true)}
-                    className="mr-3 p-2 rounded-full bg-white/40 hover:bg-white/60 transition shadow-sm backdrop-blur-md"
-                >
-                    <Search size={20} className="text-surface" />
-                </button>
 
                 {/* Wallet Balance Display */}
                 <button
@@ -99,70 +112,58 @@ const HeroSection = () => {
                 </button>
             </div>
 
-            {/* 2. Compact Search Trigger (Hero Area) - Replaces Large Widget */}
-            <div className="w-full z-10 px-5 mt-2">
-                <div
-                    onClick={() => setIsSearchOpen(true)}
-                    className="w-full max-w-md mx-auto bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg border border-white/40 p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-all hover:shadow-xl"
-                >
-                    <div className="p-2.5 bg-teal-50 rounded-xl">
-                        <Search size={20} className="text-teal-600" />
-                    </div>
-                    <div className="flex-1 flex flex-col">
-                        <span className="text-sm font-bold text-gray-800">Where to?</span>
-                        <span className="text-xs text-gray-400">Anywhere • Any week • Add guests</span>
-                    </div>
-                    <div className="p-2 bg-gray-50 rounded-full border border-gray-100">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="4" y1="21" x2="4" y2="14"></line>
-                            <line x1="4" y1="10" x2="4" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12" y2="3"></line>
-                            <line x1="20" y1="21" x2="20" y2="16"></line>
-                            <line x1="20" y1="12" x2="20" y2="3"></line>
-                            <line x1="1" y1="14" x2="7" y2="14"></line>
-                            <line x1="9" y1="8" x2="15" y2="8"></line>
-                            <line x1="17" y1="16" x2="23" y2="16"></line>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-
-            {/* 3. Sticky Header Search (Appears on Scroll) */}
+            {/* 2. Search Bar - Sticky Logic */}
             <div className={`
-                 fixed top-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-xl shadow-md border-b border-surface/5 z-50 transform transition-transform duration-300
-                 ${isSticky ? 'translate-y-0' : '-translate-y-full'}
+                 w-full transition-all duration-300 z-50 flex justify-center mt-2
+                 ${isSticky ? 'fixed top-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-xl shadow-md border-b border-surface/5' : 'relative'}
             `}>
                 <div
                     onClick={handleSearchClick}
                     className={`
-                    w-full 
-                    bg-gray-100/50
-                    h-10 rounded-full shadow-inner mx-auto max-w-7xl
-                    flex items-center 
-                    px-3 md:px-4
-                    gap-2 md:gap-3
+                    w-[90%] md:w-auto min-w-[320px] max-w-md
+                    bg-white
+                    ${isSticky ? 'rounded-full shadow-inner bg-gray-100/50 mx-auto' : 'rounded-[30px] shadow-lg border border-gray-100'}
+                    flex items-center justify-between
+                    px-2.5 py-2
+                    relative
                     cursor-pointer
+                    transition-all duration-300 transform active:scale-95
                 `}>
-                    <Search size={18} className="text-gray-400" />
-                    <span className="text-gray-400 font-normal text-xs md:text-sm truncate flex-1">
-                        Search hotels, dates, guests...
-                    </span>
+                    <div className="flex items-center gap-3 w-full">
+                        <div className="w-11 h-11 md:w-12 md:h-12 bg-[#effaf8] rounded-full flex items-center justify-center shrink-0">
+                            <Search size={20} className="text-[#008f81] stroke-[2.5]" />
+                        </div>
+                        
+                        <div className="flex flex-col justify-center flex-1 overflow-hidden">
+                            <span className="text-[15px] md:text-[17px] font-black text-gray-800 leading-tight truncate">Where to?</span>
+                            <span className="text-[11px] md:text-[13px] font-medium text-gray-400 truncate">Anywhere • Any week • Add guests</span>
+                        </div>
+                        
+                        <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 shrink-0 shadow-sm mr-1">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="4" y1="21" x2="4" y2="14"></line>
+                                <line x1="4" y1="10" x2="4" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12" y2="3"></line>
+                                <line x1="20" y1="21" x2="20" y2="16"></line>
+                                <line x1="20" y1="12" x2="20" y2="3"></line>
+                                <line x1="1" y1="14" x2="7" y2="14"></line>
+                                <line x1="9" y1="8" x2="15" y2="8"></line>
+                                <line x1="17" y1="16" x2="23" y2="16"></line>
+                            </svg>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            {/* 4. MODAL OVERLAY (The Real Search Widget) */}
-            {isSearchOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-teal-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-md animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
-                        <SearchWidget onClose={() => setIsSearchOpen(false)} />
-                    </div>
-                    {/* Background click closes modal */}
-                    <div className="absolute inset-0 -z-10" onClick={() => setIsSearchOpen(false)} />
-                </div>
+            {/* Placeholder Spacer only when sticky to prevent content jump */}
+            {isSticky && (
+                <div className="h-11 w-full md:h-14"></div>
             )}
 
             <MobileMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
+            
+            <HomeSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
 
         </section>
     );

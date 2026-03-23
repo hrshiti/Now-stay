@@ -38,7 +38,8 @@ const transactionSchema = new mongoose.Schema({
       'no_show_credit',
       'booking',
       'referral_bonus',
-      'referral_penalty'
+      'referral_penalty',
+      'admin_adjustment'
     ],
     required: true
   },

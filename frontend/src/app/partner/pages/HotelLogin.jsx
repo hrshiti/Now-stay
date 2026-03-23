@@ -3,16 +3,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, Mail, ArrowRight, Loader2, Shield, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/apiService';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 
 const HotelLogin = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [method, setMethod] = useState('phone');
-    const [contact, setContact] = useState('');
+    const [contact, setContact] = useState('9589814119');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Handle auto-scroll on input focus for webview keyboard
+    React.useEffect(() => {
+        const handleFocusIn = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        };
+
+        window.addEventListener('focusin', handleFocusIn);
+        return () => window.removeEventListener('focusin', handleFocusIn);
+    }, []);
 
     const handleSendOTP = async (e) => {
         e.preventDefault();
@@ -32,6 +46,10 @@ const HotelLogin = () => {
             // Use authService
             await authService.sendOtp(contact, 'login', 'partner');
             setStep(2);
+            // Pre-fill OTP for default partner number
+            if (contact === '9589814119') {
+                setOtp(['1', '2', '3', '4', '5', '6']);
+            }
         } catch (err) {
             setError(err.message || 'Failed to send OTP');
         } finally {
@@ -95,7 +113,7 @@ const HotelLogin = () => {
                         transition={{ type: "spring", delay: 0.2 }}
                         className="inline-block mb-4"
                     >
-                        <img src={logo} alt="Rukkoo Hub Partner" className="w-32 h-auto" />
+                        <NowStayLogo size="lg" />
                     </motion.div>
                     <h1 className="text-3xl font-bold text-white">Partner Login</h1>
                     <p className="text-teal-100 mt-2">Access your hotel dashboard</p>

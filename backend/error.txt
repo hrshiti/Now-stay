@@ -1,0 +1,8 @@
+D:\hritik sir\Now-stay\backend\controllers\propertyController.js:689
+export const addRoomType = async (req, res) => {
+             ^
+
+SyntaxError: Identifier 'addRoomType' has already been declared
+    at checkSyntax (node:internal/main/check_syntax:74:5)
+
+Node.js v22.14.0

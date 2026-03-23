@@ -6,10 +6,10 @@ import {
     CreditCard, History, Shield,
     FileText, HelpCircle, LogOut,
     LayoutDashboard,
-    ChevronRight, Wallet, Bell, Settings, Edit3, Info, Phone, Calendar
+    ChevronRight, Wallet, Bell, Settings, Edit3, Info, Phone, Calendar, ShieldCheck
 } from 'lucide-react';
 import usePartnerStore from '../store/partnerStore';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import NowStayLogo from '../../components/ui/NowStayLogo';
 
 const PartnerSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
@@ -85,6 +85,7 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
         {
             title: 'Growth & Finance',
             items: [
+                { icon: ShieldCheck, label: 'My Subscription', path: '/hotel/subscriptions' },
                 { icon: Wallet, label: 'Wallet', path: '/hotel/wallet' },
                 { icon: History, label: 'Booking History', path: '/hotel/bookings' },
             ]
@@ -135,12 +136,7 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-5 pb-2">
-                            <div className="flex flex-col items-start leading-none">
-                                <span className="text-xl font-black tracking-tighter text-slate-900 flex items-center gap-0.5">
-                                    NOW<span className="text-teal-600">STAY</span>
-                                </span>
-                                <div className="h-1 w-6 bg-teal-600 rounded-full mt-0.5"></div>
-                            </div>
+                            <NowStayLogo size="sm" />
                             <button onClick={onClose} className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition border border-gray-100">
                                 <X size={20} className="text-gray-500" />
                             </button>

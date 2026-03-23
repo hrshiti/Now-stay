@@ -5,49 +5,10 @@ import StepWrapper from '../../app/partner/components/StepWrapper';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { useLenis } from '../../app/shared/hooks/useLenis';
 import { authService, userService } from '../../services/apiService';
-import { requestNotificationPermission } from '../../utils/firebase';
 
 // Updated Steps Components
 import StepUserRegistration from '../../app/partner/steps/StepUserRegistration';
 import StepOwnerDetails from '../../app/partner/steps/StepOwnerDetails';
-
-const OTPInput = () => {
-    const { formData, updateFormData } = usePartnerStore();
-    return (
-        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="text-center space-y-2">
-                <div className="w-16 h-16 bg-[#004F4D]/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#004F4D]"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                </div>
-                <h3 className="text-xl font-bold text-[#003836]">Verify Phone Number</h3>
-                <p className="text-sm text-gray-500">
-                    We've sent a 6-digit code to <span className="font-bold text-[#003836]">{formData.phone}</span>
-                </p>
-            </div>
-
-            <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-gray-400 ml-1">One Time Password (OTP)</label>
-                <input
-                    type="text"
-                    maxLength={6}
-                    placeholder="123456"
-                    className="w-full h-14 text-center text-2xl font-bold tracking-widest border border-gray-400 rounded-xl focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 outline-none transition-all placeholder:text-gray-200"
-                    value={formData.otpCode || ''}
-                    onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '');
-                        updateFormData({ otpCode: val });
-                    }}
-                    autoFocus
-                />
-            </div>
-
-            <p className="text-center text-xs text-gray-400">
-                Didn't receive code? <button className="text-[#004F4D] font-bold hover:underline">Resend</button>
-            </p>
-        </div>
-    );
-};
-
 
 const steps = [
     { id: 1, title: 'Registration', desc: 'Create your partner account' },
@@ -61,15 +22,29 @@ const HotelSignup = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // Resume from persisted step on mount & handle error timeout
+    // Handle error timeout
     useEffect(() => {
         if (error) {
             const timer = setTimeout(() => {
                 setError('');
-            }, 3000); // 3 seconds
+            }, 5000);
             return () => clearTimeout(timer);
         }
     }, [error]);
+
+    // Handle auto-scroll on input focus for webview keyboard
+    useEffect(() => {
+        const handleFocusIn = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        };
+
+        window.addEventListener('focusin', handleFocusIn);
+        return () => window.removeEventListener('focusin', handleFocusIn);
+    }, []);
 
     const currentStepIndex = currentStep - 1;
     const progress = (currentStep / steps.length) * 100;
@@ -77,24 +52,36 @@ const HotelSignup = () => {
     const handleNext = async () => {
         setError('');
 
-        // --- STEP 1: BASIC INFO VALIDATION ---
+        // --- STEP 1: BASIC INFO & PROACTIVE VALIDATION ---
         if (currentStep === 1) {
             if (!formData.full_name || formData.full_name.length < 3) return setError('Please enter a valid full name');
             if (!formData.email || !formData.email.includes('@')) return setError('Please enter a valid email');
             if (!formData.phone || formData.phone.length !== 10) return setError('Please enter a valid 10-digit phone number');
             if (!formData.termsAccepted) return setError('You must accept the Terms & Conditions');
 
-            // Proceed to Step 2
-            nextStep();
+            setLoading(true);
+            try {
+                // Check if already exists before moving to heavy Step 2
+                await authService.checkExists(formData.phone, formData.email, 'partner');
+                nextStep();
+            } catch (err) {
+                const isDuplicate = err.status === 409 || (err.message && err.message.toLowerCase().includes('exists'));
+                if (isDuplicate) {
+                    setError(`${err.message} Please login instead.`);
+                } else {
+                    setError(err.message || 'Validation failed. Please try again.');
+                }
+            } finally {
+                setLoading(false);
+            }
         }
 
         // --- STEP 2: OWNER DETAILS SUBMISSION & REGISTRATION ---
         else if (currentStep === 2) {
             // Validation
-            if (!formData.owner_name) return setError('Owner Name is required');
             if (!formData.aadhaar_number || formData.aadhaar_number.length !== 12) return setError('Valid 12-digit Aadhaar Number is required');
-            if (!formData.aadhaar_front) return setError('Aadhaar Front Image is required');
-            if (!formData.aadhaar_back) return setError('Aadhaar Back Image is required');
+            if (!formData.aadhaar_front?.url) return setError('Aadhaar Front Image is required');
+            if (!formData.aadhaar_back?.url) return setError('Aadhaar Back Image is required');
             if (!formData.pan_number || formData.pan_number.length !== 10) return setError('Valid 10-digit PAN Number is required');
 
             // PAN Regex Validation
@@ -103,38 +90,36 @@ const HotelSignup = () => {
                 return setError('Invalid PAN format. Please use (e.g., ABCDE1234F)');
             }
 
-            if (!formData.pan_card_image) return setError('PAN Card Image is required');
-
-            if (!formData.owner_address?.street || !formData.owner_address?.city || !formData.owner_address?.state || !formData.owner_address?.zipCode) {
-                return setError('Complete address details are required');
-            }
+            if (!formData.pan_card_image?.url) return setError('PAN Card Image is required');
 
             // SUBMIT REGISTRATION TO BACKEND
             setLoading(true);
             try {
-                // Prepare clean payload with only required fields
+                // Prepare clean payload with only required fields (Referral removed for partners)
                 const payload = {
                     full_name: formData.full_name,
                     email: formData.email,
                     phone: formData.phone,
-                    owner_name: formData.owner_name,
                     aadhaar_number: formData.aadhaar_number,
                     aadhaar_front: formData.aadhaar_front,
                     aadhaar_back: formData.aadhaar_back,
                     pan_number: formData.pan_number,
                     pan_card_image: formData.pan_card_image,
-                    owner_address: formData.owner_address,
                     termsAccepted: formData.termsAccepted,
                     role: 'partner'
                 };
 
+                console.log(`[REFERRAL_DEBUG] Partner Registration Payload:`, payload);
                 const response = await authService.registerPartner(payload);
                 setLoading(false);
+
+                // Removed referral handling for partners
 
                 // Show success message
                 alert(response.message || 'Registration successful! Your account is pending admin approval. You can login once approved.');
 
-                // Redirect to login
+                // Clear store and redirect
+                usePartnerStore.getState().resetForm();
                 navigate('/hotel/login');
             } catch (err) {
                 setLoading(false);
@@ -148,7 +133,6 @@ const HotelSignup = () => {
         if (currentStep > 1) {
             prevStep();
         }
-        // Disabled redirection on Step 1
     };
 
     const renderStep = () => {
@@ -228,14 +212,6 @@ const HotelSignup = () => {
                         >
                             Back
                         </button>
-                        {!loading && (
-                            <button
-                                onClick={() => { if (window.confirm("Clear all fields in this step?")) { usePartnerStore.getState().clearCurrentStep('signup'); } }}
-                                className="text-xs font-bold text-red-400 hover:text-red-600 transition-colors px-3 py-2 ml-2 border border-red-100 rounded-lg hover:bg-red-50"
-                            >
-                                Clear Step
-                            </button>
-                        )}
                     </div>
 
                     <div className="flex-1 flex flex-col items-end">

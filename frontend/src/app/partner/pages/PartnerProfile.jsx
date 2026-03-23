@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Mail, Phone, MapPin, Edit, Save, Camera, CreditCard } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Edit, Save, Camera, CreditCard, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
 import gsap from 'gsap';
 import usePartnerStore from '../store/partnerStore';
 import { userService, authService, hotelService } from '../../../services/apiService';
+import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import PartnerHeader from '../components/PartnerHeader';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../../utils/flutterBridge';
 
@@ -34,21 +36,37 @@ const PartnerProfile = () => {
     const { formData } = usePartnerStore();
     const [isEditing, setIsEditing] = useState(false);
     const containerRef = useRef(null);
-    const [approvalStatus, setApprovalStatus] = useState('pending');
+    const [loading, setLoading] = useState(true);
+
+    // Initial state from localStorage to prevent flicker
+    const getInitialProfile = () => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const addr = user.address || {};
+        const addrStr = [addr.street, addr.city, addr.state].filter(Boolean).join(', ');
+
+        return {
+            name: user.name || '',
+            email: user.email || '',
+            phone: user.phone || '',
+            address: addrStr,
+            role: user.role || 'partner',
+            aadhaarNumber: user.aadhaarNumber || '',
+            panNumber: user.panNumber || '',
+            profileImage: user.profileImage || '',
+            profileImagePublicId: user.profileImagePublicId || ''
+        };
+    };
+
+    const [profile, setProfile] = useState(getInitialProfile());
+    const [approvalStatus, setApprovalStatus] = useState(() => {
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        return user.partnerApprovalStatus || 'pending';
+    });
     const [memberSince, setMemberSince] = useState('');
     const [partnerId, setPartnerId] = useState('');
-    const [profile, setProfile] = useState({
-        name: formData?.propertyName || '',
-        email: '',
-        phone: '',
-        address: '',
-        role: 'partner',
-        aadhaarNumber: '',
-        panNumber: '',
-        profileImage: '',
-        profileImagePublicId: ''
-    });
     const [uploading, setUploading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -58,10 +76,12 @@ const PartnerProfile = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
+                setLoading(true);
                 const data = await userService.getProfile();
                 const addr = data.address || {};
                 const addrStr = [addr.street, addr.city, addr.state].filter(Boolean).join(', ');
-                setProfile({
+
+                const profileData = {
                     name: data.name || '',
                     email: data.email || '',
                     phone: data.phone || '',
@@ -71,17 +91,26 @@ const PartnerProfile = () => {
                     panNumber: data.panNumber || '',
                     profileImage: data.profileImage || '',
                     profileImagePublicId: data.profileImagePublicId || ''
-                });
+                };
+
+                setProfile(profileData);
                 setApprovalStatus(data.partnerApprovalStatus || 'pending');
                 setMemberSince(data.createdAt || data.partnerSince || '');
                 setPartnerId(data._id || '');
-            } catch {
-                console.error('Failed to load partner profile');
-                setProfile((p) => ({
-                    ...p,
-                    name: p.name || 'Partner',
-                    role: 'partner'
-                }));
+
+                // Sync with localStorage to ensure next visit is instant
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const updatedUser = {
+                    ...user,
+                    ...data,
+                    id: data._id // Ensure ID consistency
+                };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+
+            } catch (error) {
+                console.error('Failed to load partner profile:', error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchProfile();
@@ -210,6 +239,21 @@ const PartnerProfile = () => {
         }
     };
 
+    const handleDeleteAccount = async () => {
+        try {
+            setDeleteLoading(true);
+            await hotelService.deletePartnerAccount();
+            authService.logout();
+            toast.success('Account deleted successfully');
+            window.location.href = '/hotel/login';
+        } catch (error) {
+            toast.error(error.message || 'Failed to delete account');
+        } finally {
+            setDeleteLoading(false);
+            setShowDeleteConfirm(false);
+        }
+    };
+
     const statusLabel = approvalStatus === 'approved' ? 'Verified Partner' : approvalStatus === 'rejected' ? 'Rejected' : 'Pending Approval';
     const statusClass = approvalStatus === 'approved' ? 'text-green-600 bg-green-50' : approvalStatus === 'rejected' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
 
@@ -329,10 +373,64 @@ const PartnerProfile = () => {
                     />
                 </div>
 
+                {/* Delete Account Button */}
+                <div className="mt-4 px-6 flex flex-col items-center">
+                    <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="flex items-center gap-2 text-red-500 font-bold text-xs px-6 py-3 border border-red-50 rounded-2xl hover:bg-red-50 transition-all uppercase tracking-widest"
+                    >
+                        <Trash2 size={14} />
+                        Delete Partner Account
+                    </button>
+                    <p className="mt-3 text-[10px] text-gray-400 text-center uppercase tracking-tighter">
+                        This action is irreversible. All properties and inventory will be deactivated.
+                    </p>
+                </div>
+
                 <div className="mt-8 text-center text-xs text-gray-400">
                     <p className="font-bold tracking-widest uppercase text-[10px]">Member since {memberSince ? new Date(memberSince).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : '—'}</p>
                 </div>
 
+                {/* Delete Confirmation Modal */}
+                <AnimatePresence>
+                    {showDeleteConfirm && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                className="bg-white w-full max-w-sm rounded-[3rem] p-8 overflow-hidden relative shadow-2xl border-4 border-red-50"
+                            >
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6 border-2 border-red-100/50">
+                                        <AlertTriangle size={36} className="text-red-500" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-[#003836] mb-2 uppercase tracking-tight">Delete Account?</h3>
+                                    <p className="text-sm font-medium text-gray-500 leading-relaxed mb-8">
+                                        Are you absolutely sure? This action is <span className="text-red-500 font-black">permanent</span> and will deactivate all your properties immediately.
+                                    </p>
+
+                                    <div className="flex flex-col w-full gap-3">
+                                        <button
+                                            onClick={handleDeleteAccount}
+                                            disabled={deleteLoading}
+                                            className="w-full bg-red-500 text-white font-black py-4.5 rounded-[1.5rem] shadow-xl shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 text-sm uppercase tracking-widest"
+                                        >
+                                            {deleteLoading ? <Loader2 size={18} className="animate-spin" /> : 'Confirm Deletion'}
+                                        </button>
+                                        <button
+                                            onClick={() => setShowDeleteConfirm(false)}
+                                            disabled={deleteLoading}
+                                            className="w-full bg-gray-50 text-gray-600 font-black py-4 rounded-[1.5rem] active:scale-95 transition-all text-xs uppercase tracking-widest"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
             </main >
         </div >
     );

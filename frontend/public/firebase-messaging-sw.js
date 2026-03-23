@@ -1,11 +1,10 @@
 /* eslint-env serviceworker, webworker */
 /* global firebase, importScripts */
-// Import and configure the Firebase SDK
-// These scripts are made available when the app is served or deployed on Firebase Hosting
+
+// Firebase SDKs for the service worker
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging-compat.js');
 
-// Initialize Firebase
 firebase.initializeApp({
   apiKey: "AIzaSyBpo_CcO2CvlYrhbhqbKRbc8QnIF6RV6T4",
   authDomain: "nowstay-6b4fd.firebaseapp.com",
@@ -15,48 +14,78 @@ firebase.initializeApp({
   appId: "1:52925285490:web:f8e5669f1c3369d2436eeb"
 });
 
-// Retrieve an instance of Firebase Messaging
 const messaging = firebase.messaging();
 
-// Handle background messages
+/**
+ * BACKGROUND MESSAGES
+ * Fires when the browser tab is closed/hidden (service worker context).
+ * This is ONLY for web browser users — Flutter app users receive notifications
+ * natively through the Flutter FCM plugin, not through this service worker.
+ *
+ * We use a `tag` derived from the notification title to prevent OS-level
+ * duplicate notifications if FCM delivers the same message twice.
+ */
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  console.log('[SW] Received background message:', payload);
 
-  const notificationTitle = payload.notification?.title || 'Rukkoin';
-  const notificationOptions = {
-    body: payload.notification?.body || '',
+  const title = payload.notification?.title || 'Rukkoin';
+  const body = payload.notification?.body || '';
+  const data = payload.data || {};
+
+  // Tag deduplication: prevents duplicate system notifications for the same event.
+  // If a notification with the same tag is already shown, it gets replaced (not doubled).
+  const tag = data.notificationId || data.tag || `${title}-${Date.now()}`;
+
+  const options = {
+    body,
     icon: '/icon-192x192.png',
     badge: '/badge-72x72.png',
-    data: payload.data || {},
-    tag: payload.data?.tag || 'default',
+    tag,                       // Deduplication key at OS level
+    renotify: false,           // Don't re-vibrate if replacing same tag
     requireInteraction: false,
     silent: false,
+    data: {
+      url: data.url || '/',    // URL to open on click
+      ...data
+    }
   };
 
-  return self.registration.showNotification(notificationTitle, notificationOptions);
+  return self.registration.showNotification(title, options);
 });
 
-// Handle notification clicks
+/**
+ * NOTIFICATION CLICK HANDLER
+ * When the user taps a background notification, open/focus the app.
+ */
 self.addEventListener('notificationclick', (event) => {
-  console.log('[firebase-messaging-sw.js] Notification click received.');
+  console.log('[SW] Notification clicked:', event.notification);
 
   event.notification.close();
 
-  // Get the URL from notification data or default to root
   const urlToOpen = event.notification.data?.url || '/';
+  // Make the URL absolute — service workers need full URLs for openWindow
+  const absoluteUrl = urlToOpen.startsWith('http')
+    ? urlToOpen
+    : (self.location.origin + urlToOpen);
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Check if there's already a window open
-      for (let i = 0; i < clientList.length; i++) {
-        const client = clientList[i];
-        if (client.url === urlToOpen && 'focus' in client) {
+      // Focus an existing tab if one is already on the target URL
+      for (const client of clientList) {
+        if (client.url === absoluteUrl && 'focus' in client) {
           return client.focus();
         }
       }
-      // If no window is open, open a new one
+      // Focus any existing tab on the origin (navigate it)
+      for (const client of clientList) {
+        if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+          client.navigate(absoluteUrl);
+          return client.focus();
+        }
+      }
+      // No existing tab — open a new one
       if (self.clients.openWindow) {
-        return self.clients.openWindow(urlToOpen);
+        return self.clients.openWindow(absoluteUrl);
       }
     })
   );

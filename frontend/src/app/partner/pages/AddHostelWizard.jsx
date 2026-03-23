@@ -3,14 +3,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
 import { CheckCircle, FileText, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, BedDouble, Users, Wifi, Clock, Loader2, Camera } from 'lucide-react';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
 const REQUIRED_DOCS_HOSTEL = [
-  { type: 'trade_license', name: 'Trade License' },
-  { type: 'fire_safety', name: 'Fire Safety Certificate' },
-  { type: 'police_verification', name: 'Police Verification' },
-  { type: 'owner_id_proof', name: 'Owner ID Proof' }
+  { type: "trade_license", name: "Trade License", required: true },
+  { type: "rent_agreement", name: "Rent Agreement", required: true }
 ];
 
 const HOSTEL_AMENITIES = [
@@ -48,10 +46,17 @@ const AddHostelWizard = () => {
   const [uploading, setUploading] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isFlutter, setIsFlutter] = useState(false);
+  const [houseRulesDraft, setHouseRulesDraft] = useState('');
 
   useEffect(() => {
     setIsFlutter(isFlutterApp());
   }, []);
+
+  useEffect(() => {
+    if (step === 7) {
+      setHouseRulesDraft(propertyForm.houseRules.join(', '));
+    }
+  }, [step]);
 
   const coverImageFileInputRef = useRef(null);
   const propertyImagesFileInputRef = useRef(null);
@@ -74,8 +79,9 @@ const AddHostelWizard = () => {
     checkOutTime: '',
     contactNumber: '',
     cancellationPolicy: '',
+    suitability: 'none',
     houseRules: [],
-    documents: REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+    documents: REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
   });
 
   const [roomTypes, setRoomTypes] = useState([]);
@@ -111,6 +117,33 @@ const AddHostelWizard = () => {
     }, 1000);
     return () => clearTimeout(timeout);
   }, [step, propertyForm, roomTypes, createdProperty]);
+
+  // --- WebView History / Back Button Fix ---
+  useEffect(() => {
+    const currentHash = window.location.hash;
+    const targetHash = `#step${step}`;
+    if (currentHash !== targetHash) {
+      if (step === 1 && (!currentHash || currentHash === '#step1')) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      } else {
+        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      }
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#step')) {
+        const hashStep = parseInt(hash.replace('#step', ''), 10);
+        if (!isNaN(hashStep)) {
+          setStep(hashStep);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const updatePropertyForm = (path, value) => {
     setPropertyForm(prev => {
@@ -173,9 +206,10 @@ const AddHostelWizard = () => {
           cancellationPolicy: prop.cancellationPolicy || 'No refund after check-in',
           houseRules: prop.houseRules || [],
           contactNumber: prop.contactNumber || '',
+          suitability: prop.suitability || 'none',
           documents: docs.length
-            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '' }))
-            : REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '', required: REQUIRED_DOCS_HOSTEL.find(rd => rd.type === (d.type || d.name))?.required || false }))
+            : REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
         });
         if (rts.length) {
           setRoomTypes(
@@ -380,11 +414,11 @@ const AddHostelWizard = () => {
 
   const handleCameraUpload = async (type, onDone) => {
     try {
-      setUploading(type);
       setError('');
       console.log('[Camera] Opening Flutter camera...');
 
       const result = await openFlutterCamera();
+      setUploading(type);
 
       if (!result.success || !result.base64) {
         throw new Error('Camera capture failed');
@@ -394,13 +428,15 @@ const AddHostelWizard = () => {
 
       const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
 
-      const res = await hotelService.uploadImagesBase64([result]);
+      const res = await hotelService.uploadImagesBase64(result.images || [result]);
 
       if (res && res.success && res.files && res.files.length > 0) {
         if (isSingle) {
           onDone(res.files[0].url);
         } else {
-          onDone([res.files[0].url]);
+          // Pass all uploaded URLs
+          const urls = res.files.map(f => f.url);
+          onDone(urls);
         }
       } else {
         throw new Error('Upload failed');
@@ -422,8 +458,8 @@ const AddHostelWizard = () => {
       console.log(`Processing ${fileArray.length} images...`);
 
       for (const file of fileArray) {
-        if (!file.type.startsWith('image/')) {
-          throw new Error(`File ${file.name} is not an image`);
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+          throw new Error(`File ${file.name} must be an image or PDF`);
         }
         if (file.size > 10 * 1024 * 1024) {
           throw new Error(`Image ${file.name} is too large. Maximum 10MB allowed.`);
@@ -485,6 +521,8 @@ const AddHostelWizard = () => {
       name: '',
       inventoryType: 'bed',
       roomCategory: 'shared',
+      baseAdults: 1,
+      baseChildren: 0,
       maxAdults: '',
       maxChildren: 0,
       bedsPerRoom: '',
@@ -610,8 +648,14 @@ const AddHostelWizard = () => {
     setStep(7);
   };
 
+  const syncHouseRulesFromDraft = () => {
+    const parsed = houseRulesDraft.split(',').map(s => s.trim()).filter(Boolean);
+    updatePropertyForm('houseRules', parsed);
+  };
+
   const nextFromRules = () => {
     setError('');
+    syncHouseRulesFromDraft();
     if (!propertyForm.checkInTime || !propertyForm.checkOutTime) {
       setError('Check-in and Check-out times are required');
       return;
@@ -625,7 +669,11 @@ const AddHostelWizard = () => {
 
   const nextFromDocuments = () => {
     setError('');
-    // Optional
+    const missing = propertyForm.documents.filter(d => d.required && !d.fileUrl);
+    if (missing.length > 0) {
+      setError(`Please upload required documents: ${missing.map(d => d.name).join(', ')}`);
+      return;
+    }
     setStep(9);
   };
 
@@ -633,8 +681,11 @@ const AddHostelWizard = () => {
     setLoading(true);
     setError('');
     try {
+      const searchParams = new URLSearchParams(location.search);
+      const queryType = searchParams.get('type');
       const propertyPayload = {
-        propertyType: 'hostel',
+        propertyType: queryType || 'hostel',
+        propertyTemplate: 'hostel',
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
         hostelType: propertyForm.hostelType,
@@ -659,6 +710,7 @@ const AddHostelWizard = () => {
         checkInTime: propertyForm.checkInTime,
         checkOutTime: propertyForm.checkOutTime,
         cancellationPolicy: propertyForm.cancellationPolicy,
+        suitability: propertyForm.suitability,
         houseRules: propertyForm.houseRules,
         documents: propertyForm.documents
       };
@@ -674,6 +726,8 @@ const AddHostelWizard = () => {
             name: rt.name,
             inventoryType: 'bed',
             roomCategory: rt.roomCategory,
+            baseAdults: Number(rt.baseAdults || 1),
+            baseChildren: Number(rt.baseChildren || 0),
             maxAdults: Number(rt.maxAdults),
             maxChildren: Number(rt.maxChildren || 0),
             bedsPerRoom: Number(rt.bedsPerRoom),
@@ -703,6 +757,8 @@ const AddHostelWizard = () => {
           name: rt.name,
           inventoryType: 'bed',
           roomCategory: rt.roomCategory,
+          baseAdults: Number(rt.baseAdults || 1),
+          baseChildren: Number(rt.baseChildren || 0),
           maxAdults: Number(rt.maxAdults),
           maxChildren: Number(rt.maxChildren || 0),
           bedsPerRoom: Number(rt.bedsPerRoom),
@@ -728,6 +784,7 @@ const AddHostelWizard = () => {
 
   const handleBack = () => {
     if (step > 1) {
+      if (step === 7) syncHouseRulesFromDraft();
       setStep(step - 1);
     } else {
       localStorage.removeItem(STORAGE_KEY);
@@ -752,6 +809,7 @@ const AddHostelWizard = () => {
       setRoomTypes([]);
     } else if (step === 7) {
       setPropertyForm(prev => ({ ...prev, checkInTime: '12:00 PM', checkOutTime: '10:00 AM', cancellationPolicy: 'No refund after check-in', houseRules: [] }));
+      setHouseRulesDraft('');
     } else if (step === 8) {
       updatePropertyForm('documents', REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, fileUrl: '' })));
     }
@@ -857,16 +915,18 @@ const AddHostelWizard = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Short Description</label>
+                  <label className="text-xs font-semibold text-gray-500">Description</label>
                   <textarea
-                    className="input w-full"
+                    className="input w-full h-24"
                     placeholder="Brief summary (e.g. Affordable student accommodation near campus...)"
                     value={propertyForm.shortDescription}
                     onChange={e => updatePropertyForm('shortDescription', e.target.value)}
                   />
                 </div>
 
-                <div className="space-y-1">
+
+
+                <div className="hidden">
                   <label className="text-xs font-semibold text-gray-500">Detailed Description</label>
                   <textarea
                     className="input w-full min-h-[100px]"
@@ -879,11 +939,47 @@ const AddHostelWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Contact Number (For Guest Inquiries)</label>
                   <input
+                    type="tel"
                     className="input w-full"
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="9876543210"
                     value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                    onChange={e => {
+                      // Filter non-digits and limit to 10 digits
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', digitsOnly);
+                    }}
+                    maxLength={10}
                   />
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length === 10 && (
+                    /^[6-9]\d{9}$/.test(propertyForm.contactNumber) ? (
+                      <p className="text-[10px] text-green-600 font-medium flex items-center gap-1 mt-1">
+                        <span>✓</span> Valid mobile number
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-red-500 font-medium flex items-center gap-1 mt-1">
+                        <span>⚠</span> Mobile number must start with 6, 7, 8, or 9
+                      </p>
+                    )
+                  )}
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
+                    <p className="text-[10px] text-gray-500 font-medium mt-1">
+                      {10 - propertyForm.contactNumber.length} more digit(s) required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500">Suitability</label>
+                  <select
+                    className="input w-full appearance-none"
+                    value={propertyForm.suitability}
+                    onChange={e => updatePropertyForm('suitability', e.target.value)}
+                  >
+                    <option value="none">None</option>
+                    <option value="Couple Friendly">Couple Friendly</option>
+                    <option value="Family Friendly">Family Friendly</option>
+                    <option value="Both">Both</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1320,6 +1416,17 @@ const AddHostelWizard = () => {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹/night)</label>
+                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraAdultPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value === '' ? '' : e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹/night)</label>
+                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraChildPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value === '' ? '' : e.target.value })} />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold text-gray-500">Images (Max 3)</label>
@@ -1329,7 +1436,7 @@ const AddHostelWizard = () => {
                         {(editingRoomType.images || []).map((img, i) => (
                           <div key={i} className="relative w-20 h-20 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden group">
                             <img src={img} className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} /></button>
                           </div>
                         ))}
                         {(editingRoomType.images || []).length < 3 && (
@@ -1415,13 +1522,9 @@ const AddHostelWizard = () => {
                 <textarea
                   className="input w-full min-h-[100px]"
                   placeholder="No alcohol, No guests after 9 PM..."
-                  value={propertyForm.houseRules.join(', ')}
-                  onChange={e =>
-                    updatePropertyForm(
-                      'houseRules',
-                      e.target.value.split(',').map(s => s.trim())
-                    )
-                  }
+                  value={houseRulesDraft}
+                  onChange={e => setHouseRulesDraft(e.target.value)}
+                  onBlur={syncHouseRulesFromDraft}
                 />
                 <p className="text-xs text-gray-400">Separate rules with commas.</p>
               </div>
@@ -1439,7 +1542,9 @@ const AddHostelWizard = () => {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="font-bold text-gray-900">{doc.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">Optional document</div>
+                          <div className={`text-xs mt-0.5 ${doc.required ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                            {doc.required ? 'Required *' : 'Optional'}
+                          </div>
                         </div>
                         {doc.fileUrl ? (
                           <div className="bg-emerald-50 text-emerald-700 p-1.5 rounded-full"><CheckCircle size={18} /></div>
@@ -1482,6 +1587,7 @@ const AddHostelWizard = () => {
                       <input
                         type="file"
                         className="hidden"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf"
                         ref={el => (documentInputRefs.current[idx] = el)}
                         onChange={e => {
                           const file = e.target.files[0];

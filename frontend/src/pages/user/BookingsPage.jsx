@@ -48,6 +48,9 @@ const BookingsPage = () => {
             if (paymentStatus === 'paid') {
                 return <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><CheckCircle size={10} /> Paid</span>;
             }
+            if (paymentStatus === 'partial') {
+                return <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><CheckCircle size={10} /> Partially Paid</span>;
+            }
             return <span className="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><AlertCircle size={10} /> Pay at Hotel</span>;
         }
         if (s === 'pending_payment') {
@@ -153,33 +156,56 @@ const BookingsPage = () => {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: index * 0.1 }}
-                                        onClick={() => navigate(`/booking/${booking._id}`, { state: { booking: booking } })}
+                                        onClick={() =>
+                                            navigate(`/booking/${booking._id}`, {
+                                                state: { booking: booking }
+                                            })
+                                        }
                                         className="bg-white rounded-xl overflow-hidden shadow-md shadow-gray-200/50 border border-gray-100 cursor-pointer active:scale-[0.98] transition-transform"
                                     >
                                         <div className="flex h-28">
+                                            {/* IMAGE SAME */}
                                             <div className="w-24 bg-gray-200 shrink-0 relative">
                                                 <img
                                                     src={propertyImage}
                                                     alt={hotel.propertyName || hotel.name || 'Hotel'}
-                                                    className={`w-full h-full object-cover ${activeTab === 'cancelled' ? 'grayscale' : ''}`}
+                                                    className={`w-full h-full object-cover ${activeTab === 'cancelled' ? 'grayscale' : ''
+                                                        }`}
                                                 />
                                                 <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                                    <Star size={8} fill="currentColor" /> {hotel.avgRating > 0 ? Number(hotel.avgRating).toFixed(1) : 'New'}
+                                                    <Star size={8} fill="currentColor" />
+                                                    {hotel.avgRating > 0
+                                                        ? Number(hotel.avgRating).toFixed(1)
+                                                        : 'New'}
                                                 </div>
                                             </div>
 
-                                            <div className="flex-1 p-3 flex flex-col justify-center">
-                                                <div className="flex justify-between items-start mb-1.5">
-                                                    {getStatusBadge(bookingStatus, booking.paymentStatus)}
-                                                    <span className="text-[9px] text-gray-400 font-medium tracking-wide">#{booking.bookingId || booking._id?.slice(-6)}</span>
+                                            {/* CONTENT */}
+                                            <div className="flex-1 p-3 flex flex-col justify-start">
+                                                <div className="flex justify-between items-start mb-1">
+                                                    {getStatusBadge(
+                                                        bookingStatus,
+                                                        booking.paymentStatus
+                                                    )}
+                                                    <span className="text-[9px] text-gray-400 font-medium tracking-wide">
+                                                        #{booking.bookingId || booking._id?.slice(-6)}
+                                                    </span>
                                                 </div>
 
-                                                <h3 className="font-bold text-surface text-sm leading-tight mb-0.5 line-clamp-1">
-                                                    {hotel.propertyName || hotel.name || 'Unknown Property'}
+                                                {/* ✅ FIXED PROPERTY NAME */}
+                                                <h3 className="font-bold text-surface text-sm leading-tight line-clamp-2 break-words min-h-[32px]">
+                                                    {hotel.propertyName ||
+                                                        hotel.name ||
+                                                        'Unknown Property'}
                                                 </h3>
 
-                                                <p className="text-[10px] text-gray-400 flex items-center gap-0.5 mb-2">
-                                                    <MapPin size={9} /> {`${hotel.address?.city || ''}, ${hotel.address?.state || ''}`.replace('undefined', '').replace(/^, /, '').replace(/, $/, '') || 'Location'}
+                                                <p className="text-[10px] text-gray-400 flex items-center gap-0.5 mb-1">
+                                                    <MapPin size={9} />
+                                                    {`${hotel.address?.city || ''}, ${hotel.address?.state || ''
+                                                        }`
+                                                        .replace('undefined', '')
+                                                        .replace(/^, /, '')
+                                                        .replace(/, $/, '') || 'Location'}
                                                 </p>
 
                                                 <div className="flex items-center gap-2 text-[10px]">
@@ -195,11 +221,23 @@ const BookingsPage = () => {
                                         </div>
 
                                         <div className="border-t border-gray-100 px-3 py-2 bg-gray-50/50 flex justify-between items-center">
-                                            <p className="text-[10px] text-gray-400 font-medium">Total Amount</p>
-                                            <p className="text-sm font-black text-surface">₹{booking.totalAmount?.toLocaleString()}</p>
+                                            <p className="text-[10px] text-gray-400 font-medium">
+                                                Total Amount
+                                            </p>
+                                            <div className="text-right">
+                                                <p className="text-sm font-black text-surface leading-none">
+                                                    ₹{booking.totalAmount?.toLocaleString()}
+                                                </p>
+                                                {(booking.paymentMethod === 'prepaid' && booking.remainingAmount > 0) && (
+                                                    <p className="text-[9px] font-bold text-orange-600 mt-0.5">
+                                                        To Pay at Hotel: ₹{booking.remainingAmount?.toLocaleString()}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </motion.div>
                                 );
+
                             })}
                         </motion.div>
                     )}

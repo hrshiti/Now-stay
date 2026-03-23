@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { User, Phone, Mail, ArrowLeft, Save, Loader2, MapPin, Navigation, Home, Camera } from 'lucide-react';
-import { authService } from '../../services/apiService';
+import { User, Phone, Mail, ArrowLeft, Save, Loader2, MapPin, Navigation, Home, Camera, Trash2, AlertTriangle } from 'lucide-react';
+import { authService, userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../utils/flutterBridge';
 
@@ -12,6 +12,8 @@ const ProfileEdit = () => {
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -240,6 +242,21 @@ const ProfileEdit = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    try {
+      setDeleteLoading(true);
+      await userService.deleteAccount();
+      authService.logout();
+      toast.success('Account deleted successfully');
+      navigate('/', { replace: true });
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete account');
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const handleAddressChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -449,6 +466,59 @@ const ProfileEdit = () => {
             {loading ? <Loader2 size={18} className="animate-spin" /> : 'Update Profile'}
           </button>
         </form>
+
+        {/* Delete Account Section */}
+        <div className="pt-8 pb-12">
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full flex items-center justify-center gap-2 text-red-500 font-bold text-sm py-3 border border-red-100 rounded-2xl hover:bg-red-50 transition-colors"
+          >
+            <Trash2 size={16} />
+            Delete Account
+          </button>
+          <p className="mt-3 text-[10px] text-gray-400 text-center px-4">
+            Deleting your account is permanent and cannot be undone. All your data will be deactivated.
+          </p>
+        </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-white w-full max-w-sm rounded-[32px] p-8 overflow-hidden relative shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
+                  <AlertTriangle size={32} className="text-red-500" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Account?</h3>
+                <p className="text-sm text-gray-500 leading-relaxed mb-8">
+                  Are you absolutely sure? This action is <span className="text-red-500 font-bold">permanent</span> and will deactivate your account immediately.
+                </p>
+
+                <div className="flex flex-col w-full gap-3">
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteLoading}
+                    className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                  >
+                    {deleteLoading ? <Loader2 size={18} className="animate-spin" /> : 'Yes, Delete Permanently'}
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    disabled={deleteLoading}
+                    className="w-full bg-gray-50 text-gray-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

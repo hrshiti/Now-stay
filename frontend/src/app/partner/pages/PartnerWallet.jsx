@@ -93,6 +93,8 @@ const PartnerWallet = () => {
 
     const handleTransaction = async () => {
         try {
+            const amount = parseFloat(amountInput);
+
             if (activeModal === 'withdraw') {
                 // Check if bank details exist
                 if (!wallet?.bankDetails?.accountNumber) {
@@ -119,11 +121,11 @@ const PartnerWallet = () => {
                     }
                     await walletService.updateBankDetails(bankDetailsInput);
                     toast.success("Bank details saved!");
-                    fetchWalletData();
+                    await fetchWalletData();
+                    // Don't close modal - user will see withdraw form now
                     return;
                 }
 
-                const amount = parseFloat(amountInput);
                 if (!amount || amount <= 0) {
                     toast.error('Please enter a valid amount');
                     return;
@@ -133,11 +135,16 @@ const PartnerWallet = () => {
                 if (amount > wallet?.balance) { toast.error('Insufficient balance'); return; }
 
                 await walletService.requestWithdrawal(amount);
-                toast.success('Withdrawal successful (Test Simulation)');
+                toast.success('Withdrawal request submitted successfully');
                 setActiveModal(null);
                 setAmountInput('');
-                fetchWalletData();
+                await fetchWalletData();
             } else if (activeModal === 'add_money') {
+                if (!amount || amount <= 0) {
+                    toast.error('Please enter a valid amount');
+                    return;
+                }
+
                 // 1. Create Order
                 const { order } = await walletService.addMoney(amount);
 
@@ -154,15 +161,19 @@ const PartnerWallet = () => {
                             // 3. Verify Payment
                             await walletService.verifyAddMoney({
                                 ...response,
-                                amount // Pass amount for reference
+                                amount, // Pass amount for reference
+                                viewAs: 'partner'
                             });
                             toast.success('Money added successfully!');
                             setActiveModal(null);
                             setAmountInput('');
                             fetchWalletData();
                         } catch (err) {
-                            toast.error('Payment verification failed');
+                            toast.error('Payment verification failed. Please try again.');
                             console.error(err);
+                            // Close modal so error message is visible (z-index fixed)
+                            setActiveModal(null);
+                            setAmountInput('');
                         }
                     },
                     prefill: {
@@ -174,16 +185,29 @@ const PartnerWallet = () => {
                     },
                 };
 
-                const razorpayInstance = new Razorpay(options);
+                const razorpayInstance = new Razorpay({
+                    ...options,
+                    modal: {
+                        ondismiss: () => {
+                            // User closed Razorpay modal without payment
+                            // Keep the add money modal open so they can try again
+                            console.log('Razorpay payment cancelled by user');
+                        }
+                    }
+                });
                 razorpayInstance.open();
                 return; // Don't close modal immediately, let handler do it
             }
 
             setActiveModal(null);
             setAmountInput('');
-            fetchWalletData();
+            await fetchWalletData();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Transaction failed');
+            // Close modal on error so user can see the error message clearly
+            // User can reopen modal if needed
+            setActiveModal(null);
+            setAmountInput('');
         }
     };
 
@@ -333,9 +357,9 @@ const PartnerWallet = () => {
 
                         <p className="text-xs text-gray-400 font-medium mb-8">
                             {showBankForm
-                                ? 'We need your bank details to process payouts via Razorpay.'
+                                ? 'We need your bank details to process payouts.'
                                 : (activeModal === 'withdraw'
-                                    ? 'Transfer funds directly to your verified bank account.'
+                                    ? 'Funds will be transferred to your bank account within 24-48 hours after admin approval.'
                                     : 'Add funds to your wallet using UPI or Cards.'
                                 )
                             }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-    CheckCircle, MapPin, Calendar, Users, FileText,
+    CheckCircle, XCircle, MapPin, Calendar, Users, FileText,
     Phone, Navigation, Share2, Home, Download, Printer, ChevronLeft
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -13,6 +13,7 @@ const BookingConfirmationPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
+//rfdhfdh
     // Initialize with state if available, else null
     const [booking, setBooking] = useState(location.state?.booking || null);
     const [loading, setLoading] = useState(!location.state?.booking);
@@ -52,30 +53,36 @@ const BookingConfirmationPage = () => {
     }, [id, booking, navigate]);
 
     useEffect(() => {
+        // Only show confetti for confirmed bookings (not cancelled)
         if (booking && animate) {
-            const end = Date.now() + 3000;
-            const colors = ['#10B981', '#3B82F6', '#F59E0B'];
+            const status = (booking.bookingStatus || booking.status || 'pending').toLowerCase();
+            const cancelled = status === 'cancelled' || status === 'no_show' || status === 'rejected';
+            
+            if (!cancelled) {
+                const end = Date.now() + 3000;
+                const colors = ['#10B981', '#3B82F6', '#F59E0B'];
 
-            (function frame() {
-                confetti({
-                    particleCount: 3,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: colors
-                });
-                confetti({
-                    particleCount: 3,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: colors
-                });
+                (function frame() {
+                    confetti({
+                        particleCount: 3,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0 },
+                        colors: colors
+                    });
+                    confetti({
+                        particleCount: 3,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 1 },
+                        colors: colors
+                    });
 
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            }());
+                    if (Date.now() < end) {
+                        requestAnimationFrame(frame);
+                    }
+                }());
+            }
         }
     }, [booking, animate]);
 
@@ -97,6 +104,11 @@ const BookingConfirmationPage = () => {
     const room = booking.roomTypeId || {};
     const user = booking.userId || {};
 
+    // Determine booking status for conditional rendering
+    const bookingStatus = (booking.bookingStatus || booking.status || 'pending').toLowerCase();
+    const isCancelled = bookingStatus === 'cancelled' || bookingStatus === 'no_show' || bookingStatus === 'rejected';
+    const isConfirmed = bookingStatus === 'confirmed' || bookingStatus === 'pending' || bookingStatus === 'awaiting_payment';
+
     const handleDirections = () => {
         const propAddress = property.address?.fullAddress ||
             `${property.address?.street || ''}, ${property.address?.city || ''}, ${property.address?.state || ''}` ||
@@ -117,6 +129,9 @@ const BookingConfirmationPage = () => {
         window.print();
     };
 
+    // Single contact number: property (partner-entered) first, else partner account phone
+    const contactPhone = (property.contactNumber || property.partnerId?.phone || '').replace(/\D/g, '') || null;
+
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
             {/* Header */}
@@ -126,7 +141,9 @@ const BookingConfirmationPage = () => {
                         <ChevronLeft size={20} />
                         <span className="hidden sm:inline">Back</span>
                     </button>
-                    <h1 className="text-lg font-bold text-gray-900">Booking Confirmation</h1>
+                    <h1 className="text-lg font-bold text-gray-900">
+                        {isCancelled ? 'Booking Details' : 'Booking Confirmation'}
+                    </h1>
                     <button onClick={handlePrint} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
                         <Printer size={20} />
                     </button>
@@ -135,17 +152,37 @@ const BookingConfirmationPage = () => {
 
             <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
 
-                {/* 1. Success Message */}
-                <div className="bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600"></div>
-                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                        <CheckCircle size={40} className="text-green-600" />
-                    </div>
-                    <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Booking Confirmed!</h1>
-                    <p className="text-gray-500 max-w-md mx-auto">
-                        Your reservation ID is <span className="font-mono font-bold text-gray-800">#{booking.bookingId || booking._id?.slice(-8).toUpperCase()}</span>.
-                        We've sent a confirmation email to <span className="font-medium text-gray-800">{user.email}</span>.
-                    </p>
+                {/* 1. Status Message */}
+                <div className={`bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100 relative overflow-hidden ${isCancelled ? 'border-red-100' : ''}`}>
+                    {isCancelled ? (
+                        <>
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-red-600"></div>
+                            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <XCircle size={40} className="text-red-600" />
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Booking Cancelled!</h1>
+                            <p className="text-gray-500 max-w-md mx-auto">
+                                Your reservation ID is <span className="font-mono font-bold text-gray-800">#{booking.bookingId || booking._id?.slice(-8).toUpperCase()}</span>.
+                                {booking.cancellationReason && (
+                                    <span className="block mt-2 text-sm text-gray-600">
+                                        Reason: <span className="font-medium">{booking.cancellationReason}</span>
+                                    </span>
+                                )}
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600"></div>
+                            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                                <CheckCircle size={40} className="text-green-600" />
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Booking Confirmed!</h1>
+                            <p className="text-gray-500 max-w-md mx-auto">
+                                Your reservation ID is <span className="font-mono font-bold text-gray-800">#{booking.bookingId || booking._id?.slice(-8).toUpperCase()}</span>.
+                                We've sent a confirmation email to <span className="font-medium text-gray-800">{user.email}</span>.
+                            </p>
+                        </>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -183,18 +220,20 @@ const BookingConfirmationPage = () => {
                                         >
                                             <Navigation size={14} /> Directions
                                         </button>
-                                        {property.contactNumber ? (
+                                        {contactPhone ? (
                                             <a
-                                                href={`tel:${property.contactNumber}`}
-                                                className="flex-1 border border-gray-200 hover:border-black text-gray-700 hover:text-black text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                                                href={`tel:${contactPhone}`}
+                                                className="flex-1 border border-gray-200 hover:border-black text-gray-700 hover:text-black text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 no-underline"
                                             >
                                                 <Phone size={14} /> Contact Property
                                             </a>
                                         ) : (
                                             <button
-                                                className="flex-1 border border-gray-200 hover:border-black text-gray-700 hover:text-black text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2"
+                                                type="button"
+                                                disabled
+                                                className="flex-1 border border-gray-100 text-gray-400 text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
                                             >
-                                                <Phone size={14} /> Contact Property
+                                                <Phone size={14} /> Number not available
                                             </button>
                                         )}
                                     </div>
@@ -276,16 +315,28 @@ const BookingConfirmationPage = () => {
                                     <span className="font-bold text-gray-900">Total Amount</span>
                                     <span className="text-xl font-black text-gray-900">₹{booking.totalAmount?.toLocaleString()}</span>
                                 </div>
+                                {(booking.paymentMethod === 'prepaid' && booking.remainingAmount > 0) && (
+                                    <div className="bg-orange-50 -mx-6 px-6 py-3 border-b border-orange-100 flex flex-col gap-1">
+                                        <div className="flex justify-between text-sm text-gray-700">
+                                            <span>Advance Paid Now</span>
+                                            <span className="font-bold">₹{booking.amountPaid?.toLocaleString()}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm text-orange-700 font-bold">
+                                            <span>To Pay at Hotel</span>
+                                            <span>₹{booking.remainingAmount?.toLocaleString()}</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className={`p-4 rounded-xl flex items-center gap-3 ${booking.paymentStatus === 'paid' ? 'bg-green-50' : 'bg-yellow-50'}`}>
-                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'}`}>
+                            <div className={`p-4 rounded-xl flex items-center gap-3 ${booking.paymentStatus === 'paid' ? 'bg-green-50' : booking.paymentStatus === 'partial' ? 'bg-orange-50' : 'bg-yellow-50'}`}>
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-600' : booking.paymentStatus === 'partial' ? 'bg-orange-100 text-orange-600' : 'bg-yellow-100 text-yellow-600'}`}>
                                     {booking.paymentStatus === 'paid' ? <CheckCircle size={20} /> : <FileText size={20} />}
                                 </div>
                                 <div>
                                     <p className="text-xs font-bold uppercase text-gray-500">Payment Status</p>
-                                    <p className={`font-bold ${booking.paymentStatus === 'paid' ? 'text-green-700' : 'text-yellow-700'}`}>
-                                        {booking.paymentStatus === 'paid' ? 'Paid Completely' : 'Pay at Hotel'}
+                                    <p className={`font-bold ${booking.paymentStatus === 'paid' ? 'text-green-700' : booking.paymentStatus === 'partial' ? 'text-orange-700' : 'text-yellow-700'}`}>
+                                        {booking.paymentStatus === 'paid' ? 'Paid Completely' : booking.paymentStatus === 'partial' ? 'Partially Paid (Prepaid)' : 'Pay at Hotel'}
                                     </p>
                                 </div>
                             </div>
@@ -300,12 +351,44 @@ const BookingConfirmationPage = () => {
 
                         {/* Cancel Booking Option */}
                         {(() => {
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            const checkIn = new Date(booking.checkInDate);
-                            checkIn.setHours(0, 0, 0, 0);
-                            const isCancellableTime = today < checkIn;
+                            // Industry Standard: Check if cancellation is allowed (at least 24 hours before check-in time)
+                            const now = new Date();
+                            const checkInDate = new Date(booking.checkInDate);
+                            
+                            // Get check-in time from property (default to 12:00 PM if not available)
+                            const checkInTime = property?.checkInTime || '12:00 PM';
+                            
+                            // Parse check-in time
+                            let hours = 12; // Default to 12 PM
+                            let minutes = 0;
+                            const timeStr = checkInTime.trim().toUpperCase();
+                            const isPM = timeStr.includes('PM');
+                            const timeMatch = timeStr.match(/(\d+):(\d+)/);
+                            
+                            if (timeMatch) {
+                                hours = parseInt(timeMatch[1], 10);
+                                minutes = parseInt(timeMatch[2], 10);
+                                if (isPM && hours !== 12) {
+                                    hours += 12;
+                                } else if (!isPM && hours === 12) {
+                                    hours = 0;
+                                }
+                            }
+                            
+                            // Set check-in date and time
+                            const checkInDateTime = new Date(checkInDate);
+                            checkInDateTime.setHours(hours, minutes, 0, 0);
+                            
+                            // Calculate difference in milliseconds
+                            const diffMs = checkInDateTime.getTime() - now.getTime();
+                            const diffHours = diffMs / (1000 * 60 * 60);
+                            
+                            // Allow cancellation only if at least 24 hours before check-in
+                            const isCancellableTime = diffHours >= 24;
                             const isActive = ['confirmed', 'pending'].includes(booking.bookingStatus);
+                            
+                            // Calculate remaining hours for display
+                            const hoursRemaining = Math.max(0, Math.ceil(diffHours));
 
                             if (!isActive) return null;
 
@@ -316,16 +399,32 @@ const BookingConfirmationPage = () => {
                                             onClick={async () => {
                                                 if (window.confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) {
                                                     try {
-                                                        const loadToast = toast.loading('Cancelling...');
-                                                        // Fallback ID usage: booking._id or booking.bookingId might be different depending on API
+                                                        const loadToast = toast.loading('Cancelling booking...');
                                                         const idToCancel = booking._id || booking.id;
-                                                        await bookingService.cancel(idToCancel);
+                                                        const response = await bookingService.cancel(idToCancel);
                                                         toast.dismiss(loadToast);
-                                                        toast.success('Booking cancelled successfully');
+                                                        
+                                                        // Show detailed success message
+                                                        let successMsg = 'Booking cancelled successfully';
+                                                        if (response.refundProcessed && response.refundAmount > 0) {
+                                                            successMsg += `. Refund of ₹${Number(response.refundAmount).toLocaleString()} will be processed.`;
+                                                        } else if (response.refundAmount > 0) {
+                                                            successMsg += `. Refund of ₹${Number(response.refundAmount).toLocaleString()} credited to your wallet.`;
+                                                        }
+                                                        toast.success(successMsg);
                                                         navigate('/bookings');
                                                     } catch (error) {
                                                         toast.dismiss();
-                                                        toast.error(error.response?.data?.message || 'Failed to cancel booking');
+                                                        const errorMsg = error.response?.data?.message || 'Failed to cancel booking';
+                                                        toast.error(errorMsg);
+                                                        
+                                                        // If it's a policy violation, show specific message
+                                                        if (error.response?.data?.code === 'CANCELLATION_POLICY_VIOLATION') {
+                                                            const hoursRemaining = error.response?.data?.hoursRemaining || 0;
+                                                            setTimeout(() => {
+                                                                toast.error(`Cancellation is only allowed at least 24 hours before check-in. Check-in is in ${hoursRemaining} hours.`, { duration: 5000 });
+                                                            }, 500);
+                                                        }
                                                     }
                                                 }
                                             }}
@@ -335,18 +434,12 @@ const BookingConfirmationPage = () => {
                                         </button>
                                     ) : (
                                         <div className="w-full bg-gray-50 border border-gray-200 text-gray-400 font-bold py-4 rounded-2xl text-center mt-4 text-xs print:hidden">
-                                            Cancellation unavailable (Policy: Up to 1 day before Check-in)
+                                            Cancellation unavailable (Policy: Must cancel at least 24 hours before check-in. Check-in is in {hoursRemaining} hours)
                                         </div>
                                     )}
                                 </>
                             );
                         })()}
-
-                        {booking.bookingStatus === 'cancelled' && (
-                            <div className="w-full bg-red-50 border border-red-100 text-red-600 font-bold py-4 rounded-2xl text-center mt-4">
-                                This booking has been cancelled
-                            </div>
-                        )}
                     </div>
 
                 </div>

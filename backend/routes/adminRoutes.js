@@ -34,15 +34,22 @@ import {
   markAllAdminNotificationsRead,
   deleteAdminNotifications,
   getFinanceStats,
-  uploadImage
+  adminUpdateProperty,
+  uploadPropertyImage
 } from '../controllers/adminController.js';
 import { protect, authorizedRoles } from '../middlewares/authMiddleware.js';
-import upload from '../utils/multer.js';
+import { uploadDocuments } from '../utils/multer.js';
+import { getWithdrawals, updateWithdrawalStatus, adminAdjustWallet } from '../controllers/walletController.js';
 
 const router = express.Router();
 
 router.use(protect);
 router.use(authorizedRoles('admin', 'superadmin'));
+
+// Withdrawal Management
+router.get('/withdrawals', getWithdrawals);
+router.put('/withdrawals/:id/status', updateWithdrawalStatus);
+router.post('/wallet/adjust', adminAdjustWallet);
 
 // Notifications
 router.get('/notifications', getAdminNotifications);
@@ -72,6 +79,7 @@ router.delete('/delete-hotel', deleteHotel);
 router.get('/user-details/:id', getUserDetails);
 router.get('/partner-details/:id', getPartnerDetails);
 router.put('/verify-documents', verifyPropertyDocuments);
+router.put('/update-property/:id', adminUpdateProperty);
 router.get('/hotel-details/:id', getHotelDetails);
 router.get('/booking-details/:id', getBookingDetails);
 router.put('/booking-status', updateBookingStatus);
@@ -82,6 +90,6 @@ router.get('/contact-messages', getContactMessages);
 router.put('/contact-messages/:id/status', updateContactStatus);
 router.get('/platform-settings', getPlatformSettings);
 router.put('/platform-settings', updatePlatformSettings);
-router.post('/upload-image', upload.single('images'), uploadImage);
+router.post('/upload-image', uploadDocuments.array('images', 20), uploadPropertyImage);
 
 export default router;

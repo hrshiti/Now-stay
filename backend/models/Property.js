@@ -17,21 +17,12 @@ const propertySchema = new mongoose.Schema({
   contactNumber: { type: String },
   propertyType: {
     type: String,
-    enum: ["villa", "resort", "hotel", "hostel", "pg", "homestay", "tent"],
     required: true
   },
-
-  // Dynamic Category (Optional)
-  dynamicCategory: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "PropertyCategory",
-    default: null
-  },
-
-  // Flexible Category-Specific Details (Added for Tent/Glamping support)
-  structureDetails: {
-    type: Object,
-    default: {} // Stores: tentType, bathroomType, electricityInfo, etc.
+  propertyTemplate: {
+    type: String,
+    enum: ["villa", "resort", "hotel", "hostel", "pg", "homestay", "tent"],
+    required: true
   },
 
   pgType: {
@@ -44,8 +35,27 @@ const propertySchema = new mongoose.Schema({
     enum: ["boys", "girls", "mixed"]
   },
 
+  tentType: {
+    type: String,
+    enum: ["luxury", "standard", "dome", "safari", "bell"]
+  },
+
+  washroomType: {
+    type: String,
+    enum: ["attached", "shared", "external"]
+  },
+
+  viewType: {
+    type: String,
+    enum: ["hill", "lake", "forest", "desert", "none"]
+  },
+
   hostLivesOnProperty: { type: Boolean, default: false },
-  familyFriendly: { type: Boolean, default: false },
+  suitability: {
+    type: String,
+    enum: ["Couple Friendly", "Family Friendly", "Both", "none"],
+    default: "none"
+  },
 
   resortType: {
     type: String,
@@ -59,12 +69,11 @@ const propertySchema = new mongoose.Schema({
   starRating: {
     type: Number,
     min: 1,
-    max: 7
+    max: 5
   },
 
   activities: [String],
 
-  description: String,
   shortDescription: String,
 
   // OWNER

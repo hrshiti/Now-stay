@@ -19,6 +19,16 @@ export const propertyService = {
     }
   },
 
+  // Categories
+  getCategories: async () => {
+    try {
+      const response = await api.get('/categories');
+      return handleResponse(response);
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+
   // Helper to get location
   getCurrentLocation: () => {
     return new Promise((resolve, reject) => {

@@ -96,7 +96,7 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
 
     try {
       const formData = new FormData();
-      formData.append('files', file);
+      formData.append('images', file);
 
       console.log('Uploading file...', file.name);
 
@@ -313,20 +313,8 @@ const StepOwnerDetails = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      {/* Name Section */}
-      <div>
-        <label className="block text-xs font-bold text-gray-500 mb-1">Owner Name</label>
-        <input
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#004F4D]"
-          placeholder="Registered owner full name"
-          onFocus={handleFocus}
-          value={formData.owner_name}
-          onChange={e => handleChange('owner_name', e.target.value)}
-        />
-      </div>
-
       {/* Aadhaar Section */}
-      <div className="space-y-4 pt-2 border-t border-gray-100">
+      <div className="space-y-4 pt-2">
         <h3 className="text-sm font-black text-[#003836]">Aadhaar Verification</h3>
 
         <div>
@@ -388,54 +376,6 @@ const StepOwnerDetails = () => {
         </div>
       </div>
 
-      {/* Address Section */}
-      <div className="space-y-3 pt-2 border-t border-gray-100">
-        <h3 className="text-sm font-black text-[#003836]">Owner Address</h3>
-
-        <input
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm mb-2 focus:outline-none focus:ring-2 focus:ring-[#004F4D]"
-          placeholder="Street address (House No, Building, Street)"
-          onFocus={handleFocus}
-          value={formData.owner_address?.street || ''}
-          onChange={e => handleAddressChange('street', e.target.value)}
-        />
-
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#004F4D]"
-            placeholder="City"
-            onFocus={handleFocus}
-            value={formData.owner_address?.city || ''}
-            onChange={e => handleAddressChange('city', e.target.value)}
-          />
-          <input
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#004F4D]"
-            placeholder="State"
-            onFocus={handleFocus}
-            value={formData.owner_address?.state || ''}
-            onChange={e => handleAddressChange('state', e.target.value)}
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#004F4D]"
-            placeholder="Pincode"
-            maxLength={6}
-            onFocus={handleFocus}
-            value={formData.owner_address?.zipCode || ''}
-            onChange={e => handleAddressChange('zipCode', e.target.value.replace(/\D/g, '').slice(0, 6))}
-          />
-          <input
-            className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#004F4D]"
-            placeholder="Country"
-            readOnly
-            onFocus={handleFocus}
-            value={formData.owner_address?.country || 'India'}
-            onChange={e => handleAddressChange('country', e.target.value)}
-          />
-        </div>
-      </div>
     </div>
   );
 };

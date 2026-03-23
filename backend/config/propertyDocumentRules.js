@@ -1,35 +1,22 @@
-// config/propertyDocumentRules.js
 export const PROPERTY_DOCUMENTS = {
   villa: [
-    "Ownership Proof",
-    "Government ID",
-    "Electricity Bill"
+    "Trade License"
   ],
   resort: [
-    "Trade License",
-    "GST Certificate",
-    "FSSAI License",
-    "Fire Safety Certificate"
+    "Trade License"
   ],
   hotel: [
-    "Trade License",
-    "GST Certificate",
-    "FSSAI License",
-    "Fire Safety Certificate"
+    "Trade License"
   ],
   hostel: [
     "Trade License",
-    "Fire Safety Certificate",
-    "Police Verification",
-    "Owner ID Proof"
+    "Rent Agreement"
   ],
   pg: [
-    "Rent Agreement",
-    "Owner ID Proof"
+    "Trade License",
+    "Rent Agreement"
   ],
   homestay: [
-    "Ownership Proof",
-    "Local Body Registration",
-    "Government ID"
+    "Electricity Bill"
   ]
 };

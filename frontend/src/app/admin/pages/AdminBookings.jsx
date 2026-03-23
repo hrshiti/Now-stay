@@ -79,29 +79,27 @@ const AdminBookings = () => {
 
         try {
             setLoading(true);
-            const [bookingsRes, statsRes] = await Promise.all([
-                adminService.getBookings({
-                    page,
-                    limit,
-                    search: currentFilters.search,
-                    status: currentFilters.status
-                }),
-                adminService.getDashboardStats()
-            ]);
+            const bookingsRes = await adminService.getBookings({
+                page,
+                limit,
+                search: currentFilters.search,
+                status: currentFilters.status
+            });
 
             if (bookingsRes.success) {
                 setBookings(bookingsRes.bookings);
                 setTotalBookings(bookingsRes.total);
                 setTotalPages(Math.ceil(bookingsRes.total / limit));
-            }
 
-            if (statsRes.success) {
-                setGlobalStats({
-                    total: statsRes.stats.totalBookings,
-                    confirmed: statsRes.stats.confirmedBookings,
-                    completed: 0,
-                    pending: statsRes.stats.totalBookings - statsRes.stats.confirmedBookings
-                });
+                if (bookingsRes.stats) {
+                    setGlobalStats({
+                        total: bookingsRes.stats.total,
+                        confirmed: bookingsRes.stats.confirmed,
+                        pending: bookingsRes.stats.pending,
+                        cancelled: bookingsRes.stats.cancelled,
+                        completed: bookingsRes.stats.completed
+                    });
+                }
             }
         } catch (error) {
             if (error.response?.status !== 401) {
@@ -208,10 +206,11 @@ const AdminBookings = () => {
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <MetricCard label="Total Bookings" value={globalStats.total} subLabel="GLOBAL" loading={loading} />
                 <MetricCard label="Confirmed" value={globalStats.confirmed} subLabel="LIVE" loading={loading} />
                 <MetricCard label="Pending Approval" value={globalStats.pending} subLabel="NEEDS ACTION" loading={loading} />
+                <MetricCard label="Cancelled" value={globalStats.cancelled || 0} subLabel="INACTIVE" loading={loading} />
             </div>
 
             <div className="bg-white p-4 border border-gray-200 rounded-2xl shadow-sm flex flex-col md:flex-row gap-4 items-center">

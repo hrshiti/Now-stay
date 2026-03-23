@@ -9,6 +9,8 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import axios from 'axios';
 import Joi from 'joi';
+import notificationService from '../services/notificationService.js';
+import emailService from '../services/emailService.js';
 
 // Initialize Razorpay
 let razorpay;
@@ -63,13 +65,15 @@ try {
  * @access  Private (Partner/User)
  */
 // Helper to get wallet role based on user role and query preference
-const getWalletRole = (userRole, viewAs) => {
-  // If viewAs is provided explicitly, use it (Admins and Partners can switch)
+const getWalletRole = (req, viewAs) => {
+  // 1. Explicit preference from query (Admins/Partners can switch)
   if (viewAs === 'user') return 'user';
   if (viewAs === 'partner') return 'partner';
   if (viewAs === 'admin') return 'admin';
 
-  // Default based on current authenticated user role
+  // 2. Default based on authenticated user role
+  const userRole = req.user?.role?.toLowerCase();
+  if (userRole === 'admin' || userRole === 'superadmin') return 'admin';
   return userRole || 'user';
 };
 
@@ -81,10 +85,18 @@ const getWalletRole = (userRole, viewAs) => {
 export const getWallet = async (req, res) => {
   try {
     const { viewAs, ownerId } = req.query;
-    const role = getWalletRole(req.user.role, viewAs);
+    const role = getWalletRole(req, viewAs);
 
-    // Determine whose wallet to fetch: ownerId (if admin) or current user
-    const targetUserId = (req.user.role === 'admin' && ownerId) ? ownerId : req.user._id;
+    const userQueryId = req.query.ownerId || req.query.partnerId || req.query.userId;
+    const userRoleStr = req.user.role?.toLowerCase();
+    const isAdmin = userRoleStr === 'admin' || userRoleStr === 'superadmin';
+    const targetUserId = (isAdmin && userQueryId) ? userQueryId : req.user._id;
+
+    console.log(`[getWallet] AuthUser: ${req.user.name}, AuthRole: ${req.user.role}, isAdmin: ${isAdmin}, queryId: ${userQueryId}, target: ${targetUserId}, viewAs: ${viewAs}`);
+
+    if (isAdmin && userQueryId) {
+      console.log(`[getWallet] Admin viewing specific wallet for user: ${userQueryId}`);
+    }
 
     let wallet = await Wallet.findOne({ partnerId: targetUserId, role });
 
@@ -137,15 +149,22 @@ export const getWallet = async (req, res) => {
  */
 export const getTransactions = async (req, res) => {
   try {
-    const { page = 1, limit = 20, type, viewAs, ownerId } = req.query;
+    const { page = 1, limit = 20, type, viewAs } = req.query;
     const skip = (page - 1) * limit;
-    const role = getWalletRole(req.user.role, viewAs);
+    const role = getWalletRole(req, viewAs);
 
     // Determine whose transactions to fetch
-    const targetUserId = (req.user.role === 'admin' && ownerId) ? ownerId : req.user._id;
+    const userQueryId = req.query.ownerId || req.query.partnerId || req.query.userId;
+    const userRoleStr = req.user.role?.toLowerCase();
+    const isAdmin = userRoleStr === 'admin' || userRoleStr === 'superadmin';
+    const targetUserId = (isAdmin && userQueryId) ? userQueryId : req.user._id;
+
+    console.log(`[getTransactions] AuthRole: ${userRoleStr}, isAdmin: ${isAdmin}, queryId: ${userQueryId}, target: ${targetUserId}`);
 
     // Find the specific wallet first to get its ID
     const wallet = await Wallet.findOne({ partnerId: targetUserId, role });
+
+    console.log(`[getTransactions] Found Wallet: ${wallet?._id || 'NONE'} for TargetUser: ${targetUserId} with Role: ${role}`);
 
     // 1. Fetch Wallet Transactions (Top-ups, etc) linked to this specific WALLET
     const txQuery = { walletId: wallet?._id };
@@ -153,6 +172,7 @@ export const getTransactions = async (req, res) => {
 
     let walletTransactions = [];
     if (wallet) {
+      console.log(`[getTransactions] Querying transactions for walletId: ${wallet._id}`);
       walletTransactions = await Transaction.find(txQuery)
         .sort({ createdAt: -1 })
         .limit(100)
@@ -169,7 +189,7 @@ export const getTransactions = async (req, res) => {
       };
 
       const bookings = await Booking.find(bookingQuery)
-        .populate('propertyId', 'name')
+        .populate('propertyId', 'propertyName')
         .sort({ createdAt: -1 })
         .limit(100)
         .lean();
@@ -180,7 +200,7 @@ export const getTransactions = async (req, res) => {
         bookingId: b.bookingId, // Add Booking ID
         type: b.paymentStatus === 'refunded' ? 'credit' : 'debit',
         amount: b.totalAmount,
-        description: `Booking: ${b.propertyId?.propertyName || b.propertyId?.name || 'Hotel Stay'}`,
+        description: `Booking: ${b.propertyId?.propertyName || 'Hotel Stay'}`,
         status: b.bookingStatus,
         paymentStatus: b.paymentStatus,
         isBooking: true,
@@ -219,10 +239,15 @@ export const getTransactions = async (req, res) => {
  * @route   POST /api/wallet/withdraw
  * @access  Private (Partner)
  */
+/**
+ * @desc    Request withdrawal (Manual Approval Flow)
+ * @route   POST /api/wallet/withdraw
+ * @access  Private (Partner)
+ */
 export const requestWithdrawal = async (req, res) => {
   try {
     const { amount } = req.body;
-    const role = getWalletRole(req.user.role, 'partner'); // Withdrawals only for partners generally
+    const role = getWalletRole(req, 'partner');
 
     // Validation
     if (!amount || amount < PaymentConfig.minWithdrawalAmount) {
@@ -250,133 +275,33 @@ export const requestWithdrawal = async (req, res) => {
     // Check bank details
     if (!wallet.bankDetails?.accountNumber || !wallet.bankDetails?.ifscCode) {
       return res.status(400).json({
-        message: 'Please add your bank details first'
+        message: 'Please update your bank details before withdrawing.'
       });
     }
 
-    // --- RAZORPAY PAYOUT FLOW (Using Direct API Requests via Axios) ---
-    // Why? The razorpay-node SDK instance often lacks Payouts resources ('contacts', 'fund_accounts')
-    // depending on version/config, leading to "undefined" errors. Direct API is reliable.
-
-    // 1. Get Partner Details for Contact
-    const Partner = (await import('../models/Partner.js')).default;
-    const partner = await Partner.findById(req.user._id);
-    if (!partner) return res.status(404).json({ message: 'Partner not found' });
-
-    // Auth Header
-    const authHeader = 'Basic ' + Buffer.from(`${PaymentConfig.razorpayKeyId}:${PaymentConfig.razorpayKeySecret}`).toString('base64');
-    const razorpayBaseUrl = 'https://api.razorpay.com/v1';
-
-    // Helper for API Calls
-    const rpRequest = async (method, endpoint, data) => {
-      try {
-        // Verify Account Number is not a placeholder
-        if (endpoint === '/payouts' && data.account_number?.includes('XXXX')) {
-          throw new Error("Invalid Razorpay Account Number. Please update RAZORPAY_ACCOUNT_NUMBER in your .env file with your actual RazorpayX Virtual Account Number.");
-        }
-
-        console.log(`📡 Razorpay API Call: ${method.toUpperCase()} ${razorpayBaseUrl}${endpoint}`);
-
-        const result = await axios({
-          method,
-          url: `${razorpayBaseUrl}${endpoint}`,
-          headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json'
-          },
-          data
-        });
-        return result.data;
-      } catch (error) {
-        const errorDesc = error.response?.data?.error?.description || error.message;
-        console.error(`❌ Razorpay API Error (${endpoint}):`, {
-          status: error.response?.status,
-          description: errorDesc,
-          details: error.response?.data
-        });
-        throw new Error(errorDesc);
-      }
-    };
-
-    let payoutId = null;
-    let payoutStatus = 'pending';
-    let rzpError = null;
-
-    // Execute Razorpay Flow but don't block wallet logic on failure (For Testing)
-    try {
-      // 2. Create/Get Razorpay Contact
-      if (!wallet.razorpayContactId) {
-        const contact = await rpRequest('post', '/contacts', {
-          name: partner.name,
-          email: partner.email,
-          contact: partner.phone,
-          type: "vendor",
-          reference_id: partner._id.toString(),
-          notes: { role: 'partner' }
-        });
-        wallet.razorpayContactId = contact.id;
-        await wallet.save();
-      }
-
-      // 3. Create/Get Razorpay Fund Account
-      if (!wallet.razorpayFundAccountId) {
-        const fundAccount = await rpRequest('post', '/fund_accounts', {
-          contact_id: wallet.razorpayContactId,
-          account_type: "bank_account",
-          bank_account: {
-            name: wallet.bankDetails.accountHolderName || partner.name,
-            ifsc: wallet.bankDetails.ifscCode,
-            account_number: wallet.bankDetails.accountNumber
-          }
-        });
-        wallet.razorpayFundAccountId = fundAccount.id;
-        await wallet.save();
-      }
-
-      // 4. Create Payout
-      const payout = await rpRequest('post', '/payouts', {
-        account_number: PaymentConfig.razorpayAccountNumber,
-        fund_account_id: wallet.razorpayFundAccountId,
-        amount: Math.round(amount * 100), // in paise
-        currency: "INR",
-        mode: "IMPS",
-        purpose: "payout",
-        queue_if_low_balance: true,
-        reference_id: `WD-${Date.now()}`,
-        narration: "Rukkoin Withdrawal"
-      });
-      payoutId = payout.id;
-      payoutStatus = payout.status;
-    } catch (errMessage) {
-      console.warn("⚠️ Razorpay Payout Step Failed (Proceeding for Test):", errMessage.message);
-      rzpError = errMessage.message;
-      payoutStatus = 'pending_payout'; // Indicate it hasn't reached Razorpay but wallet is deducted
-    }
-
-    // 5. Deduct Wallet & Create Records
+    // Generate IDs
     const withdrawalId = 'WD' + Date.now() + Math.floor(Math.random() * 1000);
 
+    // Create Withdrawal Record (Status: Pending for Admin to Approve)
     const withdrawal = await Withdrawal.create({
       withdrawalId,
       partnerId: req.user._id,
       walletId: wallet._id,
       amount,
       bankDetails: wallet.bankDetails,
-      status: (payoutStatus === 'processed' || payoutStatus === 'pending_payout') ? 'completed' : 'pending',
-      razorpayPayoutId: payoutId,
-      razorpayFundAccountId: wallet.razorpayFundAccountId,
+      status: 'pending', // Manual approval required
       processingDetails: {
-        remarks: rzpError ? `RZP Error: ${rzpError}` : 'Initiated from partner app',
-        initiatedAt: new Date()
+        initiatedAt: new Date(),
+        remarks: 'Waiting for admin approval'
       }
     });
 
-    // Deduct amount from wallet (Immediate deduction)
+    // Deduct amount from wallet immediately (Lock funds)
     wallet.balance -= amount;
-    wallet.totalWithdrawals += amount;
+    wallet.totalWithdrawals += amount; // We count it, if rejected we'll reverse
     await wallet.save();
 
-    // Create transaction
+    // Create Debit Transaction
     const transaction = await Transaction.create({
       walletId: wallet._id,
       partnerId: req.user._id,
@@ -387,19 +312,30 @@ export const requestWithdrawal = async (req, res) => {
       balanceAfter: wallet.balance,
       description: `Withdrawal Request (${withdrawal.withdrawalId})`,
       reference: withdrawal.withdrawalId,
-      status: (payoutStatus === 'processed' || payoutStatus === 'pending_payout') ? 'completed' : 'pending',
+      status: 'pending',
       metadata: {
-        withdrawalId: withdrawal.withdrawalId,
-        razorpayPayoutId: payoutId
+        withdrawalId: withdrawal.withdrawalId
       }
     });
 
     withdrawal.transactionId = transaction._id;
     await withdrawal.save();
 
+    // NOTIFICATION: To Partner
+    notificationService.sendToPartner(req.user._id, {
+      title: 'Withdrawal Requested ⏳',
+      body: `Your request for ₹${amount} is pending approval.`
+    }, { type: 'withdrawal_pending', withdrawalId: withdrawal._id }).catch(e => console.error(e));
+
+    // NOTIFICATION: To Admin
+    notificationService.sendToAdmins({
+      title: 'New Withdrawal Request',
+      body: `Partner ${req.user.name} requested ₹${amount}.`
+    }, { type: 'withdrawal_request', partnerId: req.user._id, amount }).catch(e => console.error(e));
+
     res.json({
       success: true,
-      message: 'Withdrawal initiated successfully via Razorpay',
+      message: 'Withdrawal request submitted successfully.',
       withdrawal: {
         id: withdrawal.withdrawalId,
         amount: withdrawal.amount,
@@ -410,25 +346,41 @@ export const requestWithdrawal = async (req, res) => {
 
   } catch (error) {
     console.error('Request Withdrawal Error:', error);
-    res.status(500).json({ message: error.message || 'Failed to process withdrawal request' });
+    res.status(500).json({ message: error.message || 'Failed to process withdrawal' });
   }
 };
 
 /**
  * @desc    Get withdrawal history
  * @route   GET /api/wallet/withdrawals
- * @access  Private (Partner)
+ * @access  Private (Partner/Admin)
  */
 export const getWithdrawals = async (req, res) => {
   try {
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 20, status, viewAs } = req.query;
 
-    // Withdrawals are tied to partnerId directly in Withdrawal schema usually
-    // But logically only partners withdraw.
-    const query = { partnerId: req.user._id };
-    if (status) query.status = status;
+    const userRoleStr = req.user.role?.toLowerCase();
+    const isAdmin = userRoleStr === 'admin' || userRoleStr === 'superadmin';
+    const userQueryId = req.query.ownerId || req.query.partnerId || req.query.userId;
+
+    // Filter Logic:
+    // 1. If Admin & No specific user requested -> Show ALL (for finance dashboard)
+    // 2. If Admin & Specific user -> Show that user's withdrawals
+    // 3. If Partner -> Show only their own
+
+    let query = {};
+
+    if (isAdmin && !userQueryId) {
+      // Show all, maybe filter by status
+    } else {
+      const targetUserId = (isAdmin && userQueryId) ? userQueryId : req.user._id;
+      query.partnerId = targetUserId;
+    }
+
+    if (status && status !== 'All Status') query.status = status;
 
     const withdrawals = await Withdrawal.find(query)
+      .populate('partnerId', 'name email phone') // Populate partner details for Admin
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
@@ -453,13 +405,121 @@ export const getWithdrawals = async (req, res) => {
 };
 
 /**
+ * @desc    Update withdrawal status (Admin)
+ * @route   PUT /api/admin/withdrawals/:id
+ * @access  Private (Admin)
+ */
+export const updateWithdrawalStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks, transactionHash } = req.body; // status: 'completed' | 'rejected'
+
+    if (!['completed', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status. Use "completed" or "rejected".' });
+    }
+
+    const withdrawal = await Withdrawal.findById(id).populate('partnerId');
+    if (!withdrawal) {
+      return res.status(404).json({ message: 'Withdrawal request not found' });
+    }
+
+    if (withdrawal.status !== 'pending') {
+      return res.status(400).json({ message: `Withdrawal is already ${withdrawal.status}` });
+    }
+
+    const wallet = await Wallet.findById(withdrawal.walletId);
+    if (!wallet) {
+      return res.status(404).json({ message: 'Associated wallet not found' });
+    }
+
+    const transaction = await Transaction.findById(withdrawal.transactionId);
+
+    if (status === 'completed') {
+      // 1. Mark Withdrawal as Completed
+      withdrawal.status = 'completed';
+      withdrawal.processingDetails = {
+        ...withdrawal.processingDetails,
+        processedAt: new Date(),
+        completedAt: new Date(),
+        utrNumber: transactionHash,
+        remarks: remarks || 'Processed by Admin'
+      };
+      await withdrawal.save();
+
+      // 2. Update Transaction Status
+      if (transaction) {
+        transaction.status = 'completed';
+        transaction.metadata.bankTransferUTR = transactionHash;
+        await transaction.save();
+      }
+
+      // Notify Partner
+      notificationService.sendToPartner(withdrawal.partnerId._id, {
+        title: 'Withdrawal Successful ✅',
+        body: `Your withdrawal of ₹${withdrawal.amount} has been processed.`
+      }, { type: 'withdrawal_completed', withdrawalId: withdrawal._id });
+
+    } else if (status === 'rejected') {
+      // 1. Mark Withdrawal as Failed/Rejected
+      withdrawal.status = 'failed';
+      withdrawal.processingDetails = {
+        ...withdrawal.processingDetails,
+        failedAt: new Date(),
+        remarks: remarks || 'Rejected by Admin'
+      };
+      await withdrawal.save();
+
+      // 2. Mark Original Debit Transaction as Failed
+      if (transaction) {
+        transaction.status = 'failed';
+        await transaction.save();
+      }
+
+      // 3. REFUND THE AMOUNT (Create Credit Transaction)
+      wallet.balance += withdrawal.amount;
+      wallet.totalWithdrawals -= withdrawal.amount; // Adjust total withdrawals stats
+      await wallet.save();
+
+      await Transaction.create({
+        walletId: wallet._id,
+        partnerId: withdrawal.partnerId._id,
+        modelType: 'Partner',
+        type: 'credit',
+        category: 'refund',
+        amount: withdrawal.amount,
+        balanceAfter: wallet.balance,
+        description: `Refund: Withdrawal Rejected (${withdrawal.withdrawalId})`,
+        reference: withdrawal.withdrawalId,
+        status: 'completed'
+      });
+
+      // Notify Partner
+      notificationService.sendToPartner(withdrawal.partnerId._id, {
+        title: 'Withdrawal Rejected ❌',
+        body: `Your withdrawal of ₹${withdrawal.amount} was rejected. Amount refunded.`
+      }, { type: 'withdrawal_rejected', withdrawalId: withdrawal._id });
+    }
+
+    res.json({
+      success: true,
+      message: `Withdrawal ${status} successfully`,
+      withdrawal
+    });
+
+  } catch (error) {
+    console.error('Update Withdrawal Status Error:', error);
+    res.status(500).json({ message: 'Failed to update status' });
+  }
+};
+
+/**
  * @desc    Update bank details
  * @route   PUT /api/wallet/bank-details
  * @access  Private (Partner)
  */
 export const updateBankDetails = async (req, res) => {
   try {
-    const role = getWalletRole(req.user.role, 'partner');
+    const role = getWalletRole(req, 'partner');
 
     // Validation Schema
     const bankSchema = Joi.object({
@@ -533,7 +593,7 @@ export const updateBankDetails = async (req, res) => {
  */
 export const deleteBankDetails = async (req, res) => {
   try {
-    const role = getWalletRole(req.user.role, 'partner');
+    const role = getWalletRole(req, 'partner');
     const wallet = await Wallet.findOne({ partnerId: req.user._id, role });
 
     if (!wallet) {
@@ -564,11 +624,16 @@ export const deleteBankDetails = async (req, res) => {
  */
 export const getWalletStats = async (req, res) => {
   try {
-    const { viewAs, ownerId } = req.query;
-    const role = getWalletRole(req.user.role, viewAs);
+    const { viewAs } = req.query;
+    const role = getWalletRole(req, viewAs);
 
     // Determine whose stats to fetch
-    const targetUserId = (req.user.role === 'admin' && ownerId) ? ownerId : req.user._id;
+    const userQueryId = req.query.ownerId || req.query.partnerId || req.query.userId;
+    const userRoleStr = req.user.role?.toLowerCase();
+    const isAdmin = userRoleStr === 'admin' || userRoleStr === 'superadmin';
+    const targetUserId = (isAdmin && userQueryId) ? userQueryId : req.user._id;
+
+    console.log(`[getWalletStats] AuthRole: ${userRoleStr}, isAdmin: ${isAdmin}, queryId: ${userQueryId}, target: ${targetUserId}`);
 
     console.log(`[getWalletStats] Target User ID: ${targetUserId}, Role: ${role}, ViewAs: ${req.query.viewAs}`);
 
@@ -744,8 +809,8 @@ export const createAddMoneyOrder = async (req, res) => {
  */
 export const verifyAddMoneyPayment = async (req, res) => {
   try {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount } = req.body;
-    const role = getWalletRole(req.user.role);
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, amount, viewAs } = req.body;
+    const role = getWalletRole(req, viewAs);
 
     const sign = razorpay_order_id + '|' + razorpay_payment_id;
     const expectedSign = crypto
@@ -757,11 +822,16 @@ export const verifyAddMoneyPayment = async (req, res) => {
       return res.status(400).json({ message: 'Invalid payment signature' });
     }
 
+    // Determine whose wallet to credit: ownerId (if admin) or current user
+    const userRole = req.user.role?.toLowerCase();
+    const isAdmin = userRole === 'admin' || userRole === 'superadmin';
+    const targetUserId = (isAdmin && req.body.ownerId) ? req.body.ownerId : req.user._id;
+
     // Find correct wallet based on ROLE
-    let wallet = await Wallet.findOne({ partnerId: req.user._id, role });
+    let wallet = await Wallet.findOne({ partnerId: targetUserId, role });
     if (!wallet) {
       wallet = await Wallet.create({
-        partnerId: req.user._id,
+        partnerId: targetUserId,
         role,
         balance: 0
       });
@@ -775,6 +845,15 @@ export const verifyAddMoneyPayment = async (req, res) => {
       'topup'
     );
 
+    // NOTIFICATION: Notify User/Partner/Admin
+    const notificationTargetId = targetUserId;
+    const notificationRole = role; // Use wallet role (user/partner/admin) directly for consistency
+
+    notificationService.sendToUser(notificationTargetId, {
+      title: 'Wallet Topped Up! 💰',
+      body: `₹${amount} has been added to your wallet successfully.`
+    }, { type: 'wallet_topup', amount }, notificationRole).catch(e => console.error('Topup push failed:', e));
+
     res.json({
       success: true,
       message: 'Wallet credited successfully',
@@ -784,5 +863,71 @@ export const verifyAddMoneyPayment = async (req, res) => {
   } catch (error) {
     console.error('Verify Add Money Error:', error);
     res.status(500).json({ message: 'Payment verification failed' });
+  }
+};
+
+/**
+ * @desc    Adjust wallet (Admin only)
+ * @route   POST /api/admin/wallet/adjust
+ * @access  Private (Admin)
+ */
+export const adminAdjustWallet = async (req, res) => {
+  try {
+    const { targetUserId, action, amount, reason, viewAs } = req.body; // action: 'credit' | 'debit'
+
+    // 1. Validation
+    if (!targetUserId || !action || !amount || parseFloat(amount) <= 0) {
+      return res.status(400).json({ message: 'Missing or invalid parameters' });
+    }
+
+    if (!['credit', 'debit'].includes(action)) {
+      return res.status(400).json({ message: 'Action must be "credit" or "debit"' });
+    }
+
+    const role = viewAs === 'partner' ? 'partner' : 'user';
+    const amountNum = parseFloat(amount);
+
+    // 2. Find Wallet
+    let wallet = await Wallet.findOne({ partnerId: targetUserId, role });
+    if (!wallet) {
+      // Create wallet if it doesn't exist for adjustments
+      wallet = await Wallet.create({
+        partnerId: targetUserId,
+        role,
+        balance: 0
+      });
+    }
+
+    // 3. Perform Adjustment using existing model methods
+    const description = `Admin Adjustment: ${reason || 'No reason provided'}`;
+    const reference = `ADJ-${Date.now()}`;
+
+    if (action === 'credit') {
+      await wallet.credit(amountNum, description, reference, 'admin_adjustment');
+    } else {
+      await wallet.debit(amountNum, description, reference, 'admin_adjustment');
+    }
+
+    // 4. Notifications
+    const notificationPayload = {
+      title: action === 'credit' ? 'Wallet Credited 💰' : 'Wallet Debited 💸',
+      body: `${action === 'credit' ? '₹' + amountNum + ' added to' : '₹' + amountNum + ' deducted from'} your wallet. Reason: ${reason || 'Admin adjustment'}.`
+    };
+
+    if (role === 'partner') {
+      notificationService.sendToPartner(targetUserId, notificationPayload, { type: 'admin_wallet_adjustment', action }).catch(e => console.error(e));
+    } else {
+      notificationService.sendToUser(targetUserId, notificationPayload, { type: 'admin_wallet_adjustment', action }).catch(e => console.error(e));
+    }
+
+    res.json({
+      success: true,
+      message: `Wallet ${action}ed successfully`,
+      newBalance: wallet.balance
+    });
+
+  } catch (error) {
+    console.error('Admin Adjust Wallet Error:', error);
+    res.status(500).json({ message: error.message || 'Failed to adjust wallet balance' });
   }
 };

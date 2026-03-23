@@ -11,30 +11,45 @@ export const api = axios.create({
 // Interceptor to add Token and Log
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const adminToken = localStorage.getItem('adminToken');
+
+  // Preference to adminToken if on /admin path, else normal token
+  const effectiveToken = window.location.pathname.startsWith('/admin') ? (adminToken || token) : (token || adminToken);
+
+  if (effectiveToken) {
+    config.headers.Authorization = `Bearer ${effectiveToken}`;
   }
-  console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`, config.data || '');
+  console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
   return config;
 }, (error) => Promise.reject(error));
 
-// Interceptor to handle 401 Unauthorized (Token invalid/expired)
+// Interceptor to handle account blocked (403 isBlocked) — tokens never expire so 401 does NOT auto-logout
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response ? error.response.status : null;
     const isBlocked = error.response?.data?.isBlocked;
 
-    if (status === 401 || (status === 403 && isBlocked)) {
-      // Clear invalid token and redirect if not already on auth pages
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/otp')) {
-        console.warn("Session expired or account blocked. Redirecting to login...");
-        if (window.location.pathname.includes('/hotel/')) {
-          window.location.href = '/hotel/login';
-        } else {
-          window.location.href = '/';
+    // Only force-logout if account is explicitly blocked by admin
+    if (status === 403 && isBlocked) {
+      const isAdminPath = window.location.pathname.startsWith('/admin');
+
+      if (isAdminPath) {
+        localStorage.removeItem('adminToken');
+        if (!window.location.pathname.includes('/login')) {
+          console.warn("Admin account blocked. Redirecting to admin login...");
+          window.location.href = '/admin/login';
+        }
+      } else {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/otp')) {
+          console.warn("Account blocked by admin. Redirecting to login...");
+          if (window.location.pathname.includes('/hotel/')) {
+            window.location.href = '/hotel/login';
+          } else {
+            window.location.href = '/';
+          }
         }
       }
     }
@@ -44,10 +59,20 @@ api.interceptors.response.use(
 
 // User Auth Services
 export const authService = {
-  // Send OTP
-  sendOtp: async (phone, type = 'login', role = 'user') => {
+  // Check if phone or email exists
+  checkExists: async (phone, email, role = 'user') => {
     try {
-      const response = await api.post('/auth/send-otp', { phone, type, role });
+      const response = await api.post('/auth/validate-exists', { phone, email, role });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Send OTP
+  sendOtp: async (phone, type = 'login', role = 'user', email = '') => {
+    try {
+      const response = await api.post('/auth/send-otp', { phone, type, role, email });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -57,7 +82,9 @@ export const authService = {
   // Verify OTP & Login/Register
   verifyOtp: async (data) => {
     try {
-      const response = await api.post('/auth/verify-otp', data);
+      const { verifyOnly, ...payload } = data;
+      const url = verifyOnly ? '/auth/verify-otp?verifyOnly=true' : '/auth/verify-otp';
+      const response = await api.post(url, payload);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -230,18 +257,9 @@ export const bookingService = {
 
 // Property Services (New)
 export const propertyService = {
-  create: async (propertyData) => {
+  create: async (data) => {
     try {
-      const response = await api.post('/properties', propertyData);
-      return response.data;
-    } catch (error) {
-      throw error.response?.data || error.message;
-    }
-  },
-  createProperty: async (propertyData) => {
-    try {
-      // Ensure structureDetails is included if present
-      const response = await api.post('/properties', propertyData);
+      const response = await api.post('/properties', data);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -460,6 +478,24 @@ export const hotelService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+  // Update FCM Token for Partner
+  updateFcmToken: async (fcmToken, platform = 'web') => {
+    try {
+      const response = await api.put('/partners/fcm-token', { fcmToken, platform });
+      return response.data;
+    } catch (error) {
+      console.warn('Partner FCM Token Update Failed:', error);
+      return null;
+    }
+  },
+  deletePartnerAccount: async () => {
+    try {
+      const response = await api.delete('/partners/profile');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
 
@@ -535,6 +571,14 @@ export const userService = {
   markAllNotificationsRead: async () => {
     try {
       const response = await api.put('/users/notifications/read-all');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  deleteAccount: async () => {
+    try {
+      const response = await api.delete('/users/profile');
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

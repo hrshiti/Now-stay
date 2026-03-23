@@ -13,7 +13,7 @@ import upload from '../utils/multer.js';
 const router = express.Router();
 
 // Upload routes
-router.post('/upload', protect, authorizedRoles('partner', 'admin'), upload.array('images', 10), uploadImages);
+router.post('/upload', protect, authorizedRoles('partner', 'admin'), upload.array('images', 20), uploadImages);
 router.post('/upload-base64', protect, authorizedRoles('partner', 'admin'), uploadImagesBase64);
 router.post('/delete-image', protect, authorizedRoles('partner', 'admin'), deleteImage);
 router.post('/location/address', protect, authorizedRoles('partner', 'admin'), getAddressFromCoordinates);

@@ -13,7 +13,8 @@ const AdminBookingDetail = () => {
     const { id } = useParams();
     const [booking, setBooking] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', type: 'danger', onConfirm: () => { } });
+    const [cancelReason, setCancelReason] = useState('');
+    const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', type: 'danger', confirmText: 'Confirm', onConfirm: () => { }, extraContent: null });
 
     const fetchBookingDetails = async () => {
         try {
@@ -35,6 +36,25 @@ const AdminBookingDetail = () => {
     }, [id]);
 
     // Status Colors
+    const handleDownloadReceipt = async () => {
+        try {
+            const data = await adminService.downloadReceipt(id);
+            // Create a blob URL and trigger download
+            const url = window.URL.createObjectURL(new Blob([data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `receipt-${booking?.bookingId || id}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            link.parentNode.removeChild(link);
+            toast.success('Receipt downloaded successfully');
+        } catch (error) {
+            console.error('Download Receipt Error:', error);
+            toast.error('Failed to download receipt');
+        }
+    };
+
+    // Status Colors
     const getStatusColor = (s) => {
         if (s === 'confirmed') return 'text-green-600 bg-green-50 border-green-200 font-bold';
         if (s === 'cancelled') return 'text-red-600 bg-red-50 border-red-200 font-bold';
@@ -43,21 +63,42 @@ const AdminBookingDetail = () => {
     };
 
     const handleCancel = () => {
+        setCancelReason('');
         setModalConfig({
             isOpen: true,
             title: 'Cancel Booking?',
             message: `Are you sure you want to cancel booking #${booking.bookingId}? This will trigger any applicable refund processes.`,
             type: 'danger',
             confirmText: 'Yes, Cancel Booking',
+            extraContent: (
+                <div className="space-y-1">
+                    <label className="block text-xs font-bold text-gray-600 uppercase tracking-tight">Reason for cancellation (optional)</label>
+                    <textarea
+                        className="w-full min-h-[72px] px-3 py-2 border border-gray-200 rounded-lg text-sm resize-y focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                        placeholder="e.g. Guest request, property unavailable..."
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                    />
+                </div>
+            ),
             onConfirm: async () => {
                 try {
-                    const res = await adminService.updateBookingStatus(booking._id, 'cancelled');
+                    const res = await adminService.updateBookingStatus(booking._id, 'cancelled', cancelReason);
                     if (res.success) {
-                        toast.success('Booking cancelled successfully');
+                        let msg = 'Booking cancelled successfully.';
+                        if (res.walletStatus) {
+                            const ws = res.walletStatus;
+                            if (ws.userRefunded != null) msg += ` User refunded: ₹${Number(ws.userRefunded).toLocaleString()}.`;
+                            if (ws.partnerDeducted != null && ws.partnerDeducted > 0) msg += ` Partner wallet deducted: ₹${Number(ws.partnerDeducted).toLocaleString()}.`;
+                            if (ws.partnerRefunded != null) msg += ` Partner commission refunded: ₹${Number(ws.partnerRefunded).toLocaleString()}.`;
+                        }
+                        toast.success(msg);
+                        setCancelReason('');
                         fetchBookingDetails();
                     }
-                } catch {
-                    toast.error('Failed to cancel booking');
+                } catch (err) {
+                    const apiMsg = err?.response?.data?.message;
+                    toast.error(apiMsg || 'Failed to cancel booking');
                 }
             }
         });
@@ -106,7 +147,9 @@ const AdminBookingDetail = () => {
                     <p className="text-[10px] font-bold uppercase text-gray-400 tracking-tight">Booked on {new Date(booking.createdAt).toLocaleDateString()} • {new Date(booking.createdAt).toLocaleTimeString()}</p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-[10px] font-bold uppercase text-gray-700 hover:bg-gray-50 transition-colors">
+                    <button
+                        onClick={handleDownloadReceipt}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-[10px] font-bold uppercase text-gray-700 hover:bg-gray-50 transition-colors">
                         <Download size={14} /> Download Receipt
                     </button>
                     {((booking.bookingStatus || booking.status) === 'confirmed' || (booking.bookingStatus || booking.status) === 'pending') && (
@@ -189,20 +232,59 @@ const AdminBookingDetail = () => {
 
                             <div className="flex justify-between text-xs font-bold uppercase">
                                 <span className="text-gray-400">Taxes & Fees</span>
-                                <span className="text-gray-900">Included</span>
+                                <span className="text-gray-900">₹{booking.taxes?.toLocaleString() || 0}</span>
                             </div>
                             <div className="flex justify-between text-xs font-bold uppercase">
-                                <span className="text-emerald-600">Payment Status</span>
-                                <span className="text-emerald-700">PAID</span>
+                                <span className="text-gray-400">Payment Method</span>
+                                <span className="text-gray-900">{booking.paymentMethod?.replace(/_/g, ' ') || 'N/A'}</span>
                             </div>
+
+                            {booking.paymentMethod === 'pay_at_hotel' && (
+                                <div className="flex justify-between text-xs font-bold uppercase">
+                                    <span className="text-gray-400">Platform Commission</span>
+                                    <span className="text-amber-600">₹{((booking.adminCommission || 0) + (booking.taxes || 0)).toLocaleString()}</span>
+                                </div>
+                            )}
+
+                            <div className="flex justify-between text-xs font-bold uppercase">
+                                <span className={booking.paymentStatus === 'paid' ? 'text-emerald-600' : booking.paymentStatus === 'refunded' ? 'text-gray-500' : booking.paymentStatus === 'partial' ? 'text-orange-600' : 'text-amber-600'}>
+                                    Payment Status
+                                </span>
+                                <span className={booking.paymentStatus === 'paid' ? 'text-emerald-700' : booking.paymentStatus === 'refunded' ? 'text-gray-600' : booking.paymentStatus === 'partial' ? 'text-orange-700' : 'text-amber-700'}>
+                                    {booking.paymentStatus === 'partial' ? 'PARTIAL (PREPAID)' : (booking.paymentStatus?.toUpperCase() || 'PENDING')}
+                                </span>
+                            </div>
+
+                            {booking.paymentMethod === 'prepaid' && (
+                                <>
+                                    <div className="flex justify-between text-xs font-bold uppercase mt-2 pt-2 border-t border-gray-50">
+                                        <span className="text-gray-500">Advance Paid (30%)</span>
+                                        <span className="text-green-600 font-extrabold">₹{booking.amountPaid?.toLocaleString() || 0}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs font-bold uppercase pb-2">
+                                        <span className="text-gray-500">Pending Balance (Hotel)</span>
+                                        <span className="text-orange-600 font-extrabold">₹{booking.remainingAmount?.toLocaleString() || 0}</span>
+                                    </div>
+                                </>
+                            )}
                             <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
                                 <span className="font-bold text-gray-900 uppercase text-xs">Total Amount</span>
                                 <span className="text-xl font-bold text-gray-900">₹{booking.totalAmount?.toLocaleString()}</span>
                             </div>
                             <div className="pt-2">
-                                <span className="flex items-center justify-center w-full py-1.5 bg-green-50 text-green-700 text-[10px] font-bold rounded border border-green-100 uppercase">
-                                    <ShieldCheck size={12} className="mr-1" /> Payment Verified
-                                </span>
+                                {booking.paymentStatus === 'paid' ? (
+                                    <span className="flex items-center justify-center w-full py-1.5 bg-green-50 text-green-700 text-[10px] font-bold rounded border border-green-100 uppercase">
+                                        <ShieldCheck size={12} className="mr-1" /> Payment Verified
+                                    </span>
+                                ) : booking.paymentStatus === 'refunded' ? (
+                                    <span className="flex items-center justify-center w-full py-1.5 bg-gray-50 text-gray-700 text-[10px] font-bold rounded border border-gray-100 uppercase">
+                                        <ArrowRight size={12} className="mr-1" /> Amount Refunded
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center justify-center w-full py-1.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded border border-amber-100 uppercase">
+                                        <Clock size={12} className="mr-1" /> Awaiting Payment
+                                    </span>
+                                )}
                             </div>
                         </div>
                     </div>

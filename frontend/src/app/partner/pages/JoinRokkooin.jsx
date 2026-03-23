@@ -47,7 +47,7 @@ const JoinRokkooin = () => {
 
     const handleExit = () => {
         resetForm();
-        navigate('/partner/dashboard');
+        navigate('/hotel/dashboard');
     };
 
     const handleNext = async () => {

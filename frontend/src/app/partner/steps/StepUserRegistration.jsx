@@ -1,3 +1,4 @@
+import React from 'react';
 import usePartnerStore from '../store/partnerStore';
 import { Link } from 'react-router-dom';
 
@@ -44,6 +45,7 @@ const StepUserRegistration = () => {
           />
         </div>
       </div>
+
       <div className="flex items-start gap-2 mt-2">
         <input
           id="terms"
@@ -53,7 +55,7 @@ const StepUserRegistration = () => {
           onChange={e => handleChange('termsAccepted', e.target.checked)}
         />
         <label htmlFor="terms" className="text-xs text-gray-500 leading-relaxed">
-          I agree to the <Link to="/terms?audience=partner" className="text-[#004F4D] font-bold hover:underline">Terms & Conditions</Link> and <Link to="/privacy?audience=partner" className="text-[#004F4D] font-bold hover:underline">Privacy Policy</Link> of Rukko Partner.
+          I agree to the <Link to="/terms?audience=partner" className="text-[#004F4D] font-bold hover:underline">Terms & Conditions</Link> and <Link to="/privacy?audience=partner" className="text-[#004F4D] font-bold hover:underline">Privacy Policy</Link> of NowStay Partner.
         </label>
       </div>
     </div>
@@ -61,4 +63,3 @@ const StepUserRegistration = () => {
 };
 
 export default StepUserRegistration;
-

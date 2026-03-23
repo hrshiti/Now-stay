@@ -56,8 +56,8 @@ const PartnerContact = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <PartnerHeader title="Contact Partner Support" subtitle="Reach the Rukko team" />
+    <div className="min-h-screen bg-gray-50">
+      <PartnerHeader title="Contact Partner Support" subtitle="Reach the Rukko team" showMenu={false} />
 
       <main ref={contentRef} className="max-w-3xl mx-auto px-4 pt-6 space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -67,7 +67,12 @@ const PartnerContact = () => {
             </div>
             <div>
               <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Email</p>
-              <p className="text-xs text-gray-500">rukkoohub@gmail.com</p>
+              <a
+                href="mailto:rukkoohub@gmail.com"
+                className="text-xs text-gray-500 hover:text-[#004F4D] transition-colors break-all"
+              >
+                rukkoohub@gmail.com
+              </a>
             </div>
           </div>
           <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
@@ -76,7 +81,12 @@ const PartnerContact = () => {
             </div>
             <div>
               <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Phone</p>
-              <p className="text-xs text-gray-500">6232314147</p>
+              <a
+                href="tel:+916232314147"
+                className="text-xs text-gray-500 hover:text-[#004F4D] transition-colors"
+              >
+                6232314147
+              </a>
             </div>
           </div>
         </div>

@@ -10,6 +10,9 @@ import morgan from 'morgan';
 // Initialize Firebase
 initializeFirebase();
 
+// Initialize Cron Jobs
+import './services/cronService.js';
+
 
 
 const app = express();
@@ -23,9 +26,8 @@ const io = new Server(server, {
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://rukkoo.in',
-      'https://nowstay.in',
-      'https://www.nowstay.in',
-      'nowstay.in'
+      'https://www.rukkoo.in',
+      'https://rukkoo-project.vercel.app'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH']
@@ -76,9 +78,10 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:5173',
       'http://127.0.0.1:5173',
-
-      'https://nowstay.in',
-      'https://www.nowstay.in'
+      'https://rukkoo.in',
+      'https://www.rukkoo.in',
+      'https://rukkoo-project.vercel.app',
+      'https://rukooin-ijcelh2vj-appzetos-projects-73814664.vercel.app'
     ];
     // Add 172.16-31 range (often used by hotspots) and 10.x
     const isLocalNetwork =
@@ -114,9 +117,10 @@ import availabilityRoutes from './routes/availabilityRoutes.js';
 import hotelRoutes from './routes/hotelRoutes.js';
 import referralRoutes from './routes/referralRoutes.js';
 import faqRoutes from './routes/faqRoutes.js';
-import categoryRoutes from './routes/categoryRoutes.js';
+import partnerRoutes from './routes/partnerRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
-import whatsappBookingRoutes from './routes/whatsappBookingRoutes.js';
+import categoryRoutes from './routes/categoryRoutes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -133,9 +137,10 @@ app.use('/api/availability', availabilityRoutes);
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/referrals', referralRoutes);
 app.use('/api/faqs', faqRoutes);
-app.use('/api/categories', categoryRoutes);
+app.use('/api/partners', partnerRoutes);
+app.use('/api/blogs', blogRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/book-hotel', whatsappBookingRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

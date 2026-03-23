@@ -11,8 +11,8 @@ import mongoose from 'mongoose';
 import emailService from '../services/emailService.js';
 import notificationService from '../services/notificationService.js';
 import smsService from '../utils/smsService.js';
+import whatsappService from '../utils/whatsappService.js';
 import referralService from '../services/referralService.js';
-import { sendWhatsAppMessage } from '../services/whatsapp.js';
 
 // Initialize Razorpay
 let razorpay;
@@ -127,10 +127,17 @@ export const verifyPayment = async (req, res) => {
       booking = await Booking.findById(bookingId);
       if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-      booking.paymentStatus = 'paid';
+      if (booking.paymentMethod !== 'prepaid') {
+        booking.paymentStatus = 'paid';
+        booking.paymentMethod = 'razorpay'; // Only overwrite if not prepaid
+        booking.amountPaid = booking.totalAmount;
+        booking.remainingAmount = 0;
+      } else {
+        booking.paymentStatus = 'partial';
+        // For prepaid, amountPaid and remainingAmount are already set correctly in createBooking
+      }
       booking.bookingStatus = 'confirmed';
       booking.paymentId = razorpay_payment_id;
-      booking.paymentMethod = 'razorpay';
       await booking.save();
 
     } else {
@@ -171,12 +178,13 @@ export const verifyPayment = async (req, res) => {
         adminCommission: Number(notes.adminCommission),
         partnerPayout: Number(notes.partnerPayout),
         totalAmount: Number(notes.totalAmount),
-        paymentStatus: 'paid', // Immediately Paid
+        prepaidDiscount: Number(notes.prepaidDiscountAmount) || 0,
+        amountPaid: Number(notes.advanceAmount) || Number(notes.totalAmount),
+        remainingAmount: Number(notes.remainingAmount) || (Number(notes.totalAmount) - (Number(notes.amountPaid) || 0)) || 0,
+        paymentStatus: notes.paymentMethod === 'prepaid' ? 'partial' : 'paid',
         bookingStatus: 'confirmed',
-        paymentMethod: 'online', // or 'razorpay'
-        paymentId: razorpay_payment_id,
-        amountPaid: Number(notes.totalAmount), // Full amount paid
-        remainingAmount: 0 // Full amount paid
+        paymentMethod: notes.paymentMethod || 'online',
+        paymentId: razorpay_payment_id
       });
 
       const walletUsedAmount = Number(notes.walletUsedAmount) || 0;
@@ -204,16 +212,23 @@ export const verifyPayment = async (req, res) => {
       paymentMeta.partnerPayout = Number(notes.partnerPayout);
       paymentMeta.adminCommission = Number(notes.adminCommission);
       paymentMeta.taxes = Number(notes.taxes);
+      paymentMeta.advanceAmount = Number(notes.advanceAmount);
     } else if (booking) {
       paymentMeta.partnerPayout = booking.partnerPayout;
       paymentMeta.adminCommission = booking.adminCommission;
       paymentMeta.taxes = booking.taxes;
+      paymentMeta.advanceAmount = booking.amountPaid;
     }
 
-    // --- PARTNER WALLET CREDIT LOGIC (Common) ---
+    // --- PARTNER & ADMIN WALLET SETTLEMENT (Common) ---
     try {
       const fullBooking = await Booking.findById(booking._id).populate('propertyId');
       const partnerId = fullBooking.propertyId?.partnerId;
+
+      const payout = paymentMeta.partnerPayout || 0;
+      const commission = paymentMeta.adminCommission || 0;
+      const taxes = paymentMeta.taxes || 0;
+      const totalAdminCredit = commission + taxes;
 
       if (partnerId) {
         let partnerWallet = await Wallet.findOne({ partnerId: partnerId, role: 'partner' });
@@ -224,26 +239,45 @@ export const verifyPayment = async (req, res) => {
             balance: 0
           });
         }
+        
+        let paymentMethodCheck = booking ? booking.paymentMethod : (notes?.paymentMethod);
 
-        const payout = paymentMeta.partnerPayout || 0;
-
-        if (payout > 0) {
-          await partnerWallet.credit(payout, `Payment for Booking #${booking.bookingId}`, booking.bookingId, 'booking_payment');
-          console.log(`[Payment] Credited ₹${payout} to Partner ${partnerId}`);
+        if (paymentMethodCheck === 'prepaid') {
+          // Prepaid Logic: Platform collected only advanceAmount
+          const advanceAmount = paymentMeta.advanceAmount || 0;
+          const partnerShareOfAdvance = advanceAmount - totalAdminCredit;
+          
+          if (partnerShareOfAdvance > 0) {
+            await partnerWallet.credit(partnerShareOfAdvance, `Advance Payment for Booking #${booking.bookingId}`, booking.bookingId, 'booking_payment');
+            console.log(`[Payment] Credited Prepaid Advance Share ₹${partnerShareOfAdvance} to Partner ${partnerId}`);
+          } else if (partnerShareOfAdvance < 0) {
+            // Admin commission + taxes is more than the 30% advance, so partner owes platform from the remaining amount they will collect at hotel.
+            const shortfall = Math.abs(partnerShareOfAdvance);
+            await partnerWallet.debit(shortfall, `Commission Shortfall for Prepaid Booking #${booking.bookingId}`, booking.bookingId, 'commission_deduction');
+            console.log(`[Payment] Deducted Commission Shortfall ₹${shortfall} from Partner ${partnerId}`);
+          }
+        } else {
+          // Standard Logic: Platform collected full amount
+          // Amount without tax (Base + Extra - Discount)
+          const taxableAmount = (paymentMeta.partnerPayout || 0) + (paymentMeta.adminCommission || 0);
+          
+          // A. Credit Partner the amount WITHOUT tax
+          if (taxableAmount > 0) {
+            await partnerWallet.credit(taxableAmount, `Payment for Booking #${booking.bookingId}`, booking.bookingId, 'booking_payment');
+            console.log(`[Payment] Credited Taxable Amount ₹${taxableAmount} to Partner ${partnerId}`);
+  
+            // B. Debit Partner ONLY the Commission (Tax is already handled by not crediting it)
+            if (commission > 0) {
+              await partnerWallet.debit(commission, `Platform Commission for Booking #${booking.bookingId}`, booking.bookingId, 'commission_deduction');
+              console.log(`[Payment] Deducted Commission ₹${commission} from Partner ${partnerId}`);
+            }
+          }
         }
       }
-    } catch (err) { console.error("Wallet Credit Failed", err); }
 
-    // --- ADMIN WALLET CREDIT LOGIC ---
-    try {
-      const commission = paymentMeta.adminCommission || 0;
-      const taxes = paymentMeta.taxes || 0;
-      const totalAdminCredit = commission + taxes;
-
+      // --- ADMIN WALLET CREDIT ---
       if (totalAdminCredit > 0) {
         const AdminUser = mongoose.model('User');
-        // Find *any* admin to associate the system wallet with (since Wallet requires a partnerId/userId)
-        // In a real system, you'd have a specific "System User" or "Super Admin".
         const adminUser = await AdminUser.findOne({ role: { $in: ['admin', 'superadmin'] } }).sort({ createdAt: 1 });
 
         if (adminUser) {
@@ -260,15 +294,13 @@ export const verifyPayment = async (req, res) => {
           // Credit the wallet (Commission + Tax)
           await adminWallet.credit(totalAdminCredit, `Commission (₹${commission}) & Tax (₹${taxes}) for Booking #${booking.bookingId}`, booking.bookingId, 'commission_tax');
           console.log(`[Payment] Credited ₹${totalAdminCredit} (Comm: ${commission}, Tax: ${taxes}) to Admin Wallet`);
-        } else {
-          console.warn("⚠️ No Admin user found. Cannot credit commission/tax.");
         }
       }
-    } catch (err) { console.error("Admin Wallet Credit Failed", err); }
+    } catch (err) { console.error("Wallet Settlement Logic Failed", err); }
 
-    // Return full populated booking for confirmation page
+    // Return full populated booking for confirmation page (partnerId.phone for Contact Property)
     const populatedBooking = await Booking.findById(booking._id)
-      .populate('propertyId')
+      .populate({ path: 'propertyId', populate: { path: 'partnerId', select: 'phone' } })
       .populate('roomTypeId')
       .populate('userId', 'name email phone');
 
@@ -290,37 +322,41 @@ export const verifyPayment = async (req, res) => {
         }, { type: 'booking', bookingId: populatedBooking._id }, 'user').catch(err => console.error('User Push failed:', err));
       }
 
-      // 3. Partner Notifications
-      if (property && property.partnerId) {
-        // Push
-        notificationService.sendToUser(property.partnerId, {
-          title: 'New Booking Alert!',
-          body: `1 Night, ${populatedBooking.guests.adults} Guests. Check App.`
-        }, { type: 'new_booking', bookingId: populatedBooking._id }, 'partner').catch(err => console.error('Partner Push failed:', err));
-
-        // SMS
-        // Fetch partner user to get phone
-        const PartnerModel = mongoose.model('Partner');
-        const partnerUser = await PartnerModel.findById(property.partnerId);
-        if (partnerUser && partnerUser.phone) {
-          smsService.sendSMS(partnerUser.phone, `New Booking Alert! Booking #${populatedBooking.bookingId} at ${property.name}. Check App for details.`)
-            .catch(err => console.error('Partner SMS failed:', err));
-        }
+      // WhatsApp Notification
+      if (populatedBooking.bookingStatus === 'confirmed') {
+        whatsappService.sendBookingConfirmation(populatedBooking).catch(err => console.error('WhatsApp trigger failed:', err));
       }
 
-      // 4. WhatsApp Confirmation
-      if (user && user.phone) {
-        sendWhatsAppMessage({
-          phone: user.phone,
-          name: user.name,
-          hotel: property.propertyName || property.name,
-          date: populatedBooking.checkInDate.toISOString().split('T')[0],
-          mapLink: property.location?.coordinates && property.location.coordinates.length === 2
-            ? `https://www.google.com/maps/dir/?api=1&destination=${property.location.coordinates[1]},${property.location.coordinates[0]}`
-            : ''
-        })
-          .then(msgId => console.log(`[WA] Payment Success Message Sent: ${msgId}`))
-          .catch(err => console.error('[WA] Payment Success Message Failed:', err.message));
+      // 3. Partner Notifications
+      if (property && property.partnerId) {
+        const isNewBooking = !req.body.bookingId;
+
+        // Push
+        notificationService.sendToPartner(property.partnerId, {
+          title: isNewBooking ? 'New Booking Alert!' : 'Payment Confirmed',
+          body: isNewBooking ? `New booking for ${populatedBooking.guests.adults} Guests. Check App.` : `Payment for Booking #${populatedBooking.bookingId} marked as received.`
+        }, { type: isNewBooking ? 'new_booking' : 'payment_confirmed', bookingId: populatedBooking._id }).catch(err => console.error('Partner Push failed:', err));
+
+        // Fetch partner user to get phone and email
+        const PartnerModel = mongoose.model('Partner');
+        const partnerUser = await PartnerModel.findById(property.partnerId);
+
+        if (partnerUser) {
+          // SMS
+          if (partnerUser.phone) {
+            smsService.sendSMS(partnerUser.phone, isNewBooking ? `New Booking Alert! Booking #${populatedBooking.bookingId} at ${property.name}. Check App for details.` : `Payment Received! Booking #${populatedBooking.bookingId} payment confirmed.`)
+              .catch(err => console.error('Partner SMS failed:', err));
+          }
+
+          // Email
+          if (partnerUser.email) {
+            if (isNewBooking) {
+              emailService.sendPartnerNewBookingEmail(partnerUser, user, populatedBooking).catch(e => console.error(e));
+            } else {
+              emailService.sendPartnerBookingStatusUpdateEmail(partnerUser, populatedBooking, 'Payment Received Online').catch(e => console.error(e));
+            }
+          }
+        }
       }
     } catch (notifErr) {
       console.error('Notification Trigger Custom Error:', notifErr);

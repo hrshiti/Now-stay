@@ -1,7 +1,9 @@
 import React from 'react';
-import { Home, Briefcase, Search, Wallet, User } from 'lucide-react';
+import { Home, Briefcase, Navigation, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { propertyService } from '../../services/propertyService';
+import { toast } from 'react-hot-toast';
 
 const BottomNavbar = () => {
     const navigate = useNavigate();
@@ -10,24 +12,38 @@ const BottomNavbar = () => {
     const navItems = [
         { name: 'Home', icon: Home, route: '/' },
         { name: 'Bookings', icon: Briefcase, route: '/bookings' },
-        { name: 'Search', icon: Search, route: '/search' },
-        { name: 'Wallet', icon: Wallet, route: '/wallet' },
+        { name: 'Near By', icon: Navigation, route: null, handler: 'nearBy' },
         { name: 'Profile', icon: User, route: '/profile/edit' },
     ];
 
     const getActiveTab = (path) => {
         if (path === '/') return 'Home';
         if (path.includes('bookings')) return 'Bookings';
-        if (path.includes('listings') || path.includes('search')) return 'Search';
-        if (path.includes('wallet')) return 'Wallet';
+        if (path.includes('search') && new URLSearchParams(location.search).get('lat')) return 'Near By';
         if (path.includes('profile')) return 'Profile';
         return 'Home';
     };
 
     const activeTab = getActiveTab(location.pathname);
 
+    const handleNearBy = async () => {
+        try {
+            toast.loading('Getting your location...');
+            const loc = await propertyService.getCurrentLocation();
+            toast.dismiss();
+            navigate(`/search?lat=${loc.lat}&lng=${loc.lng}&radius=50&sort=distance`);
+        } catch (error) {
+            toast.dismiss();
+            toast.error('Could not get location. Please enable permissions.');
+        }
+    };
+
     const handleNavClick = (item) => {
-        navigate(item.route);
+        if (item.handler === 'nearBy') {
+            handleNearBy();
+        } else {
+            navigate(item.route);
+        }
     };
 
     return (

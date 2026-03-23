@@ -3,16 +3,15 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
 import { CheckCircle, FileText, Home, Image, Plus, Trash2, MapPin, Search, BedDouble, Wifi, Snowflake, Coffee, ShowerHead, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, X, Clock, Loader2, Camera } from 'lucide-react';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
 const REQUIRED_DOCS_VILLA = [
-  { type: "ownership_proof", name: "Ownership Proof" },
-  { type: "government_id", name: "Government ID" },
-  { type: "electricity_bill", name: "Electricity Bill" }
+  { type: "trade_license", name: "Trade License", required: true },
+  { type: "electricity_bill", name: "Electricity Bill", required: false }
 ];
 const VILLA_AMENITIES = ["Private Pool", "Garden", "Parking", "Kitchen", "WiFi"];
-const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in"];
+const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in", "Visitors not allowed"];
 const ROOM_AMENITIES = [
   { key: 'pool', label: 'Private Pool', icon: Snowflake },
   { key: 'wifi', label: 'WiFi', icon: Wifi },
@@ -40,10 +39,17 @@ const AddVillaWizard = () => {
   const [uploading, setUploading] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isFlutter, setIsFlutter] = useState(false);
+  const [customHouseRulesDraft, setCustomHouseRulesDraft] = useState('');
 
   useEffect(() => {
     setIsFlutter(isFlutterApp());
   }, []);
+
+  useEffect(() => {
+    if (step === 7) {
+      setCustomHouseRulesDraft(propertyForm.houseRules.filter(r => !HOUSE_RULES_OPTIONS.includes(r)).join(', '));
+    }
+  }, [step]);
   const coverImageFileInputRef = useRef(null);
   const propertyImagesFileInputRef = useRef(null);
   const roomImagesFileInputRef = useRef(null);
@@ -63,8 +69,9 @@ const AddVillaWizard = () => {
     checkOutTime: '',
     contactNumber: '',
     cancellationPolicy: '',
+    suitability: 'none',
     houseRules: [],
-    documents: REQUIRED_DOCS_VILLA.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+    documents: REQUIRED_DOCS_VILLA.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
   });
 
   const [roomTypes, setRoomTypes] = useState([]);
@@ -101,6 +108,33 @@ const AddVillaWizard = () => {
     }, 1000);
     return () => clearTimeout(timeout);
   }, [step, propertyForm, roomTypes, createdProperty]);
+
+  // --- WebView History / Back Button Fix ---
+  useEffect(() => {
+    const currentHash = window.location.hash;
+    const targetHash = `#step${step}`;
+    if (currentHash !== targetHash) {
+      if (step === 1 && (!currentHash || currentHash === '#step1')) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      } else {
+        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      }
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#step')) {
+        const hashStep = parseInt(hash.replace('#step', ''), 10);
+        if (!isNaN(hashStep)) {
+          setStep(hashStep);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const updatePropertyForm = (path, value) => {
     setPropertyForm(prev => {
@@ -162,9 +196,10 @@ const AddVillaWizard = () => {
           cancellationPolicy: prop.cancellationPolicy || '',
           houseRules: prop.houseRules || [],
           contactNumber: prop.contactNumber || '',
+          suitability: prop.suitability || 'none',
           documents: docs.length
-            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '' }))
-            : REQUIRED_DOCS_VILLA.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '', required: REQUIRED_DOCS_VILLA.find(rd => rd.type === (d.type || d.name))?.required || false }))
+            : REQUIRED_DOCS_VILLA.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
         });
         if (rts.length) {
           setRoomTypes(
@@ -407,8 +442,8 @@ const AddVillaWizard = () => {
       console.log(`Processing ${fileArray.length} images...`);
 
       for (const file of fileArray) {
-        if (!file.type.startsWith('image/')) {
-          throw new Error(`File ${file.name} is not an image`);
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+          throw new Error(`File ${file.name} must be an image or PDF`);
         }
         if (file.size > 10 * 1024 * 1024) {
           throw new Error(`Image ${file.name} is too large. Maximum 10MB allowed.`);
@@ -468,11 +503,11 @@ const AddVillaWizard = () => {
 
   const handleCameraUpload = async (type, onDone) => {
     try {
-      setUploading(type);
       setError('');
       console.log('[Camera] Opening Flutter camera...');
 
       const result = await openFlutterCamera();
+      setUploading(type);
 
       if (!result.success || !result.base64) {
         throw new Error('Camera capture failed');
@@ -482,13 +517,15 @@ const AddVillaWizard = () => {
 
       const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
 
-      const res = await hotelService.uploadImagesBase64([result]);
+      const res = await hotelService.uploadImagesBase64(result.images || [result]);
 
       if (res && res.success && res.files && res.files.length > 0) {
         if (isSingle) {
           onDone(res.files[0].url);
         } else {
-          onDone([res.files[0].url]);
+          // Pass all uploaded URLs
+          const urls = res.files.map(f => f.url);
+          onDone(urls);
         }
       } else {
         throw new Error('Upload failed');
@@ -632,8 +669,15 @@ const AddVillaWizard = () => {
     setStep(7);
   };
 
+  const syncHouseRulesFromDraft = () => {
+    const customRules = customHouseRulesDraft.split(',').map(s => s.trim()).filter(Boolean);
+    const selectedPredefined = propertyForm.houseRules.filter(r => HOUSE_RULES_OPTIONS.includes(r));
+    updatePropertyForm('houseRules', [...selectedPredefined, ...customRules]);
+  };
+
   const nextFromRules = () => {
     setError('');
+    syncHouseRulesFromDraft();
     if (!propertyForm.checkInTime || !propertyForm.checkOutTime) {
       setError('Check-in and Check-out times are required');
       return;
@@ -643,7 +687,11 @@ const AddVillaWizard = () => {
 
   const nextFromDocuments = () => {
     setError('');
-    // Optional
+    const missing = propertyForm.documents.filter(d => d.required && !d.fileUrl);
+    if (missing.length > 0) {
+      setError(`Please upload required documents: ${missing.map(d => d.name).join(', ')}`);
+      return;
+    }
     setStep(9);
   };
 
@@ -651,8 +699,11 @@ const AddVillaWizard = () => {
     setLoading(true);
     setError('');
     try {
+      const searchParams = new URLSearchParams(location.search);
+      const queryType = searchParams.get('type');
       const propertyPayload = {
-        propertyType: 'villa',
+        propertyType: queryType || 'villa',
+        propertyTemplate: 'villa',
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
         description: propertyForm.description,
@@ -676,6 +727,7 @@ const AddVillaWizard = () => {
         checkInTime: propertyForm.checkInTime,
         checkOutTime: propertyForm.checkOutTime,
         cancellationPolicy: propertyForm.cancellationPolicy,
+        suitability: propertyForm.suitability,
         houseRules: propertyForm.houseRules,
         documents: propertyForm.documents
       };
@@ -748,6 +800,7 @@ const AddVillaWizard = () => {
       localStorage.removeItem(STORAGE_KEY);
       navigate(-1);
     } else {
+      if (step === 7) syncHouseRulesFromDraft();
       setStep(prev => prev - 1);
     }
   };
@@ -769,6 +822,7 @@ const AddVillaWizard = () => {
       setRoomTypes([]);
     } else if (step === 7) {
       setPropertyForm(prev => ({ ...prev, checkInTime: '', checkOutTime: '', cancellationPolicy: '', houseRules: [] }));
+      setCustomHouseRulesDraft('');
     } else if (step === 8) {
       updatePropertyForm('documents', REQUIRED_DOCS_VILLA.map(d => ({ type: d.type, name: d.name, fileUrl: '' })));
     }
@@ -845,18 +899,17 @@ const AddVillaWizard = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Short Tagline</label>
-                  <input
-                    className="input"
-                    placeholder="e.g. Luxury 3BHK Villa with Private Pool"
-                    maxLength={60}
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</label>
+                  <textarea
+                    className="input min-h-[100px] leading-relaxed"
+                    placeholder="Brief summary (e.g. Luxury 3BHK Villa with Private Pool)"
                     value={propertyForm.shortDescription}
                     onChange={e => updatePropertyForm('shortDescription', e.target.value)}
                   />
-                  <div className="flex justify-end text-[10px] text-gray-400">{propertyForm.shortDescription.length}/60</div>
+                  <div className="flex justify-end text-[10px] text-gray-400">{propertyForm.shortDescription.length} chars</div>
                 </div>
 
-                <div className="space-y-1">
+                <div className="hidden">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">About Property</label>
                   <textarea
                     className="input min-h-[120px] leading-relaxed"
@@ -869,11 +922,47 @@ const AddVillaWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Contact Number (For Guest Inquiries)</label>
                   <input
+                    type="tel"
                     className="input"
-                    placeholder="e.g. +91 9876543210"
+                    placeholder="9876543210"
                     value={propertyForm.contactNumber}
-                    onChange={e => updatePropertyForm('contactNumber', e.target.value)}
+                    onChange={e => {
+                      // Filter non-digits and limit to 10 digits
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', digitsOnly);
+                    }}
+                    maxLength={10}
                   />
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length === 10 && (
+                    /^[6-9]\d{9}$/.test(propertyForm.contactNumber) ? (
+                      <p className="text-[10px] text-green-600 font-medium flex items-center gap-1 mt-1">
+                        <span>✓</span> Valid mobile number
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-red-500 font-medium flex items-center gap-1 mt-1">
+                        <span>⚠</span> Mobile number must start with 6, 7, 8, or 9
+                      </p>
+                    )
+                  )}
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
+                    <p className="text-[10px] text-gray-500 font-medium mt-1">
+                      {10 - propertyForm.contactNumber.length} more digit(s) required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Suitability</label>
+                  <select
+                    className="input w-full appearance-none"
+                    value={propertyForm.suitability}
+                    onChange={e => updatePropertyForm('suitability', e.target.value)}
+                  >
+                    <option value="none">None</option>
+                    <option value="Couple Friendly">Couple Friendly</option>
+                    <option value="Family Friendly">Family Friendly</option>
+                    <option value="Both">Both</option>
+                  </select>
                 </div>
               </div>
 
@@ -1150,9 +1239,9 @@ const AddVillaWizard = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cover Image</label>
-                  <div
+                  <button
                     onClick={() => !uploading && (isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click())}
-                    className="w-full aspect-video sm:aspect-[21/9] rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-3 overflow-hidden group hover:border-emerald-400 hover:bg-emerald-50/10 transition-all relative cursor-pointer"
+                    className="w-full aspect-video sm:aspect-[21/9] rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-3 overflow-hidden group hover:border-emerald-400 hover:bg-emerald-50/10 transition-all relative"
                   >
                     {uploading === 'cover' ? (
                       <div className="flex flex-col items-center gap-2 text-emerald-600">
@@ -1169,7 +1258,7 @@ const AddVillaWizard = () => {
                           onClick={(e) => { e.stopPropagation(); updatePropertyForm('coverImage', ''); }}
                           className="absolute top-3 right-3 p-2 bg-white text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
                         >
-                          <Trash2 size={16} />
+                          <X size={16} />
                         </div>
                       </>
                     ) : (
@@ -1183,7 +1272,7 @@ const AddVillaWizard = () => {
                         </div>
                       </>
                     )}
-                  </div>
+                  </button>
                   <input ref={coverImageFileInputRef} type="file" accept="image/*" className="hidden" onChange={e => uploadImages(e.target.files, 'cover', u => updatePropertyForm('coverImage', u[0]))} />
                 </div>
 
@@ -1202,7 +1291,7 @@ const AddVillaWizard = () => {
                           onClick={() => updatePropertyForm('propertyImages', propertyForm.propertyImages.filter((_, x) => x !== i))}
                           className="absolute top-1 right-1 p-1.5 bg-white text-red-500 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
                         >
-                          <Trash2 size={14} />
+                          <X size={14} />
                         </button>
                       </div>
                     ))}
@@ -1341,7 +1430,7 @@ const AddVillaWizard = () => {
                         {(editingRoomType.images || []).map((img, i) => (
                           <div key={i} className="relative w-20 h-20 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden group">
                             <img src={img} className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} /></button>
                           </div>
                         ))}
                         {(editingRoomType.images || []).length < 4 && (
@@ -1431,9 +1520,11 @@ const AddVillaWizard = () => {
                     <button
                       key={rule}
                       onClick={() => {
-                        const has = propertyForm.houseRules.includes(rule);
-                        const arr = has ? propertyForm.houseRules.filter(x => x !== rule) : [...propertyForm.houseRules, rule];
-                        updatePropertyForm('houseRules', arr);
+                        const customRules = customHouseRulesDraft.split(',').map(s => s.trim()).filter(Boolean);
+                        const selectedPredefined = propertyForm.houseRules.filter(r => HOUSE_RULES_OPTIONS.includes(r));
+                        const has = selectedPredefined.includes(rule);
+                        const newPredefined = has ? selectedPredefined.filter(x => x !== rule) : [...selectedPredefined, rule];
+                        updatePropertyForm('houseRules', [...newPredefined, ...customRules]);
                       }}
                       className={`px-3 py-1.5 rounded-lg border text-xs font-semibold transition-all ${propertyForm.houseRules.includes(rule) ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
                     >
@@ -1444,12 +1535,9 @@ const AddVillaWizard = () => {
                 <textarea
                   className="input w-full min-h-[100px]"
                   placeholder="Add other rules (e.g. No alcohol, No guests after 9 PM...)"
-                  value={propertyForm.houseRules.filter(r => !HOUSE_RULES_OPTIONS.includes(r)).join(', ')}
-                  onChange={e => {
-                    const customRules = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
-                    const selectedPredefined = propertyForm.houseRules.filter(r => HOUSE_RULES_OPTIONS.includes(r));
-                    updatePropertyForm('houseRules', [...selectedPredefined, ...customRules]);
-                  }}
+                  value={customHouseRulesDraft}
+                  onChange={e => setCustomHouseRulesDraft(e.target.value)}
+                  onBlur={syncHouseRulesFromDraft}
                 />
                 <p className="text-xs text-gray-400">Separate custom rules with commas.</p>
               </div>
@@ -1467,7 +1555,9 @@ const AddVillaWizard = () => {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="font-bold text-gray-900">{doc.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">Optional document</div>
+                          <div className={`text-xs mt-0.5 ${doc.required ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                            {doc.required ? 'Required *' : 'Optional'}
+                          </div>
                         </div>
                         {doc.fileUrl ? (
                           <div className="bg-emerald-50 text-emerald-700 p-1.5 rounded-full"><CheckCircle size={18} /></div>
@@ -1510,6 +1600,7 @@ const AddVillaWizard = () => {
                       <input
                         type="file"
                         className="hidden"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf"
                         ref={el => (documentInputRefs.current[idx] = el)}
                         onChange={e => {
                           const file = e.target.files[0];

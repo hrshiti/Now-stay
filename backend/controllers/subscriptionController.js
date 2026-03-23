@@ -1,4 +1,5 @@
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
+import PartnerSubscription from '../models/PartnerSubscription.js';
 import Partner from '../models/Partner.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
@@ -7,240 +8,296 @@ import PaymentConfig from '../config/payment.config.js';
 // Initialize Razorpay
 let razorpay;
 try {
-    if (PaymentConfig.razorpayKeyId && PaymentConfig.razorpayKeySecret) {
-        razorpay = new Razorpay({
-            key_id: PaymentConfig.razorpayKeyId,
-            key_secret: PaymentConfig.razorpayKeySecret
-        });
-    } else {
-        console.warn("⚠️ Razorpay Keys missing. Subscription features will fail.");
-    }
+  if (PaymentConfig.razorpayKeyId && PaymentConfig.razorpayKeySecret) {
+    razorpay = new Razorpay({
+      key_id: PaymentConfig.razorpayKeyId,
+      key_secret: PaymentConfig.razorpayKeySecret
+    });
+  }
 } catch (err) {
-    console.error("Razorpay Init Failed:", err.message);
+  console.error("Razorpay Init Failed in Subscriptions:", err.message);
 }
 
-// --- ADMIN CONTROLLERS ---
+// --- ADMIN ROUTES ---
 
-/**
- * @desc    Create a new subscription plan
- * @route   POST /api/subscriptions/admin/create
- * @access  Admin
- */
 export const createPlan = async (req, res) => {
-    try {
-        const { name, maxProperties, price, durationDays, description, commissionPercentage } = req.body;
-
-        const plan = await SubscriptionPlan.create({
-            name,
-            maxProperties,
-            price,
-            durationDays,
-            description,
-            commissionPercentage: commissionPercentage || 10 // Default to 10% if not provided
-        });
-
-        res.status(201).json({ success: true, plan });
-    } catch (error) {
-        console.error('Create Plan Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to create plan' });
+  try {
+    const { name, description, price, durationInMonths, commissionRate } = req.body;
+    if (!name || price === undefined) {
+      return res.status(400).json({ message: 'Name and Price are required' });
     }
+
+    const plan = new SubscriptionPlan({
+      name,
+      description,
+      price,
+      durationInMonths: durationInMonths || 12,
+      commissionRate: commissionRate || 0
+    });
+
+    await plan.save();
+    res.status(201).json({ success: true, plan, message: 'Subscription Plan created successfully' });
+  } catch (error) {
+    console.error('Create Plan Error:', error);
+    res.status(500).json({ message: 'Server error creating plan' });
+  }
 };
 
-/**
- * @desc    Get all subscription plans (Admin view - includes inactive)
- * @route   GET /api/subscriptions/admin/all
- * @access  Admin
- */
-export const getAllPlans = async (req, res) => {
-    try {
-        const plans = await SubscriptionPlan.find().sort({ createdAt: -1 });
-        res.json({ success: true, plans });
-    } catch (error) {
-        console.error('Get All Plans Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch plans' });
-    }
+export const getPlans = async (req, res) => {
+  try {
+    const plans = await SubscriptionPlan.find({ isActive: true });
+    res.status(200).json({ success: true, plans });
+  } catch (error) {
+    console.error('Get Plans Error:', error);
+    res.status(500).json({ message: 'Server error getting plans' });
+  }
 };
 
-/**
- * @desc    Update a subscription plan
- * @route   PUT /api/subscriptions/admin/:id
- * @access  Admin
- */
 export const updatePlan = async (req, res) => {
-    try {
-        const plan = await SubscriptionPlan.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        if (!plan) return res.status(404).json({ message: 'Plan not found' });
-        res.json({ success: true, plan });
-    } catch (error) {
-        console.error('Update Plan Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to update plan' });
-    }
+  try {
+    const { id } = req.params;
+    const { name, description, price, durationInMonths, commissionRate, isActive } = req.body;
+
+    const plan = await SubscriptionPlan.findByIdAndUpdate(
+      id,
+      { name, description, price, durationInMonths, commissionRate, isActive },
+      { new: true }
+    );
+
+    if (!plan) return res.status(404).json({ message: 'Plan not found' });
+    res.status(200).json({ success: true, plan, message: 'Plan updated successfully' });
+  } catch (error) {
+    console.error('Update Plan Error:', error);
+    res.status(500).json({ message: 'Server error updating plan' });
+  }
 };
 
-/**
- * @desc    Delete (Soft Delete) a subscription plan
- * @route   DELETE /api/subscriptions/admin/:id
- * @access  Admin
- */
 export const deletePlan = async (req, res) => {
-    try {
-        // We strictly soft delete to preserve history for partners using this plan
-        const plan = await SubscriptionPlan.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
-        if (!plan) return res.status(404).json({ message: 'Plan not found' });
-        res.json({ success: true, message: 'Plan deactivated' });
-    } catch (error) {
-        console.error('Delete Plan Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to delete plan' });
-    }
+  try {
+    const { id } = req.params;
+    const plan = await SubscriptionPlan.findByIdAndUpdate(id, { isActive: false }, { new: true });
+    if (!plan) return res.status(404).json({ message: 'Plan not found' });
+    res.status(200).json({ success: true, message: 'Plan deactivated successfully' });
+  } catch (error) {
+    console.error('Delete Plan Error:', error);
+    res.status(500).json({ message: 'Server error deleting plan' });
+  }
 };
 
-// --- PARTNER CONTROLLERS ---
+export const getPartnerSubscriptions = async (req, res) => {
+  try {
+    // Admin checking all partner subscriptions
+    const subscriptions = await PartnerSubscription.find()
+      .populate('planId')
+      .populate('partnerId', 'name email phone')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, subscriptions });
+  } catch (error) {
+    console.error('Get Partner Subscriptions Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
-/**
- * @desc    Get active subscription plans for partners
- * @route   GET /api/subscriptions/plans
- * @access  Private (Partner)
- */
+// --- PARTNER ROUTES ---
+
 export const getActivePlans = async (req, res) => {
-    try {
-        const plans = await SubscriptionPlan.find({ isActive: true }).sort({ price: 1 });
-        res.json({ success: true, plans });
-    } catch (error) {
-        console.error('Get Active Plans Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch plans' });
-    }
+  try {
+    const plans = await SubscriptionPlan.find({ isActive: true });
+    res.status(200).json({ success: true, plans });
+  } catch (error) {
+    console.error('Get Active Plans Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
-/**
- * @desc    Get current subscription status of partner
- * @route   GET /api/subscriptions/current
- * @access  Private (Partner)
- */
-export const getCurrentSubscription = async (req, res) => {
-    try {
-        const partnerId = req.user._id || req.user.id;
-        const partner = await Partner.findById(partnerId).populate('subscription.planId');
+export const getMySubscription = async (req, res) => {
+  try {
+    const subscription = await PartnerSubscription.findOne({
+      partnerId: req.user._id,
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gt: new Date() }
+    }).populate('planId');
 
-        if (!partner) return res.status(404).json({ message: 'Partner not found' });
-
-        res.json({
-            success: true,
-            subscription: partner.subscription
-        });
-    } catch (error) {
-        console.error('Get Subscription Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to fetch subscription' });
-    }
+    res.status(200).json({ success: true, subscription });
+  } catch (error) {
+    console.error('Get My Subscription Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 };
 
-/**
- * @desc    Create Razorpay Order for Subscription
- * @route   POST /api/subscriptions/checkout
- * @access  Private (Partner)
- */
 export const createSubscriptionOrder = async (req, res) => {
-    try {
-        const { planId } = req.body;
-        const partnerId = req.user._id || req.user.id;
+  try {
+    const { planId } = req.body;
+    const plan = await SubscriptionPlan.findById(planId);
 
-        const plan = await SubscriptionPlan.findById(planId);
-        if (!plan) return res.status(404).json({ message: 'Plan not found' });
-
-        const amountInPaise = Math.round(plan.price * 100);
-
-        const options = {
-            amount: amountInPaise,
-            currency: PaymentConfig.currency || "INR",
-            receipt: `sub_${partnerId}_${Date.now()}`,
-            notes: {
-                partnerId: partnerId.toString(),
-                planId: planId.toString(),
-                type: 'subscription_purchase'
-            }
-        };
-
-        const order = await razorpay.orders.create(options);
-
-        res.json({
-            success: true,
-            order: {
-                id: order.id,
-                amount: order.amount,
-                currency: order.currency,
-                planId: plan._id
-            },
-            key: PaymentConfig.razorpayKeyId
-        });
-
-    } catch (error) {
-        console.error('Create Subscription Order Error:', error);
-        res.status(500).json({ success: false, message: 'Failed to create order' });
+    if (!plan || !plan.isActive) {
+      return res.status(404).json({ message: 'Plan not found or inactive' });
     }
+
+    if (!razorpay) {
+      return res.status(500).json({ message: 'Payment gateway not configured' });
+    }
+
+    // Check for existing active subscription to handle Upgrade/Renewal logic
+    let finalPrice = plan.price;
+    const currentSub = await PartnerSubscription.findOne({
+      partnerId: req.user._id,
+      isActive: true,
+      endDate: { $gt: new Date() }
+    }).populate('planId');
+
+    if (currentSub && currentSub.planId) {
+      // UPGRADE CASE: New price is higher than current plan price
+      if (plan.price > currentSub.planId.price) {
+        const now = new Date();
+        const start = new Date(currentSub.startDate);
+        const end = new Date(currentSub.endDate);
+        
+        const totalDurationMs = end - start;
+        const remainingDurationMs = end - now;
+        
+        if (totalDurationMs > 0 && remainingDurationMs > 0) {
+          // Calculate credit for unused time: (RemainingDays / TotalDays) * AmountPaid
+          const credit = (remainingDurationMs / totalDurationMs) * (currentSub.amountPaid || currentSub.planId.price);
+          finalPrice = Math.max(0, plan.price - credit);
+        }
+      }
+      // DOWNGRADE or RENEWAL: No price deduction, full price applies
+    }
+
+    const options = {
+      amount: Math.round(finalPrice * 100), // in paise
+      currency: 'INR',
+      receipt: `sub_rcpt_${Date.now()}`,
+      notes: {
+        planId: plan._id.toString(),
+        partnerId: req.user._id.toString(),
+        originalPrice: plan.price.toString(),
+        finalPrice: finalPrice.toString(),
+        type: 'subscription'
+      }
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.status(200).json({ 
+      success: true, 
+      order: {
+        ...order,
+        key: PaymentConfig.razorpayKeyId
+      }
+    });
+
+  } catch (error) {
+    console.error('Create Subscription Order Error:', error);
+    res.status(500).json({ message: 'Error creating payment order' });
+  }
 };
 
-/**
- * @desc    Verify Razorpay Payment & Activate Subscription
- * @route   POST /api/subscriptions/verify
- * @access  Private (Partner)
- */
-export const verifySubscription = async (req, res) => {
-    try {
-        const { razorpay_order_id, razorpay_payment_id, razorpay_signature, planId } = req.body;
-        const partnerId = req.user._id || req.user.id;
-
-        // 1. Verify Signature
-        const body = razorpay_order_id + "|" + razorpay_payment_id;
-        const expectedSignature = crypto
-            .createHmac("sha256", PaymentConfig.razorpayKeySecret)
-            .update(body.toString())
-            .digest("hex");
-
-        if (expectedSignature !== razorpay_signature) {
-            return res.status(400).json({ success: false, message: "Invalid signature" });
-        }
-
-        // 2. Activate Subscription
-        const plan = await SubscriptionPlan.findById(planId);
-        if (!plan) return res.status(404).json({ message: 'Plan not found during activation' });
-
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + plan.durationDays);
-
-        const partner = await Partner.findById(partnerId);
-
-        // Logic: Reset properties count or carry over? 
-        // Usually, upgrading/renewing gives fresh capacity for that tier, 
-        // OR we just set the new max limit. 
-        // The requirement says "jab plan ke according number of property hotel patner add kar chuka ho to vo fir se property add nahi kar sakta he".
-        // This implies `propertiesAdded` is a counter for the *current* plan cycle. 
-        // If I renew, my counter technically should reset for *new* additions if it was a usage-based limit, 
-        // BUT usually "Max 5 properties" means "Total Active Properties". 
-        // If I have 5, and I renew a 5-property plan, I still have 5. I can't add more. 
-        // If I upgrade to 10, I can add 5 more. 
-        // So, we don't necessarily reset `propertiesAdded`. We just check `propertiesAdded < maxProperties` in the Guard logic.
-        // However, the `propertiesAdded` field in Partner schema needs to stay accurate to *actual* properties in DB.
-        // We should probably sync it with `Property.countDocuments({ partnerId })` to be safe, but for now let's leave it as is 
-        // and assume the Add Property flow increments it. 
-
-        partner.subscription = {
-            planId: plan._id,
-            status: 'active',
-            startDate: new Date(),
-            expiryDate: expiryDate,
-            propertiesAdded: partner.subscription?.propertiesAdded || 0, // Keep existing count
-            transactionId: razorpay_payment_id
-        };
-
-        await partner.save();
-
-        res.json({
-            success: true,
-            message: 'Subscription activated successfully',
-            subscription: partner.subscription
-        });
-
-    } catch (error) {
-        console.error('Verify Subscription Error:', error);
-        res.status(500).json({ success: false, message: 'Payment verification failed' });
+export const buySubscription = async (req, res) => {
+  try {
+    const { 
+      planId, 
+      paymentMethod, 
+      paymentId, 
+      razorpay_order_id, 
+      razorpay_payment_id, 
+      razorpay_signature 
+    } = req.body;
+    
+    // Validate Plan
+    const plan = await SubscriptionPlan.findById(planId);
+    if (!plan || !plan.isActive) {
+      return res.status(404).json({ message: 'Valid plan not found' });
     }
+
+    // --- Razorpay Verification (if applicable) ---
+    if (razorpay_signature) {
+      const body = razorpay_order_id + "|" + razorpay_payment_id;
+      const expectedSignature = crypto
+        .createHmac("sha256", PaymentConfig.razorpayKeySecret)
+        .update(body.toString())
+        .digest("hex");
+
+      if (expectedSignature !== razorpay_signature) {
+        return res.status(400).json({ message: "Invalid payment signature" });
+      }
+    }
+
+    // --- Handle Subscription Logic (Upgrade/Downgrade/Renewal) ---
+    const activeSub = await PartnerSubscription.findOne({
+      partnerId: req.user._id,
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gt: new Date() }
+    }).populate('planId');
+
+    let finalStartDate = new Date();
+    const finalEndDate = new Date();
+    let isUpgrade = false;
+    let actualPaidAmount = plan.price;
+
+    // Fetch the actual amount paid from Razorpay order to be safe
+    if (razorpay_order_id) {
+       try {
+         const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
+         actualPaidAmount = rzpOrder.amount / 100;
+       } catch (e) {
+         console.warn("Failed to fetch order amount from Razorpay, using plan price");
+       }
+    }
+
+    if (activeSub && activeSub.planId) {
+      const isSamePlan = activeSub.planId._id.toString() === planId.toString();
+      const isPriceHigher = plan.price > activeSub.planId.price;
+
+      if (isSamePlan) {
+        // CASE: SAME PLAN (RENEWAL) -> Extend existing end date
+        finalStartDate = new Date(activeSub.endDate);
+        finalEndDate.setTime(finalStartDate.getTime());
+        finalEndDate.setMonth(finalEndDate.getMonth() + plan.durationInMonths);
+      } else if (isPriceHigher) {
+        // CASE: UPGRADE -> Start immediately today, but old plan stops
+        isUpgrade = true;
+        finalStartDate = new Date();
+        finalEndDate.setMonth(finalEndDate.getMonth() + plan.durationInMonths);
+      } else {
+        // CASE: DOWNGRADE -> Start after the current active one ends
+        finalStartDate = new Date(activeSub.endDate);
+        finalEndDate.setTime(finalStartDate.getTime());
+        finalEndDate.setMonth(finalEndDate.getMonth() + plan.durationInMonths);
+      }
+    } else {
+      // CASE: NEW/NO ACTIVE SUBSCRIPTION
+      finalStartDate = new Date();
+      finalEndDate.setMonth(finalEndDate.getMonth() + plan.durationInMonths);
+    }
+    
+    // Create new Subscription
+    const subscription = new PartnerSubscription({
+      partnerId: req.user._id,
+      planId: plan._id,
+      startDate: finalStartDate,
+      endDate: finalEndDate,
+      paymentMethod: paymentMethod || 'online',
+      paymentId: razorpay_payment_id || paymentId || 'MANUAL-TEST',
+      amountPaid: actualPaidAmount,
+      paymentStatus: 'paid',
+      isActive: true,
+      commissionRate: plan.commissionRate
+    });
+
+    await subscription.save();
+    
+    // Clean up if it was an upgrade (Switch immediately)
+    if (isUpgrade && activeSub) {
+      activeSub.isActive = false;
+      await activeSub.save();
+    }
+
+    res.status(201).json({ success: true, subscription, message: 'Subscription purchased successfully!' });
+  } catch (error) {
+    console.error('Buy Subscription Error:', error);
+    res.status(500).json({ message: 'Server error buying subscription' });
+  }
 };

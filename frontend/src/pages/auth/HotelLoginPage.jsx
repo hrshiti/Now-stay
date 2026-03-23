@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { authService, userService } from '../../services/apiService';
-import { requestNotificationPermission } from '../../utils/firebase';
-import logo from '../../assets/rokologin-removebg-preview.png';
+import { authService } from '../../services/apiService';
+import NowStayLogo from '../../components/ui/NowStayLogo';
 import toast from 'react-hot-toast';
 
 const HotelLoginPage = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
-    const [phone, setPhone] = useState('');
+    const [phone, setPhone] = useState('9589814119');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -55,8 +54,16 @@ const HotelLoginPage = () => {
             setResendTimer(120);
             setCanResend(false);
             setStep(2);
+            // Pre-fill OTP for default partner number
+            if (phone === '9589814119') {
+                setOtp(['1', '2', '3', '4', '5', '6']);
+            }
         } catch (err) {
-            setError(err.message || 'Failed to send OTP');
+            if (err.isBlocked || err.response?.data?.isBlocked || err.status === 403) {
+                setError(err.message || 'Your account has been blocked by admin. Please contact support.');
+            } else {
+                setError(err.message || 'Failed to send OTP');
+            }
         } finally {
             setLoading(false);
         }
@@ -112,23 +119,20 @@ const HotelLoginPage = () => {
                 role: 'partner'
             });
 
-            // Update FCM Token for Partner
+            // Trigger FCM token re-registration using the cached token from App.jsx
             try {
-                console.log('HotelLogin: Requesting notification permission...');
-                const token = await requestNotificationPermission();
-                if (token) {
-                    console.log('HotelLogin: FCM Token obtained, updating backend...');
-                    await userService.updateFcmToken(token, 'web');
-                } else {
-                    console.warn('HotelLogin: Notification permission denied or token is null');
-                }
+                window.dispatchEvent(new CustomEvent('fcm:register'));
             } catch (fcmError) {
-                console.warn('HotelLogin: FCM update failed', fcmError);
+                console.warn('[FCM] Could not dispatch register event', fcmError);
             }
 
             navigate('/hotel/dashboard');
         } catch (err) {
-            setError(err.message || 'Invalid OTP');
+            if (err.isBlocked || err.response?.data?.isBlocked || err.status === 403) {
+                setError(err.message || 'Your account has been blocked by admin. Please contact support.');
+            } else {
+                setError(err.message || 'Invalid OTP');
+            }
         } finally {
             setLoading(false);
         }
@@ -139,13 +143,8 @@ const HotelLoginPage = () => {
 
             {/* Top Bar - Centered Logo */}
             <header className="px-6 pt-0 pb-2 flex justify-center items-center">
-                <div className="flex items-center justify-center">
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-4xl font-black tracking-tighter text-[#111827] flex items-center gap-1">
-                            NOW<span className="text-[#004F4D]">STAY.in</span>
-                        </span>
-                        <div className="h-1 w-10 bg-[#004F4D] rounded-full -mt-0.5"></div>
-                    </div>
+                <div className="flex items-center justify-center py-4">
+                    <NowStayLogo size="xl" />
                 </div>
             </header>
 
@@ -158,7 +157,7 @@ const HotelLoginPage = () => {
                     className="mb-8 text-center space-y-1"
                 >
                     <h1 className="text-xl font-bold text-[#003836]">Partner Login</h1>
-                    <p className="text-gray-400 text-xs font-medium">Log in to StayNow</p>
+                    <p className="text-gray-400 text-xs font-medium">Log in to manage your property</p>
                 </motion.div>
 
                 {/* Form Area */}
@@ -315,7 +314,7 @@ const HotelLoginPage = () => {
                 {/* Footer */}
                 <div className="py-8 text-center mt-auto">
                     <p className="text-gray-400 text-sm font-medium">
-                        New to StayNow?{' '}
+                    New to NowStay?{' '}
                         <button
                             onClick={() => navigate('/hotel/register')}
                             className="text-[#004F4D] font-bold hover:underline"

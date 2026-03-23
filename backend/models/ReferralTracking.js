@@ -14,8 +14,13 @@ const referralTrackingSchema = new mongoose.Schema({
     referredUserId: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: 'User',
-        unique: true // One user can only be referred once
+        refPath: 'referredUserModel'
+    },
+    referredUserModel: {
+        type: String,
+        required: true,
+        enum: ['User', 'Partner'],
+        default: 'User'
     },
     referralCodeId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -48,6 +53,7 @@ const referralTrackingSchema = new mongoose.Schema({
 
 // Index for quick stats lookup
 referralTrackingSchema.index({ referrerId: 1, status: 1 });
+referralTrackingSchema.index({ referredUserId: 1, referredUserModel: 1 }, { unique: true });
 
 const ReferralTracking = mongoose.model('ReferralTracking', referralTrackingSchema);
 export default ReferralTracking;

@@ -36,10 +36,26 @@ const contactMessageSchema = new mongoose.Schema(
     },
     meta: {
       type: Object
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      refPath: 'audienceModel'
+    },
+    audienceModel: {
+      type: String,
+      enum: ['User', 'Partner', 'Admin']
     }
   },
   { timestamps: true }
 );
+
+contactMessageSchema.pre('save', async function () {
+  // If we have a userId but no audienceModel was set manually
+  if (this.userId && !this.audienceModel) {
+    // Default based on audience if not specified
+    this.audienceModel = this.audience === 'partner' ? 'Partner' : 'User';
+  }
+});
 
 const ContactMessage = mongoose.model('ContactMessage', contactMessageSchema);
 export default ContactMessage;

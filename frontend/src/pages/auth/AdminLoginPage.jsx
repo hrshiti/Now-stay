@@ -43,10 +43,10 @@ const AdminLoginPage = () => {
         // Simulate authentication
         setTimeout(() => {
             // Mock credentials check
-            if (formData.email === 'admin@rukkoo.in' && formData.password === 'admin123') {
+            if (formData.email === 'admin@nowstay.in' && formData.password === 'admin123') {
                 navigate('/admin/dashboard');
             } else {
-                setError('Invalid credentials. Try admin@rukkoo.in / admin123');
+                setError('Invalid credentials. Try admin@nowstay.in / admin123');
                 setLoading(false);
             }
         }, 1500);
@@ -72,7 +72,7 @@ const AdminLoginPage = () => {
                         <Shield size={40} className="text-white" />
                     </motion.div>
                     <h1 className="text-3xl font-black text-white mb-1">Admin Portal</h1>
-                    <p className="text-slate-400 text-sm">StayNow Master Control</p>
+                    <p className="text-slate-400 text-sm">NowStay.in Master Control</p>
                 </div>
 
                 {/* Form Card */}
@@ -93,7 +93,7 @@ const AdminLoginPage = () => {
                                     name="email"
                                     value={formData.email}
                                     onChange={handleChange}
-                                    placeholder="admin@rukkoo.in"
+                                    placeholder="Enter admin email"
                                     className="flex-1 bg-transparent px-4 py-4 text-white font-medium placeholder:text-slate-600 outline-none"
                                     autoComplete="email"
                                 />
@@ -172,19 +172,7 @@ const AdminLoginPage = () => {
                     </p>
                 </div>
 
-                {/* Demo Credentials */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-6 bg-slate-800/30 border border-slate-700/50 rounded-xl p-4"
-                >
-                    <p className="text-xs text-slate-500 text-center mb-2">Demo Credentials</p>
-                    <div className="text-center text-slate-400 text-sm font-mono">
-                        <p>Email: <span className="text-white">admin@rukkoo.in</span></p>
-                        <p>Password: <span className="text-white">admin123</span></p>
-                    </div>
-                </motion.div>
+
             </motion.div>
         </div>
     );

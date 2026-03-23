@@ -9,7 +9,7 @@ const referralProgramSchema = new mongoose.Schema({
     rewardAmount: {
         type: Number,
         required: true,
-        default: 200
+        default: 100
     },
     triggerType: {
         type: String,

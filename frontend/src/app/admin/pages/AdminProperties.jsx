@@ -8,7 +8,6 @@ import {
 } from 'lucide-react';
 import ConfirmationModal from '../components/ConfirmationModal';
 import adminService from '../../../services/adminService';
-import { categoryService } from '../../../services/categoryService';
 import toast from 'react-hot-toast';
 
 const PropertyStatusBadge = ({ status }) => {
@@ -50,22 +49,8 @@ const AdminProperties = () => {
         type: ''
     });
 
-    const [dynamicCategories, setDynamicCategories] = useState([]);
-
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', type: 'danger', onConfirm: () => { } });
-
-    useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const cats = await categoryService.getActiveCategories();
-                setDynamicCategories(cats || []);
-            } catch (err) {
-                console.error("Failed to fetch categories:", err);
-            }
-        };
-        fetchCategories();
-    }, []);
 
     const fetchProperties = useCallback(async (page, currentFilters) => {
         const token = localStorage.getItem('adminToken');
@@ -162,7 +147,7 @@ const AdminProperties = () => {
             return;
         }
 
-        const headers = ['ID', 'Property Name', 'Type', 'Owner', 'Status', 'City'];
+        const headers = ['ID', 'Property Name', 'Type', 'Owner', 'Status', 'Suitability', 'City'];
         const csvContent = [
             headers.join(','),
             ...properties.map(h => [
@@ -171,6 +156,7 @@ const AdminProperties = () => {
                 `"${h.propertyType}"`,
                 `"${h.partnerId?.name || ''}"`,
                 h.status,
+                `"${h.suitability || 'none'}"`,
                 `"${h.address?.city || ''}"`
             ].join(','))
         ].join('\n');
@@ -245,9 +231,6 @@ const AdminProperties = () => {
                         <option value="pg">PG</option>
                         <option value="resort">Resort</option>
                         <option value="homestay">Homestay</option>
-                        {dynamicCategories.map(cat => (
-                            <option key={cat._id} value={cat._id}>{cat.displayName}</option>
-                        ))}
                     </select>
                 </div>
             </div>
@@ -261,6 +244,7 @@ const AdminProperties = () => {
                                 <th className="p-4">Type</th>
                                 <th className="p-4">Owner</th>
                                 <th className="p-4">Status</th>
+                                <th className="p-4">Suitability</th>
                                 <th className="p-4 text-center">Actions</th>
                             </tr>
                         </thead>
@@ -306,9 +290,7 @@ const AdminProperties = () => {
                                                     </Link>
                                                 </td>
                                                 <td className="p-4">
-                                                    <p className="text-[10px] text-gray-700 font-bold uppercase">
-                                                        {property.dynamicCategory?.displayName || property.propertyType || 'N/A'}
-                                                    </p>
+                                                    <p className="text-[10px] text-gray-700 font-bold uppercase">{property.propertyType || 'N/A'}</p>
                                                 </td>
                                                 <td className="p-4">
                                                     <p className="text-[10px] text-gray-700 font-bold uppercase mb-0.5">{property.partnerId?.name || 'Unknown Partner'}</p>
@@ -316,6 +298,9 @@ const AdminProperties = () => {
                                                 </td>
                                                 <td className="p-4">
                                                     <PropertyStatusBadge status={property.status} />
+                                                </td>
+                                                <td className="p-4">
+                                                    <p className="text-[10px] text-gray-700 font-bold uppercase">{property.suitability || 'none'}</p>
                                                 </td>
                                                 <td className="p-4 text-center relative">
                                                     <button

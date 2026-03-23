@@ -11,87 +11,83 @@ export const isFlutterApp = () => {
 };
 
 /**
- * Open Flutter native camera and get base64 image
- * @returns {Promise<Object>} {success, base64, mimeType, fileName}
+ * Open Flutter native picker (Camera/Gallery) and get base64 image(s)
+ * Handles both single capture and multiple selection
+ * @returns {Promise<Object>} {success, images: [{base64, mimeType, fileName}], ...}
  */
 export const openFlutterCamera = async () => {
   return new Promise((resolve, reject) => {
     try {
-      // Check if Flutter bridge exists
       if (!window.flutter_inappwebview) {
         reject(new Error('Flutter bridge not available'));
         return;
       }
 
-      // Call Flutter camera handler
       window.flutter_inappwebview
         .callHandler('openCamera')
         .then((result) => {
-          console.log('[Flutter Camera] Result received:', result ? (result.images ? `List of ${result.images.length}` : 'Single Image') : 'Empty');
-
+          console.log('[Flutter Picker] Result:', result);
           if (result && result.success) {
-            // Support for Multiple Images (New Format)
-            if (result.images && Array.isArray(result.images)) {
-              resolve({
-                success: true,
-                isMultiple: true,
-                images: result.images.map(img => ({
-                  base64: img.base64,
-                  mimeType: img.mimeType || 'image/jpeg',
-                  fileName: img.fileName || `image-${Date.now()}.jpg`
-                }))
-              });
-            }
-            // Support for Single Image (Old Format)
-            else if (result.base64) {
-              resolve({
-                success: true,
-                isMultiple: false,
+            // Support both single result and multiple results from Flutter
+            const images = result.images || [
+              {
                 base64: result.base64,
                 mimeType: result.mimeType || 'image/jpeg',
                 fileName: result.fileName || `image-${Date.now()}.jpg`
-              });
-            } else {
-              reject(new Error('Invalid structure from Flutter bridge'));
-            }
+              }
+            ];
+
+            resolve({
+              success: true,
+              images: images,
+              // Keep legacy single field for backward compatibility
+              base64: images[0].base64,
+              mimeType: images[0].mimeType,
+              fileName: images[0].fileName
+            });
           } else {
-            reject(new Error(result?.message || 'Camera capture failed'));
+            reject(new Error('Image capture failed'));
           }
         })
         .catch((error) => {
-          console.error('[Flutter Camera] Error:', error);
+          console.error('[Flutter Picker] Error:', error);
           reject(error);
         });
     } catch (error) {
-      console.error('[Flutter Camera] Exception:', error);
+      console.error('[Flutter Picker] Exception:', error);
       reject(error);
     }
   });
 };
 
 /**
- * Upload base64 image to backend
- * @param {string} base64 - Base64 string
- * @param {string} mimeType - MIME type
- * @param {string} fileName - File name
+ * Upload base64 image(s) to backend
+ * @param {string|Array} dataOrBase64 - Either a single base64 string or an array of image objects
+ * @param {string} [mimeType] - MIME type (only if first arg is base64 string)
+ * @param {string} [fileName] - File name (only if first arg is base64 string)
  * @returns {Promise<Object>} Upload result
  */
-export const uploadBase64Image = async (base64, mimeType = 'image/jpeg', fileName = 'image.jpg') => {
+export const uploadBase64Image = async (dataOrBase64, mimeType = 'image/jpeg', fileName = 'image.jpg') => {
   try {
+    let images = [];
+
+    // Polymorphic handling: Check if we got an array of objects or single arguments
+    if (Array.isArray(dataOrBase64)) {
+      images = dataOrBase64;
+    } else {
+      images = [{
+        base64: dataOrBase64,
+        mimeType,
+        fileName
+      }];
+    }
+
     const response = await fetch('/api/auth/partner/upload-docs-base64', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        images: [
-          {
-            base64,
-            mimeType,
-            fileName
-          }
-        ]
-      })
+      body: JSON.stringify({ images })
     });
 
     if (!response.ok) {
@@ -112,54 +108,36 @@ export const uploadBase64Image = async (base64, mimeType = 'image/jpeg', fileNam
 };
 
 /**
- * Universal image picker - uses Flutter camera in app, file input in browser
- * @param {Function} onSuccess - Success callback (url, publicId)
+ * Universal image picker - handles single and multiple images depending on context
+ * @param {Function} onSuccess - Success callback (returns first file OR array of all files)
  * @param {Function} onError - Error callback
  */
 export const pickImage = async (onSuccess, onError) => {
   try {
     if (isFlutterApp()) {
-      console.log('[Image Picker] Using Flutter camera...');
+      console.log('[Image Picker] Using Flutter native bridge...');
 
-      // Use Flutter camera
       const result = await openFlutterCamera();
 
-      if (result.success) {
-        console.log('[Image Picker] Uploading to backend...', result.isMultiple ? 'Multiple' : 'Single');
+      if (result.success && result.images) {
+        console.log(`[Image Picker] Uploading ${result.images.length} images...`);
 
-        // Prepare payload for flexible Base64 endpoint
-        const uploadPayload = result.isMultiple ? result.images : [{
-          base64: result.base64,
-          mimeType: result.mimeType,
-          fileName: result.fileName
-        }];
-
-        // Upload to backend using the normalized flexible format
-        const response = await fetch('/api/auth/partner/upload-docs-base64', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ images: uploadPayload })
-        });
-
-        if (!response.ok) throw new Error('Upload failed on server');
-        const uploadResult = await response.json();
+        const uploadResult = await uploadBase64Image(result.images);
 
         if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
-          if (result.isMultiple) {
-            // If multiple, return the whole array to the caller
-            onSuccess && onSuccess(uploadResult.files);
-          } else {
-            // If single, return url and publicId as before for compatibility
-            const file = uploadResult.files[0];
+          // Process each file
+          uploadResult.files.forEach(file => {
             onSuccess && onSuccess(file.url, file.publicId);
-          }
+          });
+
+          // If the caller explicitly wants the whole array, they can check if the first arg is array
+          // But for compatibility, we trigger onSuccess for each one to update UI lists
         } else {
-          throw new Error('Upload failed: Invalid response');
+          throw new Error('Upload failed');
         }
       }
     } else {
-      console.log('[Image Picker] Using web file input...');
-      // Fallback to regular file input (already handled by existing code)
+      console.log('[Image Picker] Browser detected. Please use manual file input.');
       onError && onError(new Error('Please use file input in browser'));
     }
   } catch (error) {

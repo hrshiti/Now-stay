@@ -95,10 +95,24 @@ const BookingCard = ({ booking }) => {
                 </div>
             </div>
 
-            {/* Earning Section */}
-            <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-200 mb-4">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payout</span>
-                <span className="font-black text-[#004F4D] text-lg">₹{booking.partnerPayout?.toLocaleString('en-IN') || 0}</span>
+            {/* Earning & Collection Section (Swapped Priority) */}
+            <div className="pt-3 border-t border-dashed border-gray-200 mb-4 space-y-1 text-right">
+                <div className="flex items-center justify-between opacity-60">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Expected Earnings</span>
+                    <span className="font-bold text-gray-600 text-xs">₹{booking.partnerPayout?.toLocaleString('en-IN') || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${(booking.remainingAmount > 0 || booking.paymentStatus === 'pending') ? 'text-red-500' : 'text-gray-400'}`}>
+                        {(booking.remainingAmount > 0 || booking.paymentStatus === 'pending') ? 'Collect at Hotel' : 'Total Paid'}
+                    </span>
+                    <span className={`font-black text-xl ${(booking.remainingAmount > 0 || booking.paymentStatus === 'pending') ? 'text-red-600' : 'text-[#004F4D]'}`}>
+                        ₹{booking.remainingAmount > 0 
+                            ? booking.remainingAmount.toLocaleString('en-IN') 
+                            : (booking.paymentStatus === 'pending' 
+                                ? booking.totalAmount?.toLocaleString('en-IN') 
+                                : (booking.amountPaid?.toLocaleString('en-IN') || booking.totalAmount?.toLocaleString('en-IN')))}
+                    </span>
+                </div>
             </div>
 
             {/* Actions */}

@@ -110,20 +110,53 @@ const PartnerInventory = () => {
                 const daysInMonth = lastDay.getDate();
                 const total = selectedRoom?.totalInventory || 0;
 
+                // Helper to normalize date to local midnight for accurate date-only comparison
+                // Handles both Date objects and ISO strings from backend
+                const normalizeToLocalMidnight = (date) => {
+                    if (!date) return null;
+                    // If it's already a Date object, use it directly
+                    const d = date instanceof Date ? new Date(date.getTime()) : new Date(date);
+                    // Set to local midnight to avoid timezone issues
+                    d.setHours(0, 0, 0, 0);
+                    return d;
+                };
+
+                // Helper to get date string in YYYY-MM-DD format for comparison
+                const getDateString = (dateObj) => {
+                    const y = dateObj.getFullYear();
+                    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                    const d = String(dateObj.getDate()).padStart(2, '0');
+                    return `${y}-${m}-${d}`;
+                };
+
                 for (let d = 1; d <= daysInMonth; d++) {
                     const dateObj = new Date(year, month, d);
+                    dateObj.setHours(0, 0, 0, 0); // Ensure local midnight
+                    const currentDateStr = getDateString(dateObj);
                     let blockedCount = 0;
 
                     if (ledgerRes.entries) {
                         ledgerRes.entries.forEach(entry => {
-                            const start = new Date(entry.startDate);
-                            const end = new Date(entry.endDate);
-                            // Check overlap: simple [start, end) logic
-                            // Standard hotel logic: check-in day counts, check-out day is free
-                            // If block is 1st to 2nd, it blocks the 1st.
-                            // So if dateObj (1st) >= start (1st) && dateObj (1st) < end (2nd) -> TRUE.
-                            // If dateObj (2nd) >= start (1st) && dateObj (2nd) < end (2nd) -> FALSE. Correct.
-                            if (dateObj >= start && dateObj < end) {
+                            if (!entry.startDate || !entry.endDate) return;
+                            
+                            // Normalize ledger entry dates to local midnight for accurate comparison
+                            const start = normalizeToLocalMidnight(entry.startDate);
+                            const end = normalizeToLocalMidnight(entry.endDate);
+                            
+                            if (!start || !end) return;
+                            
+                            // Use date string comparison for more reliable date-only matching
+                            // This avoids any timezone conversion issues
+                            const startStr = getDateString(start);
+                            const endStr = getDateString(end);
+                            
+                            // Check overlap: [start, end) - check-in day is blocked, check-out day is free
+                            // If booking is 19th to 21st:
+                            // - startStr = "2024-02-19", endStr = "2024-02-21"
+                            // - currentDateStr = "2024-02-19": "2024-02-19" >= "2024-02-19" && "2024-02-19" < "2024-02-21" = TRUE ✓
+                            // - currentDateStr = "2024-02-20": "2024-02-20" >= "2024-02-19" && "2024-02-20" < "2024-02-21" = TRUE ✓
+                            // - currentDateStr = "2024-02-21": "2024-02-21" >= "2024-02-19" && "2024-02-21" < "2024-02-21" = FALSE ✓
+                            if (currentDateStr >= startStr && currentDateStr < endStr) {
                                 blockedCount += entry.units;
                             }
                         });
@@ -428,44 +461,89 @@ const PartnerInventory = () => {
                         {/* Form */}
                         <div className="flex-1 overflow-y-auto px-6 pb-20">
                             <div className="space-y-5">
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-3">
                                     <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Check-in</label>
-                                        <input
-                                            type="date"
-                                            value={formData.startDate}
-                                            onChange={e => {
-                                                const newStart = e.target.value;
-                                                let newEnd = formData.endDate;
-                                                if (newEnd <= newStart) {
-                                                    const d = new Date(newStart);
-                                                    d.setDate(d.getDate() + 1);
-                                                    const y = d.getFullYear();
-                                                    const m = String(d.getMonth() + 1).padStart(2, '0');
-                                                    const day = String(d.getDate()).padStart(2, '0');
-                                                    newEnd = `${y}-${m}-${day}`;
-                                                }
-                                                setFormData({ ...formData, startDate: newStart, endDate: newEnd });
-                                            }}
-                                            className="w-full h-12 px-3 rounded-xl border border-gray-200 font-medium focus:border-black focus:ring-0"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Check-out</label>
-                                        <input
-                                            type="date"
-                                            value={formData.endDate}
-                                            min={(() => {
-                                                const d = new Date(formData.startDate);
-                                                d.setDate(d.getDate() + 1);
-                                                const y = d.getFullYear();
-                                                const m = String(d.getMonth() + 1).padStart(2, '0');
-                                                const day = String(d.getDate()).padStart(2, '0');
-                                                return `${y}-${m}-${day}`;
-                                            })()}
-                                            onChange={e => setFormData({ ...formData, endDate: e.target.value })}
-                                            className="w-full h-12 px-3 rounded-xl border border-gray-200 font-medium focus:border-black focus:ring-0"
-                                        />
+                                        <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase">Date Range</label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="relative">
+                                                <label className="block text-[10px] font-semibold text-gray-400 mb-1">Start Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.startDate}
+                                                    onChange={e => {
+                                                        const newStart = e.target.value;
+                                                        if (!newStart) {
+                                                            setFormData({ ...formData, startDate: newStart });
+                                                            return;
+                                                        }
+                                                        let newEnd = formData.endDate;
+                                                        // Ensure end date is at least 1 day after start date
+                                                        const startDate = new Date(newStart);
+                                                        const minEndDate = new Date(startDate);
+                                                        minEndDate.setDate(minEndDate.getDate() + 1);
+                                                        const minEndStr = `${minEndDate.getFullYear()}-${String(minEndDate.getMonth() + 1).padStart(2, '0')}-${String(minEndDate.getDate()).padStart(2, '0')}`;
+                                                        
+                                                        if (!newEnd || newEnd <= newStart) {
+                                                            newEnd = minEndStr;
+                                                        } else {
+                                                            // If current end date is before minimum, update it
+                                                            const endDate = new Date(newEnd);
+                                                            if (endDate <= startDate) {
+                                                                newEnd = minEndStr;
+                                                            }
+                                                        }
+                                                        setFormData({ ...formData, startDate: newStart, endDate: newEnd });
+                                                    }}
+                                                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 font-medium text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <label className="block text-[10px] font-semibold text-gray-400 mb-1">End Date</label>
+                                                <input
+                                                    type="date"
+                                                    value={formData.endDate}
+                                                    min={(() => {
+                                                        if (!formData.startDate) {
+                                                            const tomorrow = new Date();
+                                                            tomorrow.setDate(tomorrow.getDate() + 1);
+                                                            return `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+                                                        }
+                                                        const d = new Date(formData.startDate);
+                                                        d.setDate(d.getDate() + 1);
+                                                        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                                                    })()}
+                                                    onChange={e => {
+                                                        const newEnd = e.target.value;
+                                                        if (!newEnd) {
+                                                            setFormData({ ...formData, endDate: newEnd });
+                                                            return;
+                                                        }
+                                                        // Validate that end date is after start date
+                                                        if (formData.startDate && newEnd <= formData.startDate) {
+                                                            const startDate = new Date(formData.startDate);
+                                                            const minEndDate = new Date(startDate);
+                                                            minEndDate.setDate(minEndDate.getDate() + 1);
+                                                            const minEndStr = `${minEndDate.getFullYear()}-${String(minEndDate.getMonth() + 1).padStart(2, '0')}-${String(minEndDate.getDate()).padStart(2, '0')}`;
+                                                            setFormData({ ...formData, endDate: minEndStr });
+                                                            return;
+                                                        }
+                                                        setFormData({ ...formData, endDate: newEnd });
+                                                    }}
+                                                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 font-medium text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                        {formData.startDate && formData.endDate && (() => {
+                                            const start = new Date(formData.startDate);
+                                            const end = new Date(formData.endDate);
+                                            const nights = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+                                            return (
+                                                <p className="text-xs text-emerald-600 font-semibold mt-2 flex items-center gap-1">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    <span>{nights} {nights === 1 ? 'night' : 'nights'} selected ({formData.startDate} to {formData.endDate})</span>
+                                                </p>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
 

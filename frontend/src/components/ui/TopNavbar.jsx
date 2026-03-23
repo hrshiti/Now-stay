@@ -1,24 +1,34 @@
 import React from 'react';
-import { User, Globe } from 'lucide-react';
-import logo from '../../assets/rokologin-removebg-preview.png';
-import { Link } from 'react-router-dom';
+import { User, Globe, Navigation } from 'lucide-react';
+import NowStayLogo from './NowStayLogo';
+import { Link, useNavigate } from 'react-router-dom';
+import { propertyService } from '../../services/propertyService';
+import { toast } from 'react-hot-toast';
 
 const TopNavbar = () => {
+    const navigate = useNavigate();
     // Get user from local storage
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     const userName = user.name || 'User';
 
+    const handleNearBy = async (e) => {
+        e.preventDefault();
+        try {
+            toast.loading('Getting your location...');
+            const location = await propertyService.getCurrentLocation();
+            toast.dismiss();
+            navigate(`/search?lat=${location.lat}&lng=${location.lng}&radius=50&sort=distance`);
+        } catch (error) {
+            toast.dismiss();
+            toast.error('Could not get location. Please enable permissions.');
+        }
+    };
+
     return (
         <nav className="hidden md:flex w-full h-24 bg-white/95 backdrop-blur-md border-b border-gray-100 px-8 justify-between items-center fixed top-0 z-50">
 
-            {/* Logo */}
-            <Link to="/">
-                <div className="flex flex-col items-start leading-tight group">
-                    <span className="text-2xl font-black tracking-tighter text-gray-900">
-                        NOW<span className="text-teal-600">STAY.in</span>
-                    </span>
-                    <div className="h-0.5 w-6 bg-teal-600 rounded-full group-hover:w-full transition-all duration-300"></div>
-                </div>
+            <Link to="/" className="flex items-center">
+                <NowStayLogo size="md" />
             </Link>
 
             {/* Desktop Links */}
@@ -32,9 +42,13 @@ const TopNavbar = () => {
                 <Link to="/bookings" className="text-gray-600 font-bold text-sm hover:text-surface transition">
                     Bookings
                 </Link>
-                <Link to="/wallet" className="text-gray-600 font-bold text-sm hover:text-surface transition">
-                    Wallet
-                </Link>
+                <button
+                    onClick={handleNearBy}
+                    className="text-gray-600 font-bold text-sm hover:text-surface transition flex items-center gap-1.5"
+                >
+                    <Navigation size={16} />
+                    Near By
+                </button>
                 <Link to="/refer" className="text-gray-600 font-bold text-sm hover:text-surface transition">
                     Refer & Earn
                 </Link>

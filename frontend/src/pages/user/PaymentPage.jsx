@@ -1,18 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, CreditCard, ShieldCheck, Tag, TrendingDown } from 'lucide-react';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { ArrowLeft, CreditCard, ShieldCheck, Tag, TrendingDown, Loader2 } from 'lucide-react';
 import RazorpayButton from '../../components/payment/RazorpayButton';
 import { toast } from 'react-hot-toast';
+import { bookingService } from '../../services/apiService';
 
 const PaymentPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { id } = useParams();
     const [selectedMethod, setSelectedMethod] = useState('razorpay');
+    const [booking, setBooking] = useState(location.state?.booking || null);
+    const [loading, setLoading] = useState(!location.state?.booking);
 
-    // Get booking data from navigation state
-    const booking = location.state?.booking;
-    const bookingId = booking?.bookingId;
-    const pricing = booking?.pricing || {};
+    // Get booking data from state
+    const bookingId = booking?.bookingId || booking?._id;
+    const pricing = booking?.pricing || {
+        baseAmount: booking?.baseAmount || 0,
+        discountAmount: booking?.discount || 0,
+        userPayableAmount: booking?.totalAmount || 0,
+    };
 
     // Debug logging
     console.log('PaymentPage - Location state:', location.state);
@@ -21,14 +28,46 @@ const PaymentPage = () => {
     console.log('PaymentPage - Pricing:', pricing);
 
     useEffect(() => {
-        if (!booking || !bookingId) {
-            console.error('Payment page error - No booking data found');
-            console.error('Booking:', booking);
-            console.error('Booking ID:', bookingId);
-            toast.error('No booking found. Please create a booking first.');
-            navigate('/');
-        }
-    }, [booking, bookingId, navigate]);
+        const fetchBooking = async () => {
+            if (booking) return;
+
+            if (!id) {
+                toast.error('No booking found. Please create a booking first.');
+                navigate('/');
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const data = await bookingService.getBookingDetail(id);
+                if (data.paymentStatus === 'paid') {
+                    toast.success('This booking is already paid!');
+                    navigate(`/booking/${id}`);
+                    return;
+                }
+                setBooking(data);
+            } catch (error) {
+                console.error("Failed to load booking:", error);
+                toast.error("Could not load booking details");
+                navigate('/');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchBooking();
+    }, [id, booking, navigate]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="flex flex-col items-center">
+                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-[#004F4D]" />
+                    <p className="text-gray-500 font-medium">Loading details...</p>
+                </div>
+            </div>
+        );
+    }
 
     if (!booking) {
         return null;
@@ -150,7 +189,7 @@ const PaymentPage = () => {
             {/* Bottom Bar with Razorpay Button */}
             <div className="fixed bottom-0 left-0 w-full bg-white p-4 border-t border-gray-200 shadow-xl">
                 <RazorpayButton
-                    bookingId={bookingId}
+                    bookingId={booking?._id || bookingId}
                     amount={pricing.userPayableAmount}
                     onSuccess={handlePaymentSuccess}
                     onFailure={handlePaymentFailure}
