@@ -131,7 +131,7 @@ const PartnerJoinPropertyType = () => {
       <main className="flex-1 max-w-2xl mx-auto w-full p-4 md:p-6 pb-20">
         <div className="space-y-2 mb-8">
           <h1 className="text-3xl font-black text-gray-900 uppercase">What keeps you busy?</h1>
-          <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Select the type of property you want to list on Rukkoin.</p>
+          <p className="text-gray-500 text-sm font-bold uppercase tracking-widest">Select the type of property you want to list on nowstay.in.</p>
         </div>
 
         {loading ? (
