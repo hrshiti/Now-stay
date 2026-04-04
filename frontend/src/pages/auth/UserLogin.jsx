@@ -142,31 +142,31 @@ const UserLogin = () => {
         }
     };
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex items-center justify-center p-6">
+        <div className="min-h-screen bg-emerald-100 flex items-center justify-center p-6">
             {/* Background Pattern */}
             <div className="absolute inset-0 bg-grid-pattern opacity-5 pointer-events-none"></div>
 
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="w-full max-w-sm relative z-10"
+                className="w-full max-w-md relative z-10"
             >
-                {/* Logo */}
-                <div className="text-center mb-8">
-                    <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", delay: 0.1 }}
-                        className="inline-block mb-6"
-                    >
-                        <NowStayLogo size="lg" />
-                    </motion.div>
-                    <h1 className="text-2xl font-black text-gray-900 tracking-tight">Welcome Back</h1>
-                    <p className="text-gray-400 text-xs font-medium mt-1">Login to continue your journey</p>
-                </div>
+                {/* Main Glassmorphic Card */}
+                <div className="bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.05)] p-8 md:p-10">
+                    {/* Logo & Header */}
+                    <div className="text-center mb-6">
+                        <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: "spring", delay: 0.1 }}
+                            className="inline-block mb-4"
+                        >
+                            <NowStayLogo size="lg" />
+                        </motion.div>
+                        <h1 className="text-xl font-black text-gray-900 tracking-tight">Welcome Back</h1>
+                        <p className="text-gray-400 text-xs font-medium mt-1">Login to continue your journey</p>
+                    </div>
 
-                {/* Main Card */}
-                <div className=" p-2">
                     <AnimatePresence mode="wait">
                         {step === 1 ? (
                             <motion.div
@@ -176,12 +176,12 @@ const UserLogin = () => {
                                 exit={{ opacity: 0, x: -20 }}
                             >
                                 <form onSubmit={handleSendOTP} className="space-y-6">
-                                    <div>
-                                        <label className="text-[10px] uppercase tracking-wider font-bold text-gray-400 mb-2 block ml-1">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-400 block ml-2">
                                             Phone Number
                                         </label>
-                                        <div className="relative">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                        <div className="relative group">
+                                            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-surface transition-colors">
                                                 <Phone size={18} />
                                             </div>
                                             <input
@@ -190,7 +190,7 @@ const UserLogin = () => {
                                                 onChange={(e) => setPhone(e.target.value)}
                                                 placeholder="9876543210"
                                                 maxLength={10}
-                                                className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-transparent rounded-2xl focus:bg-white focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none transition-all font-bold text-gray-800 text-lg placeholder:text-gray-300 shadow-sm"
+                                                className="w-full pl-12 pr-4 py-3.5 bg-white/50 border-2 border-transparent rounded-[1.5rem] focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-black text-gray-800 text-lg placeholder:text-gray-300 shadow-sm"
                                                 required
                                             />
                                         </div>
@@ -198,9 +198,9 @@ const UserLogin = () => {
 
                                     {error && (
                                         <motion.p
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="text-red-500 text-xs font-bold text-center bg-red-50 py-2 rounded-lg"
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            className="text-red-500 text-[11px] font-black text-center bg-red-50/80 backdrop-blur-sm border border-red-100 py-2.5 rounded-xl"
                                         >
                                             {error}
                                         </motion.p>
@@ -209,14 +209,14 @@ const UserLogin = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-2xl font-bold active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 rounded-[1.5rem] font-black tracking-wide shadow-lg shadow-emerald-500/20 hover:shadow-xl active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                                     >
                                         {loading ? (
-                                            <Loader2 size={20} className="animate-spin" />
+                                            <Loader2 size={24} className="animate-spin" />
                                         ) : (
                                             <>
-                                                Send OTP
-                                                <ArrowRight size={20} />
+                                                <span className="text-sm">Send OTP</span>
+                                                <ArrowRight size={18} />
                                             </>
                                         )}
                                     </button>
@@ -229,19 +229,18 @@ const UserLogin = () => {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                             >
-                                <div className="text-center mb-4">
-                                    <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2">
-                                        <Shield size={18} className="text-emerald-600" />
+                                <div className="text-center mb-6">
+                                    <div className="w-12 h-12 bg-emerald-50/80 rounded-[1rem] flex items-center justify-center mx-auto mb-3 border border-emerald-100 shadow-sm">
+                                        <Shield size={22} className="text-emerald-600" />
                                     </div>
-                                    <h2 className="text-base font-black text-gray-900 tracking-tight">Enter OTP</h2>
-                                    <p className="text-[10px] text-gray-400 mt-0.5 font-medium">
-                                        Code sent to <span className="text-gray-900 font-bold">+91 {phone}</span>
+                                    <h2 className="text-lg font-black text-gray-900 tracking-tight">Enter OTP</h2>
+                                    <p className="text-[11px] text-gray-400 mt-1 font-medium">
+                                        Code sent to <span className="text-gray-900 font-black">+91 {phone}</span>
                                     </p>
                                 </div>
 
                                 <form onSubmit={handleVerifyOTP} className="space-y-6">
-                                    {/* OTP Input */}
-                                    <div className="flex gap-1.5 justify-center">
+                                    <div className="flex gap-2 justify-center">
                                         {otp.map((digit, index) => (
                                             <input
                                                 key={index}
@@ -252,29 +251,23 @@ const UserLogin = () => {
                                                 maxLength={1}
                                                 value={digit}
                                                 onChange={(e) => handleOTPChange(index, e.target.value)}
-                                                className="w-10 h-12 text-center text-lg font-black border-2 border-gray-300 rounded-xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all bg-gray-50/50"
+                                                className="w-10 h-12 text-center text-lg font-black border-2 border-gray-100 rounded-xl focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all bg-white/50"
                                             />
                                         ))}
                                     </div>
 
                                     <div className="text-center">
                                         {canResend ? (
-                                            <p className="text-gray-500 text-[11px] font-bold">
-                                                Didn't receive code?{' '}
-                                                <button
-                                                    type="button"
-                                                    onClick={handleResendOTP}
-                                                    className="text-emerald-600 hover:text-emerald-700 hover:underline transition-colors"
-                                                >
-                                                    Resend OTP
-                                                </button>
-                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={handleResendOTP}
+                                                className="text-emerald-600 text-[11px] font-black hover:text-emerald-700 transition-colors bg-emerald-50 px-4 py-1.5 rounded-full border border-emerald-100 shadow-sm animate-bounce"
+                                            >
+                                                Resend Code
+                                            </button>
                                         ) : (
-                                            <p className="text-gray-500 text-[11px] font-bold">
-                                                Resend OTP in{' '}
-                                                <span className="text-emerald-600 font-black tabular-nums">
-                                                    {Math.floor(resendTimer / 60)}:{String(resendTimer % 60).padStart(2, '0')}
-                                                </span>
+                                            <p className="text-gray-400 text-[11px] font-bold bg-gray-50/80 inline-block px-4 py-1.5 rounded-full border border-gray-100">
+                                                Resend in <span className="text-emerald-600 font-black tabular-nums">{Math.floor(resendTimer / 60)}:{String(resendTimer % 60).padStart(2, '0')}</span>
                                             </p>
                                         )}
                                     </div>
@@ -283,7 +276,7 @@ const UserLogin = () => {
                                         <motion.p
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
-                                            className="text-red-500 text-[10px] font-bold text-center bg-red-50 py-2 rounded-lg"
+                                            className="text-red-500 text-[11px] font-black text-center bg-red-50 py-2.5 rounded-xl border border-red-100"
                                         >
                                             {error}
                                         </motion.p>
@@ -293,10 +286,10 @@ const UserLogin = () => {
                                         <button
                                             type="submit"
                                             disabled={loading}
-                                            className="w-full bg-gray-900 hover:bg-black text-white py-3 rounded-2xl font-black text-sm shadow-md shadow-gray-900/10 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                            className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 rounded-[1.5rem] font-black text-sm shadow-lg shadow-emerald-500/20 hover:shadow-xl active:scale-[0.97] transition-all disabled:opacity-50 flex items-center justify-center gap-3"
                                         >
                                             {loading ? (
-                                                <Loader2 size={18} className="animate-spin" />
+                                                <Loader2 size={24} className="animate-spin" />
                                             ) : (
                                                 'Verify & Login'
                                             )}
@@ -305,7 +298,7 @@ const UserLogin = () => {
                                         <button
                                             type="button"
                                             onClick={() => setStep(1)}
-                                            className="w-full text-gray-400 text-[10px] font-bold hover:text-emerald-600 transition-colors"
+                                            className="w-full text-gray-400 text-[10px] font-bold hover:text-emerald-600 transition-colors pt-1"
                                         >
                                             Change Number
                                         </button>
@@ -314,18 +307,20 @@ const UserLogin = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
 
-                {/* Footer */}
-                <p className="text-center text-gray-400 text-xs mt-8 font-medium">
-                    New to Now Stay?{' '}
-                    <button
-                        onClick={() => navigate('/signup')}
-                        className="text-emerald-600 font-bold hover:underline"
-                    >
-                        Create Account
-                    </button>
-                </p>
+                    {/* Sign Up Link */}
+                    <div className="mt-6 pt-6 border-t border-gray-100/50 text-center">
+                        <p className="text-gray-400 text-xs font-medium">
+                            New to Now Stay?{' '}
+                            <button
+                                onClick={() => navigate('/signup')}
+                                className="text-emerald-600 font-black hover:underline"
+                            >
+                                Create Account
+                            </button>
+                        </p>
+                    </div>
+                </div>
             </motion.div>
         </div>
     );

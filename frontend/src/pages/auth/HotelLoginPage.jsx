@@ -139,7 +139,7 @@ const HotelLoginPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white text-[#003836] flex flex-col font-sans selection:bg-[#004F4D] selection:text-white">
+        <div className="min-h-screen bg-white text-[#003836] flex flex-col font-sans selection:bg-[#0F172A] selection:text-white">
 
             {/* Top Bar - Centered Logo */}
             <header className="px-6 pt-0 pb-2 flex justify-center items-center">
@@ -176,7 +176,7 @@ const HotelLoginPage = () => {
                                     <label className="text-[#003836] font-bold text-[10px] uppercase tracking-wider block mb-1.5 ml-1">
                                         Mobile Number
                                     </label>
-                                    <div className="flex items-center bg-gray-50/50 rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-[#004F4D]/10 focus-within:border-[#004F4D] transition-all h-12">
+                                    <div className="flex items-center bg-gray-50/50 rounded-xl border border-gray-200 overflow-hidden focus-within:ring-2 focus-within:ring-[#0F172A]/10 focus-within:border-[#0F172A] transition-all h-12">
                                         <div className="pl-4 text-gray-500 font-bold border-r border-gray-100 pr-3 h-full flex items-center bg-gray-100/30">
                                             <span className="text-xs">+91</span>
                                         </div>
@@ -204,7 +204,7 @@ const HotelLoginPage = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#004F4D] text-white h-12 rounded-xl font-bold text-sm shadow-lg shadow-[#004F4D]/20 hover:shadow-[#004F4D]/30 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#0F172A] text-white h-12 rounded-xl font-bold text-sm shadow-lg shadow-[#0F172A]/20 hover:shadow-[#0F172A]/30 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <Loader2 size={18} className="animate-spin" />
@@ -226,8 +226,8 @@ const HotelLoginPage = () => {
                             className="flex-1"
                         >
                             <div className="mb-6 bg-green-50/50 p-4 rounded-2xl border border-green-100 text-center">
-                                <div className="w-10 h-10 bg-[#004F4D]/10 rounded-full flex items-center justify-center mx-auto mb-2">
-                                    <Shield size={20} className="text-[#004F4D]" />
+                                <div className="w-10 h-10 bg-[#0F172A]/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                                    <Shield size={20} className="text-[#0F172A]" />
                                 </div>
                                 <h2 className="text-base font-bold text-[#003836]">Enter OTP</h2>
                                 <p className="text-gray-500 text-xs mt-1">
@@ -251,7 +251,7 @@ const HotelLoginPage = () => {
                                                     document.getElementById(`otp-${index - 1}`)?.focus();
                                                 }
                                             }}
-                                            className="w-10 h-12 bg-white border-2 border-gray-400 rounded-xl text-center text-[#003836] text-xl font-bold focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 outline-none transition-all shadow-sm"
+                                            className="w-10 h-12 bg-white border-2 border-gray-400 rounded-xl text-center text-[#003836] text-xl font-bold focus:border-[#0F172A] focus:ring-2 focus:ring-[#0F172A]/10 outline-none transition-all shadow-sm"
                                             autoFocus={index === 0}
                                         />
                                     ))}
@@ -264,7 +264,7 @@ const HotelLoginPage = () => {
                                             <button
                                                 type="button"
                                                 onClick={handleResendOTP}
-                                                className="text-[#004F4D] hover:underline"
+                                                className="text-[#0F172A] hover:underline"
                                             >
                                                 Resend OTP
                                             </button>
@@ -272,7 +272,7 @@ const HotelLoginPage = () => {
                                     ) : (
                                         <p className="text-gray-400 text-xs font-bold">
                                             Resend OTP in{' '}
-                                            <span className="text-[#004F4D] tabular-nums">
+                                            <span className="text-[#0F172A] tabular-nums">
                                                 {Math.floor(resendTimer / 60)}:{String(resendTimer % 60).padStart(2, '0')}
                                             </span>
                                         </p>
@@ -289,7 +289,7 @@ const HotelLoginPage = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#004F4D] text-white h-12 rounded-xl font-bold text-sm shadow-lg shadow-[#004F4D]/20 hover:shadow-[#004F4D]/30 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#0F172A] text-white h-12 rounded-xl font-bold text-sm shadow-lg shadow-[#0F172A]/20 hover:shadow-[#0F172A]/30 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <Loader2 size={18} className="animate-spin" />
@@ -301,7 +301,7 @@ const HotelLoginPage = () => {
                                     <button
                                         type="button"
                                         onClick={() => setStep(1)}
-                                        className="w-full text-gray-400 text-xs font-bold hover:text-[#004F4D] transition-colors"
+                                        className="w-full text-gray-400 text-xs font-bold hover:text-[#0F172A] transition-colors"
                                     >
                                         Change Mobile Number
                                     </button>
@@ -317,7 +317,7 @@ const HotelLoginPage = () => {
                     New to NowStay?{' '}
                         <button
                             onClick={() => navigate('/hotel/register')}
-                            className="text-[#004F4D] font-bold hover:underline"
+                            className="text-[#0F172A] font-bold hover:underline"
                         >
                             Register as a partner
                         </button>

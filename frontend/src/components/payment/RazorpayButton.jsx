@@ -45,7 +45,7 @@ const RazorpayButton = ({
           contact: ''
         },
         theme: {
-          color: '#004F4D'
+          color: '#0F172A'
         }
       });
 
@@ -83,7 +83,7 @@ const RazorpayButton = ({
     <button
       onClick={handlePayment}
       disabled={disabled || loading}
-      className={`flex items-center justify-center gap-2 bg-[#004F4D] text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-[#003836] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      className={`flex items-center justify-center gap-2 bg-[#0F172A] text-white font-bold py-3 px-6 rounded-xl shadow-md hover:bg-[#003836] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       {loading ? (
         <>

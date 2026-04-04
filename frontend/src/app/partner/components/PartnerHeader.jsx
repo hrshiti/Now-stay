@@ -78,7 +78,7 @@ const PartnerHeader = ({ title, subtitle, showMenu = true }) => {
                         onClick={() => navigate('/hotel/wallet')}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white border border-gray-100 shadow-sm active:scale-95 transition-transform"
                     >
-                        <div className="w-5 h-5 bg-[#004F4D] rounded-full flex items-center justify-center">
+                        <div className="w-5 h-5 bg-[#0F172A] rounded-full flex items-center justify-center">
                             <Wallet size={10} className="text-white" />
                         </div>
                         <div className="flex flex-col items-start leading-none mr-0.5">

@@ -64,7 +64,7 @@ const PartnerSupport = () => {
                 <div className="grid grid-cols-2 gap-3 mb-8">
                     <button
                         onClick={() => window.open('https://wa.me/919111384535', '_blank')}
-                        className="bg-[#004F4D] text-white p-5 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
+                        className="bg-[#0F172A] text-white p-5 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
                     >
                         <MessageSquare size={24} />
                         <span className="text-sm font-bold">WhatsApp Chat</span>
@@ -86,7 +86,7 @@ const PartnerSupport = () => {
                 <div>
                     {loading ? (
                         <div className="p-8 flex justify-center">
-                            <Loader2 className="animate-spin text-[#004F4D]" />
+                            <Loader2 className="animate-spin text-[#0F172A]" />
                         </div>
                     ) : faqs.length === 0 ? (
                         <div className="p-8 text-center text-gray-400 text-sm">No FAQs available.</div>
@@ -99,7 +99,7 @@ const PartnerSupport = () => {
 
                 <div className="mt-8 text-center">
                     <p className="text-xs text-gray-400 mb-2">Still have questions?</p>
-                    <a href="mailto:partners@rokkooin.com" className="inline-flex items-center gap-2 text-sm font-bold text-[#004F4D] border-b border-[#004F4D]/20 pb-0.5 hover:border-[#004F4D] transition-colors">
+                    <a href="mailto:partners@rokkooin.com" className="inline-flex items-center gap-2 text-sm font-bold text-[#0F172A] border-b border-[#0F172A]/20 pb-0.5 hover:border-[#0F172A] transition-colors">
                         <Mail size={14} /> Email us at partners@rokkooin.com
                     </a>
                 </div>

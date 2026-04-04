@@ -144,7 +144,7 @@ const HotelSignup = () => {
     };
 
     return (
-        <div className="h-screen overflow-hidden bg-white text-[#003836] flex flex-col font-sans selection:bg-[#004F4D] selection:text-white">
+        <div className="h-screen overflow-hidden bg-white text-[#003836] flex flex-col font-sans selection:bg-[#0F172A] selection:text-white">
             {/* Top Bar */}
             <header className="absolute top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md z-50 px-4 flex items-center justify-between border-b border-gray-100">
                 <button
@@ -166,7 +166,7 @@ const HotelSignup = () => {
             {/* Progress Bar */}
             <div className="absolute top-16 left-0 right-0 z-40 bg-gray-100 h-1">
                 <div
-                    className="h-full bg-[#004F4D] transition-all duration-500 ease-out"
+                    className="h-full bg-[#0F172A] transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -190,7 +190,7 @@ const HotelSignup = () => {
                                     Already have a partner account?{' '}
                                     <button
                                         onClick={() => navigate('/hotel/login')}
-                                        className="text-[#004F4D] font-bold hover:underline"
+                                        className="text-[#0F172A] font-bold hover:underline"
                                     >
                                         Login Here
                                     </button>
@@ -207,7 +207,7 @@ const HotelSignup = () => {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleBack}
-                            className={`text-xs font-bold underline px-3 py-2 transition-colors ${currentStep === 1 || loading ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-[#004F4D]'}`}
+                            className={`text-xs font-bold underline px-3 py-2 transition-colors ${currentStep === 1 || loading ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-[#0F172A]'}`}
                             disabled={currentStep === 1 || loading}
                         >
                             Back
@@ -218,7 +218,7 @@ const HotelSignup = () => {
                         <button
                             onClick={handleNext}
                             disabled={loading}
-                            className={`bg-[#004F4D] text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 w-full md:w-auto justify-center ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
+                            className={`bg-[#0F172A] text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 w-full md:w-auto justify-center ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
                         >
                             {loading ? (
                                 <>Processing...</>

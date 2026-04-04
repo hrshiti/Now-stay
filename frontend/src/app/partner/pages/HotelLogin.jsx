@@ -93,7 +93,7 @@ const HotelLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#003836] via-[#004F4D] to-[#006663] flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-[#003836] via-[#0F172A] to-[#006663] flex items-center justify-center p-4 relative overflow-hidden">
             {/* Animated Background Elements */}
             <div className="absolute inset-0 opacity-10">
                 <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl"></div>
@@ -140,7 +140,7 @@ const HotelLogin = () => {
                                         type="button"
                                         onClick={() => setMethod('phone')}
                                         className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${method === 'phone'
-                                            ? 'bg-[#004F4D] text-white shadow-md'
+                                            ? 'bg-[#0F172A] text-white shadow-md'
                                             : 'text-gray-500'
                                             }`}
                                     >
@@ -151,7 +151,7 @@ const HotelLogin = () => {
                                         type="button"
                                         onClick={() => setMethod('email')}
                                         className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${method === 'email'
-                                            ? 'bg-[#004F4D] text-white shadow-md'
+                                            ? 'bg-[#0F172A] text-white shadow-md'
                                             : 'text-gray-500'
                                             }`}
                                     >
@@ -176,7 +176,7 @@ const HotelLogin = () => {
                                                 value={contact}
                                                 onChange={(e) => setContact(e.target.value)}
                                                 placeholder={method === 'phone' ? '9876543210' : 'partner@hotel.com'}
-                                                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#004F4D] focus:border-transparent outline-none transition-all"
+                                                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0F172A] focus:border-transparent outline-none transition-all"
                                                 required
                                             />
                                         </div>
@@ -195,7 +195,7 @@ const HotelLogin = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#004F4D] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#0F172A] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <Loader2 size={20} className="animate-spin" />
@@ -217,7 +217,7 @@ const HotelLogin = () => {
                             >
                                 <div className="text-center mb-6">
                                     <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Shield size={32} className="text-[#004F4D]" />
+                                        <Shield size={32} className="text-[#0F172A]" />
                                     </div>
                                     <h2 className="text-xl font-bold text-gray-900">Enter OTP</h2>
                                     <p className="text-sm text-gray-500 mt-2">
@@ -235,7 +235,7 @@ const HotelLogin = () => {
                                                 maxLength={1}
                                                 value={digit}
                                                 onChange={(e) => handleOTPChange(index, e.target.value)}
-                                                className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-400 rounded-xl focus:border-[#004F4D] focus:ring-2 focus:ring-teal-200 outline-none transition-all"
+                                                className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-400 rounded-xl focus:border-[#0F172A] focus:ring-2 focus:ring-teal-200 outline-none transition-all"
                                             />
                                         ))}
                                     </div>
@@ -253,7 +253,7 @@ const HotelLogin = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#004F4D] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#0F172A] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <Loader2 size={20} className="animate-spin" />

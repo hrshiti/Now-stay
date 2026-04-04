@@ -32,7 +32,7 @@ const NotificationItem = ({ notif }) => {
                     {notif.desc}
                 </p>
                 {!notif.read && (
-                    <button className="text-[10px] font-bold text-[#004F4D] border-b border-[#004F4D]/20 hover:border-[#004F4D] transition-colors">Mark as Read</button>
+                    <button className="text-[10px] font-bold text-[#0F172A] border-b border-[#0F172A]/20 hover:border-[#0F172A] transition-colors">Mark as Read</button>
                 )}
             </div>
             {!notif.read && (
@@ -68,7 +68,7 @@ const PartnerNotifications = () => {
             <main className="max-w-3xl mx-auto px-4 pt-6">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="font-black text-[#003836] text-lg">Recent</h3>
-                    <button className="text-xs font-bold text-gray-400 hover:text-[#004F4D] transition-colors">Mark all read</button>
+                    <button className="text-xs font-bold text-gray-400 hover:text-[#0F172A] transition-colors">Mark all read</button>
                 </div>
 
                 <div ref={listRef}>

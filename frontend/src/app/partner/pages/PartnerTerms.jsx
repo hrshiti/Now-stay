@@ -7,7 +7,7 @@ import { legalService } from '../../../services/apiService';
 const Section = ({ title, children }) => (
     <div className="mb-8">
         <h4 className="font-bold text-[#003836] mb-2 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#004F4D]"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#0F172A]"></span>
             {title}
         </h4>
         <div className="text-xs text-gray-500 leading-relaxed pl-3.5 border-l border-gray-100">
@@ -109,7 +109,7 @@ const PartnerTerms = () => {
                             <CheckCircle size={16} />
                             <span className="text-xs font-bold">You accepted these terms on 12 Aug 2024</span>
                         </div>
-                        <button className="flex items-center gap-1 text-xs font-bold text-[#004F4D] hover:underline">
+                        <button className="flex items-center gap-1 text-xs font-bold text-[#0F172A] hover:underline">
                             Download PDF <ExternalLink size={12} />
                         </button>
                     </div>

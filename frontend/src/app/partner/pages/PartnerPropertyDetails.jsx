@@ -174,7 +174,7 @@ const PartnerPropertyDetails = () => {
         {/* Inventory Management Button */}
         <button
           onClick={() => navigate(`/hotel/inventory/${id}`)}
-          className="w-full bg-[#004F4D] text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-emerald-900/10 active:scale-[0.99] transition-all mb-4"
+          className="w-full bg-[#0F172A] text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-emerald-900/10 active:scale-[0.99] transition-all mb-4"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white">

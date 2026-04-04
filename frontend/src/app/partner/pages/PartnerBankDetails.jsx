@@ -123,13 +123,13 @@ const PartnerBankDetails = () => {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-[#004F4D]" /></div>;
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-[#0F172A]" /></div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-20">
       {/* Header */}
-      <div className="bg-[#004F4D] text-white pt-8 pb-12 px-6 rounded-b-[40px] shadow-lg mb-6 relative">
+      <div className="bg-[#0F172A] text-white pt-8 pb-12 px-6 rounded-b-[40px] shadow-lg mb-6 relative">
         <div className="flex items-center gap-4 mb-6">
           <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
             <ArrowLeft size={20} />
@@ -156,7 +156,7 @@ const PartnerBankDetails = () => {
               </div>
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-[#004F4D] rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-[#0F172A] rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors"
               >
                 <Edit size={14} /> Edit
               </button>
@@ -184,7 +184,7 @@ const PartnerBankDetails = () => {
           <div className="space-y-4">
             <div className="group">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Account Holder</label>
-              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
+              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
                 <User size={18} className="text-gray-400" />
                 {isEditing ? (
                   <input
@@ -202,7 +202,7 @@ const PartnerBankDetails = () => {
 
             <div className="group">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Account Number</label>
-              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
+              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
                 <CreditCard size={18} className="text-gray-400" />
                 {isEditing ? (
                   <input
@@ -223,7 +223,7 @@ const PartnerBankDetails = () => {
             <div className="flex gap-4">
               <div className="group flex-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">IFSC Code</label>
-                <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
+                <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
                   <Building2 size={18} className="text-gray-400" />
                   {isEditing ? (
                     <input
@@ -242,7 +242,7 @@ const PartnerBankDetails = () => {
 
             <div className="group">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Bank Name</label>
-              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
+              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
                 <Landmark size={18} className="text-gray-400" />
                 {isEditing ? (
                   <input
@@ -265,7 +265,7 @@ const PartnerBankDetails = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-3.5 rounded-xl bg-[#004F4D] text-white font-bold text-sm shadow-lg shadow-[#004F4D]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-[#0F172A] text-white font-bold text-sm shadow-lg shadow-[#0F172A]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                 Save Details
