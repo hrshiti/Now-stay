@@ -196,9 +196,9 @@ const SearchPage = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-white pb-24">
+        <div className="min-h-screen bg-emerald-100 pb-24">
             {/* Sticky Header */}
-            <div className="sticky top-0 z-30 bg-white border-b border-gray-100 pb-3 pt-3 px-4 shadow-sm">
+            <div className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-white/50 pb-3 pt-3 px-4 shadow-sm">
                 <div className="relative mb-3">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
@@ -214,21 +214,23 @@ const SearchPage = () => {
                 <div className="flex gap-3">
                     <button
                         onClick={handleNearMe}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-bold transition-all active:scale-95
-                        ${location ? 'bg-[#0F172A]/5 text-[#0F172A] border-[#0F172A]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 transition-all active:scale-95 text-xs font-black
+                        ${location 
+                            ? 'bg-surface text-white border-surface shadow-lg shadow-surface/20' 
+                            : 'bg-white text-surface border-surface/10 hover:border-surface/40 shadow-sm'}`}
                     >
-                        <Navigation size={14} className={location ? "fill-[#0F172A]" : ""} />
+                        <Navigation size={14} className={location ? "fill-white" : "fill-surface"} />
                         {location ? "Nearby Active" : "Near Me"}
                     </button>
 
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-bold transition-all active:scale-95
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 transition-all active:scale-95 text-xs font-black
                         ${(filters.minPrice || filters.maxPrice || (Array.isArray(filters.type) && filters.type.length > 0 && filters.type !== 'all') || filters.amenities?.length > 0)
-                                ? 'bg-[#0F172A]/5 text-[#0F172A] border-[#0F172A]'
-                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                ? 'bg-surface text-white border-surface shadow-lg shadow-surface/20' 
+                                : 'bg-white text-surface border-surface/10 hover:border-surface/40 shadow-sm'}`}
                     >
-                        <Filter size={14} className={(filters.minPrice || filters.maxPrice || (Array.isArray(filters.type) && filters.type.length > 0 && filters.type !== 'all') || filters.amenities?.length > 0) ? "fill-[#0F172A]" : ""} />
+                        <Filter size={14} className={(filters.minPrice || filters.maxPrice || (Array.isArray(filters.type) && filters.type.length > 0 && filters.type !== 'all') || filters.amenities?.length > 0) ? "fill-white" : "fill-surface"} />
                         Filters
                     </button>
                 </div>

@@ -626,7 +626,7 @@ const PropertyDetailsPage = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen pb-24">
+    <div className="bg-emerald-100 min-h-screen pb-24">
       {/* Header Image */}
       <div className="relative h-[40vh] md:h-[50vh] cursor-zoom-in group">
         <motion.div
@@ -724,7 +724,7 @@ const PropertyDetailsPage = () => {
 
       {/* Main Content */}
       <div className="max-w-5xl mx-auto px-0 md:px-5 -mt-10 relative z-10">
-        <div className="bg-white rounded-t-3xl md:rounded-3xl shadow-[0_-10px_60px_-15px_rgba(0,0,0,0.1)] p-5 pb-32 md:p-8 min-h-screen md:min-h-fit">
+        <div className="bg-white/80 backdrop-blur-xl rounded-t-3xl md:rounded-3xl shadow-[0_-10px_60px_-15px_rgba(0,40,40,0.1)] p-5 pb-32 md:p-8 min-h-screen md:min-h-fit border border-white/50">
 
           {/* Title & Badge */}
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-6">
@@ -1300,12 +1300,10 @@ const PropertyDetailsPage = () => {
 
                     if (!displayValue) return null;
 
-                    return (
-                      <div key={idx} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">
-                        <Shield size={14} className="text-gray-400" />
-                        <span>{rule.label}: <span className="font-semibold text-textDark">{displayValue}</span></span>
+                      <div key={idx} className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
+                        <Shield size={16} className="text-surface/50" />
+                        <span className="text-gray-600 font-medium">{rule.label}: <span className="font-bold text-textDark ml-1">{displayValue}</span></span>
                       </div>
-                    );
                   })}
                 </div>
 
@@ -1343,17 +1341,17 @@ const PropertyDetailsPage = () => {
               <h2 className="text-lg font-bold text-textDark mb-4">Nearby Places</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {property.nearbyPlaces.map((place, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-lg shadow-sm text-surface">
-                        <MapPin size={16} />
+                  <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 shadow-sm">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2.5 bg-white rounded-xl shadow-sm text-surface">
+                        <MapPin size={18} />
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-textDark">{place.name}</p>
-                        <p className="text-xs text-gray-500 capitalize">{place.type}</p>
+                        <p className="font-black text-sm text-textDark">{place.name}</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold mt-0.5">{place.type}</p>
                       </div>
                     </div>
-                    <span className="text-xs font-bold text-surface bg-surface/5 px-2 py-1 rounded-md">
+                    <span className="text-xs font-black text-surface bg-white px-3 py-1.5 rounded-lg border border-surface/10 shadow-sm">
                       {place.distanceKm} km
                     </span>
                   </div>
@@ -1363,8 +1361,8 @@ const PropertyDetailsPage = () => {
           )}
 
           {/* User Reviews Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-4">
+          <div className="mb-12">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-bold text-textDark">Guest Reviews</h2>
                 <div className="flex items-center text-sm text-gray-500 pt-1">
@@ -1376,9 +1374,12 @@ const PropertyDetailsPage = () => {
               </div>
               <button
                 onClick={() => setShowReviewForm(!showReviewForm)}
-                className="text-xs font-bold text-surface border border-surface px-3 py-1.5 rounded bg-surface/5 hover:bg-surface hover:text-white transition-all flex items-center gap-1.5"
+                className="text-xs font-black text-surface border border-surface/20 px-4 py-2 rounded-xl bg-white shadow-sm hover:bg-surface hover:text-white transition-all flex items-center gap-2 active:scale-95"
               >
-                <MessageSquare size={14} /> <span>Write a Review</span>
+                <div className="p-1 bg-surface/10 rounded-lg group-hover:bg-white/20">
+                  <MessageSquare size={14} />
+                </div>
+                <span>Write a Review</span>
               </button>
             </div>
 
@@ -1432,8 +1433,8 @@ const PropertyDetailsPage = () => {
 
             {/* Reviews Display - Carousel if > 3 */}
             {reviews.length === 0 ? (
-              <div className="text-center py-8 bg-gray-50 rounded-xl border border-dotted border-gray-300">
-                <p className="text-gray-500">No reviews yet. Be the first to share your experience!</p>
+              <div className="text-center p-12 bg-gray-50 rounded-2xl border border-dotted border-gray-300">
+                <p className="text-gray-500 font-medium">No reviews yet. Be the first to share your experience!</p>
               </div>
             ) : (
               // Simple Scrollable Row for simplicity and UX
@@ -1466,15 +1467,15 @@ const PropertyDetailsPage = () => {
       </div>
 
       {/* Sticky Bottom Booking Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-lg z-50">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 py-3 px-4 shadow-lg z-50">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-gray-500">{priceBreakdown ? 'Total Amount' : 'Price per night'}</p>
-            <p className="font-bold text-lg text-surface">
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{priceBreakdown ? 'Total Amount' : 'Per Night'}</p>
+            <p className="font-bold text-xl text-surface leading-tight">
               ₹{priceBreakdown?.grandTotal?.toLocaleString() || bookingBarPrice?.toLocaleString() || 'N/A'}
             </p>
             {dates.checkIn && dates.checkOut && (
-              <div className="mt-1">
+              <div className="mt-0.5">
                 {checkingAvailability ? (
                   <span className="text-[10px] text-blue-500 flex items-center gap-1">
                     <Loader2 size={10} className="animate-spin" /> Checking...
@@ -1491,7 +1492,7 @@ const PropertyDetailsPage = () => {
               </div>
             )}
             {extraPricingLabels.length > 0 && (
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[9px] text-gray-400 font-medium leading-tight">
                 {extraPricingLabels.join(' • ')}
               </p>
             )}
@@ -1500,14 +1501,19 @@ const PropertyDetailsPage = () => {
             <button
               onClick={handleBook}
               disabled={bookingLoading || checkingAvailability}
-              className="bg-surface text-white px-8 py-3 rounded-xl font-bold flex-1 md:w-64 disabled:opacity-70 disabled:cursor-not-allowed hover:bg-surface-dark transition-colors flex items-center justify-center gap-2"
+              className="bg-surface text-white px-6 py-1.5 rounded-lg font-black text-sm flex-1 md:w-44 disabled:opacity-70 disabled:cursor-not-allowed hover:bg-surface-dark shadow-md shadow-surface/20 transition-all active:scale-[0.96] flex flex-col items-center justify-center leading-none min-h-[44px]"
             >
               {(bookingLoading || checkingAvailability) ? (
                 <>
-                  <Loader2 size={20} className="animate-spin" />
-                  <span>{checkingAvailability ? 'Checking...' : 'Processing...'}</span>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span className="text-[10px]">{checkingAvailability ? 'Checking...' : 'Wait...'}</span>
                 </>
-              ) : 'Book Now'}
+              ) : (
+                <>
+                  <span className="block">Book</span>
+                  <span className="block mt-0.5">Now</span>
+                </>
+              )}
             </button>
           </div>
         </div>

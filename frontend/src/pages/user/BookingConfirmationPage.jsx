@@ -88,7 +88,7 @@ const BookingConfirmationPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="min-h-screen flex items-center justify-center bg-emerald-100">
                 <div className="flex flex-col items-center">
                     <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin mb-4"></div>
                     <p className="text-gray-500 font-medium">Loading Booking...</p>
@@ -133,15 +133,15 @@ const BookingConfirmationPage = () => {
     const contactPhone = (property.contactNumber || property.partnerId?.phone || '').replace(/\D/g, '') || null;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-12">
+        <div className="min-h-screen bg-emerald-100 pb-12">
             {/* Header */}
-            <div className="bg-white border-b border-gray-200 sticky top-0 z-30 print:hidden">
+            <div className="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 print:hidden shadow-sm shadow-emerald-900/5">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
-                    <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-600 hover:text-black transition-colors font-medium">
+                    <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/50 rounded-full transition-all active:scale-90 flex items-center gap-1.5 text-gray-700">
                         <ChevronLeft size={20} />
-                        <span className="hidden sm:inline">Back</span>
+                        <span className="hidden sm:inline font-bold text-sm">Back</span>
                     </button>
-                    <h1 className="text-lg font-bold text-gray-900">
+                    <h1 className="text-lg font-black text-gray-900 tracking-tight">
                         {isCancelled ? 'Booking Details' : 'Booking Confirmation'}
                     </h1>
                     <button onClick={handlePrint} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
@@ -153,7 +153,7 @@ const BookingConfirmationPage = () => {
             <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
 
                 {/* 1. Status Message */}
-                <div className={`bg-white rounded-3xl p-8 text-center shadow-sm border border-gray-100 relative overflow-hidden ${isCancelled ? 'border-red-100' : ''}`}>
+                <div className={`bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-xl shadow-emerald-900/5 border border-white/50 ${isCancelled ? 'border-red-100' : ''}`}>
                     {isCancelled ? (
                         <>
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-red-600"></div>
@@ -344,7 +344,7 @@ const BookingConfirmationPage = () => {
 
                         <button
                             onClick={() => navigate('/bookings')}
-                            className="w-full bg-black text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-gray-800 transition-all flex items-center justify-center gap-2 print:hidden"
+                            className="w-full bg-surface text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-900/20 hover:bg-surface-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 print:hidden"
                         >
                             My Bookings
                         </button>
