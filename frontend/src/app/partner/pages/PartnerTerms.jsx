@@ -19,6 +19,7 @@ const Section = ({ title, children }) => (
 const PartnerTerms = () => {
     const contentRef = useRef(null);
     const [page, setPage] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
     useEffect(() => {
@@ -33,12 +34,15 @@ const PartnerTerms = () => {
 
         const load = async () => {
             try {
+                setLoading(true);
                 const res = await legalService.getPage('partner', 'terms');
                 if (!isMounted) return;
                 setPage(res.page);
             } catch (e) {
                 if (!isMounted) return;
                 setError('Using default partner agreement until admin configures legal copy.');
+            } finally {
+                if (isMounted) setLoading(false);
             }
         };
 
@@ -74,34 +78,24 @@ const PartnerTerms = () => {
                         </div>
                     )}
 
-                    {page?.content ? (
-                        <Section title="">
-                            <p className="whitespace-pre-line">
-                                {page.content}
-                            </p>
-                        </Section>
+                    {loading ? (
+                        <div className="py-20 flex flex-col items-center justify-center gap-4">
+                             <div className="w-10 h-10 border-4 border-surface border-t-transparent rounded-full animate-spin"></div>
+                             <p className="text-xs text-gray-400 font-medium">Loading agreement details...</p>
+                        </div>
+                    ) : page?.content ? (
+                        <div className="space-y-6">
+                            <Section title="Terms & Conditions">
+                                <p className="whitespace-pre-line text-sm text-gray-600 leading-relaxed font-medium">
+                                    {page.content}
+                                </p>
+                            </Section>
+                        </div>
                     ) : (
-                        <>
-                            <Section title="1. Relationship with Rokkooin">
-                                By listing your property on Rokkooin, you agree to act as an independent service provider.
-                                Rokkooin acts solely as an intermediary platform to connect you with potential guests.
-                            </Section>
-
-                            <Section title="2. Payouts & Commission">
-                                Rokkooin charges a flat commission of 15% on every completed booking. Payouts are processed
-                                weekly (every Wednesday) for the previous week's check-outs, subject to a minimum withdrawal limit of ₹1,000.
-                            </Section>
-
-                            <Section title="3. Cancellation Policy">
-                                Partners must adhere to the cancellation policy selected during property listing.
-                                Any penalties for guest cancellations will be shared as per the platform rules.
-                            </Section>
-
-                            <Section title="4. Quality Standards">
-                                You agree to maintain the property standards as verified during onboarding.
-                                Consistent negative feedback or failure to honor bookings may result in delisting.
-                            </Section>
-                        </>
+                        <div className="py-20 text-center flex flex-col items-center justify-center gap-4 border-2 border-dashed border-gray-100 rounded-3xl">
+                            <FileText className="w-12 h-12 text-gray-200" />
+                            <p className="text-gray-400 text-sm font-medium">Legal agreement content is not available yet.</p>
+                        </div>
                     )}
 
                     <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">

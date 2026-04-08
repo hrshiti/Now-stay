@@ -105,8 +105,8 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
                 { icon: HelpCircle, label: 'Help & Support', path: '/hotel/support' },
                 { icon: FileText, label: 'Terms & Conditions', path: '/hotel/terms' },
                 { icon: Shield, label: 'Privacy Policy', path: '/hotel/privacy' },
-                { icon: Info, label: 'About Rukko Partner', path: '/hotel/about' },
-                { icon: Phone, label: 'Contact Rukko Team', path: '/hotel/contact' },
+                { icon: Info, label: 'About NowStay Partner', path: '/hotel/about' },
+                { icon: Phone, label: 'Contact NowStay Team', path: '/hotel/contact' },
                 { icon: Settings, label: 'Settings', path: '/hotel/settings' },
             ]
         }

@@ -28,7 +28,7 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[SW] Received background message:', payload);
 
-  const title = payload.notification?.title || 'Rukkoin';
+  const title = payload.notification?.title || 'NowStayIn';
   const body = payload.notification?.body || '';
   const data = payload.data || {};
 

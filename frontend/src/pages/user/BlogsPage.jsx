@@ -81,7 +81,7 @@ const BlogsPage = () => {
         <div className="grid md:grid-cols-[minmax(0,1.4fr),minmax(0,1fr)] gap-10 items-center">
           <div>
             <p className="text-xs font-semibold tracking-[0.2em] uppercase text-teal-300 mb-3">
-              RUKKOO HUB // STORIES
+              NOWSTAY HUB // STORIES
             </p>
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight text-white mb-4">
               Travel stories, stay tips &amp; real booking hacks.

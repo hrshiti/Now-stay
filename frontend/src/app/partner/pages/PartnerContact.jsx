@@ -42,7 +42,7 @@ const PartnerContact = () => {
         subject,
         message
       });
-      setSuccess('Your message has been sent to the Rukko team.');
+      setSuccess('Your message has been sent to the NowStay team.');
       setName('');
       setEmail('');
       setPhone('');
@@ -57,7 +57,7 @@ const PartnerContact = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <PartnerHeader title="Contact Partner Support" subtitle="Reach the Rukko team" showMenu={false} />
+      <PartnerHeader title="Contact Partner Support" subtitle="Reach the NowStay team" showMenu={false} />
 
       <main ref={contentRef} className="max-w-3xl mx-auto px-4 pt-6 space-y-4">
         <div className="grid grid-cols-2 gap-3">
@@ -68,27 +68,14 @@ const PartnerContact = () => {
             <div>
               <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Email</p>
               <a
-                href="mailto:rukkoohub@gmail.com"
+                href="mailto:nowstayhub@gmail.com"
                 className="text-xs text-gray-500 hover:text-[#0F172A] transition-colors break-all"
               >
-                rukkoohub@gmail.com
+                nowstayhub@gmail.com
               </a>
             </div>
           </div>
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#0F172A]/10 flex items-center justify-center text-[#0F172A]">
-              <Phone size={18} />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Phone</p>
-              <a
-                href="tel:+916232314147"
-                className="text-xs text-gray-500 hover:text-[#0F172A] transition-colors"
-              >
-                6232314147
-              </a>
-            </div>
-          </div>
+
         </div>
 
         {error && (

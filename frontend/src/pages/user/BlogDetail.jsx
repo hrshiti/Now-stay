@@ -98,7 +98,7 @@ const BlogDetail = () => {
               <div className="w-8 h-8 rounded-full bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
                 <User size={14} className="text-slate-950" />
               </div>
-              <span className="font-bold text-slate-300">Rukkoo Editorial</span>
+              <span className="font-bold text-slate-300">NowStay Editorial</span>
             </div>
             <div className="flex items-center gap-2">
               <Calendar size={14} className="text-slate-500" />
@@ -146,9 +146,9 @@ const BlogDetail = () => {
         {/* Footer info */}
         <div className="mt-20 pt-10 border-t border-slate-800">
           <div className="bg-slate-900/40 rounded-3xl p-8 border border-slate-800">
-            <h4 className="text-lg font-bold mb-2">About Rukkoo In</h4>
+            <h4 className="text-lg font-bold mb-2">About NowStay In</h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              We're a team of travellers, techies, and hospitality experts dedicated to making budget travel premium. Every story on Rukkoo Hub is backed by real data and on-ground experiences.
+              We're a team of travellers, techies, and hospitality experts dedicated to making budget travel premium. Every story on NowStay Hub is backed by real data and on-ground experiences.
             </p>
             <button 
               onClick={() => navigate('/search')}

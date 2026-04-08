@@ -152,8 +152,8 @@ const Layout = ({ children }) => {
     const handleSliderChange = (e) => {
       setHideNavsDueToSlider(!!e.detail);
     };
-    window.addEventListener('rukkoo:slider', handleSliderChange);
-    return () => window.removeEventListener('rukkoo:slider', handleSliderChange);
+    window.addEventListener('nowstay:slider', handleSliderChange);
+    return () => window.removeEventListener('nowstay:slider', handleSliderChange);
   }, []);
 
   React.useEffect(() => {
@@ -365,11 +365,11 @@ function App() {
   }, []);
 
   // One-time cleanup: remove the legacy persisted WebView flag.
-  // Old deviceDetect.js stored '__rukkoo_app_mode__ = "1"' in localStorage permanently.
+  // Old deviceDetect.js stored '__nowstay_app_mode__ = "1"' in localStorage permanently.
   // This caused isWebView() to return true in real browsers that share storage with the app,
   // blocking web push registration. Safe to remove — detection is now done via live UA/URL check.
   React.useEffect(() => {
-    localStorage.removeItem('__rukkoo_app_mode__');
+    localStorage.removeItem('__nowstay_app_mode__');
   }, []);
 
 

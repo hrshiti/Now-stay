@@ -16,7 +16,7 @@ const docs = [
     audience: 'user',
     slug: 'terms',
     title: 'Terms & Conditions',
-    content: 'By using Rukko, you agree to follow our booking, cancellation and usage rules. Bookings depend on availability, and each property may have its own check-in, ID and house rules that must be respected.'
+    content: 'By using NowStay, you agree to follow our booking, cancellation and usage rules. Bookings depend on availability, and each property may have its own check-in, ID and house rules that must be respected.'
   },
   {
     audience: 'user',
@@ -27,20 +27,20 @@ const docs = [
   {
     audience: 'user',
     slug: 'about',
-    title: 'About Rukko',
-    content: 'Rukko is a mobile-first platform to discover, compare and book stays across hotels, PGs, homestays and villas. Our goal is to make city stays simple and transparent for young travellers and working professionals.'
+    title: 'About NowStay',
+    content: 'NowStay is a mobile-first platform to discover, compare and book stays across hotels, PGs, homestays and villas. Our goal is to make city stays simple and transparent for young travellers and working professionals.'
   },
   {
     audience: 'user',
     slug: 'contact',
     title: 'Contact Us',
-    content: 'For support related to bookings, payments or account access, you can write to support@rukko.in or call our helpdesk during business hours.'
+    content: 'For support related to bookings, payments or account access, you can write to support@nowstay.in or call our helpdesk during business hours.'
   },
   {
     audience: 'partner',
     slug: 'terms',
     title: 'Partner Agreement',
-    content: 'By listing your property on Rukko, you agree to keep availability, pricing and guest details accurate, honour confirmed bookings and follow our payout and commission rules shared during onboarding.'
+    content: 'By listing your property on NowStay, you agree to keep availability, pricing and guest details accurate, honour confirmed bookings and follow our payout and commission rules shared during onboarding.'
   },
   {
     audience: 'partner',
@@ -51,14 +51,14 @@ const docs = [
   {
     audience: 'partner',
     slug: 'about',
-    title: 'About Rukko Partner',
-    content: 'Rukko Partner is a dashboard for hotels, PGs and homestays to manage listings, track bookings and view payouts in a mobile-first way.'
+    title: 'About NowStay Partner',
+    content: 'NowStay Partner is a dashboard for hotels, PGs and homestays to manage listings, track bookings and view payouts in a mobile-first way.'
   },
   {
     audience: 'partner',
     slug: 'contact',
-    title: 'Contact Rukko Team',
-    content: 'For questions about onboarding, payouts or property performance, you can reach our partner support team at partners@rukko.in.'
+    title: 'Contact NowStay Team',
+    content: 'For questions about onboarding, payouts or property performance, you can reach our partner support team at partners@nowstay.in.'
   }
 ];
 

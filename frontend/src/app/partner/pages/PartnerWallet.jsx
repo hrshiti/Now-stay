@@ -153,7 +153,7 @@ const PartnerWallet = () => {
                     key: order.key,
                     amount: order.amount,
                     currency: order.currency,
-                    name: "Rukkoin Partner",
+                    name: "NowStay Partner",
                     description: "Wallet Top-up",
                     order_id: order.id,
                     handler: async (response) => {
