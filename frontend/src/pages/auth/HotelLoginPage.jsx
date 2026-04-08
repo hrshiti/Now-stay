@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 const HotelLoginPage = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
-    const [phone, setPhone] = useState('9589814119');
+    const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -54,10 +54,7 @@ const HotelLoginPage = () => {
             setResendTimer(120);
             setCanResend(false);
             setStep(2);
-            // Pre-fill OTP for default partner number
-            if (phone === '9589814119') {
-                setOtp(['1', '2', '3', '4', '5', '6']);
-            }
+
         } catch (err) {
             if (err.isBlocked || err.response?.data?.isBlocked || err.status === 403) {
                 setError(err.message || 'Your account has been blocked by admin. Please contact support.');

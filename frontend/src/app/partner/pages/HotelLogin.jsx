@@ -9,7 +9,7 @@ const HotelLogin = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [method, setMethod] = useState('phone');
-    const [contact, setContact] = useState('9589814119');
+    const [contact, setContact] = useState('');
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -46,10 +46,7 @@ const HotelLogin = () => {
             // Use authService
             await authService.sendOtp(contact, 'login', 'partner');
             setStep(2);
-            // Pre-fill OTP for default partner number
-            if (contact === '9589814119') {
-                setOtp(['1', '2', '3', '4', '5', '6']);
-            }
+
         } catch (err) {
             setError(err.message || 'Failed to send OTP');
         } finally {
