@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { referralService } from '../../services/apiService';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const ReferAndEarnPage = () => {
     const navigate = useNavigate();
@@ -24,6 +25,10 @@ const ReferAndEarnPage = () => {
     const codeRef = useRef(null);
 
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setLoading(false);
+            return;
+        }
         const fetchData = async () => {
             console.log(`[REFERRAL_DEBUG] Fetching referral stats...`);
             try {
@@ -51,6 +56,10 @@ const ReferAndEarnPage = () => {
         };
         fetchData();
     }, []);
+
+    if (!localStorage.getItem('token')) {
+        return <AuthRequired title="Refer & Earn" message="Get rewarded for sharing the NowStay experience! Sign in to get your unique referral code and track your earnings." />;
+    }
 
     const handleCopy = () => {
         navigator.clipboard.writeText(referralData.code);

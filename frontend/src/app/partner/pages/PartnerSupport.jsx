@@ -99,8 +99,8 @@ const PartnerSupport = () => {
 
                 <div className="mt-8 text-center">
                     <p className="text-xs text-gray-400 mb-2">Still have questions?</p>
-                    <a href="mailto:partners@rokkooin.com" className="inline-flex items-center gap-2 text-sm font-bold text-[#0F172A] border-b border-[#0F172A]/20 pb-0.5 hover:border-[#0F172A] transition-colors">
-                        <Mail size={14} /> Email us at partners@rokkooin.com
+                    <a href="mailto:partners@nowstay.in" className="inline-flex items-center gap-2 text-sm font-bold text-[#0F172A] border-b border-[#0F172A]/20 pb-0.5 hover:border-[#0F172A] transition-colors">
+                        <Mail size={14} /> Email us at partners@nowstay.in
                     </a>
                 </div>
             </div>

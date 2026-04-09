@@ -8,6 +8,7 @@ import {
 import { api } from '../../services/apiService';
 import toast, { Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const WalletPage = () => {
     const navigate = useNavigate();
@@ -22,6 +23,10 @@ const WalletPage = () => {
     const quickAmounts = [500, 1000, 2000];
 
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setLoading(false);
+            return;
+        }
         fetchWalletData();
         fetchTransactions();
     }, []);
@@ -123,6 +128,10 @@ const WalletPage = () => {
             setProcessing(false);
         }
     };
+
+    if (!localStorage.getItem('token')) {
+        return <AuthRequired title="Your Wallet" message="Sign in to view your balance, add money, and view transaction history." />;
+    }
 
     if (loading) {
         return (

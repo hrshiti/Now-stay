@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Phone, Mail, ArrowLeft, Save, Loader2, MapPin, Navigation, Home, Camera, Trash2, AlertTriangle } from 'lucide-react';
 import { authService, userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
+import AuthRequired from '../../components/ui/AuthRequired';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../utils/flutterBridge';
 
 const ProfileEdit = () => {
@@ -32,6 +33,9 @@ const ProfileEdit = () => {
 
   useEffect(() => {
     // Load user data from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       try {
@@ -56,6 +60,10 @@ const ProfileEdit = () => {
       }
     }
   }, []);
+
+  if (!localStorage.getItem('token')) {
+    return <AuthRequired title="Your Profile" message="Please sign in to view and update your personal information and account settings." />;
+  }
 
   const autoFillAddress = async (lat, lng) => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY;

@@ -7,6 +7,7 @@ import {
     CheckCircle, XCircle, AlertCircle, Ticket
 } from 'lucide-react';
 import { bookingService } from '../../services/apiService';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const BookingsPage = () => {
     const navigate = useNavigate();
@@ -24,6 +25,10 @@ const BookingsPage = () => {
 
     // Fetch Bookings when Active Tab Changes
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setLoading(false);
+            return;
+        }
         const fetchBookings = async () => {
             try {
                 setLoading(true);
@@ -40,6 +45,10 @@ const BookingsPage = () => {
 
         fetchBookings();
     }, [activeTab]);
+
+    if (!localStorage.getItem('token')) {
+        return <AuthRequired title="My Bookings" message="Sign in to view and manage your property bookings, upcoming stays, and past history." />;
+    }
 
     const getStatusBadge = (status, paymentStatus) => {
         const s = (status || '').toLowerCase();

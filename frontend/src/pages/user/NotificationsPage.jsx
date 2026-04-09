@@ -4,6 +4,7 @@ import { ArrowLeft, Bell, Calendar, Tag, Info, Trash2, CheckCircle, Circle } fro
 import { motion, AnimatePresence } from 'framer-motion';
 import { userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const NotificationsPage = () => {
     const navigate = useNavigate();
@@ -19,6 +20,10 @@ const NotificationsPage = () => {
     }, [selectedNotif]);
 
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setLoading(false);
+            return;
+        }
         const init = async () => {
             setLoading(true);
             try {
@@ -33,6 +38,10 @@ const NotificationsPage = () => {
         };
         init();
     }, []);
+
+    if (!localStorage.getItem('token')) {
+        return <AuthRequired title="Notifications" message="Login to see all your activity, booking updates, and exclusive offers." />;
+    }
 
     const fetchNotifications = async () => {
         try {
