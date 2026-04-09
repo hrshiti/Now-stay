@@ -51,10 +51,11 @@ const offerSchema = new mongoose.Schema({
   },
   startDate: {
     type: Date,
-    default: Date.now
+    required: true
   },
   endDate: {
-    type: Date
+    type: Date,
+    required: true
   },
   usageLimit: {
     type: Number, // total times this coupon can be used

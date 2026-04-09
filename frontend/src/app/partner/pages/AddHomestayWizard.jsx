@@ -6,13 +6,11 @@ import {
   CheckCircle, FileText, Home, Image, Plus, Trash2, MapPin, Search,
   BedDouble, Wifi, Coffee, Car, Users, CheckSquare, Snowflake, Tv, ShowerHead, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X
 } from 'lucide-react';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
 const REQUIRED_DOCS_HOMESTAY = [
-  { type: "ownership_proof", name: "Ownership Proof (Sale Deed)" },
-  { type: "local_registration", name: "Local Registration (Panchayat)" },
-  { type: "govt_id", name: "Govt ID (Aadhar)" }
+  { type: "electricity_bill", name: "Electricity Bill", required: true }
 ];
 
 const HOMESTAY_AMENITIES = [
@@ -37,7 +35,9 @@ const ROOM_AMENITIES = [
   { label: "Attached Washroom", icon: CheckSquare }
 ];
 
-const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in"];
+const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in", "Visitors not allowed"];
+
+
 
 const AddHomestayWizard = () => {
   const navigate = useNavigate();
@@ -49,10 +49,6 @@ const AddHomestayWizard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [createdProperty, setCreatedProperty] = useState(null);
-  const [stateError, setStateError] = useState('');
-  const [cityError, setCityError] = useState('');
-  const [pincodeError, setPincodeError] = useState('');
-  const [contactNumberError, setContactNumberError] = useState('');
 
   // Maps / Location State
   const [nearbySearchQuery, setNearbySearchQuery] = useState('');
@@ -81,7 +77,6 @@ const AddHomestayWizard = () => {
     description: '',
     shortDescription: '',
     hostLivesOnProperty: '',
-    familyFriendly: '',
     coverImage: '',
     propertyImages: [],
     address: { country: '', state: '', city: '', area: '', fullAddress: '', pincode: '' },
@@ -92,8 +87,9 @@ const AddHomestayWizard = () => {
     checkOutTime: '',
     contactNumber: '',
     cancellationPolicy: '',
+    suitability: 'none',
     houseRules: [],
-    documents: REQUIRED_DOCS_HOMESTAY.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+    documents: REQUIRED_DOCS_HOMESTAY.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
   });
 
   const [roomTypes, setRoomTypes] = useState([]);
@@ -129,6 +125,33 @@ const AddHomestayWizard = () => {
     }, 1000);
     return () => clearTimeout(timeout);
   }, [step, propertyForm, roomTypes, createdProperty]);
+
+  // --- WebView History / Back Button Fix ---
+  useEffect(() => {
+    const currentHash = window.location.hash;
+    const targetHash = `#step${step}`;
+    if (currentHash !== targetHash) {
+      if (step === 1 && (!currentHash || currentHash === '#step1')) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      } else {
+        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      }
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#step')) {
+        const hashStep = parseInt(hash.replace('#step', ''), 10);
+        if (!isNaN(hashStep)) {
+          setStep(hashStep);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Helper Functions
   const updatePropertyForm = (path, value) => {
@@ -405,8 +428,8 @@ const AddHomestayWizard = () => {
       console.log(`Processing ${fileArray.length} images...`);
 
       for (const file of fileArray) {
-        if (!file.type.startsWith('image/')) {
-          throw new Error(`File ${file.name} is not an image`);
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+          throw new Error(`File ${file.name} must be an image or PDF`);
         }
         if (file.size > 10 * 1024 * 1024) {
           throw new Error(`Image ${file.name} is too large. Maximum 10MB allowed.`);
@@ -466,11 +489,11 @@ const AddHomestayWizard = () => {
 
   const handleCameraUpload = async (type, onDone) => {
     try {
-      setUploading(type);
       setError('');
       console.log('[Camera] Opening Flutter camera...');
 
       const result = await openFlutterCamera();
+      setUploading(type);
 
       if (!result.success || !result.base64) {
         throw new Error('Camera capture failed');
@@ -480,13 +503,15 @@ const AddHomestayWizard = () => {
 
       const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
 
-      const res = await hotelService.uploadImagesBase64([result]);
+      const res = await hotelService.uploadImagesBase64(result.images || [result]);
 
       if (res && res.success && res.files && res.files.length > 0) {
         if (isSingle) {
           onDone(res.files[0].url);
         } else {
-          onDone([res.files[0].url]);
+          // Pass all uploaded URLs
+          const urls = res.files.map(f => f.url);
+          onDone(urls);
         }
       } else {
         throw new Error('Upload failed');
@@ -516,7 +541,6 @@ const AddHomestayWizard = () => {
           description: prop.description || '',
           shortDescription: prop.shortDescription || '',
           hostLivesOnProperty: prop.hostLivesOnProperty ?? true,
-          familyFriendly: prop.familyFriendly ?? true,
           coverImage: prop.coverImage || '',
           propertyImages: prop.propertyImages || [],
           address: {
@@ -546,9 +570,10 @@ const AddHomestayWizard = () => {
           cancellationPolicy: prop.cancellationPolicy || '',
           houseRules: prop.houseRules || [],
           contactNumber: prop.contactNumber || '',
+          suitability: prop.suitability || 'none',
           documents: docs.length
-            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '' }))
-            : REQUIRED_DOCS_HOMESTAY.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '', required: REQUIRED_DOCS_HOMESTAY.find(rd => rd.type === (d.type || d.name))?.required || false }))
+            : REQUIRED_DOCS_HOMESTAY.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
         });
 
         if (rts.length) {
@@ -579,364 +604,75 @@ const AddHomestayWizard = () => {
   // --- Strict Validation ---
   const nextFromBasic = () => {
     setError('');
-    setContactNumberError('');
-    
-    // Property Name validation
-    if (!propertyForm.propertyName || !propertyForm.propertyName.trim()) {
-      setError('Homestay name is required');
+    if (!propertyForm.propertyName || !propertyForm.shortDescription) {
+      setError('Property Name and Short Description required');
       return;
     }
-    if (propertyForm.propertyName.trim().length < 3) {
-      setError('Homestay name must be at least 3 characters');
-      return;
-    }
-    if (propertyForm.propertyName.trim().length > 100) {
-      setError('Homestay name cannot exceed 100 characters');
-      return;
-    }
-    if (!/[a-zA-Z]/.test(propertyForm.propertyName)) {
-      setError('Homestay name must contain at least one letter');
-      return;
-    }
-    
-    // Short Description validation
-    if (!propertyForm.shortDescription || !propertyForm.shortDescription.trim()) {
-      setError('Short description is required');
-      return;
-    }
-    if (propertyForm.shortDescription.trim().length < 10) {
-      setError('Short description must be at least 10 characters');
-      return;
-    }
-    if (propertyForm.shortDescription.trim().length > 200) {
-      setError('Short description cannot exceed 200 characters');
-      return;
-    }
-    
-    // Contact Number validation
-    if (!propertyForm.contactNumber || !propertyForm.contactNumber.trim()) {
-      setError('Contact number is required');
-      setContactNumberError('Contact number is required');
-      return;
-    }
-    const contactDigitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
-    if (contactDigitsOnly.length !== 10) {
-      setError('Contact number must be exactly 10 digits');
-      setContactNumberError(`Must contain exactly 10 digits (found: ${contactDigitsOnly.length})`);
-      return;
-    }
-    
-    // Host Lives On Property validation
-    if (!propertyForm.hostLivesOnProperty) {
-      setError('Please select if host lives on property');
-      return;
-    }
-    
-    // Family Friendly validation
-    if (!propertyForm.familyFriendly) {
-      setError('Please select if property is family friendly');
-      return;
-    }
-    
     setStep(2);
   };
   const nextFromLocation = () => {
     setError('');
-    setStateError('');
-    setCityError('');
-    setPincodeError('');
-    const { country, state, city, area, fullAddress, pincode } = propertyForm.address;
-    
-    // Full Address validation
-    if (!fullAddress || !fullAddress.trim()) {
-      setError('Full address is required');
+    if (!propertyForm.address.fullAddress || !propertyForm.address.city || !propertyForm.location.coordinates[0]) {
+      setError('Full Address and Map Location are required');
       return;
     }
-    if (fullAddress.trim().length < 10) {
-      setError('Full address must be at least 10 characters');
-      return;
-    }
-    if (fullAddress.trim().length > 500) {
-      setError('Full address cannot exceed 500 characters');
-      return;
-    }
-    
-    // Country validation
-    if (!country || !country.trim()) {
-      setError('Country is required');
-      return;
-    }
-    if (country.trim().length < 2) {
-      setError('Country must be at least 2 characters');
-      return;
-    }
-    if (!/^[a-zA-Z\s\-]+$/.test(country)) {
-      setError('Country can only contain letters, spaces, and hyphens');
-      return;
-    }
-    
-    // State validation
-    if (!state || !state.trim()) {
-      setError('State is required');
-      setStateError('State is required');
-      return;
-    }
-    if (state.trim().length < 2) {
-      setError('State must be at least 2 characters');
-      setStateError('Minimum 2 characters required');
-      return;
-    }
-    if (!/^[a-zA-Z\s\-]+$/.test(state)) {
-      setError('State can only contain letters, spaces, and hyphens');
-      setStateError('Letters and spaces only');
-      return;
-    }
-    
-    // City validation
-    if (!city || !city.trim()) {
-      setError('City is required');
-      setCityError('City is required');
-      return;
-    }
-    if (city.trim().length < 2) {
-      setError('City must be at least 2 characters');
-      setCityError('Minimum 2 characters required');
-      return;
-    }
-    if (!/^[a-zA-Z\s\-]+$/.test(city)) {
-      setError('City can only contain letters, spaces, and hyphens');
-      setCityError('Letters and spaces only');
-      return;
-    }
-    
-    // Area/Locality validation
-    if (!area || !area.trim()) {
-      setError('Area/Locality is required');
-      return;
-    }
-    if (area.trim().length < 2) {
-      setError('Area/Locality must be at least 2 characters');
-      return;
-    }
-    
-    // Pincode validation
-    if (!pincode || !pincode.trim()) {
-      setError('Pincode is required');
-      setPincodeError('Pincode is required');
-      return;
-    }
-    const pincodeDigitsOnly = pincode.replace(/\D/g, '');
-    if (pincodeDigitsOnly.length !== 6) {
-      setError('Pincode must be exactly 6 digits');
-      setPincodeError(`Must be exactly 6 digits (found: ${pincodeDigitsOnly.length})`);
-      return;
-    }
-    
-    // Coordinates validation
-    const lat = Number(propertyForm.location.coordinates[1]);
-    const lng = Number(propertyForm.location.coordinates[0]);
-    if (!lat || !lng || lat === 0 || lng === 0) {
-      setError('Location coordinates are required. Please use "Use Current Location" or search for an address');
-      return;
-    }
-    
     setStep(3);
   };
   const nextFromAmenities = () => {
     setError('');
-    
-    // Amenities validation - homestay requires at least 1 amenity
-    if (!propertyForm.amenities || propertyForm.amenities.length === 0) {
-      setError('Please select at least 1 amenity');
+    if (propertyForm.amenities.length === 0) {
+      setError('Please select at least one amenity');
       return;
     }
-    
     setStep(4);
   };
   const nextFromNearby = () => {
     setError('');
-    
-    // Nearby places validation
-    if (!propertyForm.nearbyPlaces || propertyForm.nearbyPlaces.length === 0) {
+    if (propertyForm.nearbyPlaces.length < 1) {
       setError('Please add at least 1 nearby place');
       return;
     }
-    
-    // Validate each nearby place
-    for (let i = 0; i < propertyForm.nearbyPlaces.length; i++) {
-      const place = propertyForm.nearbyPlaces[i];
-      if (!place.name || !place.name.trim()) {
-        setError(`Nearby place ${i + 1}: Name is required`);
-        return;
-      }
-      if (place.name.trim().length < 3) {
-        setError(`Nearby place ${i + 1}: Name must be at least 3 characters`);
-        return;
-      }
-      if (!place.distanceKm || place.distanceKm === '') {
-        setError(`Nearby place ${i + 1}: Distance is required`);
-        return;
-      }
-      const distance = Number(place.distanceKm);
-      if (isNaN(distance) || distance <= 0) {
-        setError(`Nearby place ${i + 1}: Distance must be a positive number`);
-        return;
-      }
-      if (distance > 100) {
-        setError(`Nearby place ${i + 1}: Distance cannot exceed 100 km`);
-        return;
-      }
-    }
-    
     setStep(5);
   };
   const nextFromImages = () => {
     setError('');
-    
-    // Cover image validation
-    if (!propertyForm.coverImage || !propertyForm.coverImage.trim()) {
+    if (!propertyForm.coverImage) {
       setError('Cover image is required');
       return;
     }
-    
-    // Property images validation
-    const validImages = (propertyForm.propertyImages || []).filter(img => img && img.trim());
-    if (validImages.length < 4) {
-      setError(`At least 4 property images required (uploaded: ${validImages.length})`);
+    if (propertyForm.propertyImages.length < 4) {
+      setError('Please upload at least 4 property images');
       return;
     }
-    if (validImages.length > 20) {
-      setError('Maximum 20 property images allowed');
-      return;
-    }
-    
     setStep(6);
   };
   const nextFromRoomTypes = () => {
     setError('');
-    
-    // Room types existence validation
-    if (!roomTypes || roomTypes.length === 0) {
-      setError('At least one room/inventory type is required');
+    if (!roomTypes.length) {
+      setError('Please add at least one inventory type (Room or Entire Place)');
       return;
     }
-    
-    // Validate each room type
-    for (let i = 0; i < roomTypes.length; i++) {
-      const rt = roomTypes[i];
-      
-      // Name validation
-      if (!rt.name || !rt.name.trim()) {
-        setError(`Inventory ${i + 1}: Name is required`);
-        return;
-      }
-      if (rt.name.trim().length < 3) {
-        setError(`Inventory ${i + 1}: Name must be at least 3 characters`);
-        return;
-      }
-      if (rt.name.trim().length > 100) {
-        setError(`Inventory ${i + 1}: Name cannot exceed 100 characters`);
-        return;
-      }
-      
-      // Price validation
-      if (!rt.pricePerNight || rt.pricePerNight === '') {
-        setError(`Inventory ${i + 1}: Price per night is required`);
-        return;
-      }
-      const price = Number(rt.pricePerNight);
-      if (isNaN(price) || price <= 0) {
-        setError(`Inventory ${i + 1}: Price must be a positive number`);
-        return;
-      }
-      if (price > 1000000) {
-        setError(`Inventory ${i + 1}: Price cannot exceed ₹10,00,000`);
-        return;
-      }
-      
-      // Max Adults validation
-      if (!rt.maxAdults || rt.maxAdults === '') {
-        setError(`Inventory ${i + 1}: Max occupancy is required`);
-        return;
-      }
-      const maxAdults = Number(rt.maxAdults);
-      if (isNaN(maxAdults) || maxAdults < 1) {
-        setError(`Inventory ${i + 1}: Max occupancy must be at least 1`);
-        return;
-      }
-      if (maxAdults > 20) {
-        setError(`Inventory ${i + 1}: Max occupancy cannot exceed 20`);
-        return;
-      }
-      
-      // Images validation
-      const validImages = (rt.images || []).filter(img => img && img.trim());
-      if (validImages.length < 3) {
-        setError(`Inventory ${i + 1}: At least 3 images required (uploaded: ${validImages.length})`);
-        return;
-      }
-      if (validImages.length > 15) {
-        setError(`Inventory ${i + 1}: Maximum 15 images allowed`);
-        return;
-      }
-      
-      // Amenities validation
-      if (!rt.amenities || rt.amenities.length === 0) {
-        setError(`Inventory ${i + 1}: At least 1 amenity must be selected`);
-        return;
-      }
-    }
-    
     setStep(7);
   };
   const nextFromRules = () => {
     setError('');
-    
-    // Check-in time validation
-    if (!propertyForm.checkInTime || !propertyForm.checkInTime.trim()) {
-      setError('Check-in time is required');
+    if (!propertyForm.checkInTime || !propertyForm.checkOutTime) {
+      setError('Check-in and Check-out times required');
       return;
     }
-    
-    // Check-out time validation
-    if (!propertyForm.checkOutTime || !propertyForm.checkOutTime.trim()) {
-      setError('Check-out time is required');
+    if (!propertyForm.cancellationPolicy) {
+      setError('Cancellation Policy required');
       return;
     }
-    
-    // Check-in and Check-out times must be different
-    if (propertyForm.checkInTime.trim() === propertyForm.checkOutTime.trim()) {
-      setError('Check-in and Check-out times must be different');
-      return;
-    }
-    
-    // Cancellation policy validation
-    if (!propertyForm.cancellationPolicy || !propertyForm.cancellationPolicy.trim()) {
-      setError('Cancellation policy is required');
-      return;
-    }
-    if (propertyForm.cancellationPolicy.trim().length < 10) {
-      setError('Cancellation policy must be at least 10 characters');
-      return;
-    }
-    if (propertyForm.cancellationPolicy.trim().length > 1000) {
-      setError('Cancellation policy cannot exceed 1000 characters');
-      return;
-    }
-    
     setStep(8);
   };
   const nextFromDocs = () => {
     setError('');
-    
-    // Check if all required documents are uploaded
-    const missingDocs = propertyForm.documents.filter(doc => !doc.fileUrl || !doc.fileUrl.trim());
-    if (missingDocs.length > 0) {
-      const missingNames = missingDocs.map(d => d.name).join(', ');
-      setError(`Please upload all required documents: ${missingNames}`);
+    const missing = propertyForm.documents.filter(d => d.required && !d.fileUrl);
+    if (missing.length > 0) {
+      setError(`Please upload required documents: ${missing.map(d => d.name).join(', ')}`);
       return;
     }
-    
     setStep(9);
   };
 
@@ -944,14 +680,16 @@ const AddHomestayWizard = () => {
     setLoading(true);
     setError('');
     try {
+      const searchParams = new URLSearchParams(location.search);
+      const queryType = searchParams.get('type');
       const propertyPayload = {
-        propertyType: 'homestay',
+        propertyType: queryType || 'homestay',
+        propertyTemplate: 'homestay',
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
         description: propertyForm.description,
         shortDescription: propertyForm.shortDescription,
         hostLivesOnProperty: propertyForm.hostLivesOnProperty,
-        familyFriendly: propertyForm.familyFriendly,
         coverImage: propertyForm.coverImage,
         propertyImages: propertyForm.propertyImages.filter(Boolean),
         address: propertyForm.address,
@@ -966,6 +704,7 @@ const AddHomestayWizard = () => {
         checkInTime: propertyForm.checkInTime,
         checkOutTime: propertyForm.checkOutTime,
         cancellationPolicy: propertyForm.cancellationPolicy,
+        suitability: propertyForm.suitability,
         houseRules: propertyForm.houseRules,
         documents: propertyForm.documents
       };
@@ -1018,16 +757,8 @@ const AddHomestayWizard = () => {
           amenities: rt.amenities
         }));
         const res = await propertyService.create(propertyPayload);
-        console.log('Create response:', res);
-        
-        // Extract property ID from response - handle different response structures
-        propId = res.property?._id || res._id || res.id;
-        
-        if (!propId) {
-          throw new Error('Failed to create property - no ID returned from server');
-        }
-        
-        setCreatedProperty(res.property || res);
+        propId = res.property?._id;
+        setCreatedProperty(res.property);
       }
       localStorage.removeItem(STORAGE_KEY);
       setStep(10);
@@ -1050,7 +781,7 @@ const AddHomestayWizard = () => {
   const clearCurrentStep = () => {
     if (!window.confirm("Clear all fields in this step?")) return;
     if (step === 1) {
-      setPropertyForm(prev => ({ ...prev, propertyName: '', description: '', shortDescription: '', hostLivesOnProperty: true, familyFriendly: true }));
+      setPropertyForm(prev => ({ ...prev, propertyName: '', description: '', shortDescription: '', hostLivesOnProperty: true }));
     } else if (step === 2) {
       updatePropertyForm('address', { country: 'India', state: 'Goa', city: '', area: '', fullAddress: '', pincode: '' });
       updatePropertyForm(['location', 'coordinates'], ['', '']);
@@ -1161,16 +892,16 @@ const AddHomestayWizard = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Short Description</label>
+                  <label className="text-xs font-semibold text-gray-500">Description</label>
                   <textarea className="input w-full" placeholder="Brief summary (e.g. Private rooms in a heritage house)..." value={propertyForm.shortDescription} onChange={e => updatePropertyForm('shortDescription', e.target.value)} />
                 </div>
 
-                <div className="space-y-1">
+                <div className="hidden">
                   <label className="text-xs font-semibold text-gray-500">Detailed Description</label>
                   <textarea className="input w-full min-h-[100px]" placeholder="Tell guests about your home, the neighborhood, and what to expect..." value={propertyForm.description} onChange={e => updatePropertyForm('description', e.target.value)} />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="pt-2">
                   <label className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition-all ${propertyForm.hostLivesOnProperty ? 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-500' : 'bg-gray-50 border-gray-200 hover:bg-white'}`}>
                     <div className={`w-5 h-5 rounded flex items-center justify-center border ${propertyForm.hostLivesOnProperty ? 'bg-emerald-600 border-transparent text-white' : 'bg-white border-gray-300'}`}>
                       {propertyForm.hostLivesOnProperty && <CheckCircle size={14} />}
@@ -1178,37 +909,51 @@ const AddHomestayWizard = () => {
                     <input type="checkbox" checked={propertyForm.hostLivesOnProperty} onChange={e => updatePropertyForm('hostLivesOnProperty', e.target.checked)} className="hidden" />
                     <span className={`text-sm font-bold ${propertyForm.hostLivesOnProperty ? 'text-emerald-900' : 'text-gray-700'}`}>Host Lives on Property</span>
                   </label>
-
-                  <label className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition-all ${propertyForm.familyFriendly ? 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-500' : 'bg-gray-50 border-gray-200 hover:bg-white'}`}>
-                    <div className={`w-5 h-5 rounded flex items-center justify-center border ${propertyForm.familyFriendly ? 'bg-emerald-600 border-transparent text-white' : 'bg-white border-gray-300'}`}>
-                      {propertyForm.familyFriendly && <CheckCircle size={14} />}
-                    </div>
-                    <input type="checkbox" checked={propertyForm.familyFriendly} onChange={e => updatePropertyForm('familyFriendly', e.target.checked)} className="hidden" />
-                    <span className={`text-sm font-bold ${propertyForm.familyFriendly ? 'text-emerald-900' : 'text-gray-700'}`}>Family Friendly</span>
-                  </label>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Contact Number (For Guest Inquiries)</label>
                   <input
-                    className={`input w-full ${contactNumberError ? 'border-red-300 bg-red-50' : ''}`}
-                    placeholder="e.g. 9876543210"
-                    inputMode="numeric"
-                    maxLength="10"
+                    type="tel"
+                    className="input w-full"
+                    placeholder="9876543210"
                     value={propertyForm.contactNumber}
                     onChange={e => {
-                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      updatePropertyForm('contactNumber', numericOnly);
-                      // Real-time validation
-                      if (numericOnly && numericOnly.length !== 10) {
-                        setContactNumberError(`Must contain exactly 10 digits (found: ${numericOnly.length})`);
-                      } else {
-                        setContactNumberError('');
-                      }
+                      // Filter non-digits and limit to 10 digits
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', digitsOnly);
                     }}
+                    maxLength={10}
                   />
-                  {contactNumberError && <span className="text-xs font-semibold text-red-500">{contactNumberError}</span>}
-                  {propertyForm.contactNumber && !contactNumberError && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length === 10 && (
+                    /^[6-9]\d{9}$/.test(propertyForm.contactNumber) ? (
+                      <p className="text-[10px] text-green-600 font-medium flex items-center gap-1 mt-1">
+                        <span>✓</span> Valid mobile number
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-red-500 font-medium flex items-center gap-1 mt-1">
+                        <span>⚠</span> Mobile number must start with 6, 7, 8, or 9
+                      </p>
+                    )
+                  )}
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
+                    <p className="text-[10px] text-gray-500 font-medium mt-1">
+                      {10 - propertyForm.contactNumber.length} more digit(s) required
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Suitability</label>
+                  <select
+                    className="input w-full appearance-none"
+                    value={propertyForm.suitability}
+                    onChange={e => updatePropertyForm('suitability', e.target.value)}
+                  >
+                    <option value="none">None</option>
+                    <option value="Couple Friendly">Couple Friendly</option>
+                    <option value="Family Friendly">Family Friendly</option>
+                    <option value="Both">Both</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1216,7 +961,7 @@ const AddHomestayWizard = () => {
 
           {step === 2 && (
             <div className="space-y-6">
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><CheckCircle size={16} className="rotate-45" /> {error}</div>}
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
               <div className="space-y-4">
                 <div className="relative">
@@ -1251,101 +996,12 @@ const AddHomestayWizard = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">Country</label>
-                    <input 
-                      className="input" 
-                      placeholder="Country" 
-                      value={propertyForm.address.country} 
-                      onChange={e => {
-                        const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
-                        updatePropertyForm(['address', 'country'], alphabetOnly);
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">State/Province</label>
-                    <input 
-                      className={`input ${stateError ? 'border-red-300 bg-red-50' : ''}`}
-                      placeholder="State/Province" 
-                      value={propertyForm.address.state} 
-                      onChange={e => {
-                        const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
-                        updatePropertyForm(['address', 'state'], alphabetOnly);
-                        // Real-time validation
-                        const stateRegex = /^[a-zA-Z\s\-]*$/;
-                        if (alphabetOnly && !stateRegex.test(alphabetOnly)) {
-                          setStateError('State must contain only alphabetic characters');
-                        } else {
-                          setStateError('');
-                        }
-                      }}
-                    />
-                    {stateError && <span className="text-xs font-semibold text-red-500">{stateError}</span>}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">City</label>
-                    <input 
-                      className={`input ${cityError ? 'border-red-300 bg-red-50' : ''}`}
-                      placeholder="City" 
-                      value={propertyForm.address.city} 
-                      onChange={e => {
-                        const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
-                        updatePropertyForm(['address', 'city'], alphabetOnly);
-                        // Real-time validation
-                        const cityRegex = /^[a-zA-Z\s\-]*$/;
-                        if (alphabetOnly && !cityRegex.test(alphabetOnly)) {
-                          setCityError('City must contain only alphabetic characters');
-                        } else {
-                          setCityError('');
-                        }
-                      }}
-                    />
-                    {cityError && <span className="text-xs font-semibold text-red-500">{cityError}</span>}
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">Area/Sector</label>
-                    <input 
-                      className="input" 
-                      placeholder="Area / Sector" 
-                      value={propertyForm.address.area} 
-                      onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} 
-                    />
-                  </div>
-                  <div className="col-span-2 space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">Full Street Address</label>
-                    <input 
-                      className="input" 
-                      placeholder="House/Flat No, Building Name..." 
-                      value={propertyForm.address.fullAddress} 
-                      onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)} 
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">Pincode/Zip</label>
-                    <input 
-                      className={`input ${pincodeError ? 'border-red-300 bg-red-50' : ''}`}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength="6"
-                      placeholder="Pincode / Zip" 
-                      value={propertyForm.address.pincode} 
-                      onChange={e => {
-                        const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 6);
-                        updatePropertyForm(['address', 'pincode'], numericOnly);
-                        // Real-time validation
-                        if (numericOnly && numericOnly.length !== 6) {
-                          setPincodeError(`Must contain exactly 6 digits (found: ${numericOnly.length})`);
-                        } else {
-                          setPincodeError('');
-                        }
-                      }}
-                    />
-                    {pincodeError && <span className="text-xs font-semibold text-red-500">{pincodeError}</span>}
-                    {propertyForm.address.pincode && !pincodeError && (
-                      <span className="text-xs font-semibold text-green-600">✓ Valid pincode</span>
-                    )}
-                  </div>
+                  <input className="input" placeholder="Country" value={propertyForm.address.country} onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} />
+                  <input className="input" placeholder="State/Province" value={propertyForm.address.state} onChange={e => updatePropertyForm(['address', 'state'], e.target.value)} />
+                  <input className="input" placeholder="City" value={propertyForm.address.city} onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} />
+                  <input className="input" placeholder="Area / Sector" value={propertyForm.address.area} onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} />
+                  <input className="input col-span-2" placeholder="Full Street Address" value={propertyForm.address.fullAddress} onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)} />
+                  <input className="input" placeholder="Pincode / Zip" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
                 </div>
 
                 <button
@@ -1372,14 +1028,7 @@ const AddHomestayWizard = () => {
 
           {step === 3 && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-gray-700">Select Homestay Amenities</h3>
-                <span className={`text-xs font-bold px-3 py-1 rounded-full ${propertyForm.amenities.length >= 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                  Selected: {propertyForm.amenities.length} / 1 (minimum required)
-                </span>
-              </div>
-
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><CheckCircle size={16} className="rotate-45" /> {error}</div>}
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
               <div className="grid grid-cols-2 gap-3">
                 {HOMESTAY_AMENITIES.map(am => {
@@ -1569,7 +1218,7 @@ const AddHomestayWizard = () => {
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <span className="text-white font-bold text-sm bg-white/20 backdrop-blur-md px-4 py-2 rounded-full">Change Cover</span>
                         </div>
-                        <button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveImage(propertyForm.coverImage, 'cover'); }} className="absolute top-3 right-3 p-1.5 bg-white text-red-500 rounded-full shadow-md hover:bg-red-50 transition-colors z-10"><Trash2 size={16} /></button>
+                        <button type="button" onClick={(e) => { e.stopPropagation(); handleRemoveImage(propertyForm.coverImage, 'cover'); }} className="absolute top-3 right-3 p-1.5 bg-white text-red-500 rounded-full shadow-md hover:bg-red-50 transition-colors z-10"><X size={16} /></button>
                       </>
                     ) : (
                       <div className="text-center p-6">
@@ -1600,7 +1249,7 @@ const AddHomestayWizard = () => {
                           onClick={() => handleRemoveImage(img, 'gallery', i)}
                           className="absolute top-1 right-1 bg-white/90 text-red-500 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                         >
-                          <Trash2 size={12} />
+                          <X size={12} />
                         </button>
                       </div>
                     ))}
@@ -1724,6 +1373,17 @@ const AddHomestayWizard = () => {
                       </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹/night)</label>
+                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraAdultPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value === '' ? '' : e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹/night)</label>
+                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraChildPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value === '' ? '' : e.target.value })} />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <label className="text-xs font-semibold text-gray-500">Images (Max 3)</label>
@@ -1733,7 +1393,7 @@ const AddHomestayWizard = () => {
                         {(editingRoomType.images || []).map((img, i) => (
                           <div key={i} className="relative w-20 h-20 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden group">
                             <img src={img} className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} /></button>
                           </div>
                         ))}
                         {(editingRoomType.images || []).length < 3 && (
@@ -1748,19 +1408,14 @@ const AddHomestayWizard = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-gray-500">Room Amenities</label>
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${editingRoomType.amenities.length >= 1 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          Selected: {editingRoomType.amenities.length} / 1 (minimum)
-                        </span>
-                      </div>
+                      <label className="text-xs font-semibold text-gray-500">Amenities</label>
                       <div className="flex flex-wrap gap-2">
                         {ROOM_AMENITIES.map(opt => {
                           const isSelected = editingRoomType.amenities.includes(opt.label);
                           return (
                             <button
                               key={opt.label}
-                              type="button"
+                              type="button" // Prevent form sub
                               onClick={() => toggleRoomAmenity(opt.label)}
                               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${isSelected ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
                             >
@@ -1784,8 +1439,6 @@ const AddHomestayWizard = () => {
 
           {step === 7 && (
             <div className="space-y-6">
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><CheckCircle size={16} className="rotate-45" /> {error}</div>}
-
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-In Time</label>
@@ -1806,10 +1459,6 @@ const AddHomestayWizard = () => {
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-500">Cancellation Policy</label>
                 <textarea className="input min-h-[80px]" placeholder="e.g. Free cancellation up to 48 hours before check-in..." value={propertyForm.cancellationPolicy} onChange={e => updatePropertyForm('cancellationPolicy', e.target.value)} />
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-gray-400">{propertyForm.cancellationPolicy.length} characters</span>
-                  {propertyForm.cancellationPolicy.length >= 10 && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
-                </div>
               </div>
 
               <div className="space-y-2">
@@ -1848,7 +1497,9 @@ const AddHomestayWizard = () => {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="font-bold text-gray-900">{doc.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">Optional document</div>
+                          <div className={`text-xs mt-0.5 ${doc.required ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                            {doc.required ? 'Required *' : 'Optional'}
+                          </div>
                         </div>
                         {doc.fileUrl ? (
                           <div className="bg-emerald-50 text-emerald-700 p-1.5 rounded-full"><CheckCircle size={18} /></div>
@@ -1891,6 +1542,7 @@ const AddHomestayWizard = () => {
                       <input
                         type="file"
                         className="hidden"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf"
                         ref={el => (documentInputRefs.current[idx] = el)}
                         onChange={e => {
                           const file = e.target.files[0];
@@ -1943,8 +1595,8 @@ const AddHomestayWizard = () => {
                     <div className="font-semibold text-sm">{propertyForm.hostLivesOnProperty ? 'Lives on Property' : 'Does Not Live'}</div>
                   </div>
                   <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
-                    <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Target</div>
-                    <div className="font-semibold text-sm">{propertyForm.familyFriendly ? 'Family Friendly' : 'All Guests'}</div>
+                    <div className="text-xs text-gray-500 uppercase font-bold tracking-wider mb-1">Suitability</div>
+                    <div className="font-semibold text-sm capitalize">{propertyForm.suitability}</div>
                   </div>
                 </div>
 
@@ -1992,15 +1644,13 @@ const AddHomestayWizard = () => {
 
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-40">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          {step !== 10 && (
-            <button
-              onClick={handleBack}
-              disabled={step === 1 || loading || isEditingSubItem}
-              className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Back
-            </button>
-          )}
+          <button
+            onClick={handleBack}
+            disabled={step === 1 || loading || isEditingSubItem}
+            className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Back
+          </button>
 
           {step < 9 && (
             <button

@@ -17,17 +17,20 @@ const PropertyFeed = ({ selectedType, selectedCity }) => {
         const filters = {};
         if (selectedType && selectedType !== 'All') filters.type = selectedType;
 
-        // Fetch properties and saved status in parallel if logged in
-        const promises = [propertyService.getPublic(filters)];
+        // Always fetch public properties (no auth needed)
+        const data = await propertyService.getPublic(filters);
+
+        // Fetch saved hotels separately only if logged in — don't let this fail the whole page
         if (localStorage.getItem('token')) {
-          promises.push(userService.getSavedHotels());
-        }
-
-        const [data, savedRes] = await Promise.all(promises);
-
-        if (savedRes) {
-          const list = savedRes.savedHotels || [];
-          setSavedHotelIds(list.map(h => (typeof h === 'object' ? h._id : h)));
+          try {
+            const savedRes = await userService.getSavedHotels();
+            const list = savedRes?.savedHotels || [];
+            setSavedHotelIds(list.map(h => (typeof h === 'object' ? h._id : h)));
+          } catch (savedErr) {
+            // Silently ignore saved hotels error (e.g. 401 if token is invalid)
+            console.warn("Could not fetch saved hotels:", savedErr);
+            setSavedHotelIds([]);
+          }
         }
 
         let filteredData = data;
@@ -35,7 +38,7 @@ const PropertyFeed = ({ selectedType, selectedCity }) => {
           filteredData = data.filter(p => p.address?.city?.toLowerCase() === selectedCity.toLowerCase());
         }
 
-        setProperties(filteredData);
+        setProperties(Array.isArray(filteredData) ? filteredData : []);
       } catch (err) {
         console.error("Failed to fetch properties:", err);
         setError("Could not load properties. Please try again.");

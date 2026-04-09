@@ -5,85 +5,50 @@ import PropertyDocument from '../models/PropertyDocument.js';
 import Partner from '../models/Partner.js';
 import { PROPERTY_DOCUMENTS } from '../config/propertyDocumentRules.js';
 import emailService from '../services/emailService.js';
-import User from '../models/User.js'; // Needed to find Admins? Or Admin model
+import notificationService from '../services/notificationService.js';
+import User from '../models/User.js';
 import Admin from '../models/Admin.js';
-import AvailabilityLedger from '../models/AvailabilityLedger.js';
 
-const notifyAdminOfNewProperty = async (property) => {
+const notifySubmission = async (property) => {
   try {
+    // 1. Notify Admin (Email & Push)
     const admin = await Admin.findOne({ role: { $in: ['admin', 'superadmin'] } });
     if (admin && admin.email) {
-      await emailService.sendAdminNewPropertyEmail(admin.email, property);
+      emailService.sendAdminNewPropertyEmail(admin.email, property).catch(e => console.error('Admin Property Email Error:', e));
     }
+
+    notificationService.sendToAdmins({
+      title: 'New Property for Review 🏨',
+      body: `${property.propertyName} (${property.propertyType}) has been submitted by a partner.`
+    }, { type: 'new_property_submission', propertyId: property._id }).catch(e => console.error('Admin Property Push Error:', e));
+
+    // 2. Notify Partner (Email Confirmation)
+    const partner = await Partner.findById(property.partnerId);
+    if (partner && partner.email) {
+      emailService.sendPartnerPropertyAddedEmail(partner, property).catch(e => console.error('Partner Property Email Error:', e));
+    }
+
   } catch (err) {
-    console.warn('Could not notify admin about property:', err.message);
+    console.warn('Could not notify about property submission:', err.message);
   }
 };
 
 export const createProperty = async (req, res) => {
   try {
-    // --- SUBSCRIPTION GUARD: Check if partner can add more properties ---
-    const partner = await Partner.findById(req.user._id).populate('subscription.planId');
-    if (!partner) return res.status(404).json({ message: 'Partner not found' });
-
-    const { subscription } = partner;
-
-    // Check if subscription is active and not expired
-    const isSubscriptionActive =
-      subscription?.status === 'active' &&
-      subscription?.expiryDate &&
-      new Date(subscription.expiryDate) > new Date();
-
-    // LOGIC UPDATE: Revenue Strategy & No Subscription Case
-    // If no active subscription, we allow property creation (Commission-based model).
-    // If active subscription, we enforce the plan's property limit.
-
-    let maxAllowed = 1; // Default limit for non-subscribed users (or could be unlimited based on business rule)
-    // The requirement says "Agar partner koi plan purchase nahi karta: Vo properties add kar sakta hai".
-    // We'll set a reasonable default or unlimited. Let's assume unlimited for commission-only, 
-    // BUT usually systems have a free tier limit. 
-    // If "No Subscription" means "Pay Per Booking", maybe they can add unlimited but pay higher commission.
-    // However, to avoid spam, let's keep it open or check if business requires a strict limit.
-    // Logic: If subscription active -> use plan limit. If not -> Unrestricted (or high limit).
-
-    if (isSubscriptionActive) {
-      maxAllowed = subscription.planId?.maxProperties || 1;
-    } else {
-      // No subscription / Expired
-      // "Vo properties add kar sakta hai" -> Allow.
-      // We set a high number or skip the check.
-      maxAllowed = 9999;
-    }
-
-    // REMOVED THE BLOCKING GUARD to support "No Subscription Case"
-    /* 
-    if (!isSubscriptionActive) {
-      return res.status(403).json({
-        message: 'No active subscription. Please purchase a subscription plan to add properties.',
-        requiresSubscription: true
-      });
-    } 
-    */
-
-    // Check if partner has reached property limit
-    const currentPropertyCount = await Property.countDocuments({
-      partnerId: req.user._id,
-      status: { $ne: 'deleted' } // Don't count deleted properties
-    });
-
-    // maxAllowed is already determined above based on subscription status
-
-    if (currentPropertyCount >= maxAllowed) {
-      return res.status(403).json({
-        message: `Property limit reached. Your plan allows ${maxAllowed} properties. Please upgrade your subscription.`,
-        limitReached: true,
-        currentCount: currentPropertyCount,
-        maxAllowed: maxAllowed
-      });
-    }
-
-    const { propertyName, contactNumber, propertyType, dynamicCategory, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, familyFriendly, resortType, activities, hotelCategory, starRating } = req.body;
+    const { propertyName, contactNumber, propertyType, propertyTemplate, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, resortType, activities, hotelCategory, starRating } = req.body;
     if (!propertyName || !propertyType || !coverImage) return res.status(400).json({ message: 'Missing required fields' });
+
+    // Validate contact number if provided (Indian mobile: 10 digits, starts with 6-9)
+    if (contactNumber && contactNumber.trim() !== '') {
+      const digitsOnly = contactNumber.replace(/\D/g, '');
+      if (digitsOnly.length !== 10) {
+        return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
+      }
+      if (!/^[6-9]\d{9}$/.test(digitsOnly)) {
+        return res.status(400).json({ message: 'Contact number must be a valid Indian mobile number (starts with 6, 7, 8, or 9)' });
+      }
+      req.body.contactNumber = digitsOnly;
+    }
     const lowerType = propertyType.toLowerCase();
     const requiredDocs = PROPERTY_DOCUMENTS[lowerType] || [];
     const nearbyPlacesArray = Array.isArray(nearbyPlaces) ? nearbyPlaces : [];
@@ -93,7 +58,7 @@ export const createProperty = async (req, res) => {
       propertyName,
       contactNumber,
       propertyType: lowerType,
-      description,
+      propertyTemplate: (propertyTemplate || lowerType),
       shortDescription,
       partnerId: req.user._id,
       address,
@@ -109,15 +74,14 @@ export const createProperty = async (req, res) => {
       pgType: lowerType === 'pg' ? pgType : undefined,
       hostelType: lowerType === 'hostel' ? hostelType : undefined,
       hostLivesOnProperty: lowerType === 'homestay' ? hostLivesOnProperty : undefined,
-      familyFriendly: lowerType === 'homestay' ? familyFriendly : undefined,
       resortType: lowerType === 'resort' ? resortType : undefined,
-      activities: lowerType === 'resort' ? activities : undefined,
+      activities: (lowerType === 'resort' || lowerType === 'tent') ? activities : undefined,
       hotelCategory: lowerType === 'hotel' ? hotelCategory : undefined,
       starRating: lowerType === 'hotel' ? starRating : undefined,
-      dynamicCategory: dynamicCategory || undefined
+      suitability: req.body.suitability || 'none'
     });
-    // Pricing is now handled in RoomType for ALL types
     await doc.save();
+
     // Inline RoomTypes if provided
     if (Array.isArray(roomTypes) && roomTypes.length > 0) {
       await RoomType.insertMany(
@@ -147,7 +111,6 @@ export const createProperty = async (req, res) => {
         },
         { new: true, upsert: true }
       );
-      // Move property to pending for admin verification
       doc.status = 'pending';
       doc.isLive = false;
       await doc.save();
@@ -161,12 +124,8 @@ export const createProperty = async (req, res) => {
 
     // NOTIFICATION: Notify Admin only if pending
     if (doc.status === 'pending') {
-      notifyAdminOfNewProperty(doc).catch(e => console.error(e));
+      notifySubmission(doc).catch(e => console.error(e));
     }
-
-    // INCREMENT SUBSCRIPTION COUNTER: Update propertiesAdded count
-    partner.subscription.propertiesAdded = (partner.subscription.propertiesAdded || 0) + 1;
-    await partner.save();
 
     res.status(201).json({ success: true, property: doc });
   } catch (e) {
@@ -185,30 +144,23 @@ export const updateProperty = async (req, res) => {
       return res.status(403).json({ message: 'Not allowed' });
     }
 
+    // Validate contact number if provided
+    if (payload.contactNumber !== undefined && payload.contactNumber !== null && String(payload.contactNumber).trim() !== '') {
+      const digitsOnly = String(payload.contactNumber).replace(/\D/g, '');
+      if (digitsOnly.length !== 10) {
+        return res.status(400).json({ message: 'Contact number must be exactly 10 digits' });
+      }
+      if (!/^[6-9]\d{9}$/.test(digitsOnly)) {
+        return res.status(400).json({ message: 'Contact number must be a valid Indian mobile number (starts with 6, 7, 8, or 9)' });
+      }
+      payload.contactNumber = digitsOnly;
+    }
+
     const updatableFields = [
-      'propertyName',
-      'description',
-      'shortDescription',
-      'address',
-      'location',
-      'nearbyPlaces',
-      'amenities',
-      'coverImage',
-      'propertyImages',
-      'checkInTime',
-      'checkOutTime',
-      'cancellationPolicy',
-      'houseRules',
-      'pgType',
-      'hostLivesOnProperty',
-      'familyFriendly',
-      'resortType',
-      'activities',
-      'hotelCategory',
-      'starRating',
-      'contactNumber',
-      'isLive',
-      'dynamicCategory'
+      'propertyName', 'shortDescription', 'address', 'location', 'nearbyPlaces',
+      'amenities', 'coverImage', 'propertyImages', 'checkInTime', 'checkOutTime',
+      'cancellationPolicy', 'houseRules', 'pgType', 'hostLivesOnProperty', 'resortType',
+      'activities', 'hotelCategory', 'starRating', 'contactNumber', 'suitability', 'isLive'
     ];
 
     updatableFields.forEach(field => {
@@ -219,7 +171,6 @@ export const updateProperty = async (req, res) => {
 
     await property.save();
 
-    // documents update if provided
     if (payload.documents && Array.isArray(payload.documents)) {
       const lowerType = property.propertyType.toLowerCase();
       const requiredDocs = PROPERTY_DOCUMENTS[lowerType] || [];
@@ -241,6 +192,11 @@ export const updateProperty = async (req, res) => {
       );
       property.status = 'pending';
       await property.save();
+
+      notificationService.sendToAdmins({
+        title: 'Property Updated 📝',
+        body: `${property.propertyName} has updated documents/details and is pending re-verification.`
+      }, { type: 'property_updated', propertyId: property._id }).catch(e => console.error('Admin Update Push Error:', e));
     }
 
     res.json({ success: true, property });
@@ -255,40 +211,16 @@ export const addRoomType = async (req, res) => {
     const { name, inventoryType, roomCategory, maxAdults, maxChildren, bedsPerRoom, totalInventory, pricePerNight, extraAdultPrice, extraChildPrice, images, amenities } = req.body;
     const property = await Property.findById(propertyId);
     if (!property) return res.status(404).json({ message: 'Property not found' });
-
     if (!pricePerNight) return res.status(400).json({ message: 'pricePerNight required' });
 
-    // For Villa, inventoryType must be 'entire'
-    if (property.propertyType === 'villa' && inventoryType !== 'entire') {
-      return res.status(400).json({ message: 'Villa must have inventoryType="entire"' });
-    }
+    const template = property.propertyTemplate || property.propertyType;
 
-    if (property.propertyType === 'hotel' && inventoryType !== 'room') {
-      return res.status(400).json({ message: 'Hotel must have inventoryType="room"' });
-    }
-
-    if (property.propertyType === 'resort' && inventoryType !== 'room') {
-      return res.status(400).json({ message: 'Resort must have inventoryType="room"' });
-    }
-
-    // For Hostel, inventoryType must be 'bed'
-    if (property.propertyType === 'hostel' && inventoryType !== 'bed') {
-      return res.status(400).json({ message: 'Hostel must have inventoryType="bed"' });
-    }
-
-    // For PG, inventoryType must be 'bed'
-    if (property.propertyType === 'pg' && inventoryType !== 'bed') {
-      return res.status(400).json({ message: 'PG must have inventoryType="bed"' });
-    }
-
-    if (property.propertyType === 'tent' && inventoryType !== 'tent') {
-      return res.status(400).json({ message: 'Tent/Campsite must have inventoryType="tent"' });
-    }
-
-    // For Homestay, inventoryType can be 'room' or 'entire'
-    if (property.propertyType === 'homestay' && !['room', 'entire'].includes(inventoryType)) {
-      return res.status(400).json({ message: 'Homestay must have inventoryType="room" or "entire"' });
-    }
+    if (template === 'villa' && inventoryType !== 'entire') return res.status(400).json({ message: 'Villa must have inventoryType="entire"' });
+    if (template === 'hotel' && inventoryType !== 'room') return res.status(400).json({ message: 'Hotel must have inventoryType="room"' });
+    if (template === 'resort' && inventoryType !== 'room') return res.status(400).json({ message: 'Resort must have inventoryType="room"' });
+    if (template === 'hostel' && inventoryType !== 'bed') return res.status(400).json({ message: 'Hostel must have inventoryType="bed"' });
+    if (template === 'pg' && inventoryType !== 'bed') return res.status(400).json({ message: 'PG must have inventoryType="bed"' });
+    if (template === 'homestay' && !['room', 'entire'].includes(inventoryType)) return res.status(400).json({ message: 'Homestay must have inventoryType="room" or "entire"' });
 
     const normalizedImages = Array.isArray(images)
       ? images.filter(Boolean)
@@ -297,19 +229,9 @@ export const addRoomType = async (req, res) => {
         : [];
 
     const rt = await RoomType.create({
-      propertyId,
-      name,
-      inventoryType,
-      roomCategory,
-      maxAdults,
-      maxChildren,
-      bedsPerRoom,
-      totalInventory,
-      pricePerNight,
-      extraAdultPrice,
-      extraChildPrice,
-      images: normalizedImages,
-      amenities
+      propertyId, name, inventoryType, roomCategory, maxAdults, maxChildren,
+      bedsPerRoom, totalInventory, pricePerNight, extraAdultPrice, extraChildPrice,
+      images: normalizedImages, amenities
     });
     res.status(201).json({ success: true, roomType: rt });
   } catch (e) {
@@ -324,7 +246,6 @@ export const updateRoomType = async (req, res) => {
 
     const property = await Property.findById(propertyId);
     if (!property) return res.status(404).json({ message: 'Property not found' });
-
     if (String(property.partnerId) !== String(req.user._id) && req.user.role !== 'admin' && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Not allowed' });
     }
@@ -332,22 +253,7 @@ export const updateRoomType = async (req, res) => {
     const roomType = await RoomType.findOne({ _id: roomTypeId, propertyId });
     if (!roomType) return res.status(404).json({ message: 'Room type not found' });
 
-    const updatableFields = [
-      'name',
-      'inventoryType',
-      'roomCategory',
-      'maxAdults',
-      'maxChildren',
-      'bedsPerRoom',
-      'totalInventory',
-      'pricePerNight',
-      'extraAdultPrice',
-      'extraChildPrice',
-      'images',
-      'amenities',
-      'isActive'
-    ];
-
+    const updatableFields = ['name', 'inventoryType', 'roomCategory', 'maxAdults', 'maxChildren', 'bedsPerRoom', 'totalInventory', 'pricePerNight', 'extraAdultPrice', 'extraChildPrice', 'images', 'amenities', 'isActive'];
     updatableFields.forEach(field => {
       if (Object.prototype.hasOwnProperty.call(payload, field)) {
         roomType[field] = payload[field];
@@ -365,31 +271,16 @@ export const updateRoomType = async (req, res) => {
     }
 
     if (payload.inventoryType) {
-      if (property.propertyType === 'villa' && roomType.inventoryType !== 'entire') {
-        return res.status(400).json({ message: 'Villa must have inventoryType="entire"' });
-      }
-      if (property.propertyType === 'hotel' && roomType.inventoryType !== 'room') {
-        return res.status(400).json({ message: 'Hotel must have inventoryType="room"' });
-      }
-      if (property.propertyType === 'resort' && roomType.inventoryType !== 'room') {
-        return res.status(400).json({ message: 'Resort must have inventoryType="room"' });
-      }
-      if (property.propertyType === 'hostel' && roomType.inventoryType !== 'bed') {
-        return res.status(400).json({ message: 'Hostel must have inventoryType="bed"' });
-      }
-      if (property.propertyType === 'pg' && roomType.inventoryType !== 'bed') {
-        return res.status(400).json({ message: 'PG must have inventoryType="bed"' });
-      }
-      if (property.propertyType === 'tent' && roomType.inventoryType !== 'tent') {
-        return res.status(400).json({ message: 'Tent/Campsite must have inventoryType="tent"' });
-      }
-      if (property.propertyType === 'homestay' && !['room', 'entire'].includes(roomType.inventoryType)) {
-        return res.status(400).json({ message: 'Homestay must have inventoryType="room" or "entire"' });
-      }
+      const template = property.propertyTemplate || property.propertyType;
+      if (template === 'villa' && roomType.inventoryType !== 'entire') return res.status(400).json({ message: 'Villa must have inventoryType="entire"' });
+      if (template === 'hotel' && roomType.inventoryType !== 'room') return res.status(400).json({ message: 'Hotel must have inventoryType="room"' });
+      if (template === 'resort' && roomType.inventoryType !== 'room') return res.status(400).json({ message: 'Resort must have inventoryType="room"' });
+      if (template === 'hostel' && roomType.inventoryType !== 'bed') return res.status(400).json({ message: 'Hostel must have inventoryType="bed"' });
+      if (template === 'pg' && roomType.inventoryType !== 'bed') return res.status(400).json({ message: 'PG must have inventoryType="bed"' });
+      if (template === 'homestay' && !['room', 'entire'].includes(roomType.inventoryType)) return res.status(400).json({ message: 'Homestay must have inventoryType="room" or "entire"' });
     }
 
     await roomType.save();
-
     res.json({ success: true, roomType });
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -399,17 +290,13 @@ export const updateRoomType = async (req, res) => {
 export const deleteRoomType = async (req, res) => {
   try {
     const { propertyId, roomTypeId } = req.params;
-
     const property = await Property.findById(propertyId);
     if (!property) return res.status(404).json({ message: 'Property not found' });
-
     if (String(property.partnerId) !== String(req.user._id) && req.user.role !== 'admin' && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'Not allowed' });
     }
-
     const roomType = await RoomType.findOneAndDelete({ _id: roomTypeId, propertyId });
     if (!roomType) return res.status(404).json({ message: 'Room type not found' });
-
     res.json({ success: true });
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -421,7 +308,8 @@ export const upsertDocuments = async (req, res) => {
     const { propertyId } = req.params;
     const property = await Property.findById(propertyId);
     if (!property) return res.status(404).json({ message: 'Property not found' });
-    const required = PROPERTY_DOCUMENTS[property.propertyType] || [];
+    const template = property.propertyTemplate || property.propertyType;
+    const required = PROPERTY_DOCUMENTS[template] || [];
     const payloadDocs = Array.isArray(req.body.documents) ? req.body.documents : [];
     const doc = await PropertyDocument.findOneAndUpdate(
       { propertyId },
@@ -445,7 +333,12 @@ export const upsertDocuments = async (req, res) => {
     await property.save();
 
     if (wasDraft) {
-      notifyAdminOfNewProperty(property).catch(e => console.error(e));
+      notifySubmission(property).catch(e => console.error(e));
+    } else {
+      notificationService.sendToAdmins({
+        title: 'Property Docs Updated 📁',
+        body: `Partner has updated documents for "${property.propertyName}". Review needed.`
+      }, { type: 'property_docs_updated', propertyId: property._id }).catch(e => console.error('Admin Docs Update Push Error:', e));
     }
 
     res.json({ success: true, property, propertyDocument: doc });
@@ -464,22 +357,15 @@ export const getPublicProperties = async (req, res) => {
       amenities,
       lat,
       lng,
-      radius = 50, // default 50km
-      guests, // Legacy field (total pax)
+      radius = 50,
+      guests,
       sort,
-      checkIn,
-      checkOut,
-      adults,
-      children,
-      rooms,
-      petFriendly
+      suitability
     } = req.query;
 
     const pipeline = [];
 
-    // --- 1. Basic Filters & Geo ---
-
-    // Geospatial Search (Must be first if used)
+    // 1. Geospatial Search (Must be first if used)
     if (lat && lng) {
       pipeline.push({
         $geoNear: {
@@ -494,48 +380,30 @@ export const getPublicProperties = async (req, res) => {
       pipeline.push({ $match: { status: 'approved', isLive: true } });
     }
 
+    // 2. Text/Filter Match
     const matchConditions = {};
 
-    // Type Filter
-    if (type && type !== 'all') {
-      const typesList = type.split(',').map(t => t.trim()).filter(Boolean);
-      const dynamicTypes = typesList.filter(t => mongoose.Types.ObjectId.isValid(t));
-      const staticTypes = typesList.filter(t => !mongoose.Types.ObjectId.isValid(t)).map(t => t.toLowerCase());
-
-      if (dynamicTypes.length > 0 && staticTypes.length > 0) {
-        matchConditions.$or = [
-          { propertyType: { $in: staticTypes } },
-          { dynamicCategory: { $in: dynamicTypes.map(id => new mongoose.Types.ObjectId(id)) } }
-        ];
-      } else if (dynamicTypes.length > 0) {
-        matchConditions.dynamicCategory = { $in: dynamicTypes.map(id => new mongoose.Types.ObjectId(id)) };
-      } else if (staticTypes.length > 0) {
-        matchConditions.propertyType = { $in: staticTypes };
-      }
-    }
-
-    // Keyword Search
     if (search) {
       const regex = new RegExp(search, 'i');
-      const searchOr = [
+      matchConditions.$or = [
         { propertyName: regex },
         { "address.city": regex },
         { "address.area": regex },
         { "address.fullAddress": regex }
       ];
+    }
 
-      if (matchConditions.$or) {
-        matchConditions.$and = [
-          { $or: matchConditions.$or }, // Wrap existing $or
-          { $or: searchOr }
-        ];
-        delete matchConditions.$or;
-      } else {
-        matchConditions.$or = searchOr;
+    if (type && type !== 'all') {
+      const typesList = type.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (typesList.length > 0) {
+        // Match ONLY by propertyType to keep categories isolated.
+        // Static categories (hotel, tent, etc.) → propertyType = "tent"
+        // Dynamic categories (Heritage Stay) → propertyType = their slug e.g. "heritage-stay"
+        // propertyTemplate is NOT used for filtering so categories never mix.
+        matchConditions.propertyType = { $in: typesList };
       }
     }
 
-    // Amenities
     if (amenities) {
       const amList = Array.isArray(amenities) ? amenities : amenities.split(',');
       if (amList.length > 0) {
@@ -543,31 +411,20 @@ export const getPublicProperties = async (req, res) => {
       }
     }
 
-    // Pet Friendly Filter (searches keywords in description or amenities if specific flag doesn't exist)
-    if (petFriendly === 'true') {
-      const petRegex = /pet|dog|cat|animal/i;
-      // Check house rules or amenities or description
-      const petOr = [
-        { "amenities": { $regex: petRegex } },
-        { "houseRules": { $regex: petRegex } },
-        // If explicit field exists (none in schema shown, so falling back to text search)
-        { "description": { $regex: petRegex } }
-      ];
-      if (matchConditions.$or) {
-        matchConditions.$and = matchConditions.$and || [];
-        if (!matchConditions.$and.length && matchConditions.$or) {
-          matchConditions.$and.push({ $or: matchConditions.$or });
-          delete matchConditions.$or;
-        } else if (matchConditions.$or) { // If $or was just set
-          // complex merge logic needed, simplify:
-          // The earlier block handles basic search $or. If we add another check:
-        }
-        // For safety, add petOr as a mandatory AND condition
-        matchConditions.$and = matchConditions.$and || [];
-        matchConditions.$and.push({ $or: petOr });
+    if (req.query.activities) {
+      const actList = Array.isArray(req.query.activities) ? req.query.activities : req.query.activities.split(',');
+      if (actList.length > 0) {
+        matchConditions.activities = { $all: actList };
+      }
+    }
 
-      } else {
-        matchConditions.$or = petOr;
+    if (suitability && suitability !== 'all') {
+      if (suitability === 'Couple Friendly') {
+        matchConditions.suitability = { $in: ['Couple Friendly', 'Both'] };
+      } else if (suitability === 'Family Friendly') {
+        matchConditions.suitability = { $in: ['Family Friendly', 'Both'] };
+      } else if (suitability === 'Both') {
+        matchConditions.suitability = 'Both';
       }
     }
 
@@ -575,127 +432,72 @@ export const getPublicProperties = async (req, res) => {
       pipeline.push({ $match: matchConditions });
     }
 
-    // --- 2. Advanced Room Availability & Capacity Check ---
-
-    // Parse Search Params
-    const reqAdults = parseInt(adults) || parseInt(guests) || 1;
-    const reqChildren = parseInt(children) || 0;
-    const reqRooms = parseInt(rooms) || 1;
-
-    let startDate = null;
-    let endDate = null;
-    let askingForDate = false;
-
-    if (checkIn && checkOut) {
-      const d1 = new Date(checkIn);
-      const d2 = new Date(checkOut);
-      if (!isNaN(d1) && !isNaN(d2) && d2 > d1) {
-        startDate = d1;
-        endDate = d2;
-        askingForDate = true;
-      }
-    }
-
-    // Lookup RoomTypes with Pipeline to Filter Availability
+    // 3. Lookup Room Types (For Price & Guest Capacity)
     const roomTypeCollection = RoomType.collection.name;
-    const ledgerCollection = AvailabilityLedger.collection.name;
-
-    const roomLookupPipeline = [
-      { $match: { $expr: { $eq: ["$propertyId", "$$pid"] }, isActive: true } },
-
-      // Capacity Filter
-      {
-        $match: {
-          maxAdults: { $gte: reqAdults },
-          // maxChildren: { $gte: reqChildren } // Optional: strict children check
-        }
-      },
-    ];
-
-    if (askingForDate) {
-      // Availability Logic:
-      // 1. Join with Ledger to find blocks overlapping the date range
-      // 2. Sum the blocked units
-      // 3. Subtract from totalInventory
-      // 4. Check if available >= reqRooms
-
-      roomLookupPipeline.push({
-        $lookup: {
-          from: ledgerCollection,
-          let: { rtid: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$roomTypeId", "$$rtid"] },
-                    // Overlap Condition: (StartA < EndB) and (EndA > StartB)
-                    { $lt: ["$startDate", endDate] },
-                    { $gt: ["$endDate", startDate] }
-                  ]
-                }
-              }
-            },
-            { $group: { _id: null, blocked: { $sum: "$units" } } }
-          ],
-          as: "blocks"
-        }
-      });
-
-      roomLookupPipeline.push({
-        $addFields: {
-          blockedCount: { $ifNull: [{ $arrayElemAt: ["$blocks.blocked", 0] }, 0] }
-        }
-      });
-
-      // Filter out room types that don't have enough availability
-      roomLookupPipeline.push({
-        $match: {
-          $expr: {
-            $gte: [{ $subtract: ["$totalInventory", "$blockedCount"] }, reqRooms]
-          }
-        }
-      });
-    }
 
     pipeline.push({
       $lookup: {
         from: roomTypeCollection,
-        let: { pid: "$_id" },
-        pipeline: roomLookupPipeline,
-        as: "roomTypes"
+        localField: '_id',
+        foreignField: 'propertyId',
+        as: 'roomTypes'
       }
     });
 
-    // --- 3. Filter Properties with NO matching rooms ---
-    // If user asked for specific capacity/dates, properties with empty roomTypes array should be removed
-    // If simplified search, we might keep them, but generally show only bookable ones
-    pipeline.push({
-      $match: { $expr: { $gt: [{ $size: "$roomTypes" }, 0] } }
-    });
+    // 4. Filter Active Room Types & Guest Capacity
+    let roomFilter = { $eq: ['$$rt.isActive', true] };
 
+    if (guests) {
+      const guestCount = parseInt(guests);
+      roomFilter = {
+        $and: [
+          { $eq: ['$$rt.isActive', true] },
+          { $gte: ['$$rt.maxAdults', guestCount] }
+        ]
+      };
+    }
 
-    // --- 4. Starting Price Calculation ---
     pipeline.push({
       $addFields: {
-        startingPrice: { $min: "$roomTypes.pricePerNight" },
+        roomTypes: {
+          $filter: {
+            input: '$roomTypes',
+            as: 'rt',
+            cond: roomFilter
+          }
+        }
+      }
+    });
+
+    // 5. Calculate Starting Price
+    pipeline.push({
+      $addFields: {
+        startingPrice: {
+          $cond: {
+            if: { $gt: [{ $size: "$roomTypes" }, 0] },
+            then: { $min: "$roomTypes.pricePerNight" },
+            else: null
+          }
+        },
         hasMatchingRooms: { $gt: [{ $size: "$roomTypes" }, 0] }
       }
     });
 
-    // --- 5. Price Range Filter ---
-    const priceMatch = {};
+    // 6. Filter by Price Range
+    const priceMatch = { hasMatchingRooms: true };
+
     if (minPrice) {
-      priceMatch.startingPrice = { $gte: parseInt(minPrice) };
+      priceMatch.startingPrice = { ...priceMatch.startingPrice, $gte: parseInt(minPrice) };
     }
     if (maxPrice) {
       priceMatch.startingPrice = { ...priceMatch.startingPrice, $lte: parseInt(maxPrice) };
     }
-    if (Object.keys(priceMatch).length > 0) {
+
+    if (Object.keys(priceMatch).length > 1) {
       pipeline.push({ $match: priceMatch });
     }
 
-    // --- 6. Sorting ---
+    // 7. Sorting
     let sortStage = { createdAt: -1 };
     if (sort) {
       if (sort === 'newest') sortStage = { createdAt: -1 };
@@ -704,23 +506,8 @@ export const getPublicProperties = async (req, res) => {
       if (sort === 'rating') sortStage = { avgRating: -1 };
       if (sort === 'distance' && lat && lng) sortStage = { distance: 1 };
     }
-    pipeline.push({ $sort: sortStage });
 
-    // --- 7. Populate dynamicCategory ---
-    pipeline.push({
-      $lookup: {
-        from: 'propertycategories',
-        localField: 'dynamicCategory',
-        foreignField: '_id',
-        as: 'dynamicCategoryArr'
-      }
-    });
-    pipeline.push({
-      $addFields: {
-        dynamicCategory: { $arrayElemAt: ['$dynamicCategoryArr', 0] }
-      }
-    });
-    pipeline.push({ $project: { dynamicCategoryArr: 0 } });
+    pipeline.push({ $sort: sortStage });
 
     const list = await Property.aggregate(pipeline);
     res.json(list);
@@ -737,7 +524,7 @@ export const getMyProperties = async (req, res) => {
     if (req.query.type) {
       query.propertyType = String(req.query.type).toLowerCase();
     }
-    const properties = await Property.find(query).populate('dynamicCategory').sort({ createdAt: -1 });
+    const properties = await Property.find(query).sort({ createdAt: -1 });
     res.json({ success: true, properties });
   } catch (e) {
     res.status(500).json({ message: e.message });
@@ -747,7 +534,7 @@ export const getMyProperties = async (req, res) => {
 export const getPropertyDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const property = await Property.findById(id).populate('dynamicCategory');
+    const property = await Property.findById(id);
     if (!property) return res.status(404).json({ message: 'Property not found' });
     const roomTypes = await RoomType.find({ propertyId: id, isActive: true });
     const documents = await PropertyDocument.findOne({ propertyId: id });
@@ -760,21 +547,28 @@ export const getPropertyDetails = async (req, res) => {
 export const deleteProperty = async (req, res) => {
   try {
     const propertyId = req.params.id;
-    // Ensure the property belongs to the logged-in partner
     const property = await Property.findOne({ _id: propertyId, partnerId: req.user._id });
 
     if (!property) {
       return res.status(404).json({ message: 'Property not found or unauthorized' });
     }
 
-    // Delete associated room types
     await RoomType.deleteMany({ propertyId });
-
-    // Delete associated documents
     await PropertyDocument.deleteMany({ propertyId });
 
-    // Delete the property
+    const deletedPropName = property.propertyName;
     await Property.findByIdAndDelete(propertyId);
+
+    notificationService.sendToAdmins({
+      title: 'Property Deleted 🗑️',
+      body: `Property "${deletedPropName}" has been deleted by the partner.`
+    }, { type: 'property_deleted', propertyId }).catch(e => console.error('Admin Delete Push Error:', e));
+
+    Partner.findById(req.user._id).then(partner => {
+      if (partner && partner.email) {
+        emailService.sendPartnerPropertyDeletedEmail(partner, property, 'Partner (Self)').catch(e => console.error(e));
+      }
+    });
 
     res.status(200).json({ message: 'Property deleted successfully' });
   } catch (error) {

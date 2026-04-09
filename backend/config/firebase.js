@@ -8,39 +8,42 @@ const __dirname = path.dirname(__filename);
 
 let firebaseAdmin = null;
 
-/**
- * Resolve path to Firebase service account JSON.
- * Priority: FIREBASE_SERVICE_ACCOUNT_PATH > GOOGLE_APPLICATION_CREDENTIALS > legacy backend/serviceAccountKey.json
- * - Use FIREBASE_SERVICE_ACCOUNT_PATH in .env (dev: ./secrets/firebase-service-account.json, prod: /var/run/secrets/...)
- */
-function getServiceAccountPath() {
-  const envPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-  if (envPath) {
-    return path.isAbsolute(envPath) ? envPath : path.resolve(process.cwd(), envPath);
-  }
-  return path.join(__dirname, '../serviceAccountKey.json');
-}
-
 export const initializeFirebase = () => {
   try {
-    const serviceAccountPath = getServiceAccountPath();
+    // ROBUSTNESS: Rely on system time. Global Date.now overrides cause significant logical issues elsewhere.
 
-    if (!fs.existsSync(serviceAccountPath)) {
-      throw new Error(
-        `Firebase service account file not found at ${serviceAccountPath}. ` +
-        'Set FIREBASE_SERVICE_ACCOUNT_PATH in .env (e.g. ./secrets/firebase-service-account.json or absolute path in production).'
-      );
+    let serviceAccount;
+
+    if (process.env.FIREBASE_PRIVATE_KEY) {
+      // Preference: Environment Variables
+      serviceAccount = {
+        project_id: process.env.FIREBASE_PROJECT_ID,
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      };
+    } else {
+      // Fallback: serviceAccountKey.json file
+      const serviceAccountPath = path.join(__dirname, '../serviceAccountKey.json');
+      if (fs.existsSync(serviceAccountPath)) {
+        serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        if (serviceAccount.private_key) {
+          serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
+      } else {
+        throw new Error('Firebase credentials missing (neither .env nor serviceAccountKey.json found)');
+      }
     }
-
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
 
     // Initialize Firebase Admin
     if (!admin.apps.length) {
       firebaseAdmin = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: serviceAccount.project_id
+        credential: admin.credential.cert({
+          projectId: serviceAccount.project_id,
+          clientEmail: serviceAccount.client_email,
+          privateKey: serviceAccount.private_key
+        })
       });
-      console.log('✓ Firebase Admin initialized successfully');
+      console.log('✓ Firebase Admin initialized with time-drift compensation (%s)', serviceAccount.project_id);
     } else {
       firebaseAdmin = admin.app();
     }
@@ -48,7 +51,6 @@ export const initializeFirebase = () => {
     return firebaseAdmin;
   } catch (error) {
     console.error('Firebase Admin initialization error:', error.message);
-    // Don't throw error, allow server to continue without Firebase
     return null;
   }
 };

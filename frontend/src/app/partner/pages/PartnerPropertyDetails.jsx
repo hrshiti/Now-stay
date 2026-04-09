@@ -174,7 +174,7 @@ const PartnerPropertyDetails = () => {
         {/* Inventory Management Button */}
         <button
           onClick={() => navigate(`/hotel/inventory/${id}`)}
-          className="w-full bg-[#004F4D] text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-emerald-900/10 active:scale-[0.99] transition-all mb-4"
+          className="w-full bg-[#0F172A] text-white p-4 rounded-2xl flex items-center justify-between shadow-lg shadow-emerald-900/10 active:scale-[0.99] transition-all mb-4"
         >
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-white">
@@ -242,7 +242,7 @@ const PartnerPropertyDetails = () => {
                   </div>
                   <div className="bg-white p-4 rounded-xl border border-gray-100 space-y-2 shadow-sm">
                     <h3 className="text-xs font-bold text-gray-500 uppercase">Description</h3>
-                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{property.description}</p>
+                    <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{property.shortDescription || property.description}</p>
                   </div>
                   <div className="bg-white p-4 rounded-xl border border-gray-100 space-y-2 shadow-sm">
                     <h3 className="text-xs font-bold text-gray-500 uppercase">Contact Number</h3>

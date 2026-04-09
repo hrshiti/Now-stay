@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { offerService } from '../../services/apiService';
 import toast from 'react-hot-toast';
@@ -16,11 +15,10 @@ const ExclusiveOffers = () => {
             try {
                 setLoading(true);
                 const data = await offerService.getActive();
-                setOffers(data);
+                setOffers(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error("Fetch Offers Error:", err);
                 setError(err.message);
-                // toast.error("Failed to load exclusive offers");
             } finally {
                 setLoading(false);
             }
@@ -31,11 +29,11 @@ const ExclusiveOffers = () => {
     if (loading) {
         return (
             <div className="py-2 pl-5">
-                <div className="h-6 w-48 bg-gray-100 rounded animate-pulse mb-4"></div>
-                <div className="flex gap-4 overflow-x-auto no-scrollbar">
+                <div className="h-6 w-48 bg-gray-100 rounded animate-pulse mb-3"></div>
+                <div className="flex gap-3 overflow-x-auto no-scrollbar">
                     {[1, 2].map(i => (
-                        <div key={i} className="min-w-[300px] h-[180px] bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center">
-                            <Loader2 className="text-gray-200 animate-spin" size={24} />
+                        <div key={i} className="min-w-[220px] h-[120px] bg-gray-100 rounded-2xl animate-pulse flex items-center justify-center">
+                            <Loader2 className="text-gray-200 animate-spin" size={20} />
                         </div>
                     ))}
                 </div>
@@ -44,66 +42,76 @@ const ExclusiveOffers = () => {
     }
 
     if (error || (offers.length === 0 && !loading)) {
-        return null; // Don't show the section if no offers or error
+        return null; // Don't show section if no offers or error
     }
 
+    // Duplicate offers list for seamless infinite loop
+    const loopedOffers = [...offers, ...offers];
+
+    const handleOfferClick = (offer) => {
+        navigator.clipboard.writeText(offer.code);
+        toast.success(`Code ${offer.code} copied!`);
+        navigate('/listings');
+    };
+
     return (
-        <section className="py-2 pl-5 mt-2">
-            <h2 className="text-xl font-bold text-surface mb-4 flex items-center gap-2">
+        <section className="py-2 mt-2 overflow-hidden">
+            <h2 className="text-xl font-bold text-surface mb-3 flex items-center gap-2 pl-5">
                 Exclusive offers for you
                 <div className="bg-accent/10 px-2 py-0.5 rounded text-[10px] font-bold text-accent">NEW</div>
             </h2>
 
-            <div className="flex gap-4 overflow-x-auto pb-4 pr-5 snap-x no-scrollbar">
-                {offers.map((offer) => (
-                    <motion.div
-                        key={offer._id || offer.id}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => {
-                            // Copy code to clipboard as a courtesy
-                            navigator.clipboard.writeText(offer.code);
-                            toast.success(`Code ${offer.code} copied!`);
-                            navigate('/listings');
-                        }}
-                        className={`
-                            relative 
-                            min-w-[280px] md:min-w-[320px] 
-                            h-[160px] 
-                            rounded-2xl 
-                            overflow-hidden 
-                            snap-center 
-                            shadow-md shadow-gray-200/50
-                            cursor-pointer
-                        `}
-                    >
-                        {/* Background Image */}
-                        <img
-                            src={offer.image}
-                            alt={offer.title}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-110"
-                        />
+            {/* Infinite auto-scroll container */}
+            <div className="flex w-full overflow-hidden">
+                <div
+                    className="flex gap-3 pl-5"
+                    style={{
+                        animation: `marquee ${offers.length * 4}s linear infinite`,
+                        width: 'max-content'
+                    }}
+                >
+                    {loopedOffers.map((offer, idx) => (
+                        <div
+                            key={`${offer._id || offer.id}-${idx}`}
+                            onClick={() => handleOfferClick(offer)}
+                            className="relative min-w-[220px] h-[120px] rounded-2xl overflow-hidden shadow-md shadow-gray-200/50 cursor-pointer flex-shrink-0 active:scale-95 transition-transform"
+                        >
+                            {/* Background Image */}
+                            <img
+                                src={offer.image}
+                                alt={offer.title}
+                                className="absolute inset-0 w-full h-full object-cover"
+                            />
 
-                        {/* Dark Gradient Overlay */}
-                        <div className={`absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center p-5 text-white items-start`}>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="bg-accent text-[8px] font-black px-1.5 py-0.5 rounded tracking-widest uppercase">
+                            {/* Dark Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex flex-col justify-center p-4 text-white items-start">
+                                <span className="bg-accent text-[8px] font-black px-1.5 py-0.5 rounded tracking-widest uppercase mb-1">
                                     {offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
                                 </span>
-                            </div>
-                            <h3 className="text-xl font-black leading-tight max-w-[80%] drop-shadow-md">{offer.title}</h3>
-                            <p className="text-[10px] font-semibold text-gray-300 mt-1 max-w-[70%] leading-relaxed drop-shadow-md line-clamp-2">{offer.subtitle}</p>
+                                <h3 className="text-base font-black leading-tight max-w-[85%] drop-shadow-md line-clamp-1">{offer.title}</h3>
+                                <p className="text-[9px] font-semibold text-gray-300 mt-0.5 max-w-[75%] leading-relaxed drop-shadow-md line-clamp-1">{offer.subtitle}</p>
 
-                            <div className="mt-3 flex items-center gap-2">
-                                <button className="px-4 py-1.5 bg-white text-black text-[10px] font-black rounded-lg hover:shadow-xl transition-all shadow-md active:scale-95">
-                                    {offer.btnText || "Copy Code"}
-                                </button>
-                                <span className="text-[9px] text-white/60 font-medium border-l border-white/20 pl-2">Code: <span className="text-white font-bold">{offer.code}</span></span>
+                                <div className="mt-2 flex items-center gap-2">
+                                    <button className="px-3 py-1 bg-white text-black text-[9px] font-black rounded-lg shadow-md">
+                                        {offer.btnText || "Copy Code"}
+                                    </button>
+                                    <span className="text-[8px] text-white/60 font-medium border-l border-white/20 pl-2">
+                                        Code: <span className="text-white font-bold">{offer.code}</span>
+                                    </span>
+                                </div>
                             </div>
                         </div>
-
-                    </motion.div>
-                ))}
+                    ))}
+                </div>
             </div>
+
+            {/* Keyframe for continuous marquee scroll */}
+            <style>{`
+                @keyframes marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
+                }
+            `}</style>
         </section>
     );
 };

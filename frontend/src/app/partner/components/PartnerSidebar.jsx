@@ -6,10 +6,10 @@ import {
     CreditCard, History, Shield,
     FileText, HelpCircle, LogOut,
     LayoutDashboard,
-    ChevronRight, Wallet, Bell, Settings, Edit3, Info, Phone, Calendar
+    ChevronRight, Wallet, Bell, Settings, Edit3, Info, Phone, Calendar, ShieldCheck
 } from 'lucide-react';
 import usePartnerStore from '../store/partnerStore';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 
 const PartnerSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate();
@@ -62,16 +62,16 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
             onClick={() => handleNavigation(path)}
             className="flex items-center gap-4 w-full p-2.5 hover:bg-gray-50 rounded-xl transition-all group active:scale-95"
         >
-            <div className="w-8 h-8 rounded-full bg-[#004F4D]/5 flex items-center justify-center group-hover:bg-[#004F4D]/10 transition-colors">
-                <Icon size={16} className="text-[#004F4D]" />
+            <div className="w-8 h-8 rounded-full bg-[#0F172A]/5 flex items-center justify-center group-hover:bg-[#0F172A]/10 transition-colors">
+                <Icon size={16} className="text-[#0F172A]" />
             </div>
             <span className="flex-1 text-left font-medium text-gray-700 text-sm">{label}</span>
             {badge && (
-                <span className="text-[10px] font-bold bg-[#004F4D] text-white px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold bg-[#0F172A] text-white px-2 py-0.5 rounded-full">
                     {badge}
                 </span>
             )}
-            <ChevronRight size={14} className="text-gray-300 group-hover:text-[#004F4D] transition-colors" />
+            <ChevronRight size={14} className="text-gray-300 group-hover:text-[#0F172A] transition-colors" />
         </button>
     );
 
@@ -85,6 +85,7 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
         {
             title: 'Growth & Finance',
             items: [
+                { icon: ShieldCheck, label: 'My Subscription', path: '/hotel/subscriptions' },
                 { icon: Wallet, label: 'Wallet', path: '/hotel/wallet' },
                 { icon: History, label: 'Booking History', path: '/hotel/bookings' },
             ]
@@ -104,8 +105,8 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
                 { icon: HelpCircle, label: 'Help & Support', path: '/hotel/support' },
                 { icon: FileText, label: 'Terms & Conditions', path: '/hotel/terms' },
                 { icon: Shield, label: 'Privacy Policy', path: '/hotel/privacy' },
-                { icon: Info, label: 'About Rukko Partner', path: '/hotel/about' },
-                { icon: Phone, label: 'Contact Rukko Team', path: '/hotel/contact' },
+                { icon: Info, label: 'About NowStay Partner', path: '/hotel/about' },
+                { icon: Phone, label: 'Contact NowStay Team', path: '/hotel/contact' },
                 { icon: Settings, label: 'Settings', path: '/hotel/settings' },
             ]
         }
@@ -135,19 +136,14 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-5 pb-2">
-                            <div className="flex flex-col items-start leading-none">
-                                <span className="text-xl font-black tracking-tighter text-slate-900 flex items-center gap-0.5">
-                                    NOW<span className="text-teal-600">STAY</span>
-                                </span>
-                                <div className="h-1 w-6 bg-teal-600 rounded-full mt-0.5"></div>
-                            </div>
+                            <NowStayLogo size="sm" />
                             <button onClick={onClose} className="p-2 rounded-full bg-gray-50 hover:bg-gray-100 transition border border-gray-100">
                                 <X size={20} className="text-gray-500" />
                             </button>
                         </div>
 
                         <div className="px-5 mb-6">
-                            <div className="bg-gradient-to-br from-[#004F4D] to-teal-700 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
+                            <div className="bg-gradient-to-br from-[#0F172A] to-teal-700 rounded-2xl p-4 text-white shadow-lg relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10"></div>
 
                                 <div className="flex items-start justify-between relative z-10">

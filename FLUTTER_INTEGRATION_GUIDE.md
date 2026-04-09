@@ -1,4 +1,4 @@
-# Flutter Integration Guide for RukkooIn
+# Flutter Integration Guide for NowStayIn
 
 This guide documents how to implement the Flutter Bridge in your Android/iOS app to enable Native Camera functionality within the React Web App (`PartnerProfile`, `AddHotel`, etc.).
 

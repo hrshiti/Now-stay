@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Wallet, Bell } from 'lucide-react';
+import { Menu, Wallet, Bell, ChevronLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 import PartnerSidebar from './PartnerSidebar';
 import { hotelService } from '../../../services/apiService';
 import walletService from '../../../services/walletService';
 
-const PartnerHeader = ({ title, subtitle }) => {
+const PartnerHeader = ({ title, subtitle, showMenu = true }) => {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
@@ -42,23 +42,26 @@ const PartnerHeader = ({ title, subtitle }) => {
 
     return (
         <>
-            <div className="flex items-center justify-between relative h-24 px-4 pt-2 bg-white sticky top-0 z-30 border-b border-gray-100">
-                <button
-                    onClick={() => setIsSidebarOpen(true)}
-                    className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
-                >
-                    <Menu size={18} className="text-[#003836]" />
-                </button>
+            <div className="flex items-center justify-between relative h-24 px-4 pt-2 bg-white/50 backdrop-blur-sm sticky top-0 z-30 border-b border-gray-100/50">
+                {showMenu ? (
+                    <button
+                        onClick={() => setIsSidebarOpen(true)}
+                        className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
+                    >
+                        <Menu size={18} className="text-[#003836]" />
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
+                    >
+                        <ChevronLeft size={18} className="text-[#003836]" />
+                    </button>
+                )}
 
-                <div className="flex flex-col items-start pt-1 ml-4">
-                    <div className="font-black tracking-tighter flex items-center text-xl">
-                        <span className="text-slate-900">NOW</span>
-                        <span className="text-teal-600">STAY.in</span>
-                    </div>
-                    <div className="w-6 h-1 bg-teal-600 rounded-full -mt-0.5 ml-0.5"></div>
+                <div className="flex-1 flex justify-center items-center">
+                    <NowStayLogo size="md" />
                 </div>
-
-                <div className="flex-1" />
 
                 <div className="flex items-center gap-2">
                     <button
@@ -75,7 +78,7 @@ const PartnerHeader = ({ title, subtitle }) => {
                         onClick={() => navigate('/hotel/wallet')}
                         className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white border border-gray-100 shadow-sm active:scale-95 transition-transform"
                     >
-                        <div className="w-5 h-5 bg-[#004F4D] rounded-full flex items-center justify-center">
+                        <div className="w-5 h-5 bg-[#0F172A] rounded-full flex items-center justify-center">
                             <Wallet size={10} className="text-white" />
                         </div>
                         <div className="flex flex-col items-start leading-none mr-0.5">

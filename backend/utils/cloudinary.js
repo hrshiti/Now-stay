@@ -17,15 +17,19 @@ cloudinary.config({
  */
 export const uploadToCloudinary = async (filePath, folder = 'general', publicId = null) => {
   try {
+    const isImage = /\.(jpg|jpeg|png|webp|gif|bmp|tiff)$/i.test(filePath);
     const uploadOptions = {
       folder: `rukkoin/${folder}`,
       resource_type: 'auto',
-      transformation: [
+    };
+
+    if (isImage) {
+      uploadOptions.transformation = [
         { width: 1920, height: 1920, crop: 'limit' },
         { quality: 'auto' },
         { fetch_format: 'auto' }
-      ]
-    };
+      ];
+    }
 
     if (publicId) {
       uploadOptions.public_id = publicId;

@@ -14,7 +14,7 @@ const TransactionRow = ({ txn }) => {
                     {isCredit ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
                 </div>
                 <div>
-                    <h4 className="font-bold text-[#003836] text-sm group-hover:text-[#004F4D] transition-colors">{txn.description}</h4>
+                    <h4 className="font-bold text-[#003836] text-sm group-hover:text-[#0F172A] transition-colors">{txn.description}</h4>
                     <div className="flex items-center gap-2 text-[10px] text-gray-400 font-medium mt-0.5">
                         <span className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-500 uppercase tracking-wide">{txn._id?.slice(-8).toUpperCase()}</span>
                         <span>•</span>
@@ -84,7 +84,7 @@ const PartnerTransactions = () => {
                     <div className="flex bg-gray-100 p-1 rounded-xl">
                         <button
                             onClick={() => setFilter('all')}
-                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-white shadow-sm text-[#004F4D]' : 'text-gray-500 hover:text-gray-700'}`}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filter === 'all' ? 'bg-white shadow-sm text-[#0F172A]' : 'text-gray-500 hover:text-gray-700'}`}
                         >
                             All
                         </button>
@@ -104,10 +104,10 @@ const PartnerTransactions = () => {
 
                     {/* Date / Download */}
                     <div className="flex gap-2">
-                        <button className="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-lg text-gray-500 hover:bg-[#004F4D] hover:text-white transition-colors" title="Filter by date">
+                        <button className="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-lg text-gray-500 hover:bg-[#0F172A] hover:text-white transition-colors" title="Filter by date">
                             <Calendar size={16} />
                         </button>
-                        <button className="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-lg text-gray-500 hover:bg-[#004F4D] hover:text-white transition-colors" title="Download report">
+                        <button className="w-9 h-9 flex items-center justify-center bg-gray-50 rounded-lg text-gray-500 hover:bg-[#0F172A] hover:text-white transition-colors" title="Download report">
                             <Download size={16} />
                         </button>
                     </div>
@@ -121,14 +121,14 @@ const PartnerTransactions = () => {
                     <input
                         type="text"
                         placeholder="Search by ID or Description..."
-                        className="w-full h-12 bg-white rounded-2xl pl-12 pr-4 text-sm font-medium border border-gray-200 shadow-sm focus:outline-none focus:border-[#004F4D]/20 transition-colors"
+                        className="w-full h-12 bg-white rounded-2xl pl-12 pr-4 text-sm font-medium border border-gray-200 shadow-sm focus:outline-none focus:border-[#0F172A]/20 transition-colors"
                     />
                     <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" />
                 </div>
 
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
-                        <Loader2 className="w-8 h-8 animate-spin text-[#004F4D]" />
+                        <Loader2 className="w-8 h-8 animate-spin text-[#0F172A]" />
                     </div>
                 ) : (
                     <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden" ref={listRef}>

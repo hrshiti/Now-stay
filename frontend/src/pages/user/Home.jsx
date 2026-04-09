@@ -8,11 +8,11 @@ const Home = () => {
     const [selectedType, setSelectedType] = useState('All');
 
     return (
-        <main className="min-h-screen bg-gray-50 pb-24">
+        <main className="min-h-screen bg-emerald-100 pb-24">
             <HeroSection />
 
             {/* Sticky Filter Bar */}
-            <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-md pt-2">
+            <div className="sticky top-0 z-30 bg-white/40 backdrop-blur-md pt-2">
                 <PropertyTypeFilter
                     selectedType={selectedType}
                     onSelectType={setSelectedType}

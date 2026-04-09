@@ -11,15 +11,47 @@ import referralService from '../services/referralService.js';
 import { uploadToCloudinary, deleteFromCloudinary, uploadBase64ToCloudinary } from '../utils/cloudinary.js';
 
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: '30d',
-  });
+  // No expiresIn: tokens never expire; users only get logged out manually
+  return jwt.sign({ id, role }, process.env.JWT_SECRET);
+};
+
+export const checkExists = async (req, res) => {
+  try {
+    const { phone, email, role = 'user' } = req.body;
+    let Model = role === 'partner' ? Partner : User;
+
+    if (phone) {
+      const existingByPhone = await Model.findOne({ phone, isDeleted: false });
+      if (existingByPhone) {
+        return res.status(409).json({
+          message: `${role.charAt(0).toUpperCase() + role.slice(1)} with this phone number already exists.`,
+          requiresLogin: true
+        });
+      }
+    }
+
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const existingByEmail = await Model.findOne({ email: normalizedEmail, isDeleted: false });
+      if (existingByEmail) {
+        return res.status(409).json({
+          message: `${role.charAt(0).toUpperCase() + role.slice(1)} with this email address already registered.`,
+          requiresLogin: true
+        });
+      }
+    }
+
+    res.status(200).json({ success: true, message: 'Details available' });
+  } catch (error) {
+    console.error('Check Exists Error:', error);
+    res.status(500).json({ message: 'Server error during validation' });
+  }
 };
 
 export const sendOtp = async (req, res) => {
   try {
-    console.log('📱 sendOtp called with body:', req.body);
-    const { phone, type, role = 'user' } = req.body; // type: 'login' or 'register'
+    const { phone, type, role = 'user', email: rawEmail } = req.body; // type: 'login' or 'register'
+    const email = rawEmail ? rawEmail.trim().toLowerCase() : '';
 
     if (!phone) {
       return res.status(400).json({ message: 'Phone number is required' });
@@ -28,11 +60,10 @@ export const sendOtp = async (req, res) => {
     let user;
     let Model = role === 'partner' ? Partner : User;
 
-    // FOR LOGIN: Check if user exists BEFORE sending OTP
+    // FOR LOGIN: Check if user exists & is not blocked BEFORE sending OTP
     if (type === 'login') {
       user = await Model.findOne({ phone });
       if (!user) {
-        // User doesn't exist - don't send OTP
         if (role === 'partner') {
           return res.status(404).json({ message: 'Partner account not found. Please register first.' });
         }
@@ -41,22 +72,58 @@ export const sendOtp = async (req, res) => {
           requiresRegistration: true
         });
       }
+
+      if (user.isBlocked) {
+        return res.status(403).json({
+          success: false,
+          message: 'Your account has been blocked by admin. Please contact support.',
+          isBlocked: true
+        });
+      }
+
+      if (user.isDeleted) {
+        // We allow them to request OTP. Re-activation happens in verifyOtp.
+        console.log(`[AUTH] Deleted account ${phone} requesting OTP for re-activation.`);
+      }
     }
 
-    // FOR REGISTER: Check if user already exists
+    // FOR REGISTER: Check if phone or email already exists
     if (type === 'register') {
-      user = await Model.findOne({ phone });
-      if (user) {
+      // Basic formatting check
+      if (!phone || phone.length !== 10) {
+        return res.status(400).json({ message: 'Valid 10-digit phone number is required' });
+      }
+
+      // 1. Check Phone
+      const existingByPhone = await Model.findOne({ phone, isDeleted: false });
+      if (existingByPhone) {
         return res.status(409).json({
-          message: 'Account already exists. Please login instead.',
+          message: `${role.charAt(0).toUpperCase() + role.slice(1)} with this phone number already exists. Please login instead.`,
           requiresLogin: true
         });
+      }
+
+      // 2. Check Email (if provided)
+      if (email) {
+        // Basic email format check
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          return res.status(400).json({ message: 'Invalid email format' });
+        }
+
+        const existingByEmail = await Model.findOne({ email, isDeleted: false });
+        if (existingByEmail) {
+          return res.status(409).json({
+            message: `${role.charAt(0).toUpperCase() + role.slice(1)} with this email address already registered. Please use another email or login.`,
+            requiresLogin: true
+          });
+        }
       }
     }
 
     // TEST NUMBERS - Bypass OTP with default 123456
-    const testNumbers = ['9685974247', '6261096283', '9752275626', '6268455411', '7777777777'];
-    const isTestNumber = testNumbers.includes(phone);
+    const testNumbers = ['9685974247', '9009925021', '6261096283', '9752275626', '8889948896', '7047716600', '6263322405', '6260491554'];
+    const isTestNumber = testNumbers.includes(phone) || (role === 'partner' && phone === '9589814119');
 
     // Generate OTP - Use 123456 for test numbers, random for others
     const otp = isTestNumber ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
@@ -87,8 +154,8 @@ export const sendOtp = async (req, res) => {
       expiresIn: 600 // 10 minutes in seconds
     });
   } catch (error) {
-    console.error('❌ Send OTP Error:', error);
-    res.status(500).json({ message: 'Server error sending OTP', error: error.message });
+    console.error('Send OTP Error:', error);
+    res.status(500).json({ message: 'Server error sending OTP' });
   }
 };
 
@@ -96,19 +163,19 @@ export const registerPartner = async (req, res) => {
   try {
     const {
       full_name,
-      email,
+      email: rawEmail,
       phone,
-      owner_name,
       aadhaar_number,
       aadhaar_front,
       aadhaar_back,
       pan_number,
       pan_card_image,
-      owner_address,
       termsAccepted
     } = req.body;
 
-    // Extract URLs if fields are objects (for backward and forward compatibility)
+    console.log(`[AUTH] Partner Registration payload:`, { phone, email: rawEmail });
+
+    const email = rawEmail ? rawEmail.trim().toLowerCase() : '';
     const getUrl = (val) => (val && typeof val === 'object' ? val.url : val);
 
     const aadhaarFrontUrl = getUrl(aadhaar_front);
@@ -120,16 +187,12 @@ export const registerPartner = async (req, res) => {
       return res.status(400).json({ message: 'Name, email, and phone are required' });
     }
 
-    if (!owner_name || !aadhaar_number || !aadhaarFrontUrl || !aadhaarBackUrl) {
-      return res.status(400).json({ message: 'Owner details and Aadhaar documents are required' });
+    if (!aadhaar_number || !aadhaarFrontUrl || !aadhaarBackUrl) {
+      return res.status(400).json({ message: 'Aadhaar details and documents are required' });
     }
 
     if (!pan_number || !panImageUrl) {
       return res.status(400).json({ message: 'PAN details are required' });
-    }
-
-    if (!owner_address || !owner_address.street || !owner_address.city || !owner_address.state || !owner_address.zipCode) {
-      return res.status(400).json({ message: 'Complete address is required' });
     }
 
     if (!termsAccepted) {
@@ -137,61 +200,73 @@ export const registerPartner = async (req, res) => {
     }
 
     // Check if partner already exists
-    const existingPartner = await Partner.findOne({ $or: [{ email }, { phone }] });
-    if (existingPartner) {
+    let partner = await Partner.findOne({ $or: [{ email }, { phone }] });
+    if (partner && !partner.isDeleted) {
       return res.status(409).json({ message: 'Partner with this email or phone already exists' });
     }
 
-    // Generate random password for partner (they'll login via OTP)
+    const isRestoration = !!(partner && partner.isDeleted);
+
+    // Generate random password for partner
     const randomPassword = Math.random().toString(36).slice(-8);
     const passwordHash = await bcrypt.hash(randomPassword, 10);
 
-    // Create Partner directly with pending approval
-    const newPartner = new Partner({
-      name: full_name,
-      email,
-      phone,
-      password: passwordHash,
-      role: 'partner',
-      isPartner: true,
-      partnerApprovalStatus: 'pending',
-      isVerified: false,
-      ownerName: owner_name,
-      aadhaarNumber: aadhaar_number,
-      aadhaarFront: aadhaarFrontUrl,
-      aadhaarBack: aadhaarBackUrl,
-      panNumber: pan_number,
-      panCardImage: panImageUrl,
-      address: {
-        street: owner_address.street,
-        city: owner_address.city,
-        state: owner_address.state,
-        zipCode: owner_address.zipCode,
-        country: owner_address.country || 'India',
-        coordinates: owner_address.coordinates || {}
-      },
-      termsAccepted
-    });
+    if (isRestoration) {
+      // Re-fill the deleted record
+      partner.isDeleted = false;
+      partner.name = full_name;
+      partner.email = email;
+      partner.password = passwordHash;
+      partner.role = 'partner';
+      partner.isPartner = true;
+      partner.partnerApprovalStatus = 'pending';
+      partner.isVerified = false;
+      partner.ownerName = full_name;
+      partner.aadhaarNumber = aadhaar_number;
+      partner.aadhaarFront = aadhaarFrontUrl;
+      partner.aadhaarBack = aadhaarBackUrl;
+      partner.panNumber = pan_number;
+      partner.panCardImage = panImageUrl;
+      partner.address = {};
+      partner.termsAccepted = termsAccepted;
+      console.log(`[AUTH] Deleted partner account ${partner._id} restored during registration.`);
+    } else {
+      // Create fresh record
+      partner = new Partner({
+        name: full_name,
+        email,
+        phone,
+        password: passwordHash,
+        role: 'partner',
+        isPartner: true,
+        partnerApprovalStatus: 'pending',
+        isVerified: false,
+        ownerName: full_name,
+        aadhaarNumber: aadhaar_number,
+        aadhaarFront: aadhaarFrontUrl,
+        aadhaarBack: aadhaarBackUrl,
+        panNumber: pan_number,
+        panCardImage: panImageUrl,
+        address: {},
+        termsAccepted
+      });
+    }
 
-    await newPartner.save();
+    await partner.save();
+
+    // Referral processing removed for partners
+
+    // Partner referral code generation removed
 
     // Send notification to admins
-    const admins = await Admin.find({ role: { $in: ['admin', 'superadmin'] } });
-    for (const admin of admins) {
-      notificationService.sendToUser(
-        admin._id,
-        {
-          title: 'New Partner Registration',
-          body: `${full_name} has registered as a partner and is pending approval.`
-        },
-        { type: 'partner_registration', partnerId: newPartner._id },
-        'admin'
-      ).catch(err => console.error('Failed to notify admin:', err));
-    }
+    notificationService.sendToAdmins({
+      title: 'New Partner Registration',
+      body: `${full_name} has registered as a partner and is pending approval.`
+    }, { type: 'partner_registration', partnerId: partner._id }).catch(err => console.error('Failed to notify admins:', err));
 
     // Send welcome email to partner
     if (email) {
-      emailService.sendPartnerRegistrationEmail(newPartner).catch(err =>
+      emailService.sendPartnerRegistrationEmail(partner).catch(err =>
         console.error('Failed to send partner registration email:', err)
       );
     }
@@ -200,11 +275,11 @@ export const registerPartner = async (req, res) => {
       success: true,
       message: 'Registration successful! Your account is pending admin approval. You can login once approved.',
       partner: {
-        id: newPartner._id,
-        name: newPartner.name,
-        email: newPartner.email,
-        phone: newPartner.phone,
-        partnerApprovalStatus: newPartner.partnerApprovalStatus
+        id: partner._id,
+        name: partner.name,
+        email: partner.email,
+        phone: partner.phone,
+        partnerApprovalStatus: partner.partnerApprovalStatus
       }
     });
 
@@ -226,40 +301,64 @@ export const verifyOtp = async (req, res) => {
     // Select Model based on Role
     let Model = role === 'partner' ? Partner : User;
 
-    // 1. Check if it's an existing user (Login Flow)
+    // 1. Find User (if any)
     let user = await Model.findOne({ phone }).select('+otp +otpExpires');
+    
+    // 2. Find registration-flow OTP Record (if any)
+    const otpRecord = await Otp.findOne({ phone });
+
     let isRegistration = false;
+    let verified = false;
+
+    // Try verifying with User OTP (Existing User/Login Flow)
+    if (user && user.otp && user.otp === otp && user.otpExpires >= Date.now()) {
+      verified = true;
+      user.otp = undefined;
+      user.otpExpires = undefined;
+      
+      // If found but deleted, this is a direct login-based re-activation
+      if (user.isDeleted) {
+        user.isDeleted = false;
+        console.log(`[AUTH] Account ${user._id} re-activated via Login flow.`);
+      }
+    } 
+    // Try verifying with Otp Record (Registration Flow / Deleted Account Recovery)
+    else if (otpRecord && otpRecord.otp === otp && otpRecord.expiresAt >= Date.now()) {
+      if (otpRecord.tempData && otpRecord.tempData.role && otpRecord.tempData.role !== role) {
+        return res.status(400).json({ message: 'Invalid role context.' });
+      }
+      verified = true;
+      
+      if (user) {
+        // Exists but was deleted (handled via registration path)
+        if (user.isDeleted) {
+           user.isDeleted = false;
+           console.log(`[AUTH] Account ${user._id} re-activated via Registration flow.`);
+        }
+      } else {
+        // Truly a new user
+        isRegistration = true;
+      }
+      
+      await Otp.deleteOne({ phone });
+    }
+
+    if (!verified) {
+      return res.status(400).json({ message: 'Invalid OTP or OTP has expired. Please request OTP again.' });
+    }
 
     if (user) {
       if (user.isBlocked) {
         return res.status(403).json({
+          success: false,
           message: 'Your account has been blocked by admin. Please contact support.',
           isBlocked: true
         });
       }
-      // ... (existing login logic)
-      if (user.otp !== otp) {
-        return res.status(400).json({ message: 'Invalid OTP' });
-      }
-      if (user.otpExpires < Date.now()) {
-        return res.status(400).json({ message: 'OTP has expired' });
-      }
-      user.otp = undefined;
-      user.otpExpires = undefined;
     } else {
-      // ... (existing registration logic)
-      if (role === 'partner') {
-        return res.status(404).json({ message: 'Partner not found. Please use partner registration.' });
-      }
-      const otpRecord = await Otp.findOne({ phone });
-      if (!otpRecord) {
-        return res.status(400).json({ message: 'Invalid request or OTP expired. Please request OTP again.' });
-      }
-      if (otpRecord.otp !== otp) {
-        return res.status(400).json({ message: 'Invalid OTP' });
-      }
-      if (otpRecord.tempData && otpRecord.tempData.role && otpRecord.tempData.role !== role) {
-        return res.status(400).json({ message: 'Invalid role context.' });
+      // Create new user (Truly first time)
+      if (req.query.verifyOnly === 'true') {
+        return res.status(200).json({ success: true, message: 'OTP verified successfully' });
       }
 
       // Check if this was a LOGIN attempt but user doesn't exist
@@ -310,6 +409,11 @@ export const verifyOtp = async (req, res) => {
 
     await user.save();
 
+    // NOTIFICATION: New Login Alert
+    if (!isRegistration && user.email) {
+      emailService.sendLoginAlertEmail(user, req.headers['user-agent'] || 'Rukkoin App/Web').catch(e => console.error(e));
+    }
+
     // NOTIFICATION & EMAIL TRIGGERS (USER REGISTRATION)
     if (isRegistration && role === 'user') {
       // Send Welcome Email
@@ -325,12 +429,18 @@ export const verifyOtp = async (req, res) => {
 
       // REFERRAL: Process Signup Referral
       if (referralCode) {
-        // Run in background to not block response
-        referralService.processReferralSignup(user, referralCode).catch(err => console.error('Referral Signup Error:', err));
+        console.log(`[REFERRAL_DEBUG] User signup with code: ${referralCode}`);
+        referralService.processReferralSignup(user, referralCode).catch(err => console.error('[REFERRAL_DEBUG] Referral Signup Error:', err));
       }
 
       // REFERRAL: Auto-generate code for new user
       referralService.generateCodeForUser(user).catch(err => console.error('Code Gen Error:', err));
+
+      // NOTIFICATION: Notify Admin of new user
+      notificationService.sendToAdmins({
+        title: 'New User Registration 👤',
+        body: `${user.name} has joined the platform.`
+      }, { type: 'new_user_registration', userId: user._id }).catch(err => console.error('Admin User alert failed:', err));
 
     }
 
@@ -347,7 +457,14 @@ export const verifyOtp = async (req, res) => {
         role: user.role,
         isPartner: user.isPartner || (role === 'partner'),
         partnerApprovalStatus: user.partnerApprovalStatus,
-        profileImage: user.profileImage
+        profileImage: user.profileImage,
+        address: user.address,
+        aadhaarNumber: user.aadhaarNumber,
+        panNumber: user.panNumber,
+        createdAt: user.createdAt,
+        partnerSince: user.partnerSince,
+        isBlocked: user.isBlocked,
+        registrationStep: user.registrationStep
       }
     });
 
@@ -390,6 +507,7 @@ export const verifyPartnerOtp = async (req, res) => {
 
     if (partner.isBlocked) {
       return res.status(403).json({
+        success: false,
         message: 'Your account has been blocked by admin. Please contact support.',
         isBlocked: true
       });
@@ -412,18 +530,10 @@ export const verifyPartnerOtp = async (req, res) => {
     }
 
     // Notify Admins
-    const admins = await Admin.find({ role: { $in: ['admin', 'superadmin'] } });
-    for (const admin of admins) {
-      notificationService.sendToUser(
-        admin._id,
-        {
-          title: `New Partner Registration: ${partner.name}`,
-          body: 'Review needed.'
-        },
-        { type: 'partner_registration', partnerId: partner._id },
-        'admin' // Assuming sendToUser handles 'admin' type correctly
-      ).catch(err => console.error('Failed to notify admin:', err));
-    }
+    notificationService.sendToAdmins({
+      title: `New Partner Registration: ${partner.name}`,
+      body: 'Review needed.'
+    }, { type: 'partner_registration', partnerId: partner._id }).catch(err => console.error('Failed to notify admins:', err));
 
     const token = generateToken(partner._id, partner.role);
 
@@ -439,7 +549,12 @@ export const verifyPartnerOtp = async (req, res) => {
         role: partner.role,
         isPartner: partner.isPartner,
         partnerApprovalStatus: partner.partnerApprovalStatus,
-        profileImage: partner.profileImage
+        profileImage: partner.profileImage,
+        address: partner.address,
+        aadhaarNumber: partner.aadhaarNumber,
+        panNumber: partner.panNumber,
+        createdAt: partner.createdAt,
+        partnerSince: partner.partnerSince
       }
     });
 
@@ -482,6 +597,9 @@ export const adminLogin = async (req, res) => {
 
     admin.lastLogin = new Date();
     await admin.save();
+
+    // NOTIFICATION: Admin Login Alert
+    emailService.sendLoginAlertEmail(admin, req.headers['user-agent'] || 'Admin Dashboard').catch(e => console.error(e));
 
     const token = generateToken(admin._id, admin.role);
 
@@ -530,6 +648,8 @@ export const getMe = async (req, res) => {
         partnerApprovalStatus: user.partnerApprovalStatus,
         address: user.address,
         profileImage: user.profileImage,
+        aadhaarNumber: user.aadhaarNumber,
+        panNumber: user.panNumber,
         partnerSince: user.partnerSince,
         createdAt: user.createdAt
       }
@@ -603,6 +723,11 @@ export const updateProfile = async (req, res) => {
 
     await user.save();
 
+    // NOTIFICATION: Security alert for profile update
+    if (user.email) {
+      emailService.sendSecurityAlertEmail(user, 'Profile Details').catch(e => console.error(e));
+    }
+
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
@@ -667,6 +792,11 @@ export const updateAdminProfile = async (req, res) => {
 
     await admin.save();
 
+    // NOTIFICATION: Security alert for Admin
+    if (admin.email) {
+      emailService.sendSecurityAlertEmail(admin, 'Admin Profile Details').catch(e => console.error(e));
+    }
+
     res.status(200).json({
       success: true,
       admin: {
@@ -684,41 +814,53 @@ export const updateAdminProfile = async (req, res) => {
   }
 };
 
-
 /**
- * @desc    Update FCM Token for Push Notifications
- * @route   PUT /api/auth/update-fcm
- * @access  Private
+ * @desc    Update Admin Password
+ * @route   PUT /api/auth/admin/update-password
+ * @access  Private (Admin/Superadmin)
  */
-export const updateFcmToken = async (req, res) => {
+export const updateAdminPassword = async (req, res) => {
   try {
-    const { fcmToken } = req.body;
-    if (!fcmToken) return res.status(400).json({ message: 'fcmToken is required' });
-
-    const user = req.user; // From middleware (User, Partner, or Admin)
-
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    // Ensure fcmTokens object exists
-    if (!user.fcmTokens) {
-      user.fcmTokens = {};
+    if (!req.user || !['admin', 'superadmin'].includes(req.user.role)) {
+      return res.status(403).json({ message: 'Only admins can update password' });
     }
 
-    // Defaulting to web for now, can be extended to 'app'
-    user.fcmTokens.web = fcmToken;
+    const { currentPassword, newPassword } = req.body;
 
-    // For backward compatibility if schema uses single field, but our models have fcmTokens object now
-    // If Admin doesn't have fcmTokens object in schema yet, we might need to check. 
-    // Assuming Admin schema is similar or we just save to the document.
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current and new passwords are required' });
+    }
 
-    await user.save();
+    const admin = await Admin.findById(req.user.id).select('+password');
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
 
-    res.json({ success: true, message: 'FCM Token updated successfully' });
+    const isMatch = await bcrypt.compare(currentPassword, admin.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid current password' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    admin.password = await bcrypt.hash(newPassword, salt);
+    await admin.save();
+
+    // NOTIFICATION: Security alert for Admin Password Change
+    if (admin.email) {
+      emailService.sendSecurityAlertEmail(admin, 'Admin Password').catch(e => console.error(e));
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully'
+    });
   } catch (error) {
-    console.error('Update FCM Token Error:', error);
-    res.status(500).json({ message: 'Server error updating FCM token' });
+    console.error('Update Admin Password Error:', error);
+    res.status(500).json({ message: 'Server error updating admin password' });
   }
 };
+
+
 
 /**
  * @desc    Upload Documents (Partner Registration)
@@ -727,13 +869,16 @@ export const updateFcmToken = async (req, res) => {
  */
 export const uploadDocs = async (req, res) => {
   try {
-    console.log(`[Upload Docs] Received ${req.files ? req.files.length : 0} files`);
+    // Handle both single file (req.file) and multiple files (req.files)
+    const filesToUpload = req.files || (req.file ? [req.file] : []);
 
-    if (!req.files || !req.files.length) {
+    console.log(`[Upload Docs] Received ${filesToUpload.length} files`);
+
+    if (!filesToUpload || filesToUpload.length === 0) {
       return res.status(400).json({ message: 'No documents provided' });
     }
 
-    const uploadPromises = req.files.map(file =>
+    const uploadPromises = filesToUpload.map(file =>
       uploadToCloudinary(file.path, 'partner-documents')
     );
 
@@ -783,45 +928,33 @@ export const uploadDocsBase64 = async (req, res) => {
   try {
     let { images } = req.body;
 
-    // Normalizing highly flexible input formats (as per Flutter Bridge documentation)
-    let imagesArray = [];
-    if (!images) {
+    // Handle single image sent not in an array (Flutter bridge compatibility)
+    if (images && !Array.isArray(images)) {
+      images = [images];
+    }
+
+    console.log(`[Upload Docs Base64] Received ${images ? images.length : 0} image items`);
+
+    if (!images || images.length === 0) {
       return res.status(400).json({ message: 'No images provided' });
     }
 
-    // 1. If it's a single string (Base64)
-    if (typeof images === 'string') {
-      imagesArray = [{ base64: images }];
-    }
-    // 2. If it's a single object
-    else if (typeof images === 'object' && !Array.isArray(images) && images.base64) {
-      imagesArray = [images];
-    }
-    // 3. If it's an array
-    else if (Array.isArray(images)) {
-      imagesArray = images.map(item => {
-        if (typeof item === 'string') return { base64: item };
-        return item; // assuming it's {base64, fileName, etc.}
-      });
-    }
+    const uploadPromises = images.map(async (img, index) => {
+      // Support both {base64: '...'} object and raw '...' base64 string
+      const base64Data = typeof img === 'object' ? img.base64 : img;
+      const fileName = typeof img === 'object' ? img.fileName : null;
 
-    console.log(`[Upload Docs Base64] Processing ${imagesArray.length} items (Flexible Format)`);
-
-    if (imagesArray.length === 0) {
-      return res.status(400).json({ message: 'No valid images provided' });
-    }
-
-    const uploadPromises = imagesArray.map(async (img, index) => {
-      if (!img || !img.base64) {
-        throw new Error(`Item ${index + 1} missing base64 data`);
+      if (!base64Data) {
+        throw new Error(`Image ${index + 1} missing base64 data`);
       }
 
-      // Generate unique publicId if fileName provided
-      const publicId = img.fileName
-        ? `${Date.now()}-${img.fileName.replace(/\.[^/.]+$/, '')}`
-        : null;
+      // Generate unique publicId with random suffix to prevent collisions during batch uploads
+      const randomSuffix = Math.random().toString(36).substring(2, 7);
+      const publicId = fileName
+        ? `${Date.now()}-${randomSuffix}-${fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_')}`
+        : `${Date.now()}-${randomSuffix}-doc-${index}`;
 
-      return uploadBase64ToCloudinary(img.base64, 'partner-documents', publicId);
+      return uploadBase64ToCloudinary(base64Data, 'partner-documents', publicId);
     });
 
     const results = await Promise.all(uploadPromises);
@@ -836,6 +969,6 @@ export const uploadDocsBase64 = async (req, res) => {
     res.json({ success: true, files });
   } catch (error) {
     console.error('Upload Docs Base64 Error:', error);
-    res.status(500).json({ message: error.message || 'Upload failed' });
+    res.status(500).json({ message: error.message || 'Base64 doc upload failed' });
   }
 };

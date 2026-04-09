@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Phone, Mail, ArrowRight, Shield } from 'lucide-react';
 import { authService } from '../../services/apiService';
+import NowStayLogo from '../../components/ui/NowStayLogo';
 
 const UserLoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loginMethod, setLoginMethod] = useState('phone'); // phone | email
     const [step, setStep] = useState('input'); // input | otp
     const [phone, setPhone] = useState('');
@@ -70,7 +72,10 @@ const UserLoginPage = () => {
 
         try {
             await authService.verifyOtp({ phone, otp: otpValue });
-            navigate('/');
+            // Re-register FCM token now that user is logged in
+            try { window.dispatchEvent(new CustomEvent('fcm:register')); } catch (_) { }
+            const redirectTo = location.state?.from?.pathname || '/';
+            navigate(redirectTo, { replace: true });
         } catch (err) {
             setError(err.message || 'Invalid OTP');
         } finally {
@@ -89,13 +94,8 @@ const UserLoginPage = () => {
 
             {/* Header / Logo Section */}
             <div className="text-center mb-8">
-                <div className="flex justify-center mb-6">
-                    <div className="flex flex-col items-center">
-                        <span className="text-4xl font-black tracking-tighter text-[#111827] flex items-center gap-1">
-                            NOW<span className="text-[#009688]">STAY</span>
-                        </span>
-                        <div className="h-1 w-8 bg-[#009688] rounded-full -mt-1 shadow-sm shadow-emerald-500/20"></div>
-                    </div>
+                <div className="flex justify-center mb-4">
+                    <NowStayLogo size="lg" />
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
                 <p className="text-gray-500">Login to continue your journey</p>
@@ -241,7 +241,7 @@ const UserLoginPage = () => {
             {/* Footer */}
             <div className="mt-8 text-center">
                 <p className="text-gray-500 text-sm">
-                    New to StayNow?{' '}
+                    New to NowStay.in?{' '}
                     <button onClick={() => navigate('/signup')} className="text-teal-600 font-bold hover:underline">
                         Create Account
                     </button>

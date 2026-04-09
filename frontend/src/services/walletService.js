@@ -1,4 +1,4 @@
-import apiService from './apiService';
+import { api as apiService } from './apiService';
 
 class WalletService {
   /**
@@ -80,6 +80,20 @@ class WalletService {
    */
   async verifyAddMoney(paymentData) {
     const response = await apiService.post('/wallet/verify-add-money', paymentData);
+    return response.data;
+  }
+
+  /**
+   * Admin Adjust Wallet (Credit/Debit)
+   */
+  async adminAdjustWallet({ targetUserId, action, amount, reason, viewAs }) {
+    const response = await apiService.post('/admin/wallet/adjust', {
+      targetUserId,
+      action,
+      amount,
+      reason,
+      viewAs
+    });
     return response.data;
   }
 

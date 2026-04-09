@@ -197,25 +197,88 @@ const PartnerBookingDetail = () => {
           </div>
         </div>
 
-        {/* Payment Info - Compact */}
+        {/* Payment & Payout Breakdown */}
         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-3 text-sm flex items-center gap-2">
-            <CreditCard size={16} className="text-gray-400" /> Payment & Payout
+          <h3 className="font-bold text-gray-900 mb-4 text-sm flex items-center gap-2">
+            <CreditCard size={16} className="text-teal-600" /> Payment & Payout Breakdown
           </h3>
-          <div className="space-y-2">
+
+          <div className="space-y-3">
+            {/* 1. Gross Calculation */}
             <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-600">Total Amount (Collect)</span>
-              <span className="font-bold text-gray-900 text-base">₹{booking.totalAmount}</span>
+              <span className="text-gray-500">Gross Room Price</span>
+              <span className="font-bold text-gray-900">₹{(booking.baseAmount + (booking.extraCharges || 0)).toLocaleString()}</span>
             </div>
+
+            {/* 2. Discounts (Show only if applicable) */}
+            {(booking.discount > 0 || booking.prepaidDiscount > 0) && (
+              <div className="space-y-1.5 pl-3 border-l-2 border-red-100">
+                {booking.discount > 0 && (
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-red-500 font-medium">Coupon Discount ({booking.couponCode})</span>
+                    <span className="text-red-600 font-bold">- ₹{booking.discount.toLocaleString()}</span>
+                  </div>
+                )}
+                {booking.prepaidDiscount > 0 && (
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-red-500 font-medium">Prepaid Offer (5% Off)</span>
+                    <span className="text-red-600 font-bold">- ₹{booking.prepaidDiscount.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. Taxes */}
             <div className="flex justify-between items-center text-xs">
-              <span className="text-gray-600">Partner Payout (Earnings)</span>
-              <span className="font-bold text-green-700 text-sm">₹{booking.partnerPayout}</span>
+              <span className="text-gray-500">GST / Taxes</span>
+              <span className="font-bold text-gray-900">+ ₹{booking.taxes.toLocaleString()}</span>
             </div>
+
+            {/* 4. Total Guest Paid */}
+            <div className="flex justify-between items-center py-2 border-t border-b border-gray-50 bg-gray-50/50 px-2 -mx-2">
+              <span className="text-xs font-bold text-gray-700">Total Guest Price</span>
+              <span className="font-black text-gray-900">₹{booking.totalAmount.toLocaleString()}</span>
+            </div>
+
+            {/* 5. Platform Commission (Internal) */}
             <div className="flex justify-between items-center text-xs pt-1">
-              <span className="text-gray-600">Status</span>
-              <span className={`font-bold px-2 py-0.5 rounded text-[10px] ${booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                {booking.paymentStatus === 'paid' ? 'PAID' : 'PAY AT HOTEL'}
-              </span>
+              <span className="text-gray-500">Platform Commission</span>
+              <span className="text-gray-900 font-medium">- ₹{booking.adminCommission.toLocaleString()}</span>
+            </div>
+
+            {/* 6. Partner Earnings (Demoted Visual Priority) */}
+            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-tight text-[10px]">Your Net Earnings (Payout)</span>
+              <span className="font-bold text-gray-700">₹{booking.partnerPayout.toLocaleString()}</span>
+            </div>
+
+            {/* 7. Collection Status (CRITICAL - HIGH VISIBILITY) */}
+            <div className={`mt-4 p-4 rounded-2xl border-2 space-y-2 shadow-sm ${booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+              <div className="flex justify-between items-center text-[10px]">
+                <span className="text-gray-500 font-bold uppercase tracking-wider">{booking.remainingAmount === 0 && booking.paymentStatus === 'paid' ? 'Total Paid Online' : 'Already Paid Online'}</span>
+                <span className="text-gray-900 font-bold">₹{(booking.amountPaid > 0 ? booking.amountPaid : (booking.paymentStatus === 'paid' ? booking.totalAmount : 0)).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-200/50">
+                <span className={`${booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'text-red-800' : 'text-green-800'} font-black text-sm uppercase tracking-tight`}>
+                  {booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'COLLECT AT HOTEL' : 'BALANCED / PAID'}
+                </span>
+                <span className={`${booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'text-red-600' : 'text-green-600'} font-black text-2xl`}>
+                  ₹{(booking.remainingAmount > 0 ? booking.remainingAmount : (booking.paymentStatus === 'pending' ? booking.totalAmount : 0)).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Status Information */}
+            <div className="flex justify-between items-center text-xs pt-2">
+              <span className="text-gray-500 font-bold uppercase tracking-tight text-[10px]">Payment Status</span>
+              <div className="flex items-center gap-2">
+                <span className={`font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wide border ${booking.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border-green-100' :
+                    booking.paymentStatus === 'partial' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                      'bg-yellow-50 text-yellow-700 border-yellow-100'
+                  }`}>
+                  {booking.paymentStatus === 'partial' ? 'Partial (30% Paid)' : booking.paymentStatus === 'paid' ? 'Fully Paid' : 'Pay At Hotel'}
+                </span>
+              </div>
             </div>
           </div>
         </div>

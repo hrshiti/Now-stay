@@ -25,8 +25,10 @@ const ReferAndEarnPage = () => {
 
     useEffect(() => {
         const fetchData = async () => {
+            console.log(`[REFERRAL_DEBUG] Fetching referral stats...`);
             try {
                 const res = await referralService.getMyStats();
+                console.log(`[REFERRAL_DEBUG] Stats API Response:`, res);
                 if (res.success) {
                     const data = res.data;
                     setReferralData({
@@ -34,15 +36,15 @@ const ReferAndEarnPage = () => {
                         link: data.link,
                         earnings: {
                             total: data.earningsTotal || 0,
-                            pending: 0, // Backend needs to separate this if needed
-                            thisMonth: 0 // Backend needing separate aggregation
+                            pending: data.earningsPending || 0,
+                            thisMonth: data.earningsThisMonth || 0
                         },
                         stats: data.stats,
                         history: data.history
                     });
                 }
             } catch (err) {
-                console.error("Failed to load referral data", err);
+                console.error("[REFERRAL_DEBUG] Failed to load referral data", err);
             } finally {
                 setLoading(false);
             }
@@ -57,17 +59,17 @@ const ReferAndEarnPage = () => {
     };
 
     const shareOptions = [
-        { icon: MessageCircle, label: "WhatsApp", color: "bg-[#25D366]", action: () => window.open(`https://wa.me/?text=Book hotels at amazing prices! Use my referral code ${referralData.code} and get ₹200 off! ${referralData.link}`) },
-        { icon: Twitter, label: "Twitter", color: "bg-[#1DA1F2]", action: () => window.open(`https://twitter.com/intent/tweet?text=Get ₹200 off on your first hotel booking with Rukkoo.in! Use code: ${referralData.code}`) },
+        { icon: MessageCircle, label: "WhatsApp", color: "bg-[#25D366]", action: () => window.open(`https://wa.me/?text=Book hotels at amazing prices! Use my referral code ${referralData.code} and get ₹100 off! ${referralData.link}`) },
+        { icon: Twitter, label: "Twitter", color: "bg-[#1DA1F2]", action: () => window.open(`https://twitter.com/intent/tweet?text=Get ₹100 off on your first hotel booking with NowStay.in! Use code: ${referralData.code}`) },
         { icon: Facebook, label: "Facebook", color: "bg-[#4267B2]", action: () => { } },
-        { icon: Mail, label: "Email", color: "bg-gray-600", action: () => window.open(`mailto:?subject=Get ₹200 off on Rukkoo.in&body=Use my code ${referralData.code} to get ₹200 off! ${referralData.link}`) },
+        { icon: Mail, label: "Email", color: "bg-gray-600", action: () => window.open(`mailto:?subject=Get ₹100 off on NowStay.in&body=Use my code ${referralData.code} to get ₹100 off! ${referralData.link}`) },
     ];
 
     const howItWorks = [
         { step: 1, title: "Share Your Code", desc: "Send your unique referral code to friends", icon: Share2 },
         { step: 2, title: "Friend Signs Up", desc: "They register using your referral code", icon: Users },
         { step: 3, title: "They Book a Stay", desc: "When they complete their first booking", icon: CheckCircle },
-        { step: 4, title: "You Both Earn", desc: "₹200 credited to both wallets!", icon: Gift },
+        { step: 4, title: "You Both Earn", desc: "₹100 credited to both wallets!", icon: Gift },
     ];
 
     if (loading) {
@@ -80,9 +82,9 @@ const ReferAndEarnPage = () => {
 
     const handleShare = async () => {
         const shareData = {
-            title: 'Join RukkooIn & Get ₹200!',
-            text: `Hey! Book hotels at amazing prices on RukkooIn. Use my referral code ${referralData.code} to get ₹200 OFF on your first booking!`,
-            url: referralData.link || 'https://rukko.in'
+            title: 'Join NowStay & Get ₹100!',
+            text: `Hey! Book hotels at amazing prices on NowStay. Use my referral code ${referralData.code} to get ₹100 OFF on your first booking!`,
+            url: referralData.link || 'https://nowstay.in'
         };
 
         if (navigator.share) {
@@ -146,7 +148,7 @@ const ReferAndEarnPage = () => {
                     transition={{ delay: 0.2 }}
                     className="text-3xl font-black text-white mb-2"
                 >
-                    Earn ₹200
+                    Earn ₹100
                 </motion.h2>
                 <motion.p
                     initial={{ opacity: 0, y: 20 }}
@@ -359,15 +361,6 @@ const ReferAndEarnPage = () => {
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* Withdraw CTA */}
-                                <button
-                                    onClick={() => navigate('/wallet')}
-                                    className="w-full bg-surface text-white font-bold py-4 rounded-xl shadow-lg shadow-surface/30 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
-                                >
-                                    <Wallet size={20} />
-                                    Withdraw to Wallet
-                                </button>
                             </motion.div>
                         )}
 
@@ -423,20 +416,20 @@ const ReferAndEarnPage = () => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Floating Share Button */}
-            <motion.button
+            < motion.button
                 initial={{ y: 100 }}
                 animate={{ y: 0 }}
                 className="fixed bottom-6 left-5 right-5 bg-gradient-to-r from-surface to-accent text-white font-bold py-4 rounded-2xl shadow-2xl shadow-surface/40 flex items-center justify-center gap-2 active:scale-[0.98] transition-transform z-30"
                 onClick={handleShare}
             >
                 <Share2 size={20} />
-                Invite Friends & Earn ₹200
-            </motion.button>
-        </div>
+                Invite Friends & Earn ₹100
+            </motion.button >
+        </div >
     );
 };
 

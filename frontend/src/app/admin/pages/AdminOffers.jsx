@@ -107,7 +107,10 @@ const AdminOffers = () => {
       return "Percentage discount cannot exceed 100%";
     }
 
-    if (formData.endDate && new Date(formData.endDate) < new Date(formData.startDate)) {
+    if (!formData.startDate) return "Start date is required";
+    if (!formData.endDate) return "End date is required";
+
+    if (new Date(formData.endDate) < new Date(formData.startDate)) {
       return "End date cannot be before start date";
     }
 
@@ -479,6 +482,7 @@ const AdminOffers = () => {
                       <div>
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block ml-1">Start Date</label>
                         <input
+                          required
                           type="date"
                           className="w-full bg-gray-50 border-2 border-transparent focus:border-accent focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold text-surface transition-all outline-none"
                           value={formData.startDate}
@@ -488,6 +492,7 @@ const AdminOffers = () => {
                       <div>
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block ml-1">End Date</label>
                         <input
+                          required
                           type="date"
                           className="w-full bg-gray-50 border-2 border-transparent focus:border-accent focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold text-surface transition-all outline-none"
                           value={formData.endDate}

@@ -3,10 +3,10 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, Building2, Calendar, Wallet,
-    Settings, Bell, Search, LogOut, Menu, X, DollarSign, ClipboardCheck, Star, Tag, FileText, MessageSquare, CircleHelp, Home, LayoutGrid, CreditCard
+    Settings, Bell, Search, LogOut, Menu, X, DollarSign, ClipboardCheck, Star, Tag, FileText, MessageSquare, CircleHelp, Home, ShieldCheck
 } from 'lucide-react';
 
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 import useAdminStore from '../store/adminStore';
 import toast from 'react-hot-toast';
 import adminService from '../../../services/adminService';
@@ -71,16 +71,16 @@ const AdminLayout = () => {
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
         { icon: Users, label: 'User Management', path: '/admin/users' },
         { icon: Building2, label: 'Partner Management', path: '/admin/partners' },
+        { icon: ShieldCheck, label: 'Subscriptions', path: '/admin/subscriptions' },
         { icon: Home, label: 'Property Management', path: '/admin/properties' },
-        { icon: LayoutGrid, label: 'Categories', path: '/admin/categories' },
         { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
         { icon: Bell, label: 'Notifications', path: '/admin/notifications', badge: unreadCount > 0 },
         { icon: Wallet, label: 'Finance & Payouts', path: '/admin/finance' },
         { icon: Tag, label: 'Offers & Coupons', path: '/admin/offers' },
         { icon: FileText, label: 'Legal & Content', path: '/admin/legal' },
         { icon: MessageSquare, label: 'Contact Messages', path: '/admin/contact-messages' },
+        { icon: Tag, label: 'Categories', path: '/admin/categories' },
         { icon: CircleHelp, label: 'FAQs', path: '/admin/faqs' },
-        { icon: CreditCard, label: 'Subscriptions', path: '/admin/subscriptions' },
         { icon: Settings, label: 'Settings', path: '/admin/settings' },
     ];
 
@@ -93,14 +93,8 @@ const AdminLayout = () => {
                 animate={{ width: isSidebarOpen ? 260 : 80 }}
                 className="bg-black text-white flex flex-col h-full border-r border-gray-800 shadow-2xl z-20 transition-all duration-300 relative"
             >
-                <div className={`py-6 flex flex-col items-center justify-center bg-white border-b border-gray-800 transition-all duration-300 ${!isSidebarOpen && 'py-4'}`}>
-                    <div className="flex flex-col items-start">
-                        <div className={`font-black tracking-tighter flex items-center transition-all duration-300 ${isSidebarOpen ? 'text-2xl' : 'text-[8px]'}`}>
-                            <span className="text-slate-900">NOW</span>
-                            <span className="text-teal-600">STAY</span>
-                        </div>
-                        {isSidebarOpen && <div className="w-8 h-1 bg-teal-600 rounded-full -mt-1 ml-0.5"></div>}
-                    </div>
+                <div className="py-2 flex items-center justify-center bg-white border-b border-gray-800 transition-all duration-300">
+                    <NowStayLogo size={isSidebarOpen ? "md" : "xs"} />
                 </div>
 
                 {/* Navigation */}
@@ -158,7 +152,7 @@ const AdminLayout = () => {
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-10 shrink-0">
                     <div className="flex items-center gap-4 flex-1">
                         <h1 className="text-xl font-bold text-gray-800">
-                            Stay Now Admin
+                            NowStay.in Admin
                         </h1>
                         <div className="hidden md:flex items-center relative max-w-md w-full ml-8">
                             <Search size={16} className="absolute left-3 text-gray-400" />

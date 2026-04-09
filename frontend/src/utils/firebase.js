@@ -1,97 +1,101 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage } from 'firebase/messaging';
+import { isWebView } from './deviceDetect';
 
-// Firebase web config from env (VITE_FIREBASE_*) with fallback for same behaviour without .env
+// Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "AIzaSyBpo_CcO2CvlYrhbhqbKRbc8QnIF6RV6T4",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? "nowstay-6b4fd.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "nowstay-6b4fd",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? "nowstay-6b4fd.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID ?? "52925285490",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID ?? "1:52925285490:web:f8e5669f1c3369d2436eeb",
+  apiKey: "AIzaSyBpo_CcO2CvlYrhbhqbKRbc8QnIF6RV6T4",
+  authDomain: "nowstay-6b4fd.firebaseapp.com",
+  projectId: "nowstay-6b4fd",
+  storageBucket: "nowstay-6b4fd.firebasestorage.app",
+  messagingSenderId: "52925285490",
+  appId: "1:52925285490:web:f8e5669f1c3369d2436eeb",
   measurementId: "G-H1T6QB3JLF"
 };
 
-const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY ?? "BNQrbFvI5-rvrXdb_4uHWQcskIuCnTRRbXxtn57n0j9-tIPtgVd86o9IEseLIoZckBNukgxOwYnDoSo3Kffbbxw";
+const VAPID_KEY = "BNQrbFvI5-rvrXdb_4uHWQcskIuCnTRRbXxtn57n0j9-tIPtgVd86o9IEseLIoZckBNukgxOwYnDoSo3Kffbbxw";
 
 const app = initializeApp(firebaseConfig);
 
 let messaging = null;
 
 const getMessagingInstance = () => {
-  if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  // Firebase Web Messaging requires serviceWorker support.
+  // Flutter WebViews do NOT support service workers, so skip in that context.
+  if (typeof window !== 'undefined' && 'serviceWorker' in navigator && !isWebView()) {
     if (!messaging) {
       try {
-        console.log('Initializing Firebase Messaging...');
         messaging = getMessaging(app);
       } catch (error) {
-        console.error('Failed to initialize Firebase Messaging:', error);
+        console.error('[Firebase] Failed to initialize Firebase Messaging:', error);
       }
     }
     return messaging;
   }
-  console.warn('Service Worker or window object not available for Messaging');
   return null;
 };
 
+/**
+ * Request notification permission and get the web FCM token.
+ * ONLY works in a real browser — NOT in Flutter WebView (WebViews don't support
+ * the Push API / service workers needed for web push).
+ *
+ * For Flutter WebView users, FCM tokens are registered directly by the Flutter
+ * native code hitting /api/users/fcm-token or /api/partners/fcm-token with platform='app'.
+ */
 export const requestNotificationPermission = async () => {
   try {
-    console.log('FCM: Starting token request process...');
-
-    if (!('Notification' in window)) {
-      console.warn('FCM: Browser does not support notifications');
+    // Skip completely if running inside a Flutter WebView
+    if (isWebView()) {
+      console.log('[FCM] Running in Flutter WebView — skipping web push registration (handled natively by Flutter).');
       return null;
     }
 
-    console.log('FCM: Current permission status:', Notification.permission);
-    const permission = await Notification.requestPermission();
-    console.log('FCM: Permission result:', permission);
+    if (!('Notification' in window)) {
+      console.warn('[FCM] This browser does not support notifications.');
+      return null;
+    }
 
-    if (permission === 'granted') {
-      const messagingInstance = getMessagingInstance();
-      if (!messagingInstance) {
-        console.warn('FCM: Messaging instance is null');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn('[FCM] Notification permission denied.');
+      return null;
+    }
+
+    const messagingInstance = getMessagingInstance();
+    if (!messagingInstance) {
+      console.warn('[FCM] Could not get messaging instance (possibly in WebView or incompatible browser).');
+      return null;
+    }
+
+    try {
+      const token = await getToken(messagingInstance, { vapidKey: VAPID_KEY });
+      if (token) {
+        console.log('[FCM] Web push token obtained.');
+        return token;
+      } else {
+        console.warn('[FCM] No FCM token received — service worker may not be registered.');
         return null;
       }
-
-      try {
-        console.log('FCM: Registering Service Worker...');
-        let swRegistration = null;
-
-        try {
-          swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-          console.log('FCM: Service Worker registered:', swRegistration.scope);
-        } catch (swError) {
-          console.error('FCM: Service Worker registration failed:', swError);
-        }
-
-        console.log('FCM: Fetching token with VAPID key...');
-        const tokenOptions = { vapidKey };
-        if (swRegistration) {
-          tokenOptions.serviceWorkerRegistration = swRegistration;
-        }
-
-        const token = await getToken(messagingInstance, tokenOptions);
-        if (token) {
-          console.log('FCM: Token successfully retrieved:', token);
-          return token;
-        } else {
-          console.warn('FCM: No token received from Firebase. Check VAPID key and SW registration.');
-        }
-      } catch (error) {
-        console.error('FCM: Error getting token:', error);
-      }
-    } else {
-      console.warn('FCM: Permission was not granted by the user');
+    } catch (error) {
+      console.error('[FCM] Error getting FCM token:', error);
+      return null;
     }
-    return null;
   } catch (error) {
-    console.error('FCM: Error in requestNotificationPermission:', error);
+    console.error('[FCM] Error requesting permission:', error);
     return null;
   }
 };
 
+/**
+ * Listen for foreground messages (browser tab is open and in focus).
+ * Only active in real browser — not in Flutter WebView.
+ * In Flutter WebView, the native Flutter code handles FCM messages.
+ */
 export const onMessageListener = (callback) => {
+  // Skip in WebView — Flutter native handles foreground messages there
+  if (isWebView()) return;
+
   const messagingInstance = getMessagingInstance();
   if (messagingInstance) {
     onMessage(messagingInstance, (payload) => {

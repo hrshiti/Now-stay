@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, AlertTriangle, CheckCircle } from 'lucide-react';
 
-const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 'danger', confirmText = 'Confirm' }) => {
+const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 'danger', confirmText = 'Confirm', extraContent }) => {
     if (!isOpen) return null;
 
     const colors = {
@@ -27,7 +27,8 @@ const ConfirmationModal = ({ isOpen, onClose, onConfirm, title, message, type = 
                             {type === 'success' ? <CheckCircle className={style.icon} size={24} /> : <AlertTriangle className={style.icon} size={24} />}
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 mb-2">{title}</h3>
-                        <p className="text-sm text-gray-500 mb-6">{message}</p>
+                        <p className="text-sm text-gray-500 mb-4">{message}</p>
+                        {extraContent && <div className="mb-4 text-left">{extraContent}</div>}
 
                         <div className="flex gap-3">
                             <button

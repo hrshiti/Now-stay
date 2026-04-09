@@ -110,10 +110,7 @@ export const getSavedHotels = async (req, res) => {
     });
 
     if (!user) {
-      return res.json({
-        success: true,
-        savedHotels: []
-      });
+      return res.status(404).json({ message: 'User not found' });
     }
 
     // Get minimum prices for these properties
@@ -164,10 +161,6 @@ export const toggleSavedHotel = async (req, res) => {
     const hotelId = req.params.id;
     const user = await User.findById(req.user._id);
 
-    if (!user) {
-      return res.status(403).json({ message: 'Only standard users can save properties' });
-    }
-
     // Check if hotel is already saved
     const isSaved = user.savedHotels.some(id => id.toString() === hotelId);
 
@@ -195,68 +188,45 @@ export const toggleSavedHotel = async (req, res) => {
 
 // @desc    Update FCM Token
 // @route   PUT /api/users/fcm-token
-// @access  Private
+// @access  Private (Users only — this endpoint is ONLY for the User model)
 export const updateFcmToken = async (req, res) => {
   try {
     const { fcmToken, platform } = req.body;
-    const userId = req.user?._id;
-
-    console.log('--- BACKEND: updateFcmToken started ---');
-    console.log('User ID:', userId);
-    console.log('Payload:', { fcmToken: fcmToken ? 'Present' : 'Missing', platform });
 
     if (!fcmToken) {
-      console.warn('BACKEND: Missing FCM token in request');
       return res.status(400).json({ success: false, message: 'Please provide FCM token' });
     }
 
     const targetPlatform = platform === 'app' ? 'app' : 'web';
-    const fcmField = `fcmTokens.${targetPlatform}`;
+    const tokenField = `fcmTokens.${targetPlatform}`;
 
-    // 1. Try to update User model
-    console.log(`BACKEND: Attempting to update User ${userId} with ${fcmField}`);
-    let user = await User.findByIdAndUpdate(
-      userId,
-      { $set: { [fcmField]: fcmToken } },
-      { new: true, runValidators: true }
+    // 1. DEDUPLICATION: Clear this token from any OTHER User document
+    // NOTE: We ONLY clear within the User model. Users, Partners, and Admins are
+    // separate auth systems — a user token should never exist in Partner/Admin collections.
+    await User.updateMany(
+      { [tokenField]: fcmToken, _id: { $ne: req.user._id } },
+      { $set: { [tokenField]: null } }
     );
 
-    // 2. If not found in User, try Partner model
-    if (!user) {
-      console.log('BACKEND: User not found, trying Partner model...');
-      user = await Partner.findByIdAndUpdate(
-        userId,
-        { $set: { [fcmField]: fcmToken } },
-        { new: true, runValidators: true }
-      );
-    }
+    // 2. Update the token for the current user
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (!user) {
-      console.error('BACKEND: User/Partner not found for ID:', userId);
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user.fcmTokens) user.fcmTokens = { app: null, web: null };
+    user.fcmTokens[targetPlatform] = fcmToken;
+    await user.save();
 
-    console.log(`BACKEND: Successfully updated FCM token for ${user.name} (${user.role}) on ${targetPlatform}`);
-    console.log('Updated fcmTokens state:', JSON.stringify(user.fcmTokens, null, 2));
+    console.log(`[FCM] User ${user._id} ${targetPlatform} token updated.`);
 
     res.json({
       success: true,
-      message: `FCM token updated successfully for ${targetPlatform} platform`,
-      data: {
-        platform: targetPlatform,
-        tokenUpdated: true
-      }
+      message: `User FCM token updated successfully for ${targetPlatform} platform`,
+      data: { platform: targetPlatform, tokenUpdated: true }
     });
 
   } catch (error) {
-    console.error('--- BACKEND: updateFcmToken ERROR ---');
-    console.error('Error Message:', error.message);
-    console.error('Full Error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error while updating FCM token',
-      error: error.message
-    });
+    console.error('Update User FCM Token Error:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -389,6 +359,26 @@ export const markAllNotificationsRead = async (req, res) => {
 
   } catch (error) {
     console.error('Mark All Read Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+/**
+ * @desc    Delete user account (Soft Delete)
+ * @route   DELETE /api/users/profile
+ * @access  Private
+ */
+export const deleteUserAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.isDeleted = true;
+    user.fcmTokens = { app: null, web: null };
+    await user.save();
+
+    res.json({ success: true, message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Delete User Account Error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

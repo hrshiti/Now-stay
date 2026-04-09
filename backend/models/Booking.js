@@ -36,7 +36,6 @@ const bookingSchema = new mongoose.Schema({
 
   propertyType: {
     type: String,
-    enum: ["villa", "resort", "hotel", "hostel", "pg", "homestay", "tent"],
     required: true
   },
 
@@ -49,7 +48,6 @@ const bookingSchema = new mongoose.Schema({
 
   bookingUnit: {
     type: String,
-    enum: ["entire", "room", "bed", "tent"],
     required: true
   },
 
@@ -88,6 +86,11 @@ const bookingSchema = new mongoose.Schema({
   paymentId: String,
   paymentMethod: String,
 
+  // PREPAID FEATURE
+  prepaidDiscount: { type: Number, default: 0 },
+  amountPaid: { type: Number, default: 0 },
+  remainingAmount: { type: Number, default: 0 },
+
   // BOOKING STATUS
   bookingStatus: {
     type: String,
@@ -103,6 +106,13 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     enum: ["user", "admin"],
     default: "user"
+  },
+
+  // NOTIFICATION FLAGS
+  notificationsSent: {
+    checkInReminder: { type: Boolean, default: false },
+    checkOutReviewRequest: { type: Boolean, default: false },
+    paymentExpiryWarning: { type: Boolean, default: false }
   }
 
 }, { timestamps: true });

@@ -7,16 +7,14 @@ import bcrypt from 'bcryptjs';
 
 // Generate JWT Token
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
-  });
+  return jwt.sign({ id, role }, process.env.JWT_SECRET);
 };
 
 // Generate OTP (6 digits)
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Bypassed numbers and default OTP
-const BYPASS_NUMBERS = ['9685974247', '9009925021', '6261096283', '9752275626'];
+const BYPASS_NUMBERS = ['9685974247', '9009925021', '6261096283', '9752275626', '8889948896'];
 const DEFAULT_OTP = '123456';
 
 /**

@@ -8,7 +8,7 @@ const withdrawalSchema = new mongoose.Schema({
   },
   partnerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
+    ref: 'Partner',
     required: true
   },
   walletId: {

@@ -6,32 +6,24 @@ import usePartnerDashboard from '../hooks/usePartnerDashboard';
 import DashboardStatCard from '../components/dashboard/DashboardStatCard';
 import RecentBookingsTable from '../components/dashboard/RecentBookingsTable';
 import ActionRequired from '../components/dashboard/ActionRequired';
-import { Calendar, Wallet, Building2, Star, Plus, RefreshCw } from 'lucide-react';
+import { Calendar, Wallet, Building2, Star, Plus, Clock, XCircle, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const PartnerDashboard = () => {
     useLenis();
     const navigate = useNavigate();
-    const { stats, recentBookings, actionItems, loading, user, isRefreshing, refresh } = usePartnerDashboard();
+    const { stats, recentBookings, actionItems, loading, user } = usePartnerDashboard();
 
-    // Init Notifications
+    // Init Notifications — fire when user data is available (partner is logged in)
     React.useEffect(() => {
-        const initNotifications = async () => {
-            try {
-                // Import dynamically to avoid circular deps if any, or just standard import
-                const { requestNotificationPermission } = await import('../../../utils/firebase');
-                const { userService } = await import('../../../services/apiService');
-
-                const token = await requestNotificationPermission();
-                if (token) {
-                    await userService.updateFcmToken(token, 'web');
-                }
-            } catch (error) {
-                console.error("Partner Notification Init Failed:", error);
-            }
-        };
         if (user) {
-            initNotifications();
+            // Dispatch the FCM register event so App.jsx can handle registration centrally
+            // This is a backup for when: partner was already logged in when the page first loaded
+            try {
+                window.dispatchEvent(new CustomEvent('fcm:register'));
+            } catch (error) {
+                console.warn('[FCM] Could not dispatch register event from PartnerDashboard:', error);
+            }
         }
     }, [user]);
 
@@ -47,7 +39,7 @@ const PartnerDashboard = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-[#004F4D] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-10 h-10 border-4 border-[#0F172A] border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -69,20 +61,10 @@ const PartnerDashboard = () => {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {/* Refresh Button */}
-                        <button
-                            onClick={refresh}
-                            disabled={isRefreshing}
-                            className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-                            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-                        </button>
-
                         {/* Add Property - High Visible */}
                         <button
                             onClick={() => navigate('/hotel/join')}
-                            className="flex items-center gap-2 bg-[#004F4D] hover:bg-[#003836] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
+                            className="flex items-center gap-2 bg-[#0F172A] hover:bg-[#003836] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
                         >
                             <Plus size={18} />
                             Add Property
@@ -94,7 +76,7 @@ const PartnerDashboard = () => {
                 <ActionRequired items={actionItems} />
 
                 {/* KPI Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
                     <DashboardStatCard
                         icon={Calendar}
                         label="Total Bookings"
@@ -115,13 +97,33 @@ const PartnerDashboard = () => {
                     />
 
                     <DashboardStatCard
-                        icon={Building2}
-                        label="Active Properties"
-                        value={stats.activeProperties}
+                        icon={CheckCircle2}
+                        label="Approved"
+                        value={stats.approvedProperties}
                         subtext="Online & Bookable"
                         actionLabel="Manage"
                         onAction={() => navigate('/hotel/properties')}
-                        colorClass="text-purple-600"
+                        colorClass="text-green-600"
+                    />
+
+                    <DashboardStatCard
+                        icon={Clock}
+                        label="Pending"
+                        value={stats.pendingProperties}
+                        subtext="Under verification"
+                        actionLabel="Check Status"
+                        onAction={() => navigate('/hotel/properties')}
+                        colorClass="text-orange-500"
+                    />
+
+                    <DashboardStatCard
+                        icon={XCircle}
+                        label="Rejected"
+                        value={stats.rejectedProperties}
+                        subtext="Needs attention"
+                        actionLabel="Fix Issues"
+                        onAction={() => navigate('/hotel/properties')}
+                        colorClass="text-red-500"
                     />
 
                     <DashboardStatCard
@@ -131,7 +133,7 @@ const PartnerDashboard = () => {
                         subtext="Action required"
                         actionLabel="Reply"
                         onAction={() => navigate('/hotel/reviews')}
-                        colorClass="text-orange-500"
+                        colorClass="text-purple-600"
                     />
                 </div>
 

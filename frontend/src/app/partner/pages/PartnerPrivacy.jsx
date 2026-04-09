@@ -44,8 +44,8 @@ const PartnerPrivacy = () => {
   const paragraphs = typeof content === 'string' ? content.split('\n').filter(Boolean) : [];
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <PartnerHeader title="Privacy Policy" subtitle="How we handle partner data" />
+    <div className="min-h-screen bg-gray-50">
+      <PartnerHeader title="Privacy Policy" subtitle="How we handle partner data" showMenu={false} />
 
       <main ref={contentRef} className="max-w-3xl mx-auto px-4 pt-6">
         {error && (

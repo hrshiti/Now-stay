@@ -2,15 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
-import { CheckCircle, FileText, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, BedDouble, Users, Wifi, Clock, Loader2, Camera, AlertCircle, ImageIcon } from 'lucide-react';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import { CheckCircle, FileText, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, BedDouble, Users, Wifi, Clock, Loader2, Camera } from 'lucide-react';
+
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
 const REQUIRED_DOCS_HOSTEL = [
-  { type: 'trade_license', name: 'Trade License' },
-  { type: 'fire_safety', name: 'Fire Safety Certificate' },
-  { type: 'police_verification', name: 'Police Verification' },
-  { type: 'owner_id_proof', name: 'Owner ID Proof' }
+  { type: "trade_license", name: "Trade License", required: true },
+  { type: "rent_agreement", name: "Rent Agreement", required: true }
 ];
 
 const HOSTEL_AMENITIES = [
@@ -48,10 +46,17 @@ const AddHostelWizard = () => {
   const [uploading, setUploading] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [isFlutter, setIsFlutter] = useState(false);
+  const [houseRulesDraft, setHouseRulesDraft] = useState('');
 
   useEffect(() => {
     setIsFlutter(isFlutterApp());
   }, []);
+
+  useEffect(() => {
+    if (step === 7) {
+      setHouseRulesDraft(propertyForm.houseRules.join(', '));
+    }
+  }, [step]);
 
   const coverImageFileInputRef = useRef(null);
   const propertyImagesFileInputRef = useRef(null);
@@ -74,152 +79,15 @@ const AddHostelWizard = () => {
     checkOutTime: '',
     contactNumber: '',
     cancellationPolicy: '',
+    suitability: 'none',
     houseRules: [],
-    documents: REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+    documents: REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
   });
 
   const [roomTypes, setRoomTypes] = useState([]);
   const [editingRoomType, setEditingRoomType] = useState(null);
   const [editingRoomTypeIndex, setEditingRoomTypeIndex] = useState(null);
   const [originalRoomTypeIds, setOriginalRoomTypeIds] = useState([]);
-
-  // Field-level validation errors
-  const [fieldErrors, setFieldErrors] = useState({
-    propertyName: '',
-    shortDescription: '',
-    description: '',
-    contactNumber: '',
-    country: '',
-    state: '',
-    city: '',
-    area: '',
-    fullAddress: '',
-    pincode: '',
-    checkInTime: '',
-    checkOutTime: '',
-    cancellationPolicy: '',
-    hostelType: '',
-    amenities: '',
-    nearbyPlaces: '',
-    coverImage: '',
-    propertyImages: '',
-    roomTypes: '',
-    tempNearbyPlace: { name: '', type: '', distanceKm: '' },
-    editingRoomType: { name: '', pricePerNight: '', totalInventory: '', bedsPerRoom: '', maxAdults: '', images: '' }
-  });
-
-  // Validation helper functions
-  const validatePropertyName = (value) => {
-    if (!value || value.trim().length === 0) return 'Property name is required';
-    if (value.trim().length < 3) return 'Property name must be at least 3 characters';
-    if (value.trim().length > 100) return 'Property name must not exceed 100 characters';
-    if (!/[a-zA-Z]/.test(value)) return 'Property name must contain at least one letter';
-    return '';
-  };
-
-  const validateShortDescription = (value) => {
-    if (!value || value.trim().length === 0) return 'Short description is required';
-    if (value.trim().length < 10) return 'Short description must be at least 10 characters';
-    if (value.trim().length > 200) return 'Short description must not exceed 200 characters';
-    return '';
-  };
-
-  const validateDescription = (value) => {
-    if (value && value.trim().length > 0 && value.trim().length < 20) {
-      return 'Description must be at least 20 characters if provided';
-    }
-    if (value && value.trim().length > 2000) return 'Description must not exceed 2000 characters';
-    return '';
-  };
-
-  const validateContactNumber = (value) => {
-    if (!value || value.trim().length === 0) return 'Contact number is required';
-    const digitsOnly = value.replace(/\D/g, '');
-    if (digitsOnly.length !== 10) return `Contact number must be exactly 10 digits (found: ${digitsOnly.length})`;
-    if (!/^[6-9]/.test(digitsOnly)) return 'Contact number must start with 6, 7, 8, or 9';
-    return '';
-  };
-
-  const validateAddress = (field, value) => {
-    if (!value || value.trim().length === 0) return `${field} is required`;
-    if (value.trim().length < 2) return `${field} must be at least 2 characters`;
-    if (value.trim().length > 100) return `${field} must not exceed 100 characters`;
-    return '';
-  };
-
-  const validatePincode = (value) => {
-    if (!value || value.trim().length === 0) return 'Pincode is required';
-    if (!/^\d{6}$/.test(value.replace(/\s/g, ''))) return 'Pincode must be exactly 6 digits';
-    return '';
-  };
-
-  const validateTime = (value, fieldName) => {
-    if (!value || value.trim().length === 0) return `${fieldName} is required`;
-    return '';
-  };
-
-  const validateCancellationPolicy = (value) => {
-    if (!value || value.trim().length === 0) return 'Cancellation policy is required';
-    if (value.trim().length < 10) return 'Cancellation policy must be at least 10 characters';
-    if (value.trim().length > 500) return 'Cancellation policy must not exceed 500 characters';
-    return '';
-  };
-
-  const validateNearbyPlaceName = (value) => {
-    if (!value || value.trim().length === 0) return 'Place name is required';
-    if (value.trim().length < 2) return 'Place name must be at least 2 characters';
-    if (value.trim().length > 100) return 'Place name must not exceed 100 characters';
-    return '';
-  };
-
-  const validateDistance = (value) => {
-    if (!value || value.trim().length === 0) return 'Distance is required';
-    const num = Number(value);
-    if (isNaN(num)) return 'Distance must be a number';
-    if (num <= 0) return 'Distance must be greater than 0';
-    if (num > 100) return 'Distance must not exceed 100 km';
-    return '';
-  };
-
-  const validateRoomName = (value) => {
-    if (!value || value.trim().length === 0) return 'Inventory name is required';
-    if (value.trim().length < 3) return 'Inventory name must be at least 3 characters';
-    if (value.trim().length > 100) return 'Inventory name must not exceed 100 characters';
-    return '';
-  };
-
-  const validatePrice = (value) => {
-    if (!value || value.trim().length === 0) return 'Price is required';
-    const num = Number(value);
-    if (isNaN(num)) return 'Price must be a number';
-    if (num <= 0) return 'Price must be greater than 0';
-    if (num > 100000) return 'Price must not exceed ₹100,000';
-    return '';
-  };
-
-  const validateInventoryCount = (value, fieldName) => {
-    if (!value || value.trim().length === 0) return `${fieldName} is required`;
-    const num = Number(value);
-    if (isNaN(num)) return `${fieldName} must be a number`;
-    if (num <= 0) return `${fieldName} must be greater than 0`;
-    if (num > 1000) return `${fieldName} must not exceed 1000`;
-    return '';
-  };
-
-  // Update field error
-  const updateFieldError = (fieldPath, error) => {
-    setFieldErrors(prev => {
-      const keys = Array.isArray(fieldPath) ? fieldPath : String(fieldPath).split('.');
-      const clone = JSON.parse(JSON.stringify(prev));
-      let ref = clone;
-      for (let i = 0; i < keys.length - 1; i++) {
-        if (!ref[keys[i]]) ref[keys[i]] = {};
-        ref = ref[keys[i]];
-      }
-      ref[keys[keys.length - 1]] = error;
-      return clone;
-    });
-  };
 
   // --- Persistence Logic ---
   const STORAGE_KEY = `rukko_hostel_wizard_draft_${existingProperty?._id || 'new'}`;
@@ -250,6 +118,33 @@ const AddHostelWizard = () => {
     return () => clearTimeout(timeout);
   }, [step, propertyForm, roomTypes, createdProperty]);
 
+  // --- WebView History / Back Button Fix ---
+  useEffect(() => {
+    const currentHash = window.location.hash;
+    const targetHash = `#step${step}`;
+    if (currentHash !== targetHash) {
+      if (step === 1 && (!currentHash || currentHash === '#step1')) {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      } else {
+        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+      }
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#step')) {
+        const hashStep = parseInt(hash.replace('#step', ''), 10);
+        if (!isNaN(hashStep)) {
+          setStep(hashStep);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const updatePropertyForm = (path, value) => {
     setPropertyForm(prev => {
       const clone = JSON.parse(JSON.stringify(prev));
@@ -259,37 +154,6 @@ const AddHostelWizard = () => {
       ref[keys[keys.length - 1]] = value;
       return clone;
     });
-
-    // Real-time field validation
-    const pathStr = Array.isArray(path) ? path.join('.') : path;
-    
-    if (pathStr === 'propertyName') {
-      updateFieldError('propertyName', validatePropertyName(value));
-    } else if (pathStr === 'shortDescription') {
-      updateFieldError('shortDescription', validateShortDescription(value));
-    } else if (pathStr === 'description') {
-      updateFieldError('description', validateDescription(value));
-    } else if (pathStr === 'contactNumber') {
-      updateFieldError('contactNumber', validateContactNumber(value));
-    } else if (pathStr === 'address.country') {
-      updateFieldError('country', validateAddress('Country', value));
-    } else if (pathStr === 'address.state') {
-      updateFieldError('state', validateAddress('State', value));
-    } else if (pathStr === 'address.city') {
-      updateFieldError('city', validateAddress('City', value));
-    } else if (pathStr === 'address.area') {
-      updateFieldError('area', validateAddress('Area', value));
-    } else if (pathStr === 'address.fullAddress') {
-      updateFieldError('fullAddress', validateAddress('Full Address', value));
-    } else if (pathStr === 'address.pincode') {
-      updateFieldError('pincode', validatePincode(value));
-    } else if (pathStr === 'checkInTime') {
-      updateFieldError('checkInTime', validateTime(value, 'Check-in time'));
-    } else if (pathStr === 'checkOutTime') {
-      updateFieldError('checkOutTime', validateTime(value, 'Check-out time'));
-    } else if (pathStr === 'cancellationPolicy') {
-      updateFieldError('cancellationPolicy', validateCancellationPolicy(value));
-    }
   };
 
   useEffect(() => {
@@ -342,9 +206,10 @@ const AddHostelWizard = () => {
           cancellationPolicy: prop.cancellationPolicy || 'No refund after check-in',
           houseRules: prop.houseRules || [],
           contactNumber: prop.contactNumber || '',
+          suitability: prop.suitability || 'none',
           documents: docs.length
-            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '' }))
-            : REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, fileUrl: '' }))
+            ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '', required: REQUIRED_DOCS_HOSTEL.find(rd => rd.type === (d.type || d.name))?.required || false }))
+            : REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
         });
         if (rts.length) {
           setRoomTypes(
@@ -549,11 +414,11 @@ const AddHostelWizard = () => {
 
   const handleCameraUpload = async (type, onDone) => {
     try {
-      setUploading(type);
       setError('');
       console.log('[Camera] Opening Flutter camera...');
 
       const result = await openFlutterCamera();
+      setUploading(type);
 
       if (!result.success || !result.base64) {
         throw new Error('Camera capture failed');
@@ -563,13 +428,15 @@ const AddHostelWizard = () => {
 
       const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
 
-      const res = await hotelService.uploadImagesBase64([result]);
+      const res = await hotelService.uploadImagesBase64(result.images || [result]);
 
       if (res && res.success && res.files && res.files.length > 0) {
         if (isSingle) {
           onDone(res.files[0].url);
         } else {
-          onDone([res.files[0].url]);
+          // Pass all uploaded URLs
+          const urls = res.files.map(f => f.url);
+          onDone(urls);
         }
       } else {
         throw new Error('Upload failed');
@@ -591,8 +458,8 @@ const AddHostelWizard = () => {
       console.log(`Processing ${fileArray.length} images...`);
 
       for (const file of fileArray) {
-        if (!file.type.startsWith('image/')) {
-          throw new Error(`File ${file.name} is not an image`);
+        if (!file.type.startsWith('image/') && file.type !== 'application/pdf') {
+          throw new Error(`File ${file.name} must be an image or PDF`);
         }
         if (file.size > 10 * 1024 * 1024) {
           throw new Error(`Image ${file.name} is too large. Maximum 10MB allowed.`);
@@ -654,6 +521,8 @@ const AddHostelWizard = () => {
       name: '',
       inventoryType: 'bed',
       roomCategory: 'shared',
+      baseAdults: 1,
+      baseChildren: 0,
       maxAdults: '',
       maxChildren: 0,
       bedsPerRoom: '',
@@ -690,10 +559,6 @@ const AddHostelWizard = () => {
       setError('Room type name and price required');
       return;
     }
-    if (!editingRoomType.amenities || editingRoomType.amenities.length === 0) {
-      setError('Please select at least 1 room/bed amenity');
-      return;
-    }
     const imageCount = (editingRoomType.images || []).filter(Boolean).length;
     if (imageCount < 3) {
       setError('Please upload at least 3 room images');
@@ -717,93 +582,37 @@ const AddHostelWizard = () => {
 
   const nextFromBasic = () => {
     setError('');
-    
-    // Validate each field
-    const nameErr = validatePropertyName(propertyForm.propertyName);
-    const shortDescErr = validateShortDescription(propertyForm.shortDescription);
-    const contactErr = validateContactNumber(propertyForm.contactNumber);
-    
-    // Update field errors
-    updateFieldError('propertyName', nameErr);
-    updateFieldError('shortDescription', shortDescErr);
-    updateFieldError('contactNumber', contactErr);
-    
-    // Check if any errors exist
-    if (nameErr || shortDescErr || contactErr) {
-      setError('Please fix all required fields');
+    if (!propertyForm.propertyName || !propertyForm.shortDescription) {
+      setError('Name and short description required');
       return;
     }
-    
     setStep(2);
   };
 
   const nextFromLocation = () => {
     setError('');
     const { country, state, city, area, fullAddress, pincode } = propertyForm.address;
-    
-    // Validate each field and set field errors
-    const countryErr = validateAddress('Country', country);
-    const stateErr = validateAddress('State', state);
-    const cityErr = validateAddress('City', city);
-    const areaErr = validateAddress('Area', area);
-    const fullAddressErr = validateAddress('Full Address', fullAddress);
-    const pincodeErr = validatePincode(pincode);
-    
-    // Update field errors
-    updateFieldError('country', countryErr);
-    updateFieldError('state', stateErr);
-    updateFieldError('city', cityErr);
-    updateFieldError('area', areaErr);
-    updateFieldError('fullAddress', fullAddressErr);
-    updateFieldError('pincode', pincodeErr);
-    
-    // Check if any errors exist
-    if (countryErr || stateErr || cityErr || areaErr || fullAddressErr || pincodeErr) {
-      setError('Please fix all address fields');
+    if (!country || !state || !city || !area || !fullAddress || !pincode) {
+      setError('All address fields are required');
       return;
     }
-    
-    // Coordinates are optional - user can add them later via search or "Use Current Location"
+    if (!propertyForm.location.coordinates[0] || !propertyForm.location.coordinates[1]) {
+      setError('Location coordinates are required');
+      return;
+    }
     setStep(3);
   };
 
   const nextFromAmenities = () => {
     setError('');
-    if (propertyForm.amenities.length < 1) {
-      setError('Please add at least 1 amenity');
-      updateFieldError('amenities', 'At least 1 amenity is required');
-      return;
-    }
     setStep(4);
   };
 
   const nextFromNearbyPlaces = () => {
-    setError('');
     if (propertyForm.nearbyPlaces.length < 1) {
       setError('Please add at least 1 nearby place');
-      updateFieldError('nearbyPlaces', 'At least 1 nearby place is required');
       return;
     }
-    
-    // Validate each nearby place
-    for (let i = 0; i < propertyForm.nearbyPlaces.length; i++) {
-      const place = propertyForm.nearbyPlaces[i];
-      
-      // Validate name
-      const nameErr = validateNearbyPlaceName(place.name);
-      if (nameErr) {
-        setError(`Nearby place ${i + 1}: ${nameErr}`);
-        return;
-      }
-      
-      // Validate distance
-      const distErr = validateDistance(String(place.distanceKm));
-      if (distErr) {
-        setError(`Nearby place ${i + 1}: ${distErr}`);
-        return;
-      }
-    }
-    
     setStep(5);
   };
 
@@ -811,236 +620,72 @@ const AddHostelWizard = () => {
     setError('');
     if (!propertyForm.coverImage) {
       setError('Cover image is required');
-      updateFieldError('coverImage', 'Cover image is required');
       return;
     }
-    
-    const validImages = propertyForm.propertyImages.filter(Boolean);
-    if (validImages.length < 4) {
-      setError(`Please upload at least 4 property images (currently: ${validImages.length})`);
-      updateFieldError('propertyImages', `At least 4 images required (currently: ${validImages.length})`);
+    if (propertyForm.propertyImages.filter(Boolean).length < 4) {
+      setError('Please upload at least 4 property images');
       return;
     }
-    
     setStep(6);
   };
 
   const nextFromRoomTypes = () => {
     setError('');
     if (!roomTypes.length) {
-      setError('At least one bed inventory is required');
+      setError('At least one RoomType required');
       return;
     }
-    
-    for (let i = 0; i < roomTypes.length; i++) {
-      const rt = roomTypes[i];
-      
-      // Validate name
-      const nameErr = validateRoomName(rt.name);
-      if (nameErr) {
-        setError(`Inventory ${i + 1}: ${nameErr}`);
+    for (const rt of roomTypes) {
+      if (!rt.name || !rt.pricePerNight) {
+        setError('Room type name and price required');
         return;
       }
-      
-      // Validate price
-      const priceErr = validatePrice(String(rt.pricePerNight));
-      if (priceErr) {
-        setError(`Inventory ${i + 1}: ${priceErr}`);
-        return;
-      }
-      
-      // Validate max adults
-      if (!rt.maxAdults || rt.maxAdults === '') {
-        setError(`Inventory ${i + 1}: Max occupancy is required`);
-        return;
-      }
-      const maxAdults = Number(rt.maxAdults);
-      if (isNaN(maxAdults) || maxAdults < 1) {
-        setError(`Inventory ${i + 1}: Max occupancy must be at least 1`);
-        return;
-      }
-      if (maxAdults > 20) {
-        setError(`Inventory ${i + 1}: Max occupancy cannot exceed 20`);
-        return;
-      }
-      
-      // Validate images
-      const validImages = (rt.images || []).filter(Boolean);
-      if (validImages.length < 3) {
-        setError(`Inventory ${i + 1}: At least 3 images required (currently: ${validImages.length})`);
-        return;
-      }
-      if (validImages.length > 15) {
-        setError(`Inventory ${i + 1}: Maximum 15 images allowed`);
-        return;
-      }
-      
-      // Validate amenities
-      if (!rt.amenities || rt.amenities.length === 0) {
-        setError(`Inventory ${i + 1}: At least 1 amenity must be selected`);
+      if (!rt.images || rt.images.filter(Boolean).length < 3) {
+        setError('Each room type must have at least 3 images');
         return;
       }
     }
-    
     setStep(7);
+  };
+
+  const syncHouseRulesFromDraft = () => {
+    const parsed = houseRulesDraft.split(',').map(s => s.trim()).filter(Boolean);
+    updatePropertyForm('houseRules', parsed);
   };
 
   const nextFromRules = () => {
     setError('');
-    
-    // Validate each field
-    const checkInErr = validateTime(propertyForm.checkInTime, 'Check-in time');
-    const checkOutErr = validateTime(propertyForm.checkOutTime, 'Check-out time');
-    const policyErr = validateCancellationPolicy(propertyForm.cancellationPolicy);
-    
-    // Update field errors
-    updateFieldError('checkInTime', checkInErr);
-    updateFieldError('checkOutTime', checkOutErr);
-    updateFieldError('cancellationPolicy', policyErr);
-    
-    // Check if any errors exist
-    if (checkInErr || checkOutErr || policyErr) {
-      setError('Please fix all required fields');
+    syncHouseRulesFromDraft();
+    if (!propertyForm.checkInTime || !propertyForm.checkOutTime) {
+      setError('Check-in and Check-out times are required');
       return;
     }
-    
+    if (!propertyForm.cancellationPolicy) {
+      setError('Cancellation policy is required');
+      return;
+    }
     setStep(8);
   };
 
   const nextFromDocuments = () => {
     setError('');
-    
-    // Check if all documents are uploaded
-    const missingDocs = propertyForm.documents.filter(doc => !doc.fileUrl);
-    if (missingDocs.length > 0) {
-      setError(`Please upload all required documents (${propertyForm.documents.length - missingDocs.length}/${propertyForm.documents.length} uploaded)`);
+    const missing = propertyForm.documents.filter(d => d.required && !d.fileUrl);
+    if (missing.length > 0) {
+      setError(`Please upload required documents: ${missing.map(d => d.name).join(', ')}`);
       return;
     }
-    
     setStep(9);
   };
 
-  const validateBeforeSubmit = () => {
-    // Step 1: Basic Info
-    if (!propertyForm.propertyName || propertyForm.propertyName.trim().length === 0) {
-      setError('Property name is required');
-      return false;
-    }
-    if (!/[a-zA-Z]/.test(propertyForm.propertyName)) {
-      setError('Property name must contain at least one letter');
-      return false;
-    }
-    if (!propertyForm.shortDescription || propertyForm.shortDescription.trim().length === 0) {
-      setError('Short description is required');
-      return false;
-    }
-    if (!propertyForm.contactNumber) {
-      setError('Contact number is required');
-      return false;
-    }
-    const contactDigitsOnly = propertyForm.contactNumber.replace(/\D/g, '');
-    if (contactDigitsOnly.length !== 10) {
-      setError('Contact number must contain exactly 10 digits');
-      return false;
-    }
-
-    // Step 2: Location
-    const { country, state, city, area, fullAddress, pincode } = propertyForm.address;
-    if (!country || !state || !city || !area || !fullAddress || !pincode) {
-      setError('All address fields are required');
-      return false;
-    }
-    if (!propertyForm.location.coordinates[0] || !propertyForm.location.coordinates[1]) {
-      setError('Location coordinates are required');
-      return false;
-    }
-
-    // Step 3: Amenities (optional but good to have)
-    if (!propertyForm.amenities || propertyForm.amenities.length === 0) {
-      setError('Please select at least one amenity');
-      return false;
-    }
-
-    // Step 4: Nearby Places
-    if (!propertyForm.nearbyPlaces || propertyForm.nearbyPlaces.length === 0) {
-      setError('Please add at least one nearby place');
-      return false;
-    }
-
-    // Step 5: Images
-    if (!propertyForm.coverImage) {
-      setError('Cover image is required');
-      return false;
-    }
-    const validPropertyImages = propertyForm.propertyImages.filter(Boolean);
-    if (validPropertyImages.length < 4) {
-      setError(`Please upload at least 4 property images (currently: ${validPropertyImages.length})`);
-      return false;
-    }
-
-    // Step 6: Room Types
-    if (!roomTypes || roomTypes.length === 0) {
-      setError('At least one bed inventory is required');
-      return false;
-    }
-    for (let i = 0; i < roomTypes.length; i++) {
-      const rt = roomTypes[i];
-      if (!rt.name || rt.name.trim().length === 0) {
-        setError(`Inventory ${i + 1}: Name is required`);
-        return false;
-      }
-      if (!rt.pricePerNight || Number(rt.pricePerNight) <= 0) {
-        setError(`Inventory ${i + 1}: Price must be greater than 0`);
-        return false;
-      }
-      if (!rt.totalInventory || Number(rt.totalInventory) <= 0) {
-        setError(`Inventory ${i + 1}: Total units must be greater than 0`);
-        return false;
-      }
-      if (!rt.bedsPerRoom || Number(rt.bedsPerRoom) <= 0) {
-        setError(`Inventory ${i + 1}: Beds per room must be greater than 0`);
-        return false;
-      }
-      if (!rt.maxAdults || Number(rt.maxAdults) <= 0) {
-        setError(`Inventory ${i + 1}: Max adults must be greater than 0`);
-        return false;
-      }
-      const validImages = (rt.images || []).filter(Boolean);
-      if (validImages.length < 3) {
-        setError(`Inventory ${i + 1}: At least 3 images required (currently: ${validImages.length})`);
-        return false;
-      }
-    }
-
-    // Step 7: Rules
-    if (!propertyForm.checkInTime || propertyForm.checkInTime.trim().length === 0) {
-      setError('Check-in time is required');
-      return false;
-    }
-    if (!propertyForm.checkOutTime || propertyForm.checkOutTime.trim().length === 0) {
-      setError('Check-out time is required');
-      return false;
-    }
-    if (!propertyForm.cancellationPolicy || propertyForm.cancellationPolicy.trim().length === 0) {
-      setError('Cancellation policy is required');
-      return false;
-    }
-
-    return true;
-  };
-
   const submitAll = async () => {
-    // Validate before submission
-    if (!validateBeforeSubmit()) {
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError('');
     try {
+      const searchParams = new URLSearchParams(location.search);
+      const queryType = searchParams.get('type');
       const propertyPayload = {
-        propertyType: 'hostel',
+        propertyType: queryType || 'hostel',
+        propertyTemplate: 'hostel',
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
         hostelType: propertyForm.hostelType,
@@ -1065,6 +710,7 @@ const AddHostelWizard = () => {
         checkInTime: propertyForm.checkInTime,
         checkOutTime: propertyForm.checkOutTime,
         cancellationPolicy: propertyForm.cancellationPolicy,
+        suitability: propertyForm.suitability,
         houseRules: propertyForm.houseRules,
         documents: propertyForm.documents
       };
@@ -1080,6 +726,8 @@ const AddHostelWizard = () => {
             name: rt.name,
             inventoryType: 'bed',
             roomCategory: rt.roomCategory,
+            baseAdults: Number(rt.baseAdults || 1),
+            baseChildren: Number(rt.baseChildren || 0),
             maxAdults: Number(rt.maxAdults),
             maxChildren: Number(rt.maxChildren || 0),
             bedsPerRoom: Number(rt.bedsPerRoom),
@@ -1109,6 +757,8 @@ const AddHostelWizard = () => {
           name: rt.name,
           inventoryType: 'bed',
           roomCategory: rt.roomCategory,
+          baseAdults: Number(rt.baseAdults || 1),
+          baseChildren: Number(rt.baseChildren || 0),
           maxAdults: Number(rt.maxAdults),
           maxChildren: Number(rt.maxChildren || 0),
           bedsPerRoom: Number(rt.bedsPerRoom),
@@ -1134,6 +784,7 @@ const AddHostelWizard = () => {
 
   const handleBack = () => {
     if (step > 1) {
+      if (step === 7) syncHouseRulesFromDraft();
       setStep(step - 1);
     } else {
       localStorage.removeItem(STORAGE_KEY);
@@ -1158,46 +809,22 @@ const AddHostelWizard = () => {
       setRoomTypes([]);
     } else if (step === 7) {
       setPropertyForm(prev => ({ ...prev, checkInTime: '12:00 PM', checkOutTime: '10:00 AM', cancellationPolicy: 'No refund after check-in', houseRules: [] }));
+      setHouseRulesDraft('');
     } else if (step === 8) {
       updatePropertyForm('documents', REQUIRED_DOCS_HOSTEL.map(d => ({ type: d.type, name: d.name, fileUrl: '' })));
     }
   };
 
   const handleNext = () => {
-    console.log('handleNext called, step:', step);
-    try {
-      if (step === 1) {
-        console.log('Calling nextFromBasic');
-        nextFromBasic();
-      } else if (step === 2) {
-        console.log('Calling nextFromLocation');
-        nextFromLocation();
-      } else if (step === 3) {
-        console.log('Calling nextFromAmenities');
-        nextFromAmenities();
-      } else if (step === 4) {
-        console.log('Calling nextFromNearbyPlaces');
-        nextFromNearbyPlaces();
-      } else if (step === 5) {
-        console.log('Calling nextFromImages');
-        nextFromImages();
-      } else if (step === 6) {
-        console.log('Calling nextFromRoomTypes');
-        nextFromRoomTypes();
-      } else if (step === 7) {
-        console.log('Calling nextFromRules');
-        nextFromRules();
-      } else if (step === 8) {
-        console.log('Calling nextFromDocuments');
-        nextFromDocuments();
-      } else if (step === 9) {
-        console.log('Calling submitAll');
-        submitAll();
-      }
-    } catch (err) {
-      console.error('Error in handleNext:', err);
-      setError('An error occurred. Please try again.');
-    }
+    if (step === 1) nextFromBasic();
+    else if (step === 2) nextFromLocation();
+    else if (step === 3) nextFromAmenities();
+    else if (step === 4) nextFromNearbyPlaces();
+    else if (step === 5) nextFromImages();
+    else if (step === 6) nextFromRoomTypes();
+    else if (step === 7) nextFromRules();
+    else if (step === 8) nextFromDocuments();
+    else if (step === 9) submitAll();
   };
 
   const getStepTitle = () => {
@@ -1252,15 +879,13 @@ const AddHostelWizard = () => {
 
               <div className="space-y-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Hostel Name *</label>
+                  <label className="text-xs font-semibold text-gray-500">Hostel Name</label>
                   <input
-                    className={`input w-full ${fieldErrors.propertyName ? 'border-red-300 bg-red-50' : ''}`}
+                    className="input w-full"
                     placeholder="e.g. UrbanStay Boys Hostel"
                     value={propertyForm.propertyName}
                     onChange={e => updatePropertyForm('propertyName', e.target.value)}
                   />
-                  {fieldErrors.propertyName && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.propertyName}</span>}
-                  {!fieldErrors.propertyName && propertyForm.propertyName && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -1271,7 +896,7 @@ const AddHostelWizard = () => {
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">Hostel Type *</label>
+                    <label className="text-xs font-semibold text-gray-500">Hostel Type</label>
                     <div className="relative">
                       <select
                         className="input appearance-none bg-white pr-10"
@@ -1290,43 +915,71 @@ const AddHostelWizard = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Short Description * ({propertyForm.shortDescription.length}/200)</label>
+                  <label className="text-xs font-semibold text-gray-500">Description</label>
                   <textarea
-                    className={`input w-full ${fieldErrors.shortDescription ? 'border-red-300 bg-red-50' : ''}`}
+                    className="input w-full h-24"
                     placeholder="Brief summary (e.g. Affordable student accommodation near campus...)"
                     value={propertyForm.shortDescription}
                     onChange={e => updatePropertyForm('shortDescription', e.target.value)}
                   />
-                  {fieldErrors.shortDescription && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.shortDescription}</span>}
-                  {!fieldErrors.shortDescription && propertyForm.shortDescription && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Detailed Description ({propertyForm.description.length}/2000)</label>
+
+
+                <div className="hidden">
+                  <label className="text-xs font-semibold text-gray-500">Detailed Description</label>
                   <textarea
-                    className={`input w-full min-h-[100px] ${fieldErrors.description ? 'border-red-300 bg-red-50' : ''}`}
+                    className="input w-full min-h-[100px]"
                     placeholder="Tell guests about your hostel, facilities, and neighborhood..."
                     value={propertyForm.description}
                     onChange={e => updatePropertyForm('description', e.target.value)}
                   />
-                  {fieldErrors.description && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.description}</span>}
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Contact Number * (10 digits)</label>
+                  <label className="text-xs font-semibold text-gray-500">Contact Number (For Guest Inquiries)</label>
                   <input
-                    className={`input w-full ${fieldErrors.contactNumber ? 'border-red-300 bg-red-50' : ''}`}
-                    placeholder="e.g. 9876543210"
-                    inputMode="numeric"
-                    maxLength="10"
+                    type="tel"
+                    className="input w-full"
+                    placeholder="9876543210"
                     value={propertyForm.contactNumber}
                     onChange={e => {
-                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
-                      updatePropertyForm('contactNumber', numericOnly);
+                      // Filter non-digits and limit to 10 digits
+                      const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      updatePropertyForm('contactNumber', digitsOnly);
                     }}
+                    maxLength={10}
                   />
-                  {fieldErrors.contactNumber && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.contactNumber}</span>}
-                  {!fieldErrors.contactNumber && propertyForm.contactNumber && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length === 10 && (
+                    /^[6-9]\d{9}$/.test(propertyForm.contactNumber) ? (
+                      <p className="text-[10px] text-green-600 font-medium flex items-center gap-1 mt-1">
+                        <span>✓</span> Valid mobile number
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-red-500 font-medium flex items-center gap-1 mt-1">
+                        <span>⚠</span> Mobile number must start with 6, 7, 8, or 9
+                      </p>
+                    )
+                  )}
+                  {propertyForm.contactNumber && propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
+                    <p className="text-[10px] text-gray-500 font-medium mt-1">
+                      {10 - propertyForm.contactNumber.length} more digit(s) required
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500">Suitability</label>
+                  <select
+                    className="input w-full appearance-none"
+                    value={propertyForm.suitability}
+                    onChange={e => updatePropertyForm('suitability', e.target.value)}
+                  >
+                    <option value="none">None</option>
+                    <option value="Couple Friendly">Couple Friendly</option>
+                    <option value="Family Friendly">Family Friendly</option>
+                    <option value="Both">Both</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -1337,11 +990,11 @@ const AddHostelWizard = () => {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-500">Search Location</label>
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                     <Search size={18} />
                   </div>
                   <input
-                    className="input pl-12"
+                    className="input pl-10"
                     placeholder="Search for area, street, or landmark..."
                     value={locationSearchQuery}
                     onChange={e => {
@@ -1374,72 +1027,28 @@ const AddHostelWizard = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Country *</label>
-                  <input 
-                    className={`input ${fieldErrors.country ? 'border-red-300 bg-red-50' : ''}`}
-                    value={propertyForm.address.country} 
-                    onChange={e => {
-                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
-                      updatePropertyForm(['address', 'country'], alphabetOnly);
-                    }}
-                  />
-                  {fieldErrors.country && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.country}</span>}
+                  <label className="text-xs font-semibold text-gray-500">Country</label>
+                  <input className="input" value={propertyForm.address.country} onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">State / Province *</label>
-                  <input 
-                    className={`input ${fieldErrors.state ? 'border-red-300 bg-red-50' : ''}`}
-                    value={propertyForm.address.state} 
-                    onChange={e => {
-                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
-                      updatePropertyForm(['address', 'state'], alphabetOnly);
-                    }}
-                  />
-                  {fieldErrors.state && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.state}</span>}
+                  <label className="text-xs font-semibold text-gray-500">State / Province</label>
+                  <input className="input" value={propertyForm.address.state} onChange={e => updatePropertyForm(['address', 'state'], e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">City *</label>
-                  <input 
-                    className={`input ${fieldErrors.city ? 'border-red-300 bg-red-50' : ''}`}
-                    value={propertyForm.address.city} 
-                    onChange={e => {
-                      const alphabetOnly = e.target.value.replace(/[^a-zA-Z\s\-]/g, '');
-                      updatePropertyForm(['address', 'city'], alphabetOnly);
-                    }}
-                  />
-                  {fieldErrors.city && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.city}</span>}
+                  <label className="text-xs font-semibold text-gray-500">City</label>
+                  <input className="input" value={propertyForm.address.city} onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Area / Sector *</label>
-                  <input 
-                    className={`input ${fieldErrors.area ? 'border-red-300 bg-red-50' : ''}`}
-                    value={propertyForm.address.area} 
-                    onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} 
-                  />
-                  {fieldErrors.area && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.area}</span>}
+                  <label className="text-xs font-semibold text-gray-500">Area / Sector</label>
+                  <input className="input" value={propertyForm.address.area} onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} />
                 </div>
                 <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Full Street Address *</label>
-                  <input 
-                    className={`input ${fieldErrors.fullAddress ? 'border-red-300 bg-red-50' : ''}`}
-                    value={propertyForm.address.fullAddress} 
-                    onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)} 
-                  />
-                  {fieldErrors.fullAddress && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.fullAddress}</span>}
+                  <label className="text-xs font-semibold text-gray-500">Full Street Address</label>
+                  <input className="input" value={propertyForm.address.fullAddress} onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Pincode / Zip * (6 digits)</label>
-                  <input 
-                    className={`input ${fieldErrors.pincode ? 'border-red-300 bg-red-50' : ''}`}
-                    value={propertyForm.address.pincode}
-                    inputMode="numeric"
-                    maxLength="6"
-                    onChange={e => {
-                      const numericOnly = e.target.value.replace(/\D/g, '').slice(0, 6);
-                      updatePropertyForm(['address', 'pincode'], numericOnly);
-                    }}
-                  />
-                  {fieldErrors.pincode && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.pincode}</span>}
+                  <label className="text-xs font-semibold text-gray-500">Pincode / Zip</label>
+                  <input className="input" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
                 </div>
               </div>
 
@@ -1466,8 +1075,6 @@ const AddHostelWizard = () => {
 
           {step === 3 && (
             <div className="space-y-6">
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><AlertCircle size={16} /> {error}</div>}
-              
               <div className="grid grid-cols-2 gap-3">
                 {HOSTEL_AMENITIES.map(item => {
                   const isSelected = propertyForm.amenities.includes(item.name);
@@ -1601,25 +1208,13 @@ const AddHostelWizard = () => {
 
                     <div className="space-y-3 pt-2 border-t border-gray-100">
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Name * ({tempNearbyPlace.name.length}/100)</label>
-                        <input 
-                          className={`input w-full ${fieldErrors.tempNearbyPlace?.name ? 'border-red-300 bg-red-50' : ''}`}
-                          value={tempNearbyPlace.name} 
-                          onChange={e => {
-                            setTempNearbyPlace({ ...tempNearbyPlace, name: e.target.value });
-                            updateFieldError(['tempNearbyPlace', 'name'], validateNearbyPlaceName(e.target.value));
-                          }} 
-                        />
-                        {fieldErrors.tempNearbyPlace?.name && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.tempNearbyPlace.name}</span>}
+                        <label className="text-xs font-semibold text-gray-500">Name</label>
+                        <input className="input w-full" value={tempNearbyPlace.name} onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, name: e.target.value })} />
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Type</label>
-                          <select 
-                            className="input w-full appearance-none" 
-                            value={tempNearbyPlace.type} 
-                            onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, type: e.target.value })}
-                          >
+                          <select className="input w-full appearance-none" value={tempNearbyPlace.type} onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, type: e.target.value })}>
                             <option value="tourist">Tourist Attraction</option>
                             <option value="airport">Airport</option>
                             <option value="market">Market</option>
@@ -1631,17 +1226,8 @@ const AddHostelWizard = () => {
                           </select>
                         </div>
                         <div className="space-y-1">
-                          <label className="text-xs font-semibold text-gray-500">Distance (km) *</label>
-                          <input 
-                            className={`input w-full ${fieldErrors.tempNearbyPlace?.distanceKm ? 'border-red-300 bg-red-50' : ''}`}
-                            type="number" 
-                            value={tempNearbyPlace.distanceKm} 
-                            onChange={e => {
-                              setTempNearbyPlace({ ...tempNearbyPlace, distanceKm: e.target.value });
-                              updateFieldError(['tempNearbyPlace', 'distanceKm'], validateDistance(e.target.value));
-                            }} 
-                          />
-                          {fieldErrors.tempNearbyPlace?.distanceKm && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.tempNearbyPlace.distanceKm}</span>}
+                          <label className="text-xs font-semibold text-gray-500">Distance (km)</label>
+                          <input className="input w-full" type="number" value={tempNearbyPlace.distanceKm} onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, distanceKm: e.target.value })} />
                         </div>
                       </div>
                     </div>
@@ -1658,8 +1244,6 @@ const AddHostelWizard = () => {
 
           {step === 5 && (
             <div className="space-y-6">
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><AlertCircle size={16} /> {error}</div>}
-              
               <div className="space-y-3">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Main Cover Image</label>
                 <div
@@ -1703,7 +1287,7 @@ const AddHostelWizard = () => {
                     <div key={i} className="relative aspect-square rounded-xl overflow-hidden group shadow-sm">
                       <img src={img} className="w-full h-full object-cover" />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
-                      <button type="button" onClick={() => handleRemoveImage(img, 'gallery', i)} className="absolute top-1 right-1 p-1.5 bg-white text-red-600 rounded-lg shadow-md z-10 hover:bg-red-50"><Trash2 size={14} /></button>
+                      <button type="button" onClick={() => handleRemoveImage(img, 'gallery', i)} className="absolute top-1 right-1 p-1.5 bg-white text-red-600 rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-sm transform scale-90 hover:scale-100"><Trash2 size={14} /></button>
                     </div>
                   ))}
                   <button
@@ -1806,78 +1390,40 @@ const AddHostelWizard = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">Name * ({editingRoomType.name.length}/100)</label>
-                      <input 
-                        className={`input ${fieldErrors.editingRoomType?.name ? 'border-red-300 bg-red-50' : ''}`}
-                        placeholder="e.g. 4 Sharing Air Conditioned Dorm" 
-                        value={editingRoomType.name} 
-                        onChange={e => {
-                          setEditingRoomType({ ...editingRoomType, name: e.target.value });
-                          updateFieldError(['editingRoomType', 'name'], validateRoomName(e.target.value));
-                        }} 
-                      />
-                      {fieldErrors.editingRoomType?.name && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.editingRoomType.name}</span>}
+                      <label className="text-xs font-semibold text-gray-500">Name</label>
+                      <input className="input" placeholder="e.g. 4 Sharing Air Conditioned Dorm" value={editingRoomType.name} onChange={e => setEditingRoomType({ ...editingRoomType, name: e.target.value })} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Price per Night (₹) *</label>
+                        <label className="text-xs font-semibold text-gray-500">Price per Night (₹)</label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-lg">₹</span>
-                          <input 
-                            className={`input pl-10 ${fieldErrors.editingRoomType?.pricePerNight ? 'border-red-300 bg-red-50' : ''}`}
-                            type="number" 
-                            placeholder="  0" 
-                            value={editingRoomType.pricePerNight} 
-                            onChange={e => {
-                              setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value });
-                              updateFieldError(['editingRoomType', 'pricePerNight'], validatePrice(e.target.value));
-                            }} 
-                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input pl-7" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
                         </div>
-                        {fieldErrors.editingRoomType?.pricePerNight && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.editingRoomType.pricePerNight}</span>}
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Units/Inventory *</label>
-                        <input 
-                          className={`input ${fieldErrors.editingRoomType?.totalInventory ? 'border-red-300 bg-red-50' : ''}`}
-                          type="number" 
-                          placeholder="1" 
-                          value={editingRoomType.totalInventory} 
-                          onChange={e => {
-                            setEditingRoomType({ ...editingRoomType, totalInventory: e.target.value });
-                            updateFieldError(['editingRoomType', 'totalInventory'], validateInventoryCount(e.target.value, 'Units'));
-                          }} 
-                        />
-                        {fieldErrors.editingRoomType?.totalInventory && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.editingRoomType.totalInventory}</span>}
+                        <label className="text-xs font-semibold text-gray-500">Units/Inventory</label>
+                        <input className="input" type="number" placeholder="1" value={editingRoomType.totalInventory} onChange={e => setEditingRoomType({ ...editingRoomType, totalInventory: e.target.value })} />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Beds per Room *</label>
-                        <input 
-                          className={`input ${fieldErrors.editingRoomType?.bedsPerRoom ? 'border-red-300 bg-red-50' : ''}`}
-                          type="number" 
-                          placeholder="1" 
-                          value={editingRoomType.bedsPerRoom} 
-                          onChange={e => {
-                            setEditingRoomType({ ...editingRoomType, bedsPerRoom: e.target.value });
-                            updateFieldError(['editingRoomType', 'bedsPerRoom'], validateInventoryCount(e.target.value, 'Beds per room'));
-                          }} 
-                        />
-                        {fieldErrors.editingRoomType?.bedsPerRoom && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.editingRoomType.bedsPerRoom}</span>}
+                        <label className="text-xs font-semibold text-gray-500">Beds per Room</label>
+                        <input className="input" type="number" placeholder="1" value={editingRoomType.bedsPerRoom} onChange={e => setEditingRoomType({ ...editingRoomType, bedsPerRoom: e.target.value })} />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Max Adults *</label>
-                        <input 
-                          className={`input ${fieldErrors.editingRoomType?.maxAdults ? 'border-red-300 bg-red-50' : ''}`}
-                          type="number" 
-                          placeholder="1" 
-                          value={editingRoomType.maxAdults} 
-                          onChange={e => {
-                            setEditingRoomType({ ...editingRoomType, maxAdults: e.target.value });
-                            updateFieldError(['editingRoomType', 'maxAdults'], validateInventoryCount(e.target.value, 'Max adults'));
-                          }} 
-                        />
-                        {fieldErrors.editingRoomType?.maxAdults && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.editingRoomType.maxAdults}</span>}
+                        <label className="text-xs font-semibold text-gray-500">Max Adults</label>
+                        <input className="input" type="number" placeholder="1" value={editingRoomType.maxAdults} onChange={e => setEditingRoomType({ ...editingRoomType, maxAdults: e.target.value })} />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹/night)</label>
+                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraAdultPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value === '' ? '' : e.target.value })} />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹/night)</label>
+                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraChildPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value === '' ? '' : e.target.value })} />
                       </div>
                     </div>
 
@@ -1890,7 +1436,7 @@ const AddHostelWizard = () => {
                         {(editingRoomType.images || []).map((img, i) => (
                           <div key={i} className="relative w-20 h-20 flex-shrink-0 rounded-xl border border-gray-200 overflow-hidden group">
                             <img src={img} className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 size={12} /></button>
+                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} /></button>
                           </div>
                         ))}
                         {(editingRoomType.images || []).length < 3 && (
@@ -1941,47 +1487,34 @@ const AddHostelWizard = () => {
 
           {step === 7 && (
             <div className="space-y-6">
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><AlertCircle size={16} /> {error}</div>}
-              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Check-In Time *</label>
+                  <label className="text-xs font-semibold text-gray-500">Check-In Time</label>
                   <div className="relative">
-                    <input 
-                      className={`input !pl-12 ${fieldErrors.checkInTime ? 'border-red-300 bg-red-50' : ''}`}
-                      placeholder="e.g. 12:00 PM" 
-                      value={propertyForm.checkInTime} 
-                      onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
-                    />
+                    <input className="input !pl-12" placeholder="e.g. 12:00 PM" value={propertyForm.checkInTime} onChange={e => updatePropertyForm('checkInTime', e.target.value)} />
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
-                  {fieldErrors.checkInTime && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.checkInTime}</span>}
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Check-Out Time *</label>
+                  <label className="text-xs font-semibold text-gray-500">Check-Out Time</label>
                   <div className="relative">
-                    <input 
-                      className={`input !pl-12 ${fieldErrors.checkOutTime ? 'border-red-300 bg-red-50' : ''}`}
-                      placeholder="e.g. 11:00 AM" 
-                      value={propertyForm.checkOutTime} 
-                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
-                    />
+                    <input className="input !pl-12" placeholder="e.g. 11:00 AM" value={propertyForm.checkOutTime} onChange={e => updatePropertyForm('checkOutTime', e.target.value)} />
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
-                  {fieldErrors.checkOutTime && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.checkOutTime}</span>}
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-500">Cancellation Policy * ({propertyForm.cancellationPolicy.length}/500)</label>
-                <textarea
-                  className={`input w-full min-h-[80px] ${fieldErrors.cancellationPolicy ? 'border-red-300 bg-red-50' : ''}`}
-                  placeholder="e.g. Free cancellation up to 24 hours before check-in..."
+                <label className="text-xs font-semibold text-gray-500">Cancellation Policy</label>
+                <select
+                  className="input w-full appearance-none"
                   value={propertyForm.cancellationPolicy}
                   onChange={e => updatePropertyForm('cancellationPolicy', e.target.value)}
-                />
-                {fieldErrors.cancellationPolicy && <span className="text-xs font-semibold text-red-500">⚠️ {fieldErrors.cancellationPolicy}</span>}
-                {!fieldErrors.cancellationPolicy && propertyForm.cancellationPolicy && <span className="text-xs font-semibold text-green-600">✓ Valid</span>}
+                >
+                  <option value="No refund after check-in">No refund after check-in</option>
+                  <option value="Free cancellation up to 24hrs">Free cancellation up to 24hrs</option>
+                  <option value="Strict">Strict</option>
+                </select>
               </div>
 
               <div className="space-y-2">
@@ -1989,13 +1522,9 @@ const AddHostelWizard = () => {
                 <textarea
                   className="input w-full min-h-[100px]"
                   placeholder="No alcohol, No guests after 9 PM..."
-                  value={propertyForm.houseRules.join(', ')}
-                  onChange={e =>
-                    updatePropertyForm(
-                      'houseRules',
-                      e.target.value.split(',').map(s => s.trim())
-                    )
-                  }
+                  value={houseRulesDraft}
+                  onChange={e => setHouseRulesDraft(e.target.value)}
+                  onBlur={syncHouseRulesFromDraft}
                 />
                 <p className="text-xs text-gray-400">Separate rules with commas.</p>
               </div>
@@ -2004,7 +1533,7 @@ const AddHostelWizard = () => {
 
           {step === 8 && (
             <div className="space-y-6">
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><AlertCircle size={16} /> {error}</div>}
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
               <div className="space-y-4">
                 <div className="text-sm font-semibold text-gray-700">Please provide the following documents</div>
                 <div className="grid gap-3">
@@ -2013,7 +1542,9 @@ const AddHostelWizard = () => {
                       <div className="flex justify-between items-start mb-3">
                         <div>
                           <div className="font-bold text-gray-900">{doc.name}</div>
-                          <div className="text-xs text-gray-400 mt-0.5">Optional document</div>
+                          <div className={`text-xs mt-0.5 ${doc.required ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                            {doc.required ? 'Required *' : 'Optional'}
+                          </div>
                         </div>
                         {doc.fileUrl ? (
                           <div className="bg-emerald-50 text-emerald-700 p-1.5 rounded-full"><CheckCircle size={18} /></div>
@@ -2056,6 +1587,7 @@ const AddHostelWizard = () => {
                       <input
                         type="file"
                         className="hidden"
+                        accept=".jpg,.jpeg,.png,.webp,.pdf"
                         ref={el => (documentInputRefs.current[idx] = el)}
                         onChange={e => {
                           const file = e.target.files[0];
@@ -2087,18 +1619,12 @@ const AddHostelWizard = () => {
                 <p className="text-emerald-700 text-sm mt-1">Review your hostel details below.</p>
               </div>
 
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-medium border border-red-100 flex items-center gap-2"><AlertCircle size={16} /> {error}</div>}
-
               <div className="space-y-4">
                 <div className="bg-white border border-gray-200 rounded-xl overflow-hidden p-4 space-y-3">
                   <div className="flex gap-4">
-                    {propertyForm.coverImage ? (
-                      <img src={propertyForm.coverImage} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
-                    ) : (
-                      <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400"><ImageIcon size={24} /></div>
-                    )}
+                    <img src={propertyForm.coverImage} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
                     <div>
-                      <h4 className="font-bold text-gray-900">{propertyForm.propertyName || 'Property Name'}</h4>
+                      <h4 className="font-bold text-gray-900">{propertyForm.propertyName}</h4>
                       <p className="text-xs text-gray-500 capitalize">{propertyForm.hostelType} Hostel</p>
                       <p className="text-xs text-emerald-600 font-medium mt-1">{propertyForm.address.city}, {propertyForm.address.state}</p>
                     </div>
@@ -2106,88 +1632,11 @@ const AddHostelWizard = () => {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
-                    Basic Information
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Name:</span>
-                      <span className="font-medium text-gray-900">{propertyForm.propertyName}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Type:</span>
-                      <span className="font-medium text-gray-900 capitalize">{propertyForm.hostelType} Hostel</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Contact:</span>
-                      <span className="font-medium text-gray-900">{propertyForm.contactNumber}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
-                    Location
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Address:</span>
-                      <span className="font-medium text-gray-900 text-right">{propertyForm.address.fullAddress}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">City:</span>
-                      <span className="font-medium text-gray-900">{propertyForm.address.city}, {propertyForm.address.state}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
-                    Amenities
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {propertyForm.amenities.map((am, i) => (
-                      <span key={i} className="px-2 py-1 bg-emerald-50 text-emerald-700 text-xs font-medium rounded-lg border border-emerald-200">{am}</span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
-                    Images
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Cover Image:</span>
-                      <span className={`font-medium ${propertyForm.coverImage ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {propertyForm.coverImage ? '✓ Uploaded' : '✗ Missing'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Gallery Images:</span>
-                      <span className={`font-medium ${propertyForm.propertyImages.filter(Boolean).length >= 4 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {propertyForm.propertyImages.filter(Boolean).length} / 4 minimum
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
-                    Inventory Summary
-                  </h4>
+                  <h4 className="font-bold text-gray-900 text-sm mb-3">Inventory Summary</h4>
                   <div className="space-y-2">
                     {roomTypes.map((rt, i) => (
                       <div key={i} className="flex justify-between items-center text-sm p-2 bg-gray-50 rounded-lg">
-                        <div>
-                          <span className="text-gray-600">{rt.name}</span>
-                          <span className="text-xs text-gray-400 ml-2">({rt.bedsPerRoom} beds, {rt.totalInventory} units)</span>
-                        </div>
+                        <span className="text-gray-600">{rt.name}</span>
                         <span className="font-bold text-emerald-700">₹{rt.pricePerNight}</span>
                       </div>
                     ))}
@@ -2195,38 +1644,8 @@ const AddHostelWizard = () => {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h4 className="font-bold text-gray-900 text-sm mb-3 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
-                    House Rules
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Check-in:</span>
-                      <span className="font-medium text-gray-900">{propertyForm.checkInTime}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Check-out:</span>
-                      <span className="font-medium text-gray-900">{propertyForm.checkOutTime}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Cancellation:</span>
-                      <span className="font-medium text-gray-900 text-right max-w-xs">{propertyForm.cancellationPolicy}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white border border-gray-200 rounded-xl p-4">
-                  <h4 className="font-bold text-gray-900 text-sm mb-2 flex items-center gap-2">
-                    <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs">✓</span>
-                    Documents
-                  </h4>
+                  <h4 className="font-bold text-gray-900 text-sm mb-2">Documents</h4>
                   <p className="text-xs text-gray-500">{propertyForm.documents.filter(d => d.fileUrl).length} of {propertyForm.documents.length} documents uploaded.</p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                  <p className="text-xs text-blue-700 font-medium">
-                    ℹ️ Please review all information carefully. Once submitted, our team will verify your details within 24-48 hours.
-                  </p>
                 </div>
               </div>
             </div>
@@ -2253,15 +1672,13 @@ const AddHostelWizard = () => {
 
       <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-40">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          {step !== 10 && (
-            <button
-              onClick={handleBack}
-              disabled={step === 1 || loading || isEditingSubItem}
-              className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Back
-            </button>
-          )}
+          <button
+            onClick={handleBack}
+            disabled={step === 1 || loading || isEditingSubItem}
+            className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Back
+          </button>
 
           {step < 9 && (
             <button
@@ -2273,21 +1690,19 @@ const AddHostelWizard = () => {
             </button>
           )}
 
-          {step < 10 && (
-            <button
-              onClick={step === 9 ? submitAll : handleNext}
-              disabled={loading}
-              className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 size={18} className="animate-spin" /> : null}
-              {step === 9 ? 'Complete Registration' : 'Continue'}
-            </button>
-          )}
+          <button
+            onClick={step === 9 ? submitAll : handleNext}
+            disabled={loading || isEditingSubItem || (step === 6 && roomTypes.length === 0)}
+            className="flex-1 py-3 bg-gray-900 text-white font-bold rounded-xl hover:bg-black disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 size={18} className="animate-spin" /> : null}
+            {step === 9 ? 'Complete Registration' : 'Continue'}
+          </button>
         </div>
       </footer>
 
       <style>{`
-        .btn-primary { background: #004F4D; color: white; font-weight: 700; padding: 10px 16px; border-radius: 12px; transition: transform 0.1s, background 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-primary { background: #0F172A; color: white; font-weight: 700; padding: 10px 16px; border-radius: 12px; transition: transform 0.1s, background 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-primary:active { transform: scale(0.97); }
         .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
         .btn-secondary { background: white; color: #374151; font-weight: 600; padding: 10px 16px; border-radius: 12px; border: 1px solid #e5e7eb; transition: all 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }

@@ -47,7 +47,7 @@ const JoinRokkooin = () => {
 
     const handleExit = () => {
         resetForm();
-        navigate('/partner/dashboard');
+        navigate('/hotel/dashboard');
     };
 
     const handleNext = async () => {
@@ -186,7 +186,7 @@ const JoinRokkooin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-white text-[#003836] flex flex-col font-sans selection:bg-[#004F4D] selection:text-white">
+        <div className="min-h-screen bg-white text-[#003836] flex flex-col font-sans selection:bg-[#0F172A] selection:text-white">
             {/* Top Bar */}
             <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md z-50 px-4 flex items-center justify-between border-b border-gray-100">
                 <button onClick={handleBack} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
@@ -204,7 +204,7 @@ const JoinRokkooin = () => {
             {/* Progress Bar */}
             <div className="fixed top-16 left-0 right-0 z-40 bg-gray-100 h-1">
                 <div
-                    className="h-full bg-[#004F4D] transition-all duration-500 ease-out"
+                    className="h-full bg-[#0F172A] transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                 />
             </div>
@@ -229,7 +229,7 @@ const JoinRokkooin = () => {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleBack}
-                            className="text-xs font-bold underline px-3 py-2 text-gray-400 hover:text-[#004F4D] transition-colors"
+                            className="text-xs font-bold underline px-3 py-2 text-gray-400 hover:text-[#0F172A] transition-colors"
                             disabled={currentStep === 1 || isSubmitting}
                         >
                             Back
@@ -248,7 +248,7 @@ const JoinRokkooin = () => {
                         <button
                             onClick={handleNext}
                             disabled={isSubmitting}
-                            className={`bg-[#004F4D] text-white px-6 py-3 rounded-full font-bold text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 w-full md:w-auto justify-center ${isSubmitting ? 'opacity-70 cursor-wait' : ''}`}
+                            className={`bg-[#0F172A] text-white px-6 py-3 rounded-full font-bold text-sm shadow-lg active:scale-95 transition-all flex items-center gap-2 w-full md:w-auto justify-center ${isSubmitting ? 'opacity-70 cursor-wait' : ''}`}
                         >
                             {isSubmitting ? 'Processing...' : currentStep === steps.length ? 'Submit Application' : 'Next'}
                             {!isSubmitting && <ArrowRight size={16} />}

@@ -54,6 +54,14 @@ const AdminSettings = () => {
 
     const [autoPayout, setAutoPayout] = useState(false);
 
+    // Password Update States
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+    });
+    const [savingPassword, setSavingPassword] = useState(false);
+
     useEffect(() => {
         if (admin) {
             setProfile({
@@ -107,6 +115,37 @@ const AdminSettings = () => {
             toast.error(message);
         } finally {
             setSavingProfile(false);
+        }
+    };
+
+    const handleUpdatePassword = async () => {
+        if (!passwordData.currentPassword || !passwordData.newPassword) {
+            return toast.error('Current and new passwords are required');
+        }
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            return toast.error('Passwords do not match');
+        }
+        if (passwordData.newPassword.length < 6) {
+            return toast.error('Password must be at least 6 characters');
+        }
+
+        try {
+            setSavingPassword(true);
+            await adminService.updateAdminPassword({
+                currentPassword: passwordData.currentPassword,
+                newPassword: passwordData.newPassword
+            });
+            toast.success('Password updated successfully');
+            setPasswordData({
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+            });
+        } catch (error) {
+            const message = error.response?.data?.message || 'Failed to update password';
+            toast.error(message);
+        } finally {
+            setSavingPassword(false);
         }
     };
 
@@ -180,6 +219,52 @@ const AdminSettings = () => {
                     >
                         <Save size={16} />
                         {savingProfile ? 'Saving...' : 'Save Profile'}
+                    </button>
+                </div>
+            </Section>
+
+            <Section title="Security & Password" icon={Lock}>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Current Password</label>
+                        <input
+                            type="password"
+                            value={passwordData.currentPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            className="w-full p-2.5 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black text-sm"
+                            placeholder="••••••••"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">New Password</label>
+                        <input
+                            type="password"
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            className="w-full p-2.5 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black text-sm"
+                            placeholder="••••••••"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Confirm New Password</label>
+                        <input
+                            type="password"
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            className="w-full p-2.5 border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-black text-sm"
+                            placeholder="••••••••"
+                        />
+                    </div>
+                </div>
+                <div className="flex justify-end pt-2">
+                    <button
+                        type="button"
+                        onClick={handleUpdatePassword}
+                        disabled={savingPassword}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-bold rounded-xl shadow-md hover:bg-gray-900 active:scale-95 disabled:opacity-60"
+                    >
+                        <Shield size={16} />
+                        {savingPassword ? 'Updating...' : 'Update Password'}
                     </button>
                 </div>
             </Section>

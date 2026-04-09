@@ -9,8 +9,6 @@ const PartnerBankDetails = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [holderNameError, setHolderNameError] = useState('');
-  const [accountNumberError, setAccountNumberError] = useState('');
 
   // Bank Details State
   const [details, setDetails] = useState({
@@ -62,14 +60,7 @@ const PartnerBankDetails = () => {
       return;
     }
 
-    // 2. Account Holder Name Check - Only alphabetic characters and spaces
-    const nameRegex = /^[a-zA-Z\s]+$/;
-    if (!nameRegex.test(accountHolderName.trim())) {
-      toast.error("Account holder name must contain only alphabetic characters");
-      setHolderNameError("Only alphabetic characters allowed");
-      return;
-    }
-
+    // 2. Account Holder Name Check
     if (accountHolderName.trim().length < 3) {
       toast.error("Account holder name must be at least 3 characters");
       return;
@@ -79,7 +70,6 @@ const PartnerBankDetails = () => {
     const accRegex = /^[0-9]{9,18}$/;
     if (!accRegex.test(accountNumber)) {
       toast.error("Enter a valid account number (9-18 digits)");
-      setAccountNumberError("Account number must be 9-18 digits");
       return;
     }
 
@@ -100,8 +90,6 @@ const PartnerBankDetails = () => {
       setSaving(true);
       await walletService.updateBankDetails(details);
       toast.success("Bank details saved successfully");
-      setHolderNameError('');
-      setAccountNumberError('');
       fetchDetails(); // Refresh view
     } catch (error) {
       toast.error("Failed to save bank details");
@@ -134,47 +122,14 @@ const PartnerBankDetails = () => {
     }
   };
 
-  const handleHolderNameChange = (e) => {
-    const value = e.target.value;
-    setDetails({ ...details, accountHolderName: value });
-    
-    // Real-time validation
-    const nameRegex = /^[a-zA-Z\s]*$/;
-    if (value && !nameRegex.test(value)) {
-      setHolderNameError("Only alphabetic characters allowed");
-    } else {
-      setHolderNameError('');
-    }
-  };
-
-  const handleAccountNumberChange = (e) => {
-    const value = e.target.value;
-    
-    // Only allow numbers
-    if (value && !/^[0-9]*$/.test(value)) {
-      return; // Don't update if non-numeric
-    }
-    
-    setDetails({ ...details, accountNumber: value });
-    
-    // Real-time validation
-    if (value.length > 0 && (value.length < 9 || value.length > 18)) {
-      setAccountNumberError("Account number must be 9-18 digits");
-    } else if (value.length > 0 && !/^[0-9]{9,18}$/.test(value)) {
-      setAccountNumberError("Only numbers allowed");
-    } else {
-      setAccountNumberError('');
-    }
-  };
-
   if (loading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-[#004F4D]" /></div>;
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><Loader2 className="animate-spin text-[#0F172A]" /></div>;
   }
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-20">
       {/* Header */}
-      <div className="bg-[#004F4D] text-white pt-8 pb-12 px-6 rounded-b-[40px] shadow-lg mb-6 relative">
+      <div className="bg-[#0F172A] text-white pt-8 pb-12 px-6 rounded-b-[40px] shadow-lg mb-6 relative">
         <div className="flex items-center gap-4 mb-6">
           <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
             <ArrowLeft size={20} />
@@ -201,7 +156,7 @@ const PartnerBankDetails = () => {
               </div>
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-[#004F4D] rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-[#0F172A] rounded-lg text-xs font-bold hover:bg-gray-100 transition-colors"
               >
                 <Edit size={14} /> Edit
               </button>
@@ -228,35 +183,33 @@ const PartnerBankDetails = () => {
 
           <div className="space-y-4">
             <div className="group">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Account Holder Name</label>
-              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${holderNameError ? 'bg-red-50/30 border-red-300' : isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
-                <User size={18} className={`${holderNameError ? 'text-red-500' : 'text-gray-400'}`} />
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Account Holder</label>
+              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
+                <User size={18} className="text-gray-400" />
                 {isEditing ? (
                   <input
                     type="text"
                     placeholder="Name as per Passbook"
                     value={details.accountHolderName}
-                    onChange={handleHolderNameChange}
+                    onChange={e => setDetails({ ...details, accountHolderName: e.target.value })}
                     className="flex-1 bg-transparent text-sm font-bold text-[#003836] placeholder:text-gray-300 focus:outline-none"
                   />
                 ) : (
                   <span className="text-sm font-bold text-[#003836]">{details.accountHolderName}</span>
                 )}
               </div>
-              {holderNameError && <span className="text-[10px] font-bold text-red-500 mt-1 block">{holderNameError}</span>}
             </div>
 
             <div className="group">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Account Number</label>
-              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${accountNumberError ? 'bg-red-50/30 border-red-300' : isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
-                <CreditCard size={18} className={`${accountNumberError ? 'text-red-500' : 'text-gray-400'}`} />
+              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
+                <CreditCard size={18} className="text-gray-400" />
                 {isEditing ? (
                   <input
                     type="text"
                     placeholder="Enter Account Number"
                     value={details.accountNumber}
-                    onChange={handleAccountNumberChange}
-                    maxLength="18"
+                    onChange={e => setDetails({ ...details, accountNumber: e.target.value })}
                     className="flex-1 bg-transparent text-sm font-bold text-[#003836] placeholder:text-gray-300 focus:outline-none"
                   />
                 ) : (
@@ -265,14 +218,12 @@ const PartnerBankDetails = () => {
                   </span>
                 )}
               </div>
-              {accountNumberError && <span className="text-[10px] font-bold text-red-500 mt-1 block">{accountNumberError}</span>}
-              {isEditing && details.accountNumber && <span className="text-[10px] font-bold text-gray-400 mt-1 block">{details.accountNumber.length}/18 digits</span>}
             </div>
 
             <div className="flex gap-4">
               <div className="group flex-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">IFSC Code</label>
-                <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
+                <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
                   <Building2 size={18} className="text-gray-400" />
                   {isEditing ? (
                     <input
@@ -291,7 +242,7 @@ const PartnerBankDetails = () => {
 
             <div className="group">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Bank Name</label>
-              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#004F4D] focus-within:ring-2 focus-within:ring-[#004F4D]/10' : 'bg-gray-50/50 border-transparent'}`}>
+              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
                 <Landmark size={18} className="text-gray-400" />
                 {isEditing ? (
                   <input
@@ -314,7 +265,7 @@ const PartnerBankDetails = () => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="w-full py-3.5 rounded-xl bg-[#004F4D] text-white font-bold text-sm shadow-lg shadow-[#004F4D]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 rounded-xl bg-[#0F172A] text-white font-bold text-sm shadow-lg shadow-[#0F172A]/20 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                 Save Details

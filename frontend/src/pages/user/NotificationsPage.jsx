@@ -11,6 +11,12 @@ const NotificationsPage = () => {
     const [loading, setLoading] = useState(true);
     const [selectedIds, setSelectedIds] = useState([]);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedNotif, setSelectedNotif] = useState(null);
+
+    useEffect(() => {
+        const event = new CustomEvent('nowstay:slider', { detail: !!selectedNotif });
+        window.dispatchEvent(event);
+    }, [selectedNotif]);
 
     useEffect(() => {
         const init = async () => {
@@ -177,9 +183,15 @@ const NotificationsPage = () => {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, scale: 0.9, height: 0 }}
                                     transition={{ delay: index * 0.05 }}
-                                    onClick={() => isSelectionMode && toggleSelect(notif._id)}
+                                    onClick={() => {
+                                        if (isSelectionMode) {
+                                            toggleSelect(notif._id);
+                                        } else {
+                                            setSelectedNotif(notif);
+                                        }
+                                    }}
                                     className={`
-                                        bg-white rounded-2xl p-4 shadow-sm border flex gap-4 relative overflow-hidden transition-all
+                                        bg-white rounded-2xl p-4 shadow-sm border flex gap-4 relative overflow-hidden transition-all cursor-pointer
                                         ${isSelectionMode && selectedIds.includes(notif._id) ? 'border-surface bg-gray-50' : 'border-gray-100'}
                                     `}
                                 >
@@ -207,7 +219,7 @@ const NotificationsPage = () => {
                                                 <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></div>
                                             )}
                                         </div>
-                                        <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-2">{notif.body}</p>
+                                        <p className="text-xs text-gray-500 mt-1 leading-relaxed line-clamp-3">{notif.body}</p>
                                         <span className="text-[10px] text-gray-400 mt-2 block font-medium">
                                             {new Date(notif.createdAt).toLocaleDateString()} • {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
@@ -225,6 +237,68 @@ const NotificationsPage = () => {
                     </>
                 )}
             </div>
+
+            {/* Notification Full Text Bottom Sheet Modal */}
+            <AnimatePresence>
+                {selectedNotif && (
+                    <>
+                        {/* Backdrop */}
+                        <motion.div
+                            key="backdrop"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setSelectedNotif(null)}
+                            className="fixed inset-0 bg-black/50 z-50"
+                        />
+                        {/* Bottom Sheet */}
+                        <motion.div
+                            key="sheet"
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 p-6 shadow-2xl max-h-[80vh] overflow-y-auto"
+                        >
+                            {/* Drag Handle */}
+                            <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mb-5" />
+
+                            {/* Icon + Close */}
+                            <div className="flex items-start justify-between mb-4">
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${getColor(selectedNotif.type)}`}>
+                                    {getIcon(selectedNotif.type || 'general')}
+                                </div>
+                                <button
+                                    onClick={() => setSelectedNotif(null)}
+                                    className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                </button>
+                            </div>
+
+                            {/* Title */}
+                            <h3 className="text-base font-black text-gray-900 mb-3 leading-snug">
+                                {selectedNotif.title}
+                            </h3>
+
+                            {/* Divider */}
+                            <div className="h-px bg-gray-100 mb-4" />
+
+                            {/* Full Body */}
+                            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">
+                                {selectedNotif.body}
+                            </p>
+
+                            {/* Timestamp */}
+                            <div className="mt-5 flex items-center gap-2 text-xs text-gray-400 font-medium">
+                                <span>
+                                    {new Date(selectedNotif.createdAt).toLocaleDateString()} • {new Date(selectedNotif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                            </div>
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

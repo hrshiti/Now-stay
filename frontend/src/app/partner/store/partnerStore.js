@@ -9,21 +9,14 @@ const INITIAL_DATA = {
     role: 'partner',
     termsAccepted: false,
     otpCode: '', // Shared with auth
+    referralCode: '',
 
     // Owner Details
-    owner_name: '',
     aadhaar_number: '',
     aadhaar_front: { url: '', publicId: '' },
     aadhaar_back: { url: '', publicId: '' },
     pan_number: '',
     pan_card_image: { url: '', publicId: '' },
-    owner_address: {
-        street: '',
-        city: '',
-        state: '',
-        zipCode: '',
-        country: 'India'
-    },
 
     // --- Property Onboarding (JoinRokkooin) ---
     hotelDraftId: null,
@@ -162,20 +155,13 @@ const usePartnerStore = create(
                             newData.email = '';
                             newData.phone = '';
                             newData.termsAccepted = false;
+                            newData.referralCode = '';
                         } else if (step === 2) {
-                            newData.owner_name = '';
                             newData.aadhaar_number = '';
                             newData.aadhaar_front = { url: '', publicId: '' };
                             newData.aadhaar_back = { url: '', publicId: '' };
                             newData.pan_number = '';
                             newData.pan_card_image = { url: '', publicId: '' };
-                            newData.owner_address = {
-                                street: '',
-                                city: '',
-                                state: '',
-                                zipCode: '',
-                                country: 'India'
-                            };
                         }
                     } else if (mode === 'join') {
                         if (step === 1) {

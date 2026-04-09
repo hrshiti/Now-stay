@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, LogOut, ChevronRight, CreditCard } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Moon, Bell, Lock, Globe, Smartphone, LogOut, ChevronRight, CreditCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import gsap from 'gsap';
 import PartnerHeader from '../components/PartnerHeader';
-import { authService } from '../../../services/apiService';
 
 const SettingItem = ({ icon: Icon, label, type = "toggle", value, onChange }) => (
     <div className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
@@ -17,7 +16,7 @@ const SettingItem = ({ icon: Icon, label, type = "toggle", value, onChange }) =>
         {type === "toggle" && (
             <button
                 onClick={() => onChange(!value)}
-                className={`w-10 h-6 rounded-full p-1 transition-colors ${value ? 'bg-[#004F4D]' : 'bg-gray-200'}`}
+                className={`w-10 h-6 rounded-full p-1 transition-colors ${value ? 'bg-[#0F172A]' : 'bg-gray-200'}`}
             >
                 <div className={`w-4 h-4 bg-white rounded-full transition-transform ${value ? 'translate-x-4' : 'translate-x-0'}`}></div>
             </button>
@@ -35,9 +34,10 @@ const SettingItem = ({ icon: Icon, label, type = "toggle", value, onChange }) =>
 
 const PartnerSettings = () => {
     const listRef = useRef(null);
-    const navigate = useNavigate();
     const [settings, setSettings] = useState({
         notifications: true,
+        emailAlerts: false,
+        darkMode: false,
     });
 
     useEffect(() => {
@@ -49,16 +49,6 @@ const PartnerSettings = () => {
 
     const toggle = (key) => {
         setSettings(prev => ({ ...prev, [key]: !prev[key] }));
-    };
-
-    const handleSignOut = async () => {
-        try {
-            await authService.logout();
-            navigate('/hotel/login');
-        } catch (error) {
-            console.error('Sign out failed:', error);
-            navigate('/hotel/login');
-        }
     };
 
     return (
@@ -91,13 +81,46 @@ const PartnerSettings = () => {
                         value={settings.notifications}
                         onChange={() => toggle('notifications')}
                     />
+                    <SettingItem
+                        icon={Smartphone}
+                        label="SMS Alerts"
+                        value={settings.emailAlerts}
+                        onChange={() => toggle('emailAlerts')}
+                    />
+                    <SettingItem
+                        icon={Globe}
+                        label="Language"
+                        type="value"
+                        value="English (UK)"
+                    />
+
+                    {/* Security Section */}
+                    <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 border-t">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Security</span>
+                    </div>
+                    <SettingItem
+                        icon={Lock}
+                        label="Two-Factor Authentication"
+                        type="link"
+                    />
+                    <SettingItem
+                        icon={Lock}
+                        label="Change Password"
+                        type="link"
+                    />
 
                     {/* App Section */}
                     <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 border-t">
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">system</span>
                     </div>
+                    <SettingItem
+                        icon={Moon}
+                        label="Dark Mode"
+                        value={settings.darkMode}
+                        onChange={() => toggle('darkMode')}
+                    />
 
-                    <button onClick={handleSignOut} className="w-full text-left p-4 text-red-500 font-bold text-sm flex items-center gap-3 hover:bg-red-50 transition-colors border-t border-gray-100">
+                    <button className="w-full text-left p-4 text-red-500 font-bold text-sm flex items-center gap-3 hover:bg-red-50 transition-colors border-t border-gray-100">
                         <LogOut size={18} />
                         Sign Out
                     </button>

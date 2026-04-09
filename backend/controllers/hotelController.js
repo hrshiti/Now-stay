@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { uploadToCloudinary, uploadBase64ToCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
+import { uploadToCloudinary, uploadBase64ToCloudinary } from '../utils/cloudinary.js';
 
 const mapAddressComponents = (components) => {
   const get = (type) => {
@@ -21,13 +21,16 @@ const mapAddressComponents = (components) => {
  */
 export const uploadImages = async (req, res) => {
   try {
-    console.log(`[Upload Images] Received ${req.files ? req.files.length : 0} files`);
+    // Handle both single file (req.file) and multiple files (req.files)
+    const filesToUpload = req.files || (req.file ? [req.file] : []);
 
-    if (!req.files || !req.files.length) {
+    console.log(`[Upload Images] Received ${filesToUpload.length} files`);
+
+    if (!filesToUpload || filesToUpload.length === 0) {
       return res.status(400).json({ message: 'No images provided' });
     }
 
-    const uploadPromises = req.files.map(file =>
+    const uploadPromises = filesToUpload.map(file =>
       uploadToCloudinary(file.path, 'properties')
     );
 
@@ -58,44 +61,33 @@ export const uploadImagesBase64 = async (req, res) => {
   try {
     let { images } = req.body;
 
-    // Normalizing highly flexible input formats (as per Flutter Bridge documentation)
-    let imagesArray = [];
-    if (!images) {
+    // Handle single image sent not in an array (Flutter bridge compatibility)
+    if (images && !Array.isArray(images)) {
+      images = [images];
+    }
+
+    console.log(`[Upload Images Base64] Received ${images ? images.length : 0} image items`);
+
+    if (!images || images.length === 0) {
       return res.status(400).json({ message: 'No images provided' });
     }
 
-    // 1. If it's a single string (Base64)
-    if (typeof images === 'string') {
-      imagesArray = [{ base64: images }];
-    }
-    // 2. If it's a single object
-    else if (typeof images === 'object' && !Array.isArray(images) && images.base64) {
-      imagesArray = [images];
-    }
-    // 3. If it's an array
-    else if (Array.isArray(images)) {
-      imagesArray = images.map(item => {
-        if (typeof item === 'string') return { base64: item };
-        return item; // assuming it's {base64, fileName, etc.}
-      });
-    }
+    const uploadPromises = images.map(async (img, index) => {
+      // Support both {base64: '...'} object and raw '...' base64 string
+      const base64Data = typeof img === 'object' ? img.base64 : img;
+      const fileName = typeof img === 'object' ? img.fileName : null;
 
-    console.log(`[Upload Images Base64] Processing ${imagesArray.length} items (Flexible Format)`);
-
-    if (imagesArray.length === 0) {
-      return res.status(400).json({ message: 'No valid images provided' });
-    }
-
-    const uploadPromises = imagesArray.map(async (img, index) => {
-      if (!img.base64) {
-        throw new Error(`Item ${index + 1} missing base64 data`);
+      if (!base64Data) {
+        throw new Error(`Image ${index + 1} missing base64 data`);
       }
 
-      const publicId = img.fileName
-        ? `${Date.now()}-${img.fileName.replace(/\.[^/.]+$/, '')}`
-        : null;
+      // Generate unique publicId with random suffix to prevent collisions during batch uploads
+      const randomSuffix = Math.random().toString(36).substring(2, 7);
+      const publicId = fileName
+        ? `${Date.now()}-${randomSuffix}-${fileName.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_')}`
+        : `${Date.now()}-${randomSuffix}-img-${index}`;
 
-      return uploadBase64ToCloudinary(img.base64, 'properties', publicId);
+      return uploadBase64ToCloudinary(base64Data, 'properties', publicId);
     });
 
     const results = await Promise.all(uploadPromises);
@@ -112,7 +104,7 @@ export const uploadImagesBase64 = async (req, res) => {
     res.json({ success: true, files, urls });
   } catch (error) {
     console.error('Upload Images Base64 Error:', error);
-    res.status(500).json({ message: error.message || 'Upload failed' });
+    res.status(500).json({ message: error.message || 'Base64 upload failed' });
   }
 };
 
@@ -128,28 +120,6 @@ export const getAddressFromCoordinates = async (req, res) => {
     }
     const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${key}`;
     const { data } = await axios.get(url);
-    
-    // Check if API returned an error
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Google Maps Geocode API Error:', data.status, data.error_message);
-      // Return a generic response if API is not enabled
-      if (data.status === 'REQUEST_DENIED') {
-        return res.status(200).json({
-          success: true,
-          country: 'India',
-          state: '',
-          city: '',
-          area: '',
-          fullAddress: `Coordinates: ${lat}, ${lng}`,
-          pincode: '',
-          latitude: lat,
-          longitude: lng,
-          note: 'Geocoding API not enabled. Please enable it in Google Cloud Console.'
-        });
-      }
-      return res.status(400).json({ message: `Maps API error: ${data.status}` });
-    }
-    
     const first = Array.isArray(data.results) ? data.results[0] : null;
     if (!first) return res.status(404).json({ message: 'Address not found' });
     const { country, state, city, area, pincode } = mapAddressComponents(first.address_components || []);
@@ -165,8 +135,7 @@ export const getAddressFromCoordinates = async (req, res) => {
       longitude: lng
     });
   } catch (e) {
-    console.error('Address lookup error:', e.message);
-    res.status(500).json({ message: e.message || 'Address lookup failed' });
+    res.status(500).json({ message: e.message });
   }
 };
 
@@ -183,19 +152,7 @@ export const searchLocation = async (req, res) => {
     const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
       query
     )}&key=${key}`;
-    
     const { data } = await axios.get(url);
-    
-    // Check if API returned an error
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Google Maps API Error:', data.status, data.error_message);
-      // Return empty results if API is not enabled
-      if (data.status === 'REQUEST_DENIED') {
-        return res.json({ success: true, results: [], note: 'Places API not enabled. Please enable it in Google Cloud Console.' });
-      }
-      return res.status(400).json({ message: `Maps API error: ${data.status}` });
-    }
-    
     const results = (data.results || []).map((r) => {
       const types = Array.isArray(r.types) ? r.types : [];
       let type = 'tourist';
@@ -211,8 +168,7 @@ export const searchLocation = async (req, res) => {
     });
     res.json({ success: true, results });
   } catch (e) {
-    console.error('Location search error:', e.message);
-    res.status(500).json({ message: e.message || 'Location search failed' });
+    res.status(500).json({ message: e.message });
   }
 };
 

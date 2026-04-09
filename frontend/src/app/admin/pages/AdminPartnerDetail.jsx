@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     User, Mail, Phone, Calendar, MapPin, Shield, CreditCard,
     History, AlertTriangle, Ban, CheckCircle, Lock, Unlock, Loader2,
-    Building, FileText, CheckSquare, XSquare, ArrowDownLeft, ArrowUpRight
+    Building, FileText, CheckSquare, XSquare, ArrowDownLeft, ArrowUpRight, Plus, Minus, X
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -122,82 +122,189 @@ const PartnerTransactionsTab = ({ partnerId }) => {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [isAdjusting, setIsAdjusting] = useState(false);
+    const [adjConfig, setAdjConfig] = useState({ type: 'credit', amount: '', reason: '' });
+    const [submitting, setSubmitting] = useState(false);
+
+    const fetchWalletData = async () => {
+        try {
+            setLoading(true);
+            const [wRes, sRes, tRes] = await Promise.all([
+                walletService.getWallet({ ownerId: partnerId, viewAs: 'partner' }),
+                walletService.getWalletStats({ ownerId: partnerId, viewAs: 'partner' }),
+                walletService.getTransactions({ ownerId: partnerId, viewAs: 'partner', limit: 50 })
+            ]);
+            if (wRes.success) setWallet(wRes.wallet);
+            if (sRes.success) setStats(sRes.stats);
+            if (tRes.success) setTransactions(tRes.transactions);
+        } catch (error) {
+            console.error('Error fetching partner wallet:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchWalletData = async () => {
-            try {
-                setLoading(true);
-                const [wRes, sRes, tRes] = await Promise.all([
-                    walletService.getWallet({ ownerId: partnerId, viewAs: 'partner' }),
-                    walletService.getWalletStats({ ownerId: partnerId, viewAs: 'partner' }),
-                    walletService.getTransactions({ ownerId: partnerId, viewAs: 'partner', limit: 50 })
-                ]);
-                if (wRes.success) setWallet(wRes.wallet);
-                if (sRes.success) setStats(sRes.stats);
-                if (tRes.success) setTransactions(tRes.transactions);
-            } catch (error) {
-                console.error('Error fetching partner wallet:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchWalletData();
     }, [partnerId]);
+
+    const handleAdjustSubmit = async () => {
+        if (!adjConfig.amount || parseFloat(adjConfig.amount) <= 0) return toast.error("Enter valid amount");
+        try {
+            setSubmitting(true);
+            const res = await walletService.adminAdjustWallet({
+                targetUserId: partnerId,
+                action: adjConfig.type,
+                amount: adjConfig.amount,
+                reason: adjConfig.reason,
+                viewAs: 'partner'
+            });
+            if (res.success) {
+                toast.success(`Wallet ${adjConfig.type}ed successfully`);
+                fetchWalletData(); // Refresh data
+                setIsAdjusting(false);
+                setAdjConfig({ type: 'credit', amount: '', reason: '' });
+            }
+        } catch (err) {
+            toast.error(err.message || "Adjustment failed");
+        } finally {
+            setSubmitting(false);
+        }
+    };
 
     if (loading) return <div className="flex justify-center p-10"><Loader2 className="animate-spin text-gray-300" /></div>;
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Available Balance</p>
-                    <h3 className="text-xl font-black text-gray-900">₹{wallet?.balance?.toLocaleString() || 0}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center md:text-left">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
+                    <div className="relative z-10 flex flex-col justify-between h-full">
+                        <div>
+                            <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Available Balance</p>
+                            <h3 className="text-2xl font-black text-gray-900">₹{wallet?.balance?.toLocaleString() || 0}</h3>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                            <button
+                                onClick={() => { setAdjConfig({ ...adjConfig, type: 'credit' }); setIsAdjusting(true); }}
+                                className="flex-1 bg-green-50 text-green-600 px-2 py-1.5 rounded-lg text-[10px] font-bold uppercase hover:bg-green-100 transition-colors flex items-center justify-center gap-1"
+                            >
+                                <Plus size={12} /> Add
+                            </button>
+                            <button
+                                onClick={() => { setAdjConfig({ ...adjConfig, type: 'debit' }); setIsAdjusting(true); }}
+                                className="flex-1 bg-red-50 text-red-600 px-2 py-1.5 rounded-lg text-[10px] font-bold uppercase hover:bg-red-100 transition-colors flex items-center justify-center gap-1"
+                            >
+                                <Minus size={12} /> Deduct
+                            </button>
+                        </div>
+                    </div>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Earnings</p>
-                    <h3 className="text-xl font-black text-green-600">₹{stats?.totalEarnings?.toLocaleString() || 0}</h3>
-                    <p className="text-[10px] text-gray-400 font-bold mt-1">+₹{stats?.thisMonthEarnings?.toLocaleString() || 0} this month</p>
+                    <h3 className="text-2xl font-black text-green-600">₹{stats?.totalEarnings?.toLocaleString() || 0}</h3>
+                    <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tight">+₹{stats?.thisMonthEarnings?.toLocaleString() || 0} this month</p>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Payouts</p>
-                    <h3 className="text-xl font-black text-orange-600">₹{stats?.totalWithdrawals?.toLocaleString() || 0}</h3>
+                    <h3 className="text-2xl font-black text-orange-600">₹{stats?.totalWithdrawals?.toLocaleString() || 0}</h3>
                 </div>
-                <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
                     <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Pending Clearance</p>
-                    <h3 className="text-xl font-black text-blue-600">₹{stats?.pendingClearance?.toLocaleString() || 0}</h3>
+                    <h3 className="text-2xl font-black text-blue-600">₹{stats?.pendingClearance?.toLocaleString() || 0}</h3>
                 </div>
             </div>
+
+            {/* Adjustment Modal */}
+            <AnimatePresence>
+                {isAdjusting && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">
+                                    {adjConfig.type === 'credit' ? 'Credit Partner Wallet' : 'Debit Partner Wallet'}
+                                </h3>
+                                <button onClick={() => setIsAdjusting(false)} className="text-gray-400 hover:text-black">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Amount (₹)</label>
+                                    <input
+                                        type="number"
+                                        value={adjConfig.amount}
+                                        onChange={(e) => setAdjConfig({ ...adjConfig, amount: e.target.value })}
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-lg font-black focus:outline-none focus:border-black transition-colors"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Reason / Note</label>
+                                    <textarea
+                                        value={adjConfig.reason}
+                                        onChange={(e) => setAdjConfig({ ...adjConfig, reason: e.target.value })}
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:border-black transition-colors"
+                                        placeholder="e.g., Commission adjustment"
+                                        rows={3}
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleAdjustSubmit}
+                                    disabled={submitting}
+                                    className={`w-full py-4 rounded-xl text-white font-black uppercase text-sm shadow-lg transition-all active:scale-95 ${adjConfig.type === 'credit' ? 'bg-green-600 shadow-green-100' : 'bg-red-600 shadow-red-100'
+                                        }`}
+                                >
+                                    {submitting ? <Loader2 className="animate-spin mx-auto" size={20} /> : `Confirm ${adjConfig.type === 'credit' ? 'Credit' : 'Debit'}`}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <div className="bg-white border border-gray-200 rounded-xl p-6">
                 <h3 className="text-xs font-bold text-gray-400 uppercase mb-4 tracking-widest">Recent Transactions</h3>
                 <div className="space-y-3">
                     {transactions && transactions.length > 0 ? (
                         transactions.map((txn, i) => {
+                            const isAdminAdj = txn.category === 'admin_adjustment';
                             const isDebit = txn.type === 'debit';
                             const isBooking = txn.category?.includes('booking');
 
                             return (
-                                <div key={i} className="flex items-center justify-between p-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-colors bg-white">
+                                <div key={i} className={`flex items-center justify-between p-4 border rounded-2xl hover:bg-gray-50 transition-colors bg-white ${isAdminAdj ? 'border-purple-100 bg-purple-50/10' : 'border-gray-100'}`}>
                                     <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-white shadow-sm ${isBooking ? 'bg-orange-50 text-orange-500' :
-                                            !isDebit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
+                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-white shadow-sm ${isAdminAdj ? 'bg-purple-100 text-purple-600' :
+                                            isBooking ? 'bg-orange-50 text-orange-500' :
+                                                !isDebit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
                                             }`}>
-                                            {isBooking ? <Calendar size={20} /> :
-                                                !isDebit ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
+                                            {isAdminAdj ? <Shield size={20} /> :
+                                                isBooking ? <Calendar size={20} /> :
+                                                    !isDebit ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                                         </div>
                                         <div className="min-w-0">
                                             <p className="text-sm font-bold text-gray-900 truncate pr-2">{txn.description}</p>
-                                            <p className="text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-tight">
-                                                {new Date(txn.createdAt).toLocaleDateString('en-IN', {
-                                                    day: 'numeric', month: 'short', year: 'numeric'
-                                                })} • {new Date(txn.createdAt).toLocaleTimeString('en-IN', {
-                                                    hour: '2-digit', minute: '2-digit'
-                                                })}
-                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">
+                                                    {new Date(txn.createdAt).toLocaleDateString('en-IN', {
+                                                        day: 'numeric', month: 'short', year: 'numeric'
+                                                    })} • {new Date(txn.createdAt).toLocaleTimeString('en-IN', {
+                                                        hour: '2-digit', minute: '2-digit'
+                                                    })}
+                                                </p>
+                                                {isAdminAdj && <span className="text-[8px] font-bold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded uppercase">Admin</span>}
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="text-right shrink-0">
-                                        <p className={`text-lg font-black tracking-tight ${isDebit ? 'text-gray-900' : 'text-green-600'}`}>
-                                            {isDebit ? '-' : '+'}₹{txn.amount?.toLocaleString()}
+                                        <p className={`text-lg font-black tracking-tight ${!isDebit ? 'text-green-600' : 'text-gray-900'}`}>
+                                            {!isDebit ? '+' : '-'}₹{txn.amount?.toLocaleString()}
                                         </p>
                                         <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${txn.status === 'completed' || txn.status === 'success' ? 'bg-green-50 text-green-600' :
                                             txn.status === 'cancelled' ? 'bg-gray-100 text-gray-500' : 'bg-amber-50 text-amber-600'

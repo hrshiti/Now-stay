@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     TrendingUp, Users, ShoppingBag, DollarSign, Building2,
-    ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCircle
+    ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCircle, CreditCard
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, Legend, BarChart, Bar
+    PieChart, Pie, Cell, Legend
 } from 'recharts';
 import adminService from '../../../services/adminService';
 import toast from 'react-hot-toast';
@@ -60,18 +60,12 @@ const AdminDashboard = () => {
         totalBookings: 0,
         totalUsers: 0,
         pendingHotels: 0,
-        totalSubscriptionRevenue: 0,
-        totalActiveSubscribers: 0,
         trends: { revenue: 0, bookings: 0, users: 0 }
     });
     const [charts, setCharts] = useState({ revenue: [], status: [] });
     const [recentBookings, setRecentBookings] = useState([]);
     const [recentRequests, setRecentRequests] = useState([]);
-    const [subscriptionRevenue, setSubscriptionRevenue] = useState({
-        total: 0,
-        activeSubscribers: 0,
-        planBreakdown: []
-    });
+    const [recentSubscriptions, setRecentSubscriptions] = useState([]);
 
     const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#6366F1'];
 
@@ -88,11 +82,10 @@ const AdminDashboard = () => {
                 setCharts(data.charts || { revenue: [], status: [] });
                 setRecentBookings(data.recentBookings || []);
                 setRecentRequests(data.recentPropertyRequests || []);
-                setSubscriptionRevenue(data.subscriptionRevenue || { total: 0, activeSubscribers: 0, planBreakdown: [] });
+                setRecentSubscriptions(data.recentSubscriptions || []);
             }
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            // toast.error('Failed to update dashboard');
         } finally {
             setLoading(false);
         }
@@ -108,23 +101,20 @@ const AdminDashboard = () => {
 
     return (
         <div className="space-y-8 p-2 pb-10">
-
-
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard Overview</h1>
-                    <p className="text-gray-500 mt-1">Real-time insights into your property platform performance.</p>
+                    <p className="text-gray-500 mt-1">Real-time insights into your platform's revenue and operations.</p>
                 </div>
-
             </div>
 
             {/* Row 1: KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <DashboardCard
-                    title="Total Revenue"
+                    title="Total Platform Revenue"
                     value={formatCurrency(stats.totalRevenue)}
-                    trend={stats.trends?.revenue}
+                    trend={stats.trends?.totalRevenue}
                     icon={DollarSign}
                     color="text-emerald-500"
                     loading={loading}
@@ -132,18 +122,39 @@ const AdminDashboard = () => {
                 />
                 <DashboardCard
                     title="Subscription Revenue"
-                    value={formatCurrency(stats.totalSubscriptionRevenue || 0)}
-                    icon={DollarSign}
-                    color="text-teal-500"
+                    value={formatCurrency(stats.subscriptionRevenue)}
+                    trend={stats.trends?.subRevenue}
+                    icon={TrendingUp}
+                    color="text-blue-600"
                     loading={loading}
                     onClick={() => navigate('/admin/subscriptions')}
+                />
+                <DashboardCard
+                    title="Active Subscribers"
+                    value={stats.activeSubscribers}
+                    icon={Users}
+                    color="text-purple-500"
+                    loading={loading}
+                    onClick={() => navigate('/admin/subscriptions')}
+                />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <DashboardCard
+                    title="Booking Revenue"
+                    value={formatCurrency(stats.bookingRevenue)}
+                    trend={stats.trends?.bookingRevenue}
+                    icon={ShoppingBag}
+                    color="text-blue-500"
+                    loading={loading}
+                    onClick={() => navigate('/admin/finance')}
                 />
                 <DashboardCard
                     title="Total Bookings"
                     value={stats.totalBookings}
                     trend={stats.trends?.bookings}
-                    icon={ShoppingBag}
-                    color="text-blue-500"
+                    icon={Clock}
+                    color="text-orange-500"
                     loading={loading}
                     onClick={() => navigate('/admin/bookings')}
                 />
@@ -152,16 +163,15 @@ const AdminDashboard = () => {
                     value={stats.totalUsers}
                     trend={stats.trends?.users}
                     icon={Users}
-                    color="text-purple-500"
+                    color="text-indigo-500"
                     loading={loading}
                     onClick={() => navigate('/admin/users')}
                 />
-                <DashboardCard
+                 <DashboardCard
                     title="Pending Reviews"
                     value={stats.pendingHotels}
-                    // trend={0} // No trend for pending usually
                     icon={Building2}
-                    color="text-orange-500"
+                    color="text-amber-500"
                     loading={loading}
                     onClick={() => navigate('/admin/properties')}
                 />
@@ -174,7 +184,11 @@ const AdminDashboard = () => {
                     <div className="flex items-center justify-between mb-8">
                         <div>
                             <h3 className="text-xl font-bold text-gray-900">Revenue Analytics</h3>
-                            <p className="text-sm text-gray-500">Monthly revenue flow over the last 6 months</p>
+                            <p className="text-sm text-gray-500">Booking vs Subscription revenue comparison</p>
+                        </div>
+                        <div className="flex gap-4 text-xs font-bold">
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-emerald-500 rounded-full"></div> Bookings</div>
+                            <div className="flex items-center gap-1.5"><div className="w-3 h-3 bg-blue-600 rounded-full"></div> Subscriptions</div>
                         </div>
                     </div>
                     <div className="h-[300px] w-full">
@@ -184,9 +198,13 @@ const AdminDashboard = () => {
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={charts.revenue}>
                                     <defs>
-                                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                        <linearGradient id="colorBookings" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#10B981" stopOpacity={0.1} />
                                             <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorSubs" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#2563eb" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
@@ -210,11 +228,21 @@ const AdminDashboard = () => {
                                     />
                                     <Area
                                         type="monotone"
-                                        dataKey="value"
+                                        dataKey="bookings"
                                         stroke="#10B981"
                                         strokeWidth={3}
                                         fillOpacity={1}
-                                        fill="url(#colorValue)"
+                                        fill="url(#colorBookings)"
+                                        stackId="1"
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="subscriptions"
+                                        stroke="#2563eb"
+                                        strokeWidth={3}
+                                        fillOpacity={1}
+                                        fill="url(#colorSubs)"
+                                        stackId="1"
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -227,7 +255,7 @@ const AdminDashboard = () => {
                     <h3 className="text-xl font-bold text-gray-900 mb-2">Booking Status</h3>
                     <p className="text-sm text-gray-500 mb-6">Distribution of booking outcomes</p>
 
-                    <div className="flex-1 min-h-[250px] relative">
+                    <div className="flex-1 min-h-[320px] relative">
                         {loading ? (
                             <div className="h-full w-full bg-gray-50 animate-pulse rounded-full" />
                         ) : (
@@ -246,126 +274,53 @@ const AdminDashboard = () => {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip />
-                                    <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                                    <Tooltip
+                                        wrapperStyle={{ zIndex: 100 }}
+                                        contentStyle={{
+                                            borderRadius: '12px',
+                                            border: 'none',
+                                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+                                            fontSize: '12px',
+                                            fontWeight: '600'
+                                        }}
+                                        formatter={(value, name) => [value, name.replace(/_/g, ' ')]}
+                                    />
+                                    <Legend
+                                        verticalAlign="bottom"
+                                        align="center"
+                                        iconType="circle"
+                                        iconSize={8}
+                                        formatter={(value) => (
+                                            <span className="text-[11px] font-medium text-gray-600 capitalize">
+                                                {value.replace(/_/g, ' ')}
+                                            </span>
+                                        )}
+                                        wrapperStyle={{
+                                            paddingTop: '30px',
+                                            bottom: -10
+                                        }}
+                                    />
                                 </PieChart>
                             </ResponsiveContainer>
                         )}
                         {/* Center Label */}
                         {!loading && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-8">
-                                <div className="text-center">
-                                    <span className="block text-3xl font-bold text-gray-900">{stats.totalBookings}</span>
-                                    <span className="text-xs text-gray-500 uppercase tracking-wider">Total</span>
-                                </div>
+                            <div className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                                <span className="block text-3xl font-bold text-gray-900 tracking-tight">{stats.totalBookings}</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Total</span>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* Subscription Revenue Section */}
-            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        <h3 className="text-xl font-bold text-gray-900">Subscription Analytics</h3>
-                        <p className="text-sm text-gray-500">Revenue breakdown by subscription plans</p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                        <div className="text-right">
-                            <p className="text-xs text-gray-500 uppercase tracking-wider">Total Revenue</p>
-                            <p className="text-2xl font-bold text-teal-600">{formatCurrency(subscriptionRevenue.total)}</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-xs text-gray-500 uppercase tracking-wider">Active Subscribers</p>
-                            <p className="text-2xl font-bold text-gray-900">{subscriptionRevenue.activeSubscribers}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="h-[300px] w-full">
-                    {loading ? (
-                        <div className="h-full w-full bg-gray-50 animate-pulse rounded-xl" />
-                    ) : subscriptionRevenue.planBreakdown && subscriptionRevenue.planBreakdown.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={subscriptionRevenue.planBreakdown.map(plan => ({
-                                name: plan.planName,
-                                revenue: plan.totalRevenue,
-                                subscribers: plan.subscriberCount
-                            }))}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                                <XAxis
-                                    dataKey="name"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                                    tickFormatter={(value) => `₹${value / 1000}k`}
-                                    dx={-10}
-                                />
-                                <Tooltip
-                                    formatter={(value, name) => {
-                                        if (name === 'revenue') return [formatCurrency(value), 'Revenue'];
-                                        return [value, 'Subscribers'];
-                                    }}
-                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                />
-                                <Bar
-                                    dataKey="revenue"
-                                    fill="#0d9488"
-                                    radius={[8, 8, 0, 0]}
-                                    maxBarSize={60}
-                                />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    ) : (
-                        <div className="h-full w-full flex items-center justify-center bg-gray-50 rounded-xl">
-                            <div className="text-center">
-                                <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <DollarSign size={32} className="text-teal-600" />
-                                </div>
-                                <p className="text-gray-900 font-semibold mb-1">No Subscription Data</p>
-                                <p className="text-sm text-gray-500">Waiting for partners to purchase subscription plans</p>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Plan Cards Below Chart */}
-                {subscriptionRevenue.planBreakdown && subscriptionRevenue.planBreakdown.length > 0 && (
-                    <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {subscriptionRevenue.planBreakdown.map((plan, index) => (
-                            <div key={plan._id || index} className="p-4 bg-gradient-to-br from-teal-50 to-white border border-teal-200 rounded-xl">
-                                <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-bold text-gray-900">{plan.planName}</h4>
-                                    <span className="px-2 py-1 bg-teal-600 text-white rounded-full text-xs font-bold">
-                                        {plan.subscriberCount}
-                                    </span>
-                                </div>
-                                <div className="flex items-baseline gap-2">
-                                    <span className="text-2xl font-black text-teal-600">{formatCurrency(plan.totalRevenue)}</span>
-                                    <span className="text-xs text-gray-500">total</span>
-                                </div>
-                                <p className="text-xs text-gray-600 mt-1">{formatCurrency(plan.planPrice)} per subscription</p>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-
-            {/* Row 3: Operations (Recent Activity & Pending Actions) */}
+            {/* Row 3: Recent Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Recent Bookings */}
                 <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col min-h-[400px]">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <Clock size={20} className="text-gray-400" />
+                            <ShoppingBag size={20} className="text-gray-400" />
                             Recent Bookings
                         </h3>
                         <button onClick={() => navigate('/admin/bookings')} className="text-sm font-semibold text-blue-600 hover:text-blue-700">View All</button>
@@ -383,65 +338,60 @@ const AdminDashboard = () => {
                                         </div>
                                         <div>
                                             <p className="text-sm font-bold text-gray-900">{booking.userId?.name || 'Guest User'}</p>
-                                            <p className="text-xs text-gray-500">{booking.propertyId?.propertyName || 'Unknown Hotel'}</p>
+                                            <p className="text-xs text-gray-500">{booking.propertyId?.propertyName || 'Hotel'}</p>
                                         </div>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm font-bold text-gray-900">{formatCurrency(booking.totalAmount)}</p>
-                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${booking.bookingStatus === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                            booking.bookingStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                booking.bookingStatus === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                                            }`}>
+                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${booking.bookingStatus === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
                                             {booking.bookingStatus}
                                         </span>
                                     </div>
                                 </div>
                             ))
                         ) : (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                                <ShoppingBag size={48} className="mb-2 opacity-20" />
-                                <p>No recent bookings found</p>
-                            </div>
+                            <p className="text-center text-gray-400 py-10">No recent bookings</p>
                         )}
                     </div>
                 </div>
 
-                {/* Pending Actions / Requests */}
+                {/* Recent Subscriptions */}
                 <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col min-h-[400px]">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                            <AlertCircle size={20} className="text-orange-500" />
-                            Pending Actions
+                            <TrendingUp size={20} className="text-blue-500" />
+                            Recent Subscriptions
                         </h3>
-                        <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-full">
-                            {recentRequests.length} Requires Action
-                        </span>
+                        <button onClick={() => navigate('/admin/subscriptions')} className="text-sm font-semibold text-blue-600 hover:text-blue-700">View All</button>
                     </div>
 
                     <div className="flex-1 space-y-4">
                         {loading ? (
                             [1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-50 animate-pulse rounded-xl"></div>)
-                        ) : recentRequests.length > 0 ? (
-                            recentRequests.map((hotel, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors cursor-pointer group">
+                        ) : recentSubscriptions.length > 0 ? (
+                            recentSubscriptions.map((sub, i) => (
+                                <div key={i} onClick={() => navigate('/admin/subscriptions')} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors cursor-pointer group">
                                     <div className="flex gap-4 items-center">
-                                        <div className="w-10 h-10 rounded-xl bg-orange-100 text-orange-600 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-                                            <Building2 size={20} />
+                                        <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+                                            <CreditCard size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900">{hotel.propertyName}</p>
-                                            <p className="text-xs text-gray-500">by {hotel.partnerId?.name || 'Partner'}</p>
+                                            <p className="text-sm font-bold text-gray-900">{sub.partnerId?.name || 'Partner'}</p>
+                                            <p className="text-xs text-gray-500">{sub.planId?.name || 'Subscription'}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => navigate(`/admin/properties/${hotel._id}`)} className="text-xs font-bold text-gray-700 bg-white border border-gray-200 px-4 py-2 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm">
-                                        Review
-                                    </button>
+                                    <div className="text-right">
+                                        <p className="text-sm font-bold text-gray-900">{formatCurrency(sub.amountPaid)}</p>
+                                        <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                                            PAID
+                                        </span>
+                                    </div>
                                 </div>
                             ))
                         ) : (
                             <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                                <CheckCircle size={48} className="mb-2 opacity-20 text-green-500" />
-                                <p>All caught up! No pending requests.</p>
+                                <CreditCard size={48} className="mb-2 opacity-20" />
+                                <p>No recent subscriptions found</p>
                             </div>
                         )}
                     </div>

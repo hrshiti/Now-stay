@@ -4,76 +4,74 @@ class PRPSMSService {
   constructor() {
     this.apiKey = process.env.PRPSMS_API_KEY;
     this.senderId = process.env.PRPSMS_SENDER_ID || 'VRUSOY';
-    this.otpTemplate = process.env.PRPSMS_OTP_TEMPLATE || 'temp 2';
+    this.templateName = process.env.PRPSMS_OTP_TEMPLATE || 'Temp 4';
     this.baseUrl = 'https://api.bulksmsadmin.com/BulkSMSapi/keyApiSendSMS/SendSmsTemplateName';
   }
 
   normalizePhoneNumber(phone) {
+    // Remove non-digits
     const digits = phone.replace(/[^0-9]/g, '');
-    // Remove leading 91 or 0 if present, then take last 10 digits
-    // The PRPSMS API might expect 10 digits or with 91, but usually 10 for mobileNo in Indian APIs
-    if (digits.length > 10) return digits.slice(-10);
-    return digits;
+    // For PRPSMS, assume it wants 10 digits or digits with 91 but no special characters
+    // Most Indian gateways expect 10 digits or 12 digits (with 91)
+    if (digits.length === 10) return digits;
+    if (digits.length === 12 && digits.startsWith('91')) return digits;
+    return digits.slice(-10); // Default to last 10 digits
   }
 
   async sendOTP(phone, otp) {
-    const normalizedPhone = this.normalizePhoneNumber(phone);
-    console.log(`📨 [PRPSMS] Sending OTP to ${normalizedPhone} using template ${this.otpTemplate}...`);
-
-    const payload = {
-      sender: this.senderId,
-      templateName: this.otpTemplate,
-      smsReciever: [
-        {
-          mobileNo: normalizedPhone,
-          templateParams: String(otp)
-        }
-      ]
-    };
-
     try {
+      const apiKey = this.apiKey || process.env.PRPSMS_API_KEY;
+      const senderId = this.senderId || process.env.PRPSMS_SENDER_ID || 'VRUSOY';
+      const templateName = this.templateName || process.env.PRPSMS_OTP_TEMPLATE || 'Temp 4';
+
+      if (!apiKey) {
+        console.warn('⚠️ [PRPSMS] Missing API Key. SMS NOT SENT.');
+        return { success: false, error: 'Missing API Key' };
+      }
+
+      const mobileNo = this.normalizePhoneNumber(phone);
+
+      const payload = {
+        sender: senderId,
+        templateName: templateName,
+        smsReciever: [
+          {
+            mobileNo: mobileNo,
+            templateParams: String(otp)
+          }
+        ]
+      };
+
+      console.log(`📨 [PRPSMS] Sending OTP to ${mobileNo}...`);
+
       const response = await axios.post(this.baseUrl, payload, {
         headers: {
-          'apikey': this.apiKey,
+          'apikey': apiKey,
           'Content-Type': 'application/json'
         },
         timeout: 20000
       });
 
-      console.log('📬 [PRPSMS] Response:', JSON.stringify(response.data));
+      console.log('📨 [PRPSMS] Response:', response.data);
 
-      // According to the PHP snippet: if ($response->successful())
-      // Axios status in 2xx range is successful.
-      if (response.status >= 200 && response.status < 300) {
-        return { success: true, response: response.data };
+      // Successful responses vary by provider, checking status or a specific field
+      if (response.status === 200 || response.data?.status === 'success') {
+        console.log('✅ OTP Sent Successfully via PRPSMS');
+        return { success: true, data: response.data };
       }
 
-      return { success: false, error: `HTTP ${response.status}`, response: response.data };
+      return { success: false, error: 'PRPSMS failure', detail: response.data };
 
     } catch (error) {
-      console.error('❌ [PRPSMS] Error:', error.response ? JSON.stringify(error.response.data) : error.message);
+      console.error('❌ PRPSMS Service Error:', error.response?.data || error.message);
       return { success: false, error: error.message };
     }
   }
 
-  /**
-   * General SMS sending (e.g., booking alerts).
-   * NOTE: For template-based services, this must use a pre-approved template.
-   * If a generic template isn't provided, this might need fallback logic or specific template mapping.
-   */
+  // Generic SMS fallback (PRPSMS uses templates for everything usually)
   async sendSMS(phone, message) {
-    // For now, if we don't have a template for every message, we might use the OTP one 
-    // or just log that templates are required.
-    // However, the existing code was sending arbitrary messages.
-    // I will attempt to use the OTP template if it's broad enough, 
-    // but usually PRPSMS requires matching templates.
-
-    console.warn('⚠️ [PRPSMS] sendSMS called with custom message. PRPSMS is template-based.');
-    // Fallback: If it's just an OTP, we can redirect to sendOTP.
-    // In authController, booking alerts are also sent.
-
-    // For now, I'll return a message that templates are needed.
-    return { success: false, error: 'PRPSMS requires pre-approved templates for custom messages.' };
+     console.warn('⚠️ [PRPSMS] sendSMS called, but PRPSMS is template-based. Using default OTP template.');
+     return this.sendOTP(phone, message);
   }
 }
 

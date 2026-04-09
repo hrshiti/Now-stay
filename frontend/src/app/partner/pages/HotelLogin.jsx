@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Phone, Mail, ArrowRight, Loader2, Shield, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/apiService';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 
 const HotelLogin = () => {
     const navigate = useNavigate();
@@ -13,6 +13,20 @@ const HotelLogin = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Handle auto-scroll on input focus for webview keyboard
+    React.useEffect(() => {
+        const handleFocusIn = (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        };
+
+        window.addEventListener('focusin', handleFocusIn);
+        return () => window.removeEventListener('focusin', handleFocusIn);
+    }, []);
 
     const handleSendOTP = async (e) => {
         e.preventDefault();
@@ -32,6 +46,7 @@ const HotelLogin = () => {
             // Use authService
             await authService.sendOtp(contact, 'login', 'partner');
             setStep(2);
+
         } catch (err) {
             setError(err.message || 'Failed to send OTP');
         } finally {
@@ -75,7 +90,7 @@ const HotelLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#003836] via-[#004F4D] to-[#006663] flex items-center justify-center p-4 relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-[#003836] via-[#0F172A] to-[#006663] flex items-center justify-center p-4 relative overflow-hidden">
             {/* Animated Background Elements */}
             <div className="absolute inset-0 opacity-10">
                 <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl"></div>
@@ -95,7 +110,7 @@ const HotelLogin = () => {
                         transition={{ type: "spring", delay: 0.2 }}
                         className="inline-block mb-4"
                     >
-                        <img src={logo} alt="Rukkoo Hub Partner" className="w-32 h-auto" />
+                        <NowStayLogo size="lg" />
                     </motion.div>
                     <h1 className="text-3xl font-bold text-white">Partner Login</h1>
                     <p className="text-teal-100 mt-2">Access your hotel dashboard</p>
@@ -122,7 +137,7 @@ const HotelLogin = () => {
                                         type="button"
                                         onClick={() => setMethod('phone')}
                                         className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${method === 'phone'
-                                            ? 'bg-[#004F4D] text-white shadow-md'
+                                            ? 'bg-[#0F172A] text-white shadow-md'
                                             : 'text-gray-500'
                                             }`}
                                     >
@@ -133,7 +148,7 @@ const HotelLogin = () => {
                                         type="button"
                                         onClick={() => setMethod('email')}
                                         className={`flex-1 py-2 px-4 rounded-lg font-medium transition-all ${method === 'email'
-                                            ? 'bg-[#004F4D] text-white shadow-md'
+                                            ? 'bg-[#0F172A] text-white shadow-md'
                                             : 'text-gray-500'
                                             }`}
                                     >
@@ -158,7 +173,7 @@ const HotelLogin = () => {
                                                 value={contact}
                                                 onChange={(e) => setContact(e.target.value)}
                                                 placeholder={method === 'phone' ? '9876543210' : 'partner@hotel.com'}
-                                                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#004F4D] focus:border-transparent outline-none transition-all"
+                                                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#0F172A] focus:border-transparent outline-none transition-all"
                                                 required
                                             />
                                         </div>
@@ -177,7 +192,7 @@ const HotelLogin = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#004F4D] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#0F172A] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <Loader2 size={20} className="animate-spin" />
@@ -199,7 +214,7 @@ const HotelLogin = () => {
                             >
                                 <div className="text-center mb-6">
                                     <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Shield size={32} className="text-[#004F4D]" />
+                                        <Shield size={32} className="text-[#0F172A]" />
                                     </div>
                                     <h2 className="text-xl font-bold text-gray-900">Enter OTP</h2>
                                     <p className="text-sm text-gray-500 mt-2">
@@ -217,7 +232,7 @@ const HotelLogin = () => {
                                                 maxLength={1}
                                                 value={digit}
                                                 onChange={(e) => handleOTPChange(index, e.target.value)}
-                                                className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-400 rounded-xl focus:border-[#004F4D] focus:ring-2 focus:ring-teal-200 outline-none transition-all"
+                                                className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-400 rounded-xl focus:border-[#0F172A] focus:ring-2 focus:ring-teal-200 outline-none transition-all"
                                             />
                                         ))}
                                     </div>
@@ -235,7 +250,7 @@ const HotelLogin = () => {
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-full bg-[#004F4D] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#0F172A] text-white py-3 rounded-xl font-bold shadow-lg hover:bg-[#003836] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {loading ? (
                                             <Loader2 size={20} className="animate-spin" />

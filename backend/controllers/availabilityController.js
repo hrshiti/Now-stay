@@ -62,7 +62,10 @@ export const checkAvailability = async (req, res) => {
     });
 
     const result = roomTypes.map(rt => {
-      const total = Number(rt.totalInventory || 0);
+      let total = Number(rt.totalInventory || 0);
+      if (rt.inventoryType === 'bed') {
+        total = total * Number(rt.bedsPerRoom || 1);
+      }
       const blocked = blockedMap.get(String(rt._id)) || 0;
       const availableUnits = Math.max(0, total - blocked);
       return {
@@ -104,7 +107,10 @@ export const createWalkIn = async (req, res) => {
     const rt = await validateRoomTypeOwnership(propertyId, roomTypeId);
     if (!rt) return res.status(400).json({ message: 'Invalid roomTypeId for property' });
 
-    const total = Number(rt.totalInventory || 0);
+    let total = Number(rt.totalInventory || 0);
+    if (rt.inventoryType === 'bed') {
+      total = total * Number(rt.bedsPerRoom || 1);
+    }
 
     const overlapping = await AvailabilityLedger.aggregate([
       {
@@ -167,7 +173,10 @@ export const createExternalBooking = async (req, res) => {
     const rt = await validateRoomTypeOwnership(propertyId, roomTypeId);
     if (!rt) return res.status(400).json({ message: 'Invalid roomTypeId for property' });
 
-    const total = Number(rt.totalInventory || 0);
+    let total = Number(rt.totalInventory || 0);
+    if (rt.inventoryType === 'bed') {
+      total = total * Number(rt.bedsPerRoom || 1);
+    }
 
     const overlapping = await AvailabilityLedger.aggregate([
       {
@@ -232,7 +241,10 @@ export const createManualBlock = async (req, res) => {
     const rt = await validateRoomTypeOwnership(propertyId, roomTypeId);
     if (!rt) return res.status(400).json({ message: 'Invalid roomTypeId for property' });
 
-    const total = Number(rt.totalInventory || 0);
+    let total = Number(rt.totalInventory || 0);
+    if (rt.inventoryType === 'bed') {
+      total = total * Number(rt.bedsPerRoom || 1);
+    }
 
     const overlapping = await AvailabilityLedger.aggregate([
       {

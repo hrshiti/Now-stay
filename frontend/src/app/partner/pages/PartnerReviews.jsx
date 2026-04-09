@@ -81,9 +81,9 @@ const ReviewCard = ({ review, onReplySubmit, currentUser }) => {
 
             {/* Existing Reply if any */}
             {hasReply && (
-                <div className="mt-3 mb-4 pl-4 border-l-2 border-[#004F4D]/20">
-                    <div className="bg-[#004F4D]/5 rounded-xl p-3">
-                        <p className="text-xs font-bold text-[#004F4D] mb-1">Your Reply</p>
+                <div className="mt-3 mb-4 pl-4 border-l-2 border-[#0F172A]/20">
+                    <div className="bg-[#0F172A]/5 rounded-xl p-3">
+                        <p className="text-xs font-bold text-[#0F172A] mb-1">Your Reply</p>
                         <p className="text-sm text-gray-700">{review.reply}</p>
                         <p className="text-[10px] text-gray-400 mt-2 text-right">
                             {new Date(review.replyAt).toLocaleDateString()}
@@ -96,7 +96,7 @@ const ReviewCard = ({ review, onReplySubmit, currentUser }) => {
             <div className="flex items-center gap-4 border-t border-dashed border-gray-100 pt-3">
                 <button
                     onClick={handleHelpful}
-                    className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isHelpful ? 'text-[#004F4D]' : 'text-gray-400 hover:text-[#004F4D]'}`}
+                    className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isHelpful ? 'text-[#0F172A]' : 'text-gray-400 hover:text-[#0F172A]'}`}
                 >
                     <ThumbsUp size={14} fill={isHelpful ? "currentColor" : "none"} />
                     Helpful {helpfulCount > 0 && <span className="ml-0.5">({helpfulCount})</span>}
@@ -105,7 +105,7 @@ const ReviewCard = ({ review, onReplySubmit, currentUser }) => {
                 {!hasReply && (
                     <button
                         onClick={() => setIsReplying(!isReplying)}
-                        className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isReplying ? 'text-[#004F4D]' : 'text-gray-400 hover:text-[#004F4D]'}`}
+                        className={`flex items-center gap-1.5 text-xs font-bold transition-colors ${isReplying ? 'text-[#0F172A]' : 'text-gray-400 hover:text-[#0F172A]'}`}
                     >
                         <MessageCircle size={14} /> Reply
                     </button>
@@ -141,7 +141,7 @@ const ReviewCard = ({ review, onReplySubmit, currentUser }) => {
                             <button
                                 onClick={handleSubmit}
                                 disabled={submitting || !replyText.trim()}
-                                className="bg-[#004F4D] text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-transform disabled:opacity-50 disabled:scale-100"
+                                className="bg-[#0F172A] text-white px-4 py-2 rounded-lg text-xs font-bold shadow-md active:scale-95 transition-transform disabled:opacity-50 disabled:scale-100"
                             >
                                 {submitting ? 'Posting...' : 'Post Reply'}
                             </button>
@@ -253,7 +253,7 @@ const PartnerReviews = () => {
                                     <span className="text-[10px] font-bold text-gray-400 w-2">{starLabel}</span>
                                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                         <div
-                                            className="h-full bg-[#004F4D] rounded-full transition-all duration-1000"
+                                            className="h-full bg-[#0F172A] rounded-full transition-all duration-1000"
                                             style={{ width: `${percentage}%` }}
                                         ></div>
                                     </div>
@@ -268,7 +268,7 @@ const PartnerReviews = () => {
             <main ref={listRef} className="max-w-3xl mx-auto px-4">
                 {loading ? (
                     <div className="flex justify-center pt-10">
-                        <div className="w-8 h-8 border-2 border-[#004F4D] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-8 h-8 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin"></div>
                     </div>
                 ) : reviews.length === 0 ? (
                     <div className="text-center py-10 text-gray-400 text-sm">

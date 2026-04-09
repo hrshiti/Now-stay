@@ -28,28 +28,28 @@ const storage = multer.diskStorage({
 
 // File filter for images
 const imageFilter = (req, file, cb) => {
-  // Accept only images
-  if (file.mimetype.startsWith('image/')) {
+  // Accept images and PDF
+  if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
     cb(null, true);
   } else {
-    cb(new Error('Only image files are allowed'), false);
+    cb(new Error('Only image and PDF files are allowed'), false);
   }
 };
 
 // File filter for documents (PDF, images)
 const documentFilter = (req, file, cb) => {
   const allowedMimes = [
-    'application/pdf',
     'image/jpeg',
     'image/jpg',
     'image/png',
-    'image/webp'
+    'image/webp',
+    'application/pdf'
   ];
 
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Only PDF and image files are allowed'), false);
+    cb(new Error('Only image and PDF files are allowed'), false);
   }
 };
 

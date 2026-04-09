@@ -4,9 +4,33 @@ import ReferralTracking from '../models/ReferralTracking.js';
 import Wallet from '../models/Wallet.js';
 import Notification from '../models/Notification.js';
 import notificationService from './notificationService.js';
+import emailService from './emailService.js';
 import mongoose from 'mongoose';
 
 class ReferralService {
+
+    /**
+     * Helper to get or create a default active program
+     */
+    async getOrCreateActiveProgram(role = 'user') {
+        try {
+            let program = await ReferralProgram.findOne({ isActive: true, eligibleRoles: role });
+            if (!program) {
+                program = await ReferralProgram.create({
+                    name: `Standard Referral Program ${role.toUpperCase()}`,
+                    rewardAmount: 100,
+                    triggerType: 'first_booking',
+                    eligibleRoles: [role],
+                    isActive: true,
+                    description: 'Get rewarded for inviting friends!'
+                });
+            }
+            return program;
+        } catch (error) {
+            console.error("Get/Create Program Error:", error);
+            return null;
+        }
+    }
 
     /**
      * Generates a unique referral code for a user/partner
@@ -14,23 +38,28 @@ class ReferralService {
      */
     async generateCodeForUser(user) {
         try {
+            // Check if user is partner - Partners don't have referral codes now
+            if (user.role === 'partner') {
+                return null;
+            }
+
             // Check if already exists
             const existing = await ReferralCode.findOne({
                 ownerId: user._id,
-                ownerType: user.role === 'partner' ? 'Partner' : 'User'
+                ownerType: 'User'
             });
             if (existing) return existing;
 
             // Find active program
-            const program = await ReferralProgram.findOne({ isActive: true, eligibleRoles: user.role });
+            const program = await this.getOrCreateActiveProgram('user');
 
             // Sanitized name prefix (first 4 chars of name or 'USER')
             const prefix = (user.name || 'USER').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4);
             let uniqueCode;
             let isUnique = false;
 
-            // Try 5 times to generate unique code
-            for (let i = 0; i < 5; i++) {
+            // Try 10 times to generate unique code
+            for (let i = 0; i < 10; i++) {
                 const randomNum = Math.floor(1000 + Math.random() * 9000); // 4 digit random
                 const candidate = `${prefix}${randomNum}`;
                 const check = await ReferralCode.findOne({ code: candidate });
@@ -49,7 +78,7 @@ class ReferralService {
             const newCode = await ReferralCode.create({
                 code: uniqueCode,
                 ownerId: user._id,
-                ownerType: user.role === 'partner' ? 'Partner' : 'User',
+                ownerType: 'User',
                 referralProgramId: program?._id
             });
 
@@ -66,17 +95,25 @@ class ReferralService {
      */
     async processReferralSignup(newUser, referralCodeString) {
         try {
+            console.log(`[REFERRAL_DEBUG] Processing signup for user: ${newUser._id}, Code: ${referralCodeString}`);
             if (!referralCodeString) return null;
 
             const code = await ReferralCode.findOne({ code: referralCodeString.toUpperCase(), isActive: true });
             if (!code) {
-                console.warn(`Invalid referral code used: ${referralCodeString}`);
+                console.warn(`[REFERRAL_DEBUG] Invalid referral code used: ${referralCodeString}`);
+                return null;
+            }
+            console.log(`[REFERRAL_DEBUG] Found valid code: ${code.code}, Owner: ${code.ownerId}`);
+
+            // self-referral check
+            if (code.ownerId.toString() === newUser._id.toString()) {
+                console.warn(`Self-referral attempted by ${newUser._id}`);
                 return null;
             }
 
-            // Self-referral check
-            if (code.ownerId.toString() === newUser._id.toString()) {
-                console.warn(`Self-referral attempted by ${newUser._id}`);
+            // Partner Referral Restriction: Partners cannot be referred
+            if (newUser.role === 'partner') {
+                console.warn(`[REFERRAL_DEBUG] Partner signup attempted with referral code. Skipping referral logic for partner.`);
                 return null;
             }
 
@@ -85,11 +122,7 @@ class ReferralService {
             if (existing) return null;
 
             // Get Active Program
-            // Note: We use the program linked to the code, or global active backup
-            let program = await ReferralProgram.findById(code.referralProgramId);
-            if (!program || !program.isActive) {
-                program = await ReferralProgram.findOne({ isActive: true });
-            }
+            let program = await this.getOrCreateActiveProgram(newUser.role);
 
             if (!program) {
                 console.warn("No active referral program found.");
@@ -97,10 +130,11 @@ class ReferralService {
             }
 
             // Create Tracking Record
-            await ReferralTracking.create({
+            const tracking = await ReferralTracking.create({
                 referrerId: code.ownerId,
                 referrerModel: code.ownerType,
                 referredUserId: newUser._id,
+                referredUserModel: newUser.role === 'partner' ? 'Partner' : 'User',
                 referralCodeId: code._id,
                 referralProgramId: program._id,
                 status: 'pending',
@@ -108,16 +142,16 @@ class ReferralService {
                 triggerType: program.triggerType || 'first_booking'
             });
 
+            console.log(`[REFERRAL_DEBUG] Created Tracking Record: ${tracking._id}`);
+
             // Increment usage count
             code.usageCount += 1;
             await code.save();
-
-            // Notify Referrer (Optional: "Someone joined using your code!")
-            // implement notification logic here if needed
+            console.log(`[REFERRAL_DEBUG] Incremented usage count for code: ${code.code}`);
 
             return true;
         } catch (error) {
-            console.error("Process Referral Signup Error:", error);
+            console.error("[REFERRAL_DEBUG] Process Referral Signup Error:", error);
             // Don't block signup if referral fails
             return null;
         }
@@ -129,23 +163,33 @@ class ReferralService {
      */
     async processBookingCompletion(userId, bookingId) {
         try {
+            console.log(`[REFERRAL_DEBUG] Processing booking completion for user: ${userId}, Booking: ${bookingId}`);
             // Find pending referral for this user
             const referral = await ReferralTracking.findOne({
                 referredUserId: userId,
                 status: 'pending'
             });
 
-            if (!referral) return;
+            if (!referral) {
+                console.log(`[REFERRAL_DEBUG] No pending referral tracking found for user: ${userId}`);
+                return;
+            }
+
+            console.log(`[REFERRAL_DEBUG] Found pending referral: ${referral._id}, Program: ${referral.referralProgramId}`);
 
             // Check Program Trigger
             const program = await ReferralProgram.findById(referral.referralProgramId);
-            if (program.triggerType !== 'first_booking') return;
+            if (!program || program.triggerType !== 'first_booking') {
+                console.log(`[REFERRAL_DEBUG] Program trigger is not 'first_booking' or program not found`);
+                return;
+            }
 
             // Unlock Reward
             referral.status = 'completed';
             referral.completedAt = new Date();
             referral.triggerBookingId = bookingId;
             await referral.save();
+            console.log(`[REFERRAL_DEBUG] Referral status updated to COMPLETED`);
 
             // Credit Wallet of Referrer
             const wallet = await this.getOrCreateWallet(referral.referrerId, referral.referrerModel);
@@ -155,27 +199,54 @@ class ReferralService {
                 referral._id.toString(),
                 'referral_bonus'
             );
+            console.log(`[REFERRAL_DEBUG] Credited Referrer Wallet: ${referral.referrerId}, Amount: ${referral.rewardAmount}`);
 
             // ALSO Credit Referee (User who booked) - Prompt said "You Both Earn" in the UI Text
-            // The UI says "You Both Earn ₹200". So we should credit the new user too.
-            const refereeWallet = await this.getOrCreateWallet(referral.referredUserId, 'User');
+            // The UI says "You Both Earn ₹100". So we should credit the new user too.
+            const refereeWallet = await this.getOrCreateWallet(referral.referredUserId, referral.referredUserModel);
             await refereeWallet.credit(
                 referral.rewardAmount,
                 `Referral Bonus (Welcome Gift)`,
                 referral._id.toString(),
                 'referral_bonus'
             );
+            console.log(`[REFERRAL_DEBUG] Credited Referee Wallet: ${referral.referredUserId}, Amount: ${referral.rewardAmount}`);
 
             // Send Notifications
-            await notificationService.sendToUser(referral.referrerId, {
-                title: 'Referral Reward Unlocked! ',
-                body: `You earned ₹${referral.rewardAmount} because your friend completed their first stay!`
-            }, { type: 'referral_reward' }, referral.referrerModel === 'Partner' ? 'partner' : 'user');
+            if (referral.referrerModel === 'Partner') {
+                await notificationService.sendToPartner(referral.referrerId, {
+                    title: 'Referral Reward Unlocked! 💰',
+                    body: `You earned ₹${referral.rewardAmount} because your friend completed their first stay!`
+                }, { type: 'referral_reward' });
+            } else {
+                await notificationService.sendToUser(referral.referrerId, {
+                    title: 'Referral Reward Unlocked! 🎁',
+                    body: `You earned ₹${referral.rewardAmount} because your friend completed their first stay!`
+                }, { type: 'referral_reward' }, 'user');
+            }
 
+            const refereeRole = referral.referredUserModel.toLowerCase();
             await notificationService.sendToUser(referral.referredUserId, {
                 title: 'Welcome Bonus Unlocked! 🎉',
                 body: `You earned ₹${referral.rewardAmount} for completing your first stay!`
-            }, { type: 'referral_reward' }, 'user');
+            }, { type: 'referral_reward' }, refereeRole).catch(e => console.error(e));
+
+            // EMAIL: Notify Referrer
+            try {
+                const User = mongoose.model('User');
+                const Partner = mongoose.model('Partner');
+                let referrer = await User.findById(referral.referrerId);
+                if (!referrer) referrer = await Partner.findById(referral.referrerId);
+
+                const refereeModel = mongoose.model(referral.referredUserModel);
+                const friend = await refereeModel.findById(referral.referredUserId);
+
+                if (referrer && referrer.email && friend) {
+                    emailService.sendReferralEarnedEmail(referrer, friend.name, referral.rewardAmount).catch(e => console.error(e));
+                }
+            } catch (err) {
+                console.error('Referral Email trigger failed:', err);
+            }
 
         } catch (error) {
             console.error("Process Booking Completion Error:", error);
@@ -205,74 +276,96 @@ class ReferralService {
      * Get User Stats for UI
      */
     async getReferralStats(userId) {
-        // 1. Get My Code
-        let myCode = await ReferralCode.findOne({ ownerId: userId });
+        try {
+            console.log(`[REFERRAL_DEBUG] Fetching stats for user: ${userId}`);
+            // 1. Get My Code
+            let myCode = await ReferralCode.findOne({ ownerId: userId });
 
-        // Lazy generate if not exists
-        if (!myCode) {
-            // Need to fetch user details to get name
-            const user = await mongoose.model('User').findById(userId); // Assuming User
-            if (user) {
-                myCode = await this.generateCodeForUser(user);
+            // Lazy generate if not exists
+            if (!myCode) {
+                const User = mongoose.model('User');
+                const Partner = mongoose.model('Partner');
+                let user = await User.findById(userId);
+                if (!user) user = await Partner.findById(userId);
+
+                if (user) {
+                    myCode = await this.generateCodeForUser(user);
+                }
             }
+
+            // 2. Stats
+            const totalReferrals = await ReferralTracking.countDocuments({ referrerId: userId });
+            const completedReferrals = await ReferralTracking.countDocuments({ referrerId: userId, status: 'completed' });
+
+            // UI Mapping:
+            // Invited -> Total usage of code (Signups initiated)
+            // Joined -> Total tracking records (Signups completed)
+            // Bookings -> Status 'completed'
+            const stats = {
+                invited: myCode ? myCode.usageCount : 0,
+                joined: totalReferrals,
+                bookings: completedReferrals
+            };
+
+            // 3. Earnings
+            const User = mongoose.model('User');
+            const Partner = mongoose.model('Partner');
+            let userObj = await User.findById(userId);
+            if (!userObj) userObj = await Partner.findById(userId);
+
+            const wallet = await Wallet.findOne({ partnerId: userId, role: userObj?.role || 'user' });
+
+            // Sum pending rewards
+            const pendingReferrals = await ReferralTracking.find({
+                referrerId: userId,
+                status: 'pending'
+            });
+            const pendingEarnings = pendingReferrals.reduce((sum, ref) => sum + ref.rewardAmount, 0);
+
+            // Calculate This Month Earnings (from Wallet/Transactions)
+            const startOfMonth = new Date();
+            startOfMonth.setDate(1);
+            startOfMonth.setHours(0, 0, 0, 0);
+
+            const Transaction = mongoose.model('Transaction');
+            const thisMonthCredits = await Transaction.find({
+                partnerId: userId,
+                category: 'referral_bonus',
+                type: 'credit',
+                createdAt: { $gte: startOfMonth }
+            });
+            const thisMonthEarnings = thisMonthCredits.reduce((sum, t) => sum + t.amount, 0);
+
+            // 4. History
+            const history = await ReferralTracking.find({ referrerId: userId })
+                .populate('referredUserId', 'name')
+                .sort({ createdAt: -1 })
+                .limit(30);
+
+            const formattedHistory = history.map(h => ({
+                id: h._id,
+                name: h.referredUserId ? h.referredUserId.name : 'New Friend',
+                status: h.status,
+                reward: h.rewardAmount,
+                date: h.createdAt,
+                avatar: h.referredUserId && h.referredUserId.name
+                    ? h.referredUserId.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                    : 'RU'
+            }));
+
+            return {
+                code: myCode ? myCode.code : '',
+                link: myCode ? `https://play.google.com/store/apps/details?id=com.rukkoin.user&referral=${myCode.code}` : '',
+                stats,
+                history: formattedHistory,
+                earningsTotal: wallet ? wallet.totalEarnings : 0,
+                earningsPending: pendingEarnings,
+                earningsThisMonth: thisMonthEarnings
+            };
+        } catch (error) {
+            console.error("Get Referral Stats Service Error:", error);
+            throw error;
         }
-
-        // 2. Stats
-        const invited = await ReferralTracking.countDocuments({ referrerId: userId });
-        const joined = await ReferralTracking.countDocuments({ referrerId: userId }); // Typically same as invited in this model unless we track sent links separately
-        // Actually, "Invited" usually means link clicks, which we can't track easily without a click tracker.
-        // For now, let's say "Invited" = Sent? No, we don't know who they sent to.
-        // Let's map: 
-        // Invited = Signed up (Pending + Completed)
-        // Joined = Signed up (Pending + Completed) - Maybe duplicate concept?
-        // Let's say "Invited" = Total referrals
-        // "Joined" = Total referrals who verified (if we tracked verification, but here assume all signed up are joined)
-        // "Bookings" = Completed referrals
-
-        // Better Mapping for the UI:
-        // Invited -> Total Referrals (Pending + Completed)
-        // Joined -> Same as Invited (since we only track when they maintain the code)
-        // OR "Invited" could be hardcoded mock if we don't track shares.
-        // Let's stick to Usage Count of code for "Invited"? No, usage count is signup count.
-
-        const bookings = await ReferralTracking.countDocuments({ referrerId: userId, status: 'completed' });
-
-        const stats = {
-            invited: myCode ? myCode.usageCount : 0,
-            joined: myCode ? myCode.usageCount : 0,
-            bookings
-        };
-
-        // 3. Earnings
-        const wallet = await Wallet.findOne({ partnerId: userId, role: 'user' });
-        // Aggregation for specific referral income
-        // Can do aggregation on Transaction collection
-        /*
-        const earnings = await Transaction.aggregate([ ... match type: 'referral_bonus' ... ])
-        */
-
-        // 4. History
-        const history = await ReferralTracking.find({ referrerId: userId })
-            .populate('referredUserId', 'name')
-            .sort({ createdAt: -1 })
-            .limit(20);
-
-        const formattedHistory = history.map(h => ({
-            id: h._id,
-            name: h.referredUserId ? h.referredUserId.name : 'Unknown User',
-            status: h.status, // 'pending' | 'completed'
-            reward: h.rewardAmount,
-            date: h.createdAt,
-            avatar: h.referredUserId && h.referredUserId.name ? h.referredUserId.name.substring(0, 2).toUpperCase() : '??'
-        }));
-
-        return {
-            code: myCode ? myCode.code : '',
-            link: myCode ? `https://rukkoo.in/r/${myCode.code}` : '',
-            stats,
-            history: formattedHistory,
-            earningsTotal: wallet ? wallet.totalEarnings : 0 // Note: This includes other earnings too potentially? But for User it's mostly referrals.
-        };
     }
 
 }

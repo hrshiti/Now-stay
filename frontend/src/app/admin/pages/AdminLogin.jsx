@@ -2,11 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Loader2, Shield, Eye, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import logo from '../../../assets/rokologin-removebg-preview.png';
+import NowStayLogo from '../../../components/ui/NowStayLogo';
 import useAdminStore from '../store/adminStore';
 import toast from 'react-hot-toast';
-import adminService from '../../../services/adminService';
-import { requestNotificationPermission } from '../../../utils/firebase';
 
 const AdminLogin = () => {
     // ...
@@ -57,18 +55,11 @@ const AdminLogin = () => {
         if (result.success) {
             toast.success('Admin login successful!');
 
-            // Update FCM Token
+            // Trigger FCM token re-registration using the cached token from App.jsx
             try {
-                console.log('AdminLogin: Requesting notification permission...');
-                const token = await requestNotificationPermission();
-                if (token) {
-                    console.log('AdminLogin: FCM Token obtained, updating backend...');
-                    await adminService.updateFcmToken(token, 'web');
-                } else {
-                    console.warn('AdminLogin: Notification permission denied or token is null');
-                }
+                window.dispatchEvent(new CustomEvent('fcm:register'));
             } catch (fcmError) {
-                console.warn('AdminLogin: FCM update failed', fcmError);
+                console.warn('[FCM] Could not dispatch register event', fcmError);
             }
 
             navigate('/admin/dashboard');
@@ -103,12 +94,7 @@ const AdminLogin = () => {
                         transition={{ type: "spring", delay: 0.2 }}
                         className="inline-block mb-4"
                     >
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="text-4xl font-black tracking-tighter text-white flex items-center">
-                                NOW<span className="text-emerald-500">STAY.in</span>
-                            </span>
-                            <div className="h-1 w-8 bg-emerald-500 rounded-full mt-1"></div>
-                        </div>
+                        <NowStayLogo size="lg" inverted />
                     </motion.div>
                     <h1 className="text-3xl font-bold text-white">Admin Portal</h1>
                     <p className="text-gray-400 mt-2">Secure access to platform management</p>
@@ -127,7 +113,7 @@ const AdminLogin = () => {
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-medium text-gray-300 mb-2">
-                                Email Address
+                                Admin Email
                             </label>
                             <div className="relative">
                                 <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -135,7 +121,7 @@ const AdminLogin = () => {
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="eg:admin@staynow.in"
+                                    placeholder="Enter admin email"
                                     className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 text-white placeholder-gray-400 rounded-xl focus:ring-2 focus:ring-white/50 focus:border-transparent outline-none transition-all"
                                     required
                                 />
@@ -193,12 +179,7 @@ const AdminLogin = () => {
                         </button>
                     </form>
 
-                    {/* Demo Credentials */}
-                    <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
-                        <p className="text-xs text-blue-200 font-medium mb-2">Demo Credentials:</p>
-                        <p className="text-xs text-gray-300 font-mono">Email: Nowstayindia@gmail.com</p>
-                        <p className="text-xs text-gray-300 font-mono">Password: SumeeT@2020</p>
-                    </div>
+
                 </motion.div>
 
                 {/* Security Notice */}

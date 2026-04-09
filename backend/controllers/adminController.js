@@ -11,12 +11,12 @@ import PropertyDocument from '../models/PropertyDocument.js';
 import Review from '../models/Review.js';
 import AvailabilityLedger from '../models/AvailabilityLedger.js';
 import Notification from '../models/Notification.js';
-import SubscriptionPlan from '../models/SubscriptionPlan.js';
-import Admin from '../models/Admin.js';
 import emailService from '../services/emailService.js';
 import notificationService from '../services/notificationService.js';
 import Wallet from '../models/Wallet.js';
 import Transaction from '../models/Transaction.js';
+import Admin from '../models/Admin.js';
+import PartnerSubscription from '../models/PartnerSubscription.js';
 import { uploadToCloudinary } from '../utils/cloudinary.js';
 
 
@@ -34,156 +34,147 @@ export const getDashboardStats = async (req, res) => {
       return ((current - previous) / previous) * 100;
     };
 
-    // 1. KPI Counts & Trends
+    // 1. KPI Counts & Trends (Bookings + Subscriptions)
     const [
       totalUsers, usersLastMonth,
       totalPartners,
       totalHotels,
       pendingHotels,
       totalBookings, bookingsLastMonth,
-      currentRevenueData, lastMonthRevenueData
+      currentBookingRevenueAgg, lastMonthBookingRevenueAgg,
+      currentSubRevenueAgg, lastMonthSubRevenueAgg,
+      activeSubscribersCount,
+      recentSubscriptions
     ] = await Promise.all([
       User.countDocuments({}),
-      User.countDocuments({ createdAt: { $lt: startOfThisMonth } }), // Approximation for trend base
+      User.countDocuments({ createdAt: { $lt: startOfThisMonth } }),
       Partner.countDocuments({}),
       Property.countDocuments({}),
       Property.countDocuments({ status: 'pending' }),
       Booking.countDocuments({}),
-      Booking.countDocuments({ createdAt: { $lt: startOfThisMonth } }), // trend base
+      Booking.countDocuments({ createdAt: { $lt: startOfThisMonth } }),
+      // Booking Revenue
       Booking.aggregate([
-        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in'] }, paymentStatus: 'paid' } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid' } },
+        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
       ]),
-      Booking.aggregate([ // Revenue before this month
+      Booking.aggregate([
         {
           $match: {
-            bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in'] },
+            bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] },
             paymentStatus: 'paid',
             createdAt: { $lt: startOfThisMonth }
           }
         },
-        { $group: { _id: null, total: { $sum: '$totalAmount' } } }
-      ])
+        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
+      ]),
+      // Subscription Revenue
+      PartnerSubscription.aggregate([
+        { $match: { paymentStatus: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+      ]),
+      PartnerSubscription.aggregate([
+        { $match: { paymentStatus: 'paid', createdAt: { $lt: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+      ]),
+      // Active Subscribers
+      PartnerSubscription.countDocuments({
+        isActive: true,
+        startDate: { $lte: today },
+        endDate: { $gt: today }
+      }),
+      // Recent Subscriptions
+      PartnerSubscription.find()
+        .populate('partnerId', 'name email')
+        .populate('planId', 'name')
+        .sort({ createdAt: -1 })
+        .limit(5)
     ]);
 
-    const totalRevenue = currentRevenueData[0]?.total || 0;
-    const prevRevenue = lastMonthRevenueData[0]?.total || 0;
+    const totalBookingRevenue = currentBookingRevenueAgg[0]?.total || 0;
+    const totalSubRevenue = currentSubRevenueAgg[0]?.total || 0;
+    const totalPlatformRevenue = totalBookingRevenue + totalSubRevenue;
 
-    // Calculate trends (Simple approx based on total vs total-this-month isn't perfect for "vs last month", 
-    // but better: Calculate created in THIS month vs created in LAST month)
+    // Monthly Growth Calculations
+    const revBookingThisMonthAgg = await Booking.aggregate([
+      { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
+      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
+    ]);
+    const revBookingLastMonthAgg = await Booking.aggregate([
+      { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
+    ]);
+    const incBookingThisMonth = revBookingThisMonthAgg[0]?.total || 0;
+    const incBookingLastMonth = revBookingLastMonthAgg[0]?.total || 0;
+
+    const revSubThisMonthAgg = await PartnerSubscription.aggregate([
+      { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
+      { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+    ]);
+    const revSubLastMonthAgg = await PartnerSubscription.aggregate([
+      { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+      { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+    ]);
+    const incSubThisMonth = revSubThisMonthAgg[0]?.total || 0;
+    const incSubLastMonth = revSubLastMonthAgg[0]?.total || 0;
 
     const usersNewThisMonth = await User.countDocuments({ createdAt: { $gte: startOfThisMonth } });
     const usersNewLastMonth = await User.countDocuments({ createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } });
-
     const bookingsThisMonth = await Booking.countDocuments({ createdAt: { $gte: startOfThisMonth } });
     const bookingsLastMonthCount = await Booking.countDocuments({ createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } });
-
-    // Revenue This Month vs Last Month
-    const revThisMonthAgg = await Booking.aggregate([
-      {
-        $match: {
-          bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in'] },
-          paymentStatus: 'paid',
-          createdAt: { $gte: startOfThisMonth }
-        }
-      },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
-    ]);
-    const revLastMonthAgg = await Booking.aggregate([
-      {
-        $match: {
-          bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in'] },
-          paymentStatus: 'paid',
-          createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth }
-        }
-      },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
-    ]);
-
-    const incomeThisMonth = revThisMonthAgg[0]?.total || 0;
-    const incomeLastMonth = revLastMonthAgg[0]?.total || 0;
 
     const trends = {
       users: calculateGrowth(usersNewThisMonth, usersNewLastMonth),
       bookings: calculateGrowth(bookingsThisMonth, bookingsLastMonthCount),
-      revenue: calculateGrowth(incomeThisMonth, incomeLastMonth)
+      bookingRevenue: calculateGrowth(incBookingThisMonth, incBookingLastMonth),
+      subRevenue: calculateGrowth(incSubThisMonth, incSubLastMonth),
+      totalRevenue: calculateGrowth(incBookingThisMonth + incSubThisMonth, incBookingLastMonth + incSubLastMonth)
     };
 
-    // --- SUBSCRIPTION REVENUE TRACKING ---
-    // Calculate total subscription revenue from all active subscriptions
-    const subscriptionStats = await Partner.aggregate([
-      {
-        $match: {
-          'subscription.status': 'active',
-          'subscription.planId': { $exists: true }
-        }
-      },
-      {
-        $lookup: {
-          from: 'subscriptionplans',
-          localField: 'subscription.planId',
-          foreignField: '_id',
-          as: 'planDetails'
-        }
-      },
-      {
-        $unwind: '$planDetails'
-      },
-      {
-        $group: {
-          _id: '$subscription.planId',
-          planName: { $first: '$planDetails.name' },
-          planPrice: { $first: '$planDetails.price' },
-          subscriberCount: { $sum: 1 },
-          totalRevenue: { $sum: '$planDetails.price' }
-        }
-      },
-      {
-        $sort: { totalRevenue: -1 }
-      }
-    ]);
-
-    const totalSubscriptionRevenue = subscriptionStats.reduce((sum, stat) => sum + stat.totalRevenue, 0);
-    const totalActiveSubscribers = subscriptionStats.reduce((sum, stat) => sum + stat.subscriberCount, 0);
-
-    // 2. Charts Data
-
-    // Revenue Chart (Last 6 Months)
+    // 2. Charts Data (Revenue Breakdown)
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
     sixMonthsAgo.setDate(1);
 
-    const monthlyRevenue = await Booking.aggregate([
-      {
-        $match: {
-          bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in'] },
-          paymentStatus: 'paid',
-          createdAt: { $gte: sixMonthsAgo }
-        }
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
-          amount: { $sum: "$totalAmount" }
-        }
-      },
-      { $sort: { _id: 1 } }
+    const monthlyRevenueData = await Promise.all([
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: sixMonthsAgo } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, amount: { $sum: { $add: ["$adminCommission", "$taxes"] } } } },
+        { $sort: { _id: 1 } }
+      ]),
+      PartnerSubscription.aggregate([
+        { $match: { paymentStatus: 'paid', createdAt: { $gte: sixMonthsAgo } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, amount: { $sum: "$amountPaid" } } },
+        { $sort: { _id: 1 } }
+      ])
     ]);
 
-    // Booking Status Distribution
+    const bookingMonthly = monthlyRevenueData[0];
+    const subMonthly = monthlyRevenueData[1];
+    
+    // Combine for Chart (By Month)
+    const months = [];
+    for (let i = 0; i < 6; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      months.unshift(d.toISOString().slice(0, 7));
+    }
+
+    const revenueChart = months.map(m => {
+      const bRes = bookingMonthly.find(item => item._id === m);
+      const sRes = subMonthly.find(item => item._id === m);
+      const [year, month] = m.split('-');
+      return {
+        name: new Date(year, month - 1).toLocaleString('default', { month: 'short' }),
+        bookings: bRes?.amount || 0,
+        subscriptions: sRes?.amount || 0,
+        total: (bRes?.amount || 0) + (sRes?.amount || 0)
+      };
+    });
+
     const bookingStatusStats = await Booking.aggregate([
       { $group: { _id: "$bookingStatus", count: { $sum: 1 } } }
     ]);
-
-    // Format for frontend
-    const revenueChart = monthlyRevenue.map(item => {
-      const [year, month] = item._id.split('-');
-      const date = new Date(year, month - 1);
-      return {
-        name: date.toLocaleString('default', { month: 'short' }),
-        value: item.amount
-      };
-    });
 
     const statusChart = bookingStatusStats.map(item => ({
       name: item._id.charAt(0).toUpperCase() + item._id.slice(1),
@@ -210,22 +201,19 @@ export const getDashboardStats = async (req, res) => {
         totalHotels,
         pendingHotels,
         totalBookings,
-        totalRevenue,
-        totalSubscriptionRevenue,
-        totalActiveSubscribers,
+        totalRevenue: totalPlatformRevenue,
+        bookingRevenue: totalBookingRevenue,
+        subscriptionRevenue: totalSubRevenue,
+        activeSubscribers: activeSubscribersCount,
         trends
       },
       charts: {
         revenue: revenueChart,
         status: statusChart
       },
-      subscriptionRevenue: {
-        total: totalSubscriptionRevenue,
-        activeSubscribers: totalActiveSubscribers,
-        planBreakdown: subscriptionStats
-      },
       recentBookings,
-      recentPropertyRequests
+      recentPropertyRequests,
+      recentSubscriptions
     });
   } catch (error) {
     console.error('Get Admin Dashboard Stats Error:', error);
@@ -328,19 +316,13 @@ export const getAllHotels = async (req, res) => {
     }
 
     if (type) {
-      // If type is a valid ObjectId, it's a dynamic category filter
-      if (mongoose.Types.ObjectId.isValid(type)) {
-        query.dynamicCategory = type;
-      } else {
-        query.propertyType = String(type).toLowerCase();
-      }
+      query.propertyType = String(type).toLowerCase();
     }
 
     const total = await Property.countDocuments(query);
 
     const hotels = await Property.find(query)
       .populate('partnerId', 'name email phone')
-      .populate('dynamicCategory')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -393,16 +375,44 @@ export const getAllBookings = async (req, res) => {
       }
     }
 
-    const total = await Booking.countDocuments(query);
-    const bookings = await Booking.find(query)
-      .populate('userId', 'name email phone')
-      .populate('propertyId', 'propertyName address')
-      .populate('roomTypeId', 'name')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const [
+      bookings,
+      total,
+      totalAll,
+      confirmed,
+      pending,
+      cancelled,
+      completed
+    ] = await Promise.all([
+      Booking.find(query)
+        .populate('userId', 'name email phone')
+        .populate('propertyId', 'propertyName address')
+        .populate('roomTypeId', 'name')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Booking.countDocuments(query),
+      Booking.countDocuments({}),
+      Booking.countDocuments({ bookingStatus: 'confirmed' }),
+      Booking.countDocuments({ bookingStatus: 'pending' }),
+      Booking.countDocuments({ bookingStatus: 'cancelled' }),
+      Booking.countDocuments({ bookingStatus: 'completed' })
+    ]);
 
-    res.status(200).json({ success: true, bookings, total, page, limit });
+    res.status(200).json({
+      success: true,
+      bookings,
+      total,
+      page,
+      limit,
+      stats: {
+        total: totalAll,
+        confirmed,
+        pending,
+        cancelled,
+        completed
+      }
+    });
   } catch (e) {
     console.error('Get All Bookings Error:', e);
     res.status(500).json({ success: false, message: 'Server error fetching bookings' });
@@ -446,6 +456,31 @@ export const updateHotelStatus = async (req, res) => {
 
     const hotel = await Property.findByIdAndUpdate(id, update, { new: true });
     if (!hotel) return res.status(404).json({ success: false, message: 'Property not found' });
+
+    // NOTIFICATION: Notify Partner
+    if (status || typeof isLive === 'boolean') {
+      const msg = status === 'approved' || update.isLive === true
+        ? `Your property "${hotel.propertyName}" is now ${status || 'Live'}!`
+        : `Management update: "${hotel.propertyName}" status changed to ${status || (update.isLive ? 'Live' : 'Hidden')}.`;
+
+      notificationService.sendToPartner(hotel.partnerId, {
+        title: 'Property Status Update 🏢',
+        body: msg
+      }, {
+        type: 'property_status_updated',
+        propertyId: hotel._id,
+        status: hotel.status,
+        isLive: hotel.isLive
+      }).catch(e => console.error('Partner status update push failed:', e));
+
+      // EMAIL: Property Status Change (Suspended / Unsuspended)
+      Partner.findById(hotel.partnerId).then(partner => {
+        if (partner && partner.email) {
+          emailService.sendPartnerPropertyStatusUpdateEmail(partner, hotel, status || hotel.status, hotel.isLive).catch(e => console.error(e));
+        }
+      });
+    }
+
     res.status(200).json({ success: true, hotel });
   } catch (e) {
     res.status(500).json({ success: false, message: 'Server error updating hotel status' });
@@ -468,10 +503,17 @@ export const verifyPropertyDocuments = async (req, res) => {
       property.isLive = true;
 
       // NOTIFICATION: Property Live
-      notificationService.sendToUser(property.partnerId, {
+      notificationService.sendToPartner(property.partnerId, {
         title: 'Property Live!',
         body: `Your property ${property.propertyName} is LIVE now!`
-      }, { type: 'property_verified', propertyId: property._id }, 'partner').catch(e => console.error(e));
+      }, { type: 'property_verified', propertyId: property._id }).catch(e => console.error(e));
+
+      // EMAIL: Property Approved
+      Partner.findById(property.partnerId).then(partner => {
+        if (partner && partner.email) {
+          emailService.sendPartnerPropertyApprovedEmail(partner, property).catch(e => console.error(e));
+        }
+      });
 
     } else if (action === 'reject') {
       docs.verificationStatus = 'rejected';
@@ -481,10 +523,17 @@ export const verifyPropertyDocuments = async (req, res) => {
       property.isLive = false;
 
       // Notify Rejection?
-      notificationService.sendToUser(property.partnerId, {
+      notificationService.sendToPartner(property.partnerId, {
         title: 'Property Documents Rejected',
         body: `Your property ${property.propertyName} documents were rejected. reason: ${adminRemark || 'Review needed'}`
-      }, { type: 'property_rejected', propertyId: property._id }, 'partner').catch(e => console.error(e));
+      }, { type: 'property_rejected', propertyId: property._id }).catch(e => console.error(e));
+
+      // EMAIL: Property Rejected
+      Partner.findById(property.partnerId).then(partner => {
+        if (partner && partner.email) {
+          emailService.sendPartnerPropertyRejectedEmail(partner, property, adminRemark).catch(e => console.error(e));
+        }
+      });
 
     } else {
       return res.status(400).json({ success: false, message: 'Invalid action' });
@@ -537,18 +586,41 @@ export const deleteReview = async (req, res) => {
 export const updateReviewStatus = async (req, res) => {
   try {
     const { reviewId, status } = req.body;
-    const review = await Review.findByIdAndUpdate(reviewId, { status }, { new: true });
+    const review = await Review.findById(reviewId).populate('userId').populate('propertyId');
     if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
+
+    review.status = status;
+    await review.save();
+
     const agg = await Review.aggregate([
-      { $match: { propertyId: review.propertyId, status: 'approved' } },
+      { $match: { propertyId: review.propertyId._id, status: 'approved' } },
       { $group: { _id: null, avg: { $avg: '$rating' }, count: { $sum: 1 } } }
     ]);
     const stats = agg[0];
     if (stats) {
-      await Property.findByIdAndUpdate(review.propertyId, { avgRating: stats.avg, totalReviews: stats.count });
+      await Property.findByIdAndUpdate(review.propertyId._id, { avgRating: stats.avg, totalReviews: stats.count });
     } else {
-      await Property.findByIdAndUpdate(review.propertyId, { avgRating: 0, totalReviews: 0 });
+      await Property.findByIdAndUpdate(review.propertyId._id, { avgRating: 0, totalReviews: 0 });
     }
+
+    // NOTIFICATION: Notify User (Push + Email)
+    if (review.userId) {
+      const user = review.userId;
+      const property = review.propertyId;
+      const reason = req.body.reason || (status === 'rejected' ? 'Did not meet community guidelines.' : '');
+
+      // Push
+      notificationService.sendToUser(user._id, {
+        title: `Review ${status === 'approved' ? 'Approved ✅' : 'Rejected ❌'}`,
+        body: `Your review for "${property.propertyName}" has been ${status}.`
+      }, { type: 'review_moderation', status, reviewId: review._id }, 'user').catch(e => console.error(e));
+
+      // Email
+      if (user.email) {
+        emailService.sendReviewStatusEmail(user, review, property, status, reason).catch(e => console.error(e));
+      }
+    }
+
     res.status(200).json({ success: true, message: `Review status updated to ${status}`, review });
   } catch (e) {
     res.status(500).json({ success: false, message: 'Server error updating review status' });
@@ -560,6 +632,26 @@ export const updatePartnerStatus = async (req, res) => {
     const { userId, isBlocked } = req.body;
     const partner = await Partner.findByIdAndUpdate(userId, { isBlocked }, { new: true });
     if (!partner) return res.status(404).json({ success: false, message: 'Partner not found' });
+
+    // NOTIFICATION: Notify Partner
+    notificationService.sendToPartner(partner._id, {
+      title: isBlocked ? 'Account Blocked ⚠️' : 'Account Unblocked ✅',
+      body: isBlocked
+        ? 'Your partner account has been blocked by administration.'
+        : 'Your partner account has been unblocked. You can now access your dashboard.'
+    }, { type: 'partner_status_update', isBlocked }).catch(e => console.error('Partner status update push failed:', e));
+
+    // EMAIL: Notify Partner of block/unblock
+    if (partner.email) {
+      emailService.sendPartnerAccountStatusEmail(partner, isBlocked).catch(e => console.error(e));
+    }
+
+    // NOTIFICATION: Notify Admin for audit log
+    notificationService.sendToAdmins({
+      title: `Partner ${isBlocked ? 'Blocked' : 'Unblocked'}`,
+      body: `Partner ${partner.name} has been ${isBlocked ? 'blocked' : 'unblocked'} by admin.`
+    }, { type: 'partner_status_change', partnerId: partner._id, isBlocked }).catch(console.error);
+
     res.status(200).json({ success: true, message: `Partner ${isBlocked ? 'blocked' : 'unblocked'} successfully`, partner });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error updating partner status' });
@@ -572,9 +664,16 @@ export const deletePartner = async (req, res) => {
     const partner = await Partner.findByIdAndDelete(userId);
     if (!partner) return res.status(404).json({ success: false, message: 'Partner not found' });
 
-    // Also consider deleting associated properties or marking them as suspended?
-    // For now, just delete the partner. 
-    // Ideally, we should check if they have active bookings/properties.
+    // NOTIFICATION: Notify Admin
+    notificationService.sendToAdmins({
+      title: 'Partner Account Deleted 🗑️',
+      body: `Partner account for ${partner.name} has been permanently deleted.`
+    }, { type: 'partner_deleted', partnerId: userId }).catch(console.error);
+
+    // EMAIL: Notify Partner
+    if (partner.email) {
+      emailService.sendPartnerAccountDeletedEmail(partner).catch(e => console.error(e));
+    }
 
     res.status(200).json({ success: true, message: 'Partner deleted successfully' });
   } catch (error) {
@@ -587,6 +686,26 @@ export const updateUserStatus = async (req, res) => {
     const { userId, isBlocked } = req.body;
     const user = await User.findByIdAndUpdate(userId, { isBlocked }, { new: true });
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // NOTIFICATION: Notify User
+    notificationService.sendToUser(user._id, {
+      title: isBlocked ? 'Account Suspended ⚠️' : 'Account Active ✅',
+      body: isBlocked
+        ? 'Your account has been suspended by administration. Contact support for assistance.'
+        : 'Your account has been reactivated. Welcome back!'
+    }, { type: 'user_status_update', isBlocked }, 'user').catch(console.error);
+
+    // NOTIFICATION: Notify Admin
+    notificationService.sendToAdmins({
+      title: `User ${isBlocked ? 'Suspended' : 'Activated'}`,
+      body: `User ${user.name} (${user.phone}) has been ${isBlocked ? 'suspended' : 'activated'} by admin.`
+    }, { type: 'user_status_change', userId: user._id, isBlocked }).catch(console.error);
+
+    // EMAIL: Notify User
+    if (user.email) {
+      emailService.sendUserAccountStatusEmail(user, isBlocked).catch(e => console.error(e));
+    }
+
     res.status(200).json({ success: true, message: `User ${isBlocked ? 'blocked' : 'unblocked'} successfully`, user });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error updating user status' });
@@ -598,6 +717,18 @@ export const deleteUser = async (req, res) => {
     const { userId } = req.body;
     const user = await User.findByIdAndDelete(userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // NOTIFICATION: Notify Admin
+    notificationService.sendToAdmins({
+      title: 'User Account Deleted 🗑️',
+      body: `User account for ${user.name} has been deleted.`
+    }, { type: 'user_deleted', userId }).catch(console.error);
+
+    // EMAIL: Notify User
+    if (user.email) {
+      emailService.sendUserAccountDeletedEmail(user).catch(e => console.error(e));
+    }
+
     res.status(200).json({ success: true, message: 'User deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error deleting user' });
@@ -613,11 +744,21 @@ export const deleteHotel = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Property id is required' });
     }
 
+    const hotel = await Property.findById(id);
+    if (!hotel) return res.status(404).json({ success: false, message: 'Property not found' });
+
+    const partner = await Partner.findById(hotel.partnerId);
+
     const del = await Property.findByIdAndDelete(id);
     if (!del) return res.status(404).json({ success: false, message: 'Property not found' });
 
     await PropertyDocument.deleteMany({ propertyId: id });
     await RoomType.deleteMany({ propertyId: id });
+
+    // EMAIL: Notify Partner of deletion
+    if (partner && partner.email) {
+      emailService.sendPartnerPropertyDeletedEmail(partner, hotel, 'SuperAdmin').catch(e => console.error(e));
+    }
 
     res.status(200).json({ success: true });
   } catch (e) {
@@ -627,22 +768,153 @@ export const deleteHotel = async (req, res) => {
 
 export const updateBookingStatus = async (req, res) => {
   try {
-    const { bookingId, status } = req.body;
-    const booking = await Booking.findById(bookingId);
+    const { bookingId, status, reason = 'Cancelled by Administrator' } = req.body;
+    const booking = await Booking.findById(bookingId).populate('propertyId');
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
 
+    const previousStatus = booking.bookingStatus;
     booking.bookingStatus = status;
-    await booking.save();
 
-    if (status === 'cancelled') {
+    let walletStatus = null;
+
+    if (status === 'cancelled' && previousStatus !== 'cancelled') {
+      booking.cancelledAt = new Date();
+      booking.cancellationReason = reason;
+
+      // --- FINANCIAL REVERSALS (do before releasing inventory so we can abort on failure) ---
+      console.log(`[AdminController] Processing cancellation financials for Booking: ${booking.bookingId} (${booking.paymentMethod})`);
+
+      // Case A: Pay at Hotel (Reverse Commission Deduction)
+      if (booking.paymentMethod === 'pay_at_hotel') {
+        const refundAmount = (booking.taxes || 0) + (booking.adminCommission || 0);
+        console.log(`[AdminController] Pay at Hotel Refund Calculation: ₹${refundAmount} (Tax: ${booking.taxes}, Commission: ${booking.adminCommission})`);
+
+        if (refundAmount > 0 && booking.propertyId?.partnerId) {
+          const partnerWallet = await Wallet.findOne({ partnerId: booking.propertyId.partnerId, role: 'partner' });
+          let adminWallet = await Wallet.findOne({ role: 'admin' });
+          if (!adminWallet) {
+            const AdminModel = (await import('../models/Admin.js')).default;
+            const firstAdmin = await AdminModel.findOne({ isActive: true });
+            if (firstAdmin) adminWallet = await Wallet.findOne({ partnerId: firstAdmin._id, role: 'admin' });
+          }
+
+          if (!partnerWallet || !adminWallet) {
+            return res.status(400).json({
+              success: false,
+              message: 'Cannot process cancellation: required wallet(s) missing. Partner wallet: ' + (partnerWallet ? 'OK' : 'missing') + ', Admin wallet: ' + (adminWallet ? 'OK' : 'missing')
+            });
+          }
+
+          await partnerWallet.credit(refundAmount, `Refund (Admin Cancel) for Booking #${booking.bookingId}`, booking.bookingId, 'commission_refund');
+          await adminWallet.debit(refundAmount, `Refund (Admin Cancel) for Booking #${booking.bookingId}`, booking.bookingId, 'commission_refund');
+          walletStatus = { partnerRefunded: refundAmount, adminDebited: refundAmount };
+          console.log(`[AdminController] Pay at Hotel financial reversal complete.`);
+        }
+      }
+
+      // Case B: Paid Bookings (Wallet/Online - Refund User & Reverse Payouts)
+      if (booking.paymentStatus === 'paid' || booking.paymentStatus === 'partial') {
+        console.log(`[AdminController] Processing Case B (Paid/Partial) refund for ${booking.totalAmount}`);
+
+        let userWallet = await Wallet.findOne({ partnerId: booking.userId, role: 'user' });
+        if (!userWallet) {
+          userWallet = await Wallet.create({ partnerId: booking.userId, role: 'user', balance: 0 });
+        }
+
+        if (booking.partnerPayout > 0 && booking.propertyId?.partnerId) {
+          const partnerWallet = await Wallet.findOne({ partnerId: booking.propertyId.partnerId, role: 'partner' });
+          if (!partnerWallet) {
+            return res.status(400).json({
+              success: false,
+              message: 'Cannot process cancellation: partner wallet not found. Refund to user was not applied.'
+            });
+          }
+        }
+
+        const adminDeduction = (booking.adminCommission || 0) + (booking.taxes || 0);
+        if (adminDeduction > 0) {
+          let adminWallet = await Wallet.findOne({ role: 'admin' });
+          if (!adminWallet) {
+            const AdminModel = (await import('../models/Admin.js')).default;
+            const firstAdmin = await AdminModel.findOne({ isActive: true });
+            if (firstAdmin) adminWallet = await Wallet.findOne({ partnerId: firstAdmin._id, role: 'admin' });
+          }
+          if (!adminWallet) {
+            return res.status(400).json({
+              success: false,
+              message: 'Cannot process cancellation: admin wallet not found. Refund to user was not applied.'
+            });
+          }
+        }
+
+        await userWallet.credit(booking.totalAmount, `Refund (Admin Cancel) for Booking #${booking.bookingId}`, booking.bookingId, 'refund');
+
+        if (booking.partnerPayout > 0 && booking.propertyId?.partnerId) {
+          const partnerWallet = await Wallet.findOne({ partnerId: booking.propertyId.partnerId, role: 'partner' });
+          await partnerWallet.debit(booking.partnerPayout, `Reversal (Admin Cancel) for Booking #${booking.bookingId}`, booking.bookingId, 'refund_deduction');
+        }
+
+        if (adminDeduction > 0) {
+          let adminWallet = await Wallet.findOne({ role: 'admin' });
+          if (!adminWallet) {
+            const AdminModel = (await import('../models/Admin.js')).default;
+            const firstAdmin = await AdminModel.findOne({ isActive: true });
+            if (firstAdmin) adminWallet = await Wallet.findOne({ partnerId: firstAdmin._id, role: 'admin' });
+          }
+          await adminWallet.debit(adminDeduction, `Reversal (Admin Cancel) for Booking #${booking.bookingId}`, booking.bookingId, 'refund_deduction');
+        }
+
+        booking.paymentStatus = 'refunded';
+        walletStatus = {
+          userRefunded: booking.totalAmount,
+          partnerDeducted: booking.partnerPayout || 0,
+          adminDeducted: adminDeduction
+        };
+        console.log(`[AdminController] Case B financials complete.`);
+      }
+
+      // Release inventory only after wallet operations succeed
       await AvailabilityLedger.deleteMany({
         source: 'platform',
         referenceId: booking._id
       });
     }
 
-    res.status(200).json({ success: true, booking });
+    await booking.save();
+
+    // Trigger Notifications (non-blocking; do not fail response on notification errors)
+    const ut = booking.userModel ? booking.userModel.toLowerCase() : 'user';
+
+    if (booking.userId) {
+      notificationService.sendToUser(booking.userId, {
+        title: `Booking ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        body: `Your booking #${booking.bookingId} at ${booking.propertyId?.propertyName || 'Hotel'} has been ${status}.`
+      }, { type: 'booking_update', bookingId: booking._id, status }, ut).catch(console.error);
+
+      if (status === 'cancelled') {
+        User.findById(booking.userId).then(user => {
+          if (user && user.email) {
+            emailService.sendBookingCancellationEmail(user, booking, booking.paymentStatus === 'refunded' ? booking.totalAmount : 0).catch(console.error);
+          }
+        });
+      }
+    }
+
+    if (booking.propertyId?.partnerId) {
+      notificationService.sendToPartner(booking.propertyId.partnerId, {
+        title: `Booking Update Alert`,
+        body: `Booking #${booking.bookingId} status updated to ${status} by Administrator.`
+      }, { type: 'booking_update', bookingId: booking._id, status }).catch(console.error);
+    }
+
+    notificationService.sendToAdmins({
+      title: 'Booking Status Updated',
+      body: `Booking #${booking.bookingId} status changed to ${status} by ${req.user.name || 'Admin'}.`
+    }, { type: 'booking_update', bookingId: booking._id }).catch(console.error);
+
+    res.status(200).json({ success: true, booking, walletStatus });
   } catch (e) {
+    console.error('Update Booking Status Error:', e);
     res.status(500).json({ success: false, message: 'Server error updating booking status' });
   }
 };
@@ -702,11 +974,15 @@ export const getPartnerDetails = async (req, res) => {
 export const getHotelDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    const property = await Property.findById(id).populate('partnerId', 'name email phone').populate('dynamicCategory');
+    const property = await Property.findById(id).populate('partnerId', 'name email phone');
     if (!property) return res.status(404).json({ success: false, message: 'Property not found' });
 
     const roomTypes = await RoomType.find({ propertyId: id, isActive: true });
     const documents = await PropertyDocument.findOne({ propertyId: id });
+    const bookings = await Booking.find({ propertyId: id })
+      .populate('userId', 'name email phone')
+      .populate('roomTypeId', 'name')
+      .sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -714,7 +990,7 @@ export const getHotelDetails = async (req, res) => {
         ...property.toObject(),
         rooms: roomTypes
       },
-      bookings: [],
+      bookings,
       documents
     });
   } catch (e) {
@@ -755,10 +1031,10 @@ export const updatePartnerApprovalStatus = async (req, res) => {
 
       // NOTIFICATION: Approved
       if (partner.email) emailService.sendPartnerApprovedEmail(partner).catch(e => console.error(e));
-      notificationService.sendToUser(partner._id, {
+      notificationService.sendToPartner(partner._id, {
         title: 'You are approved!',
         body: 'You are approved! Start listing your properties.'
-      }, { type: 'partner_approved' }, 'partner').catch(e => console.error(e));
+      }, { type: 'partner_approved' }).catch(e => console.error(e));
 
     } else if (status === 'rejected') { // Explicit 'rejected' check or else clause
       partner.isPartner = false;
@@ -766,7 +1042,12 @@ export const updatePartnerApprovalStatus = async (req, res) => {
       // NOTIFICATION: Rejected
       const reason = req.body.reason || 'Criteria not met';
       if (partner.email) emailService.sendPartnerRejectedEmail(partner, reason).catch(e => console.error(e));
-      // Optionally push? Users can't login if rejected usually, or limited access.
+
+      notificationService.sendToPartner(partner._id, {
+        title: 'Application Update',
+        body: `Your partner application has been rejected. Reason: ${reason}`
+      }, { type: 'partner_rejected', reason }).catch(e => console.error(e));
+
     } else {
       partner.isPartner = false;
     }
@@ -884,6 +1165,15 @@ export const updateContactStatus = async (req, res) => {
     }
 
     res.status(200).json({ success: true, message: 'Status updated successfully', contact: message });
+
+    // NOTIFICATION: Notify User
+    if (message.userId) {
+      const ut = message.audience === 'partner' ? 'partner' : 'user';
+      notificationService.sendToUser(message.userId, {
+        title: 'Support Update 🛠️',
+        body: `Your message "${message.subject}" is now ${status.replace('_', ' ')}.`
+      }, { type: 'support_update', messageId: message._id, status }, ut).catch(e => console.error(e));
+    }
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error updating contact status' });
   }
@@ -934,6 +1224,49 @@ export const updatePlatformSettings = async (req, res) => {
   }
 };
 
+export const updateFcmToken = async (req, res) => {
+  try {
+    const { fcmToken, platform } = req.body;
+
+    if (!fcmToken) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide FCM token'
+      });
+    }
+
+    const targetPlatform = platform === 'app' ? 'app' : 'web';
+    const tokenField = `fcmTokens.${targetPlatform}`;
+
+    // 1. DEDUPLICATION: Clear this token from any OTHER Admin document only.
+    // Admins, Users, and Partners are separate auth systems.
+    // A token registered on the admin panel can never legitimately exist in the User/Partner collections.
+    await Admin.updateMany(
+      { [tokenField]: fcmToken, _id: { $ne: req.user._id } },
+      { $set: { [tokenField]: null } }
+    );
+
+    // 2. Update the token for the current admin
+    const admin = await Admin.findById(req.user._id);
+    if (!admin) return res.status(404).json({ message: 'Admin not found' });
+
+    if (!admin.fcmTokens) admin.fcmTokens = { app: null, web: null };
+    admin.fcmTokens[targetPlatform] = fcmToken;
+    await admin.save();
+
+    console.log(`[FCM] Admin ${admin._id} ${targetPlatform} token updated.`);
+
+    res.json({
+      success: true,
+      message: `FCM token updated successfully for ${targetPlatform} platform`,
+      data: { platform: targetPlatform, tokenUpdated: true }
+    });
+
+  } catch (error) {
+    console.error('Update Admin FCM Token Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 // ==========================================
 // NOTIFICATION CONTROLLERS
@@ -976,7 +1309,7 @@ export const getAdminNotifications = async (req, res) => {
 
 export const createBroadcastNotification = async (req, res) => {
   try {
-    const { title, body, targetAudience, type = 'general' } = req.body; // targetAudience: 'users', 'partners', 'all' || 'everyone'
+    const { title, body, targetAudience, type = 'general', sendEmail = false } = req.body; // targetAudience: 'users', 'partners', 'all' || 'everyone'
 
     if (!title || !body || !targetAudience) {
       return res.status(400).json({ message: 'Title, Body and Target Audience are required' });
@@ -986,15 +1319,14 @@ export const createBroadcastNotification = async (req, res) => {
 
     // 1. Fetch Users
     if (targetAudience === 'users' || targetAudience === 'everyone' || targetAudience === 'all') {
-      const users = await User.find({ isBlocked: { $ne: true } }).select('_id');
-      recipients.push(...users.map(u => ({ id: u._id, type: 'user' })));
+      const users = await User.find({ isBlocked: { $ne: true } }).select('_id email');
+      recipients.push(...users.map(u => ({ id: u._id, type: 'user', email: u.email })));
     }
 
     // 2. Fetch Partners
     if (targetAudience === 'partners' || targetAudience === 'everyone' || targetAudience === 'all') {
-      // Typically approved partners only? Or all? Let's say all active ones.
-      const partners = await Partner.find({ isBlocked: { $ne: true } }).select('_id');
-      recipients.push(...partners.map(p => ({ id: p._id, type: 'partner' })));
+      const partners = await Partner.find({ isBlocked: { $ne: true } }).select('_id email');
+      recipients.push(...partners.map(p => ({ id: p._id, type: 'partner', email: p.email })));
     }
 
     if (recipients.length === 0) {
@@ -1013,12 +1345,18 @@ export const createBroadcastNotification = async (req, res) => {
       const chunk = recipients.slice(i, i + chunkSize);
       await Promise.all(chunk.map(async (recipient) => {
         try {
+          // Push
           await notificationService.sendToUser(
             recipient.id,
             { title, body },
             { type: 'broadcast', broadcastId: Date.now().toString() },
             recipient.type
           );
+
+          // Email (if requested)
+          if (sendEmail && recipient.email) {
+            emailService.sendBroadcastEmail(recipient.email, title, body).catch(e => console.error(e));
+          }
           sentCount++;
         } catch (err) {
           console.error(`Failed to send broadcast to ${recipient.type} ${recipient.id}:`, err);
@@ -1078,57 +1416,6 @@ export const deleteAdminNotifications = async (req, res) => {
     res.status(200).json({ success: true, message: 'Notifications deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// @desc    Update Admin FCM Token
-// @route   PUT /api/admin/fcm-token
-// @access  Private (Admin)
-export const updateFcmToken = async (req, res) => {
-  try {
-    const { fcmToken, platform } = req.body;
-    const adminId = req.user?._id;
-
-    console.log('--- ADMIN BACKEND: updateFcmToken started ---');
-    console.log('Admin ID:', adminId);
-    console.log('Payload:', { fcmToken: fcmToken ? 'Present' : 'Missing', platform });
-
-    if (!fcmToken) {
-      console.warn('ADMIN BACKEND: Missing FCM token in request');
-      return res.status(400).json({ success: false, message: 'Please provide FCM token' });
-    }
-
-    const targetPlatform = platform === 'app' ? 'app' : 'web';
-    const fcmField = `fcmTokens.${targetPlatform}`;
-
-    console.log(`ADMIN BACKEND: Attempting to update Admin ${adminId} with ${fcmField}`);
-    const adminUser = await Admin.findByIdAndUpdate(
-      adminId,
-      { $set: { [fcmField]: fcmToken } },
-      { new: true, runValidators: true }
-    );
-
-    if (!adminUser) {
-      console.error('ADMIN BACKEND: Admin not found for ID:', adminId);
-      return res.status(404).json({ message: 'Admin not found' });
-    }
-
-    console.log(`ADMIN BACKEND: Successfully updated FCM token for Admin ${adminUser.name}`);
-    console.log('Updated fcmTokens state:', JSON.stringify(adminUser.fcmTokens, null, 2));
-
-    res.json({
-      success: true,
-      message: `FCM token updated successfully for Admin on ${targetPlatform} platform`
-    });
-
-  } catch (error) {
-    console.error('--- ADMIN BACKEND: updateFcmToken ERROR ---');
-    console.error('Error Message:', error.message);
-    res.status(500).json({
-      success: false,
-      message: 'Server error updating admin FCM token',
-      error: error.message
-    });
   }
 };
 
@@ -1206,26 +1493,137 @@ export const getFinanceStats = async (req, res) => {
   }
 };
 
-/**
- * @desc    Upload Single Image (Admin Panel)
- * @route   POST /api/admin/upload-image
- * @access  Private (Admin Only)
- */
-export const uploadImage = async (req, res) => {
+export const adminUpdateProperty = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: 'No image provided' });
+    const { id } = req.params;
+    const updateData = req.body;
+
+    const property = await Property.findById(id);
+    if (!property) {
+      return res.status(404).json({ success: false, message: 'Property not found' });
     }
 
-    const { url, publicId } = await uploadToCloudinary(req.file.path, 'admin');
+    // List of fields that can be updated in Property model (Everything)
+    const updatableFields = [
+      'propertyName', 'contactNumber',
+      'hostLivesOnProperty', 'suitability',
+      'starRating', 'activities', 'shortDescription', 'partnerId', 'address',
+      'location', 'nearbyPlaces', 'coverImage', 'propertyImages',
+      'checkInTime', 'checkOutTime', 'cancellationPolicy',
+      'status', 'isLive', 'avgRating', 'totalReviews'
+    ];
 
-    res.json({
+    updatableFields.forEach(field => {
+      if (updateData[field] !== undefined) {
+        property[field] = updateData[field];
+      }
+    });
+
+    await property.save();
+
+    // Handle Rooms Update & Deletion
+    if (updateData.rooms && Array.isArray(updateData.rooms)) {
+      // Filter out temporary IDs (e.g., 'new-123') to avoid CastError in $nin
+      const validIncomingIds = updateData.rooms
+        .filter(r => r._id && mongoose.Types.ObjectId.isValid(r._id))
+        .map(r => new mongoose.Types.ObjectId(r._id));
+
+      // Delete rooms that are NOT in the incoming request
+      await RoomType.deleteMany({
+        propertyId: id,
+        _id: { $nin: validIncomingIds }
+      });
+
+      // Update existing rooms or create new ones
+      for (const roomData of updateData.rooms) {
+        if (roomData._id && mongoose.Types.ObjectId.isValid(roomData._id)) {
+          await RoomType.findByIdAndUpdate(roomData._id, {
+            name: roomData.name,
+            inventoryType: roomData.inventoryType,
+            roomCategory: roomData.roomCategory,
+            maxAdults: roomData.maxAdults,
+            maxChildren: roomData.maxChildren,
+            totalInventory: roomData.totalInventory,
+            pricePerNight: roomData.pricePerNight,
+            extraAdultPrice: roomData.extraAdultPrice,
+            extraChildPrice: roomData.extraChildPrice,
+            bedsPerRoom: roomData.bedsPerRoom,
+            // amenities: roomData.amenities, // Make read-only as requested
+            images: roomData.images,
+            isActive: roomData.isActive
+          });
+        } else {
+          // Create new RoomType
+          const { amenities: _, ...restOfRoomData } = roomData;
+          const newRoom = new RoomType({
+            ...restOfRoomData,
+            propertyId: id,
+            _id: undefined // Let mongoose generate id
+          });
+          await newRoom.save();
+        }
+      }
+    }
+
+    // Handle Documents Update
+    if (updateData.documents && Array.isArray(updateData.documents)) {
+      await PropertyDocument.findOneAndUpdate(
+        { propertyId: id },
+        {
+          documents: updateData.documents,
+          verificationStatus: updateData.documentVerificationStatus || 'pending',
+          adminRemark: updateData.adminRemark,
+          verifiedAt: updateData.documentVerificationStatus === 'verified' ? new Date() : undefined
+        },
+        { upsert: true, new: true }
+      );
+    }
+
+    res.status(200).json({
       success: true,
-      files: [{ url, publicId }],
-      urls: [url]
+      message: 'Property updated successfully by Admin',
+      property
     });
   } catch (error) {
-    console.error('Admin Upload Error:', error);
-    res.status(500).json({ message: error.message || 'Upload failed' });
+    console.error('Admin Property Update Error:', error);
+    res.status(500).json({ success: false, message: 'Server error updating property' });
+  }
+};
+
+export const uploadPropertyImage = async (req, res) => {
+  try {
+    const filesToUpload = req.files || (req.file ? [req.file] : []);
+
+    if (!filesToUpload || filesToUpload.length === 0) {
+      return res.status(400).json({ success: false, message: 'No file uploaded' });
+    }
+
+    let folder = 'hotels';
+    if (req.body.type === 'room') {
+      folder = 'rooms';
+    } else if (req.body.type === 'document') {
+      folder = 'documents';
+    }
+
+    const uploadPromises = filesToUpload.map(file =>
+      uploadToCloudinary(file.path, folder)
+    );
+
+    const results = await Promise.all(uploadPromises);
+
+    const files = results.map(result => ({
+      url: result.url,
+      publicId: result.publicId
+    }));
+
+    res.status(200).json({
+      success: true,
+      files,
+      url: files[0].url, // Backwards compatibility for single upload
+      message: `${req.body.type === 'document' ? 'Document' : 'Image'}(s) uploaded successfully`
+    });
+  } catch (error) {
+    console.error('Admin Image Upload Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to upload image' });
   }
 };

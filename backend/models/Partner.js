@@ -29,6 +29,7 @@ const partnerSchema = new mongoose.Schema({
   },
   isPartner: { type: Boolean, default: true },
   isBlocked: { type: Boolean, default: false },
+  isDeleted: { type: Boolean, default: false },
   partnerApprovalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   partnerSince: {
     type: Date,
@@ -60,20 +61,6 @@ const partnerSchema = new mongoose.Schema({
       lat: { type: Number },
       lng: { type: Number }
     }
-  },
-
-  // Subscription Details
-  subscription: {
-    planId: { type: mongoose.Schema.Types.ObjectId, ref: 'SubscriptionPlan' },
-    status: {
-      type: String,
-      enum: ['active', 'expired', 'inactive'],
-      default: 'inactive'
-    },
-    startDate: { type: Date },
-    expiryDate: { type: Date },
-    propertiesAdded: { type: Number, default: 0 },
-    transactionId: { type: String }
   },
 
   termsAccepted: { type: Boolean, default: false },

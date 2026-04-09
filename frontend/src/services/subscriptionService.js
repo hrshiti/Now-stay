@@ -1,64 +1,46 @@
-import axios from 'axios';
-import { axiosInstance } from '../app/admin/store/adminStore';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import { api as apiClient } from './apiService';
 
 const subscriptionService = {
-    // --- ADMIN ---
-    createPlan: async (planData) => {
-        const response = await axiosInstance.post('/subscriptions/admin/create', planData);
-        return response.data;
-    },
+  // --- ADMIN ---
+  getAdminPlans: async () => {
+    const response = await apiClient.get('/subscriptions/admin/plans');
+    return response.data;
+  },
+  createAdminPlan: async (data) => {
+    const response = await apiClient.post('/subscriptions/admin/plans', data);
+    return response.data;
+  },
+  updateAdminPlan: async (id, data) => {
+    const response = await apiClient.put(`/subscriptions/admin/plans/${id}`, data);
+    return response.data;
+  },
+  deleteAdminPlan: async (id) => {
+    const response = await apiClient.delete(`/subscriptions/admin/plans/${id}`);
+    return response.data;
+  },
+  getAdminPartnerSubscriptions: async () => {
+    const response = await apiClient.get('/subscriptions/admin/partner-subscriptions');
+    return response.data;
+  },
 
-    getAllPlans: async () => {
-        const response = await axiosInstance.get('/subscriptions/admin/all');
-        return response.data;
-    },
-
-    updatePlan: async (id, planData) => {
-        const response = await axiosInstance.put(`/subscriptions/admin/${id}`, planData);
-        return response.data;
-    },
-
-    deletePlan: async (id) => {
-        const response = await axiosInstance.delete(`/subscriptions/admin/${id}`);
-        return response.data;
-    },
-
-    // --- PARTNER ---
-    getActivePlans: async () => {
-        const response = await axios.get(`${API_URL}/subscriptions/plans`, {
-            withCredentials: true
-        });
-        return response.data;
-    },
-
-    getCurrentSubscription: async () => {
-        try {
-            const response = await axiosInstance.get('/subscriptions/current');
-            return response.data;
-        } catch (error) {
-            // If 401, return null subscription (user not subscribed yet)
-            if (error.response?.status === 401) {
-                return { success: true, subscription: null };
-            }
-            throw error;
-        }
-    },
-
-    createSubscriptionOrder: async (planId) => {
-        const response = await axios.post(`${API_URL}/subscriptions/checkout`, { planId }, {
-            withCredentials: true
-        });
-        return response.data;
-    },
-
-    verifySubscription: async (paymentData) => {
-        const response = await axios.post(`${API_URL}/subscriptions/verify`, paymentData, {
-            withCredentials: true
-        });
-        return response.data;
-    }
+  // --- PARTNER ---
+  getPartnerPlans: async () => {
+    const response = await apiClient.get('/subscriptions/plans');
+    return response.data;
+  },
+  getMySubscription: async () => {
+    const response = await apiClient.get('/subscriptions/my-subscription');
+    return response.data;
+  },
+  buySubscription: async (data) => {
+    // data must have { planId, paymentMethod, paymentId, ...razorpayFields }
+    const response = await apiClient.post('/subscriptions/buy-subscription', data);
+    return response.data;
+  },
+  createSubscriptionOrder: async (planId) => {
+    const response = await apiClient.post('/subscriptions/create-order', { planId });
+    return response.data;
+  }
 };
 
 export default subscriptionService;

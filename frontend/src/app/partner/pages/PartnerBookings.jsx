@@ -78,34 +78,48 @@ const BookingCard = ({ booking }) => {
             {/* Details Grid */}
             <div className="grid grid-cols-2 gap-y-3 gap-x-4 text-xs mb-5">
                 <div className="flex items-center gap-2 text-gray-600">
-                    <Calendar size={14} className="text-[#004F4D]" />
+                    <Calendar size={14} className="text-[#0F172A]" />
                     <span className="font-bold text-gray-700">{checkInDate} - {checkOutDate}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                    <Clock size={14} className="text-[#004F4D]" />
+                    <Clock size={14} className="text-[#0F172A]" />
                     <span className="font-medium">{nights} Nights</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                    <User size={14} className="text-[#004F4D]" />
+                    <User size={14} className="text-[#0F172A]" />
                     <span className="font-medium">{guestCount} Guests</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
-                    <BedDouble size={14} className="text-[#004F4D]" />
+                    <BedDouble size={14} className="text-[#0F172A]" />
                     <span className="font-medium">{roomsCount} Room</span>
                 </div>
             </div>
 
-            {/* Earning Section */}
-            <div className="flex items-center justify-between pt-3 border-t border-dashed border-gray-200 mb-4">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Payout</span>
-                <span className="font-black text-[#004F4D] text-lg">₹{booking.partnerPayout?.toLocaleString('en-IN') || 0}</span>
+            {/* Earning & Collection Section (Swapped Priority) */}
+            <div className="pt-3 border-t border-dashed border-gray-200 mb-4 space-y-1 text-right">
+                <div className="flex items-center justify-between opacity-60">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Expected Earnings</span>
+                    <span className="font-bold text-gray-600 text-xs">₹{booking.partnerPayout?.toLocaleString('en-IN') || 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${(booking.remainingAmount > 0 || booking.paymentStatus === 'pending') ? 'text-red-500' : 'text-gray-400'}`}>
+                        {(booking.remainingAmount > 0 || booking.paymentStatus === 'pending') ? 'Collect at Hotel' : 'Total Paid'}
+                    </span>
+                    <span className={`font-black text-xl ${(booking.remainingAmount > 0 || booking.paymentStatus === 'pending') ? 'text-red-600' : 'text-[#0F172A]'}`}>
+                        ₹{booking.remainingAmount > 0 
+                            ? booking.remainingAmount.toLocaleString('en-IN') 
+                            : (booking.paymentStatus === 'pending' 
+                                ? booking.totalAmount?.toLocaleString('en-IN') 
+                                : (booking.amountPaid?.toLocaleString('en-IN') || booking.totalAmount?.toLocaleString('en-IN')))}
+                    </span>
+                </div>
             </div>
 
             {/* Actions */}
             <div className="flex items-center gap-2">
                 <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/hotel/bookings/${booking._id}`); }}
-                    className="flex-1 bg-[#004F4D] text-white h-9 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform hover:bg-[#003f3d]"
+                    className="flex-1 bg-[#0F172A] text-white h-9 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 transition-transform hover:bg-[#003f3d]"
                 >
                     View Details
                 </button>
@@ -173,7 +187,7 @@ const PartnerBookings = () => {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${activeTab === tab.id
-                                ? 'bg-[#004F4D] text-white border-[#004F4D] shadow-sm'
+                                ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
                                 : 'bg-white text-gray-500 border-gray-200'
                                 }`}
                         >
@@ -187,7 +201,7 @@ const PartnerBookings = () => {
             <div className="px-4 mt-2">
                 {loading ? (
                     <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#004F4D]"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#0F172A]"></div>
                     </div>
                 ) : filteredBookings.length > 0 ? (
                     <div className="space-y-3 animate-fadeIn">
