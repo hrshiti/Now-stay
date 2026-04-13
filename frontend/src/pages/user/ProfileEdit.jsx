@@ -138,6 +138,33 @@ const ProfileEdit = () => {
     );
   };
 
+  const persistProfileImage = async (url, publicId) => {
+    const response = await authService.updateProfile({
+      profileImage: url,
+      profileImagePublicId: publicId
+    });
+
+    if (response?.user) {
+      const savedUser = localStorage.getItem('user');
+      let existingUser = {};
+
+      if (savedUser) {
+        try {
+          existingUser = JSON.parse(savedUser);
+        } catch (error) {
+          console.error('Error parsing saved user:', error);
+        }
+      }
+
+      localStorage.setItem('user', JSON.stringify({
+        ...existingUser,
+        ...response.user,
+        profileImage: url,
+        profileImagePublicId: publicId
+      }));
+    }
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -156,7 +183,7 @@ const ProfileEdit = () => {
     }
 
     const uploadData = new FormData();
-    uploadData.append('files', file);
+    uploadData.append('images', file);
 
     try {
       setImageUploading(true);
@@ -165,6 +192,7 @@ const ProfileEdit = () => {
 
       if (response && response.files && response.files.length > 0) {
         const { url, publicId } = response.files[0];
+        await persistProfileImage(url, publicId);
         setFormData(prev => ({
           ...prev,
           profileImage: url,
@@ -198,6 +226,7 @@ const ProfileEdit = () => {
 
       if (uploadResult.success && uploadResult.files && uploadResult.files.length > 0) {
         const { url, publicId } = uploadResult.files[0];
+        await persistProfileImage(url, publicId);
         setFormData(prev => ({
           ...prev,
           profileImage: url,
