@@ -3,6 +3,8 @@
  * Detects if running in Flutter app and provides camera access
  */
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
 // Check if running in Flutter InAppWebView
 export const isFlutterApp = () => {
   return window.flutter_inappwebview !== undefined ||
@@ -82,7 +84,7 @@ export const uploadBase64Image = async (dataOrBase64, mimeType = 'image/jpeg', f
       }];
     }
 
-    const response = await fetch('/api/auth/partner/upload-docs-base64', {
+    const response = await fetch(`${API_BASE_URL}/auth/partner/upload-docs-base64`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
