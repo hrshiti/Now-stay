@@ -62,7 +62,7 @@ const PaymentPage = () => {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="flex flex-col items-center">
-                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-[#004F4D]" />
+                    <Loader2 className="w-8 h-8 animate-spin mb-4 text-[#0F172A]" />
                     <p className="text-gray-500 font-medium">Loading details...</p>
                 </div>
             </div>

@@ -3,12 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, LogOut, Trash2, UserPlus, AlertCircle } from 'lucide-react';
 import { userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const SettingsPage = () => {
     const navigate = useNavigate();
+    const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    if (!token) {
+        return <AuthRequired title="Settings" message="Sign in to manage your account preferences, privacy settings, and active sessions." />;
+    }
 
     const handleLogout = () => {
         localStorage.clear();

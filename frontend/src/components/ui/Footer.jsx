@@ -26,7 +26,7 @@ const Footer = () => {
                     <ul className="flex flex-col gap-3 text-[13px] font-medium text-[#cbd5e1]">
                         <li><Link to="/about" className="hover:text-[#00d2ad] transition-colors">About Us</Link></li>
                         <li><Link to="/search" className="hover:text-[#00d2ad] transition-colors">Browse Stays</Link></li>
-                        <li><Link to="/hotel/join" className="hover:text-[#00d2ad] transition-colors">Become a Partner</Link></li>
+                        <li><a href="https://play.google.com/store/apps/details?id=com.nowstay.partnerapp" className="hover:text-[#00d2ad] transition-colors">Become a Partner</a></li>
                         <li><Link to="/contact" className="hover:text-[#00d2ad] transition-colors">Contact Us</Link></li>
                     </ul>
                 </div>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { User, Phone, Mail, ArrowLeft, Save, Loader2, MapPin, Navigation, Home, Camera, Trash2, AlertTriangle } from 'lucide-react';
 import { authService, userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
+import AuthRequired from '../../components/ui/AuthRequired';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../utils/flutterBridge';
 
 const ProfileEdit = () => {
@@ -32,6 +33,9 @@ const ProfileEdit = () => {
 
   useEffect(() => {
     // Load user data from localStorage
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
       try {
@@ -56,6 +60,10 @@ const ProfileEdit = () => {
       }
     }
   }, []);
+
+  if (!localStorage.getItem('token')) {
+    return <AuthRequired title="Your Profile" message="Please sign in to view and update your personal information and account settings." />;
+  }
 
   const autoFillAddress = async (lat, lng) => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY;
@@ -302,22 +310,23 @@ const ProfileEdit = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center pt-safe-top px-6 pb-24 md:pb-0">
-
+    <div className="min-h-screen bg-emerald-100 flex flex-col items-center pt-safe-top pb-24 md:pb-0">
+      
       {/* Sticky Header */}
-      <div className="sticky top-0 left-0 right-0 w-full z-20 bg-white/95 backdrop-blur-sm px-6 py-4 flex items-center justify-between border-b border-gray-50 shadow-sm mb-6">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-gray-100">
+      <div className="sticky top-0 left-0 right-0 w-full z-20 bg-white/70 backdrop-blur-xl px-6 py-4 flex items-center justify-between border-b border-white/50 shadow-sm mb-6">
+        <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-white/50 transition-colors">
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
-        <h1 className="text-lg font-bold text-gray-900">Edit Profile</h1>
+        <h1 className="text-lg font-black text-gray-900 tracking-tight">Edit Profile</h1>
         <div className="w-10"></div> {/* Spacer for balance */}
       </div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md space-y-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md px-4"
       >
+        <div className="bg-white/80 backdrop-blur-sm rounded-[2.5rem] p-8 shadow-xl shadow-emerald-900/5 space-y-8 border border-white/50 mb-8">
 
         {/* Profile Picture */}
         <div className="flex flex-col items-center">
@@ -548,6 +557,7 @@ const ProfileEdit = () => {
             </motion.div>
           </div>
         )}
+        </div>
       </motion.div>
     </div>
   );

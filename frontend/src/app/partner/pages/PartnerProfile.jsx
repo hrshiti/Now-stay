@@ -13,8 +13,8 @@ const Field = ({ label, value, icon: Icon, isEditing, onChange }) => (
         <div className="flex items-center justify-between mb-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{label}</label>
         </div>
-        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${isEditing ? 'bg-white border-[#004F4D] ring-4 ring-[#004F4D]/5 shadow-inner' : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isEditing ? 'bg-[#004F4D] text-white' : 'bg-white text-gray-400 shadow-sm'}`}>
+        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${isEditing ? 'bg-white border-[#0F172A] ring-4 ring-[#0F172A]/5 shadow-inner' : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isEditing ? 'bg-[#0F172A] text-white' : 'bg-white text-gray-400 shadow-sm'}`}>
                 <Icon size={18} />
             </div>
             {isEditing ? (
@@ -267,7 +267,7 @@ const PartnerProfile = () => {
                 {/* Avatar Section */}
                 <div className="text-center mb-10 relative">
                     <div className="relative inline-block">
-                        <div className="w-28 h-28 bg-[#004F4D] text-white rounded-full flex items-center justify-center text-4xl font-black mx-auto shadow-2xl shadow-[#004F4D]/30 relative border-4 border-white overflow-hidden bg-gradient-to-br from-[#004F4D] to-[#006b68]">
+                        <div className="w-28 h-28 bg-[#0F172A] text-white rounded-full flex items-center justify-center text-4xl font-black mx-auto shadow-2xl shadow-[#0F172A]/30 relative border-4 border-white overflow-hidden bg-gradient-to-br from-[#0F172A] to-[#006b68]">
                             {uploading ? (
                                 <div className="flex flex-col items-center gap-2">
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
@@ -284,7 +284,7 @@ const PartnerProfile = () => {
                         <button
                             onClick={() => isFlutterApp() ? handleCameraCapture() : fileInputRef.current?.click()}
                             disabled={uploading}
-                            className="absolute bottom-1 right-1 w-9 h-9 bg-white text-[#004F4D] rounded-full flex items-center justify-center shadow-lg border border-gray-100 hover:scale-110 active:scale-95 transition-all z-10"
+                            className="absolute bottom-1 right-1 w-9 h-9 bg-white text-[#0F172A] rounded-full flex items-center justify-center shadow-lg border border-gray-100 hover:scale-110 active:scale-95 transition-all z-10"
                         >
                             <Camera size={18} />
                         </button>
@@ -313,13 +313,13 @@ const PartnerProfile = () => {
                 <div className="bg-white p-6 pb-10 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 mb-6 transition-all duration-500">
                     <div className="flex items-center justify-between mb-10 pb-4 border-b border-gray-50">
                         <div>
-                            <p className="text-[10px] text-[#004F4D] font-black uppercase tracking-[0.2em] mb-1">Account & Settings</p>
+                            <p className="text-[10px] text-[#0F172A] font-black uppercase tracking-[0.2em] mb-1">Account & Settings</p>
                             <h3 className="text-xl font-black text-[#003836]">Personal Profile</h3>
                         </div>
                         <button
                             onClick={handleToggleEdit}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all shadow-lg active:scale-95 ${isEditing
-                                ? 'bg-[#004F4D] text-white shadow-[#004F4D]/20'
+                                ? 'bg-[#0F172A] text-white shadow-[#0F172A]/20'
                                 : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                                 }`}
                         >

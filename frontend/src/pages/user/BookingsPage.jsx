@@ -7,6 +7,7 @@ import {
     CheckCircle, XCircle, AlertCircle, Ticket
 } from 'lucide-react';
 import { bookingService } from '../../services/apiService';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const BookingsPage = () => {
     const navigate = useNavigate();
@@ -24,6 +25,10 @@ const BookingsPage = () => {
 
     // Fetch Bookings when Active Tab Changes
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setLoading(false);
+            return;
+        }
         const fetchBookings = async () => {
             try {
                 setLoading(true);
@@ -40,6 +45,10 @@ const BookingsPage = () => {
 
         fetchBookings();
     }, [activeTab]);
+
+    if (!localStorage.getItem('token')) {
+        return <AuthRequired title="My Bookings" message="Sign in to view and manage your property bookings, upcoming stays, and past history." />;
+    }
 
     const getStatusBadge = (status, paymentStatus) => {
         const s = (status || '').toLowerCase();
@@ -69,7 +78,7 @@ const BookingsPage = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-emerald-100">
             {/* Header with Scrollable Tabs */}
             <div className="sticky top-0 bg-surface text-white px-5 pt-10 pb-6 rounded-b-3xl shadow-lg shadow-surface/20 z-10">
                 <div className="flex justify-between items-center mb-6">

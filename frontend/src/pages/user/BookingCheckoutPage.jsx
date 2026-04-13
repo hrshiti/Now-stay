@@ -235,21 +235,21 @@ const BookingCheckoutPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 md:pb-10">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+    <div className="min-h-screen bg-emerald-100 pb-20 md:pb-10">
+      <div className="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 shadow-sm shadow-emerald-900/5">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/50 rounded-full transition-colors active:scale-90">
             <ArrowLeft size={20} className="text-gray-700" />
           </button>
-          <h1 className="text-lg font-bold text-gray-900">Review & Pay</h1>
+          <h1 className="text-lg font-black text-gray-900 tracking-tight">Review & Pay</h1>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
 
         {/* 1. Property Summary */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex gap-4">
-          <div className="w-24 h-24 bg-gray-200 rounded-xl overflow-hidden shrink-0">
+        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-4 shadow-xl shadow-emerald-900/5 border border-white flex gap-4">
+          <div className="w-24 h-24 bg-gray-200 rounded-2xl overflow-hidden shrink-0 shadow-inner">
             <img
               src={property.images?.cover || property.coverImage || "https://via.placeholder.com/150"}
               alt={property.name}
@@ -257,11 +257,11 @@ const BookingCheckoutPage = () => {
             />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{property.propertyType || property.propertyTemplate}</span>
-            <h2 className="font-bold text-gray-900 leading-tight mb-1">{property.name}</h2>
-            <p className="text-xs text-gray-500 mb-2">{property.address?.city || property.address}, {property.address?.state}</p>
+            <span className="text-[10px] font-black text-surface uppercase tracking-widest leading-none mb-1 block">{property.propertyType || property.propertyTemplate}</span>
+            <h2 className="font-black text-gray-900 leading-tight mb-1">{property.name}</h2>
+            <p className="text-xs text-gray-500 font-medium mb-2">{property.address?.city || property.address}, {property.address?.state}</p>
             <div className="flex items-center gap-1">
-              <span className="bg-green-100 text-green-700 text-[10px] font-bold px-1.5 py-0.5 rounded">
+              <span className="bg-honey/10 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-honey/20">
                 {property.avgRating || 'New'} ★
               </span>
             </div>
@@ -269,89 +269,91 @@ const BookingCheckoutPage = () => {
         </div>
 
         {/* 2. Trip Details */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-4 text-sm">Your Trip</h3>
-          <div className="grid grid-cols-2 gap-y-4">
+        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Your Trip</h3>
+          <div className="grid grid-cols-2 gap-y-5">
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-1">Dates</p>
-              <p className="text-sm font-bold text-gray-800">{priceBreakdown?.nights} Nights</p>
-              <p className="text-xs text-gray-600">{dates.checkIn} - {dates.checkOut}</p>
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Dates</p>
+              <p className="text-sm font-black text-gray-800 leading-tight">{priceBreakdown?.nights} Nights</p>
+              <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{dates.checkIn} - {dates.checkOut}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium mb-1">Guests</p>
-              <p className="text-sm font-bold text-gray-800">{guests.adults} Adults, {guests.children} Children</p>
-              <p className="text-xs text-gray-600">{guests.rooms} Room(s)</p>
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Guests</p>
+              <p className="text-sm font-black text-gray-800 leading-tight">{guests.adults} Adults, {guests.children} Children</p>
+              <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{guests.rooms} Room(s)</p>
             </div>
-            <div className="col-span-2">
-              <p className="text-xs text-gray-500 font-medium mb-1">Room Type</p>
-              <p className="text-sm font-bold text-gray-800">{selectedRoom.type || selectedRoom.name}</p>
+            <div className="col-span-2 pt-2">
+              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Room Type</p>
+              <p className="text-sm font-black text-gray-800 leading-tight">{selectedRoom.type || selectedRoom.name}</p>
             </div>
           </div>
         </div>
 
         {/* 3. Price Breakdown */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-4 text-sm">Price Details</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm text-gray-600">
+        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Price Details</h3>
+          <div className="space-y-3.5">
+            <div className="flex justify-between text-sm text-gray-600 font-medium">
               <span>Base Price ({priceBreakdown?.nights} nights)</span>
-              <span>₹{priceBreakdown?.totalBasePrice?.toLocaleString()}</span>
+              <span className="font-bold text-gray-800">₹{priceBreakdown?.totalBasePrice?.toLocaleString()}</span>
             </div>
             {(priceBreakdown?.totalExtraAdultCharge > 0) && (
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-gray-600 font-medium">
                 <span>Extra Adults Charges</span>
-                <span>₹{priceBreakdown.totalExtraAdultCharge.toLocaleString()}</span>
+                <span className="font-bold text-gray-800">₹{priceBreakdown.totalExtraAdultCharge.toLocaleString()}</span>
               </div>
             )}
             {(priceBreakdown?.totalExtraChildCharge > 0) && (
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-gray-600 font-medium">
                 <span>Extra Children Charges</span>
-                <span>₹{priceBreakdown.totalExtraChildCharge.toLocaleString()}</span>
+                <span className="font-bold text-gray-800">₹{priceBreakdown.totalExtraChildCharge.toLocaleString()}</span>
               </div>
             )}
             {(priceBreakdown?.discountAmount > 0) && (
-              <div className="flex justify-between text-sm text-green-700 font-medium">
-                <span className="flex items-center gap-1"><Tag size={12} /> Coupon Discount</span>
+              <div className="flex justify-between text-sm text-emerald-700 font-bold">
+                <span className="flex items-center gap-1.5"><Tag size={14} className="text-emerald-500" /> Coupon Discount</span>
                 <span>- ₹{priceBreakdown.discountAmount.toLocaleString()}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm text-gray-600">
+            <div className="flex justify-between text-sm text-gray-600 font-medium">
               <span>Taxes & Fees ({taxRate || 0}%)</span>
-              <span>₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
+              <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
             </div>
 
             {(useWallet && ['online', 'prepaid'].includes(paymentMethod) && walletDeduction > 0) && (
-              <div className="flex justify-between text-sm text-blue-700 font-medium">
-                <span className="flex items-center gap-1"><Wallet size={12} /> Wallet Balance Used</span>
+              <div className="flex justify-between text-sm text-blue-700 font-bold">
+                <span className="flex items-center gap-1.5"><Wallet size={14} className="text-blue-500" /> Wallet Balance Used</span>
                 <span>- ₹{walletDeduction.toLocaleString()}</span>
               </div>
             )}
 
             {paymentMethod === 'prepaid' && (
               <>
-                <div className="flex justify-between text-sm text-green-700 font-medium border-t border-gray-100 pt-2">
-                  <span className="flex items-center gap-1"><Tag size={12} /> Prepaid Discount (5%)</span>
+                <div className="flex justify-between text-sm text-emerald-700 font-bold border-t border-emerald-50 pt-2.5">
+                  <span className="flex items-center gap-1.5"><Tag size={14} className="text-emerald-500" /> Prepaid Discount (5%)</span>
                   <span>- ₹{prepaidDiscountAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-sm text-gray-800">
                   <span>New Total</span>
-                  <span className="line-through text-xs text-gray-400 mr-2">₹{baseTotalAmount.toLocaleString()}</span>
-                  <span className="font-bold">₹{discountedTotalAmount.toLocaleString()}</span>
+                  <div>
+                    <span className="line-through text-xs text-gray-400 mr-2">₹{baseTotalAmount.toLocaleString()}</span>
+                    <span className="font-black text-gray-900">₹{discountedTotalAmount.toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-xs text-gray-500 font-bold italic">
                   <span>Advance Payable Now (30%)</span>
                   <span>₹{advanceAmount.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-xs text-gray-400 font-medium italic">
                   <span>Balance Payable at Hotel</span>
                   <span>₹{hotelAmount.toLocaleString()}</span>
                 </div>
               </>
             )}
 
-            <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
-              <span className="font-bold text-gray-900">Total Payable Now</span>
-              <span className="text-xl font-black text-gray-900">
+            <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
+              <span className="font-black text-gray-900 uppercase tracking-widest text-[11px]">Total Payable Now</span>
+              <span className="text-2xl font-black text-surface text-right">
                 ₹{remainingPayable.toLocaleString()}
               </span>
             </div>
@@ -359,25 +361,25 @@ const BookingCheckoutPage = () => {
         </div>
 
         {/* Wallet Section */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-              <Wallet size={18} className="text-blue-600" />
-              Use Wallet Balance
+        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-black text-gray-900 text-sm tracking-tight flex items-center gap-2">
+              <Wallet size={20} className="text-blue-500" />
+              Wallet Balance
             </h3>
-            <span className="text-xs font-bold bg-blue-50 text-blue-700 px-2 py-1 rounded-md">
-              Available: ₹{walletBalance.toLocaleString()}
+            <span className="text-xs font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
+              ₹{walletBalance.toLocaleString()}
             </span>
           </div>
 
-          <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${useWallet && ['online', 'prepaid'].includes(paymentMethod) ? 'border-blue-600 bg-blue-50/20' : 'border-gray-100'}`}>
-            <div className="relative flex items-center">
+          <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${useWallet && ['online', 'prepaid'].includes(paymentMethod) ? 'border-primary-solid bg-blue-50/30' : 'border-gray-50 bg-white/50'}`}>
+            <div className="relative flex items-center pt-1">
               <input
                 type="checkbox"
-                className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300 pointer-events-none"
+                className="w-5 h-5 text-blue-600 rounded-lg focus:ring-blue-500 border-gray-300 pointer-events-none"
                 checked={useWallet}
                 disabled={walletBalance <= 0 || !['online', 'prepaid'].includes(paymentMethod)}
-                onChange={() => { }} // Handled by parent div if needed, but safer on input change
+                onChange={() => { }}
               />
               <div
                 className="absolute inset-0 cursor-pointer"
@@ -391,93 +393,94 @@ const BookingCheckoutPage = () => {
                 }}
               ></div>
             </div>
-            <div className="flex-1 opacity-100">
-              <p className="text-sm font-semibold text-gray-800">Pay using Wallet</p>
-              <p className="text-xs text-gray-500 mt-0.5">
+            <div className="flex-1">
+              <p className="text-sm font-black text-gray-800">Pay using Wallet</p>
+              <p className="text-[11px] text-gray-500 font-medium leading-relaxed mt-1">
                 {!['online', 'prepaid'].includes(paymentMethod)
-                  ? "Select an online payment method to use wallet balance."
+                  ? "Available for online/prepaid bookings."
                   : walletBalance > 0
-                    ? `Use ₹${Math.min(walletBalance, totalAmountForWallet).toLocaleString()} from your wallet.`
-                    : "Insufficient balance."}
+                    ? `Save ₹${Math.min(walletBalance, totalAmountForWallet).toLocaleString()} on this trip.`
+                    : "Insufficient wallet balance."}
               </p>
             </div>
           </label>
         </div>
 
         {/* 4. Payment Options */}
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <h3 className="font-bold text-gray-900 mb-4 text-sm">Payment Method</h3>
-          <div className="space-y-3">
+        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Payment Method</h3>
+          <div className="space-y-4">
             {/* Option 1: Pay at Hotel */}
-            <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === 'pay_at_hotel' ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-200'}`}>
-              <input
-                type="radio"
-                name="payment"
-                className="mt-1"
-                checked={paymentMethod === 'pay_at_hotel'}
-                onChange={() => {
-                  setPaymentMethod('pay_at_hotel');
-                  setUseWallet(false); // Reset wallet usage if switching to Pay at Hotel 
-                }}
-              />
+            <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'pay_at_hotel' ? 'border-surface bg-surface/5' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
+              <div className="pt-0.5">
+                <input
+                  type="radio"
+                  name="payment"
+                  className="w-4 h-4 text-surface"
+                  checked={paymentMethod === 'pay_at_hotel'}
+                  onChange={() => {
+                    setPaymentMethod('pay_at_hotel');
+                    setUseWallet(false);
+                  }}
+                />
+              </div>
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-gray-900 text-sm">Pay at Hotel</span>
-                  <Building size={16} className="text-gray-500" />
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-black text-gray-900 text-sm tracking-tight">Pay at Hotel</span>
+                  <Building size={18} className="text-gray-400" />
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
-                  Pay the full amount when you check-in at the property. No upfront payment required.
+                <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                  Pay the full amount directly at the property. No booking fees.
                 </p>
               </div>
             </label>
 
             {/* Option 2: Prepaid */}
-            <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === 'prepaid' ? 'border-black bg-gray-50 shadow-sm' : 'border-gray-100 hover:border-gray-200'}`}>
-              <input
-                type="radio"
-                name="payment"
-                className="mt-1"
-                checked={paymentMethod === 'prepaid'}
-                onChange={() => setPaymentMethod('prepaid')}
-              />
+            <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'prepaid' ? 'border-emerald-500 bg-emerald-50/30' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
+              <div className="pt-0.5">
+                <input
+                  type="radio"
+                  name="payment"
+                  className="w-4 h-4 text-emerald-600"
+                  checked={paymentMethod === 'prepaid'}
+                  onChange={() => setPaymentMethod('prepaid')}
+                />
+              </div>
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-gray-900 text-sm">Prepaid (Save 5%)</span>
-                  <div className="flex gap-2">
-                    <Tag size={16} className="text-green-600" />
-                  </div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-black text-gray-900 text-sm tracking-tight">Prepaid Savings</span>
+                  <Tag size={18} className="text-emerald-500" />
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed mb-2">
-                  Pay 30% securely now and get a 5% discount on your booking. Pay the remaining 70% at the hotel.
+                <p className="text-[11px] text-gray-500 font-medium leading-relaxed mb-2.5">
+                  Secure your room with a 30% deposit and enjoy a <span className="font-black text-emerald-600">5% Discount</span>.
                 </p>
-                <div className="flex gap-2 mt-1">
-                  <span className="bg-green-100 text-green-700 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Extra Savings</span>
+                <div className="flex gap-2">
+                  <span className="bg-emerald-100 text-emerald-700 text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-emerald-200">Recommended</span>
                 </div>
               </div>
             </label>
 
             {/* Option 3: Pay Now */}
-            <label className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === 'online' ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-gray-200'}`}>
-              <input
-                type="radio"
-                name="payment"
-                className="mt-1"
-                checked={paymentMethod === 'online'}
-                onChange={() => setPaymentMethod('online')}
-              />
+            <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'online' ? 'border-surface bg-surface/5' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
+              <div className="pt-0.5">
+                <input
+                  type="radio"
+                  name="payment"
+                  className="w-4 h-4 text-surface"
+                  checked={paymentMethod === 'online'}
+                  onChange={() => setPaymentMethod('online')}
+                />
+              </div>
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold text-gray-900 text-sm">Pay Now</span>
-                  <div className="flex gap-2">
-                    <CreditCard size={16} className="text-gray-500" />
-                  </div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="font-black text-gray-900 text-sm tracking-tight">Full Payment</span>
+                  <CreditCard size={18} className="text-gray-400" />
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed mb-2">
-                  Secure online payment via UPI, Card, or Netbanking.
+                <p className="text-[11px] text-gray-500 font-medium leading-relaxed mb-2.5">
+                  Pay securely using UPI, Cards or Netbanking for a hassle-free check-in.
                 </p>
-                {/* Badges */}
                 <div className="flex gap-2">
-                  <span className="bg-blue-100 text-blue-700 text-[10px] uppercase font-bold px-2 py-0.5 rounded">Secure</span>
+                  <span className="bg-blue-100 text-blue-700 text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-blue-200">100% Secure</span>
                 </div>
               </div>
             </label>
@@ -485,18 +488,18 @@ const BookingCheckoutPage = () => {
         </div>
 
         {/* Confirm Button */}
-        <div className="pt-2">
+        <div className="pt-4">
           <button
             onClick={handleConfirmBooking}
             disabled={loading}
-            className="w-full bg-black text-white font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-gray-900 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full bg-surface text-white font-black text-lg py-5 rounded-[2rem] shadow-2xl shadow-emerald-900/40 hover:bg-surface-dark active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
             {loading ? (
-              <span className="animate-pulse">Processing...</span>
+              <span className="animate-pulse">Finalizing...</span>
             ) : (
               <>
-                {['online', 'prepaid'].includes(paymentMethod) ? 'Pay & Book' : 'Confirm Booking'}
-                <ChevronRight size={20} />
+                <span>{['online', 'prepaid'].includes(paymentMethod) ? 'Pay & Confirm' : 'Book Stay Now'}</span>
+                <ChevronRight size={22} className="opacity-70" />
               </>
             )}
           </button>

@@ -19,7 +19,7 @@
  * Call initAppMode() once at app startup BEFORE any isWebView() calls.
  */
 
-const SESSION_KEY = '__rukkoo_webview__';
+const SESSION_KEY = '__nowstay_webview__';
 
 /**
  * Call once at startup. Reads ?source=app from URL and caches it in sessionStorage

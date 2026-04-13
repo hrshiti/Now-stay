@@ -152,8 +152,8 @@ const Layout = ({ children }) => {
     const handleSliderChange = (e) => {
       setHideNavsDueToSlider(!!e.detail);
     };
-    window.addEventListener('rukkoo:slider', handleSliderChange);
-    return () => window.removeEventListener('rukkoo:slider', handleSliderChange);
+    window.addEventListener('nowstay:slider', handleSliderChange);
+    return () => window.removeEventListener('nowstay:slider', handleSliderChange);
   }, []);
 
   React.useEffect(() => {
@@ -200,7 +200,7 @@ const Layout = ({ children }) => {
   const showUserBottomNav = showUserNavs && !hideUserBottomNavOn.some(r => location.pathname.includes(r)) && !hideNavsDueToSlider;
 
   // Partner Bottom Nav should show in Partner App (authenticated pages)
-  const isPartnerPublic = location.pathname === '/hotel/privacy' || location.pathname === '/hotel/contact';
+  const isPartnerPublic = ['/hotel/privacy', '/hotel/contact', '/hotel/terms', '/hotel/support', '/hotel/about'].some(p => location.pathname.startsWith(p));
   const showPartnerBottomNav = isPartnerApp && location.pathname !== '/hotel' && !isPartnerPublic && !hideNavsDueToSlider;
 
   const isAuthRoute = ['/login', '/signup', '/hotel/login', '/hotel/register'].some(route =>
@@ -365,11 +365,11 @@ function App() {
   }, []);
 
   // One-time cleanup: remove the legacy persisted WebView flag.
-  // Old deviceDetect.js stored '__rukkoo_app_mode__ = "1"' in localStorage permanently.
+  // Old deviceDetect.js stored '__nowstay_app_mode__ = "1"' in localStorage permanently.
   // This caused isWebView() to return true in real browsers that share storage with the app,
   // blocking web push registration. Safe to remove — detection is now done via live UA/URL check.
   React.useEffect(() => {
-    localStorage.removeItem('__rukkoo_app_mode__');
+    localStorage.removeItem('__nowstay_app_mode__');
   }, []);
 
 
@@ -530,9 +530,6 @@ function App() {
                 <Route path="transactions" element={<PartnerTransactions />} />
                 <Route path="notifications" element={<PartnerNotifications />} />
                 <Route path="kyc" element={<PartnerKYC />} />
-                <Route path="support" element={<PartnerSupport />} />
-                <Route path="terms" element={<PartnerTerms />} />
-                <Route path="about" element={<PartnerAbout />} />
                 <Route path="settings" element={<PartnerSettings />} />
                 <Route path="bank-details" element={<PartnerBankDetails />} />
                 <Route path="profile" element={<PartnerProfile />} />
@@ -542,6 +539,9 @@ function App() {
               {/* Public Partner Pages — accessible without login */}
               <Route path="privacy" element={<PartnerPrivacy />} />
               <Route path="contact" element={<PartnerContact />} />
+              <Route path="terms" element={<PartnerTerms />} />
+              <Route path="support" element={<PartnerSupport />} />
+              <Route path="about" element={<PartnerAbout />} />
             </Route>
 
             {/* Admin Auth Routes */}
@@ -594,27 +594,29 @@ function App() {
               <Route path="/blogs/:id" element={<BlogDetail />} />
               <Route path="/manage-blogs" element={<BlogManager />} />
               <Route path="/serviced" element={<div className="pt-20 text-center text-surface font-bold">Serviced Page</div>} />
+              
+              {/* These routes are now public but will handle Auth in-page */}
+              <Route path="/profile/edit" element={<ProfileEdit />} />
+              <Route path="/bookings" element={<BookingsPage />} />
+              <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/refer" element={<ReferAndEarnPage />} />
+              <Route path="/saved-places" element={<SavedPlacesPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/support" element={<SupportPage />} />
             </Route>
 
             {/* ──────────────────────────────────────
                 PRIVATE USER ROUTES
                 Always require login (WebView + Browser)
-                After login, redirected back via location.state.from
+                Specifically for Secure Booking Actions
             ────────────────────────────────────── */}
             <Route element={<UserPrivateRoute />}>
-              <Route path="/profile/edit" element={<ProfileEdit />} />
-              <Route path="/bookings" element={<BookingsPage />} />
-              <Route path="/wallet" element={<WalletPage />} />
               <Route path="/payment" element={<PaymentPage />} />
               <Route path="/payment/:id" element={<PaymentPage />} />
-              <Route path="/support" element={<SupportPage />} />
               <Route path="/checkout" element={<BookingCheckoutPage />} />
               <Route path="/booking-confirmation" element={<BookingConfirmationPage />} />
               <Route path="/booking/:id" element={<BookingConfirmationPage />} />
-              <Route path="/refer" element={<ReferAndEarnPage />} />
-              <Route path="/saved-places" element={<SavedPlacesPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Routes>
         </Suspense>

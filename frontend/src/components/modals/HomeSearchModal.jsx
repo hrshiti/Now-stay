@@ -61,7 +61,7 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-[#F4F8F7] rounded-[24px] z-[90] p-5 shadow-2xl"
+                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-[#F8FAFC] rounded-[24px] z-[90] p-5 shadow-2xl"
                     >
                         <button
                             onClick={onClose}
@@ -73,7 +73,7 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                         <div className="space-y-4 mt-2">
                             {/* Destination */}
                             <div className="relative">
-                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#008f81]">
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#10B981]">
                                     <MapPin size={20} className="stroke-[2]" />
                                 </div>
                                 <input
@@ -95,7 +95,7 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                                 <div>
                                     <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1 block pl-1">Check-in</label>
                                     <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#008f81]">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#10B981]">
                                             <Calendar size={18} />
                                         </div>
                                         <input
@@ -109,7 +109,7 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                                 <div>
                                     <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1 block pl-1">Check-out</label>
                                     <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#008f81]">
+                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#10B981]">
                                             <Calendar size={18} />
                                         </div>
                                         <input
@@ -172,23 +172,23 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                             </div>
 
                             {/* Pets Toggle */}
-                            <div className="flex items-center justify-between bg-[#effaf8] rounded-2xl p-4 border border-[#e0f2f0]">
+                            <div className="flex items-center justify-between bg-[#F1F5F9] rounded-2xl p-4 border border-[#e0f2f0]">
                                 <div className="flex items-center gap-2">
-                                    <div className="p-1.5 bg-[#dcf2ee] rounded-lg text-[#008f81]">
+                                    <div className="p-1.5 bg-[#F1F5F9] rounded-lg text-[#10B981]">
                                         <PawPrint size={16} />
                                     </div>
-                                    <span className="text-[#004F4D] font-medium text-sm">Travelling with pets?</span>
+                                    <span className="text-[#0F172A] font-medium text-sm">Travelling with pets?</span>
                                 </div>
                                 <label className="relative inline-flex items-center cursor-pointer">
                                     <input type="checkbox" value="" className="sr-only peer" checked={pets} onChange={() => setPets(!pets)} />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#008f81]"></div>
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#10B981]"></div>
                                 </label>
                             </div>
 
                             {/* Search Button */}
                             <button
                                 onClick={handleSearch}
-                                className="w-full bg-[#007066] text-white py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#007066]/20 active:scale-95 transition-transform mt-2"
+                                className="w-full bg-[#10B981] text-white py-3.5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-[#10B981]/20 active:scale-95 transition-transform mt-2"
                             >
                                 <Search size={20} />
                                 Search Hotels

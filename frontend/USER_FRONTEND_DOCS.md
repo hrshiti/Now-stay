@@ -1,7 +1,7 @@
 # User Frontend Documentation
 
 ## Overview
-The User Frontend is a customer-facing web application for **AppZeto/Rukkoin**. It allows users to search, view, and book properties (Hotels, Villas, PGs, Resorts) and manage their bookings and wallet.
+The User Frontend is a customer-facing web application for **AppZeto/NowStayIn**. It allows users to search, view, and book properties (Hotels, Villas, PGs, Resorts) and manage their bookings and wallet.
 
 ## Technology Stack
 - **Framework**: React (Vite)

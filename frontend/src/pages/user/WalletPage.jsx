@@ -8,6 +8,7 @@ import {
 import { api } from '../../services/apiService';
 import toast, { Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const WalletPage = () => {
     const navigate = useNavigate();
@@ -22,6 +23,10 @@ const WalletPage = () => {
     const quickAmounts = [500, 1000, 2000];
 
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setLoading(false);
+            return;
+        }
         fetchWalletData();
         fetchTransactions();
     }, []);
@@ -84,7 +89,7 @@ const WalletPage = () => {
                 key: data.order.key,
                 amount: data.order.amount,
                 currency: data.order.currency,
-                name: 'Rukkoin',
+                name: 'NowStayIn',
                 description: 'Wallet Top-up',
                 order_id: data.order.id,
                 handler: async function (response) {
@@ -109,7 +114,7 @@ const WalletPage = () => {
                     }
                 },
                 theme: {
-                    color: '#004F4D'
+                    color: '#0F172A'
                 }
             };
 
@@ -123,6 +128,10 @@ const WalletPage = () => {
             setProcessing(false);
         }
     };
+
+    if (!localStorage.getItem('token')) {
+        return <AuthRequired title="Your Wallet" message="Sign in to view your balance, add money, and view transaction history." />;
+    }
 
     if (loading) {
         return (
@@ -142,7 +151,7 @@ const WalletPage = () => {
             <Toaster position="top-center" />
 
             {/* Header / Balance Card */}
-            <div className="sticky top-0 z-10 bg-[#004F4D] px-6 pt-10 pb-8 rounded-b-[2.5rem] shadow-lg overflow-hidden">
+            <div className="sticky top-0 z-10 bg-[#0F172A] px-6 pt-10 pb-8 rounded-b-[2.5rem] shadow-lg overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
 
                 <h1 className="text-white text-lg font-bold mb-6 text-center">My Wallet</h1>
@@ -158,7 +167,7 @@ const WalletPage = () => {
                 <div className="mt-8">
                     <button
                         onClick={() => setShowAddMoneySheet(true)}
-                        className="w-full bg-white text-[#004F4D] py-3.5 rounded-xl font-bold text-sm shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        className="w-full bg-white text-[#0F172A] py-3.5 rounded-xl font-bold text-sm shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                     >
                         <Plus size={18} strokeWidth={3} /> Add Money
                     </button>
@@ -245,7 +254,7 @@ const WalletPage = () => {
                                 </button>
                             </div>
 
-                            <div className="bg-gray-50 rounded-2xl p-4 mb-2 flex items-center gap-3 border border-gray-200 focus-within:border-[#004F4D] focus-within:ring-1 ring-[#004F4D] transition-all">
+                            <div className="bg-gray-50 rounded-2xl p-4 mb-2 flex items-center gap-3 border border-gray-200 focus-within:border-[#0F172A] focus-within:ring-1 ring-[#0F172A] transition-all">
                                 <IndianRupee size={24} className="text-gray-400" />
                                 <input
                                     type="number"
@@ -282,7 +291,7 @@ const WalletPage = () => {
                                     <button
                                         key={amt}
                                         onClick={() => setAddAmount(String(amt))}
-                                        className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-[#004F4D] hover:text-white hover:border-[#004F4D] transition-all whitespace-nowrap"
+                                        className="px-4 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-[#0F172A] hover:text-white hover:border-[#0F172A] transition-all whitespace-nowrap"
                                     >
                                         +₹{amt}
                                     </button>
@@ -295,7 +304,7 @@ const WalletPage = () => {
                                 className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2
                                     ${(!addAmount || Number(addAmount) < 10)
                                         ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
-                                        : 'bg-[#004F4D] text-white shadow-[#004F4D]/20'
+                                        : 'bg-[#0F172A] text-white shadow-[#0F172A]/20'
                                     }`}
                             >
                                 {processing && <Loader2 size={20} className="animate-spin" />}
@@ -360,7 +369,7 @@ const WalletPage = () => {
                                 {selectedTransaction.bookingId && (
                                     <div className="flex justify-between items-center bg-white/50 p-2 rounded-lg border border-gray-100">
                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Reference</span>
-                                        <span className="text-[10px] font-bold text-[#004F4D] bg-[#004F4D]/5 px-2 py-0.5 rounded">
+                                        <span className="text-[10px] font-bold text-[#0F172A] bg-[#0F172A]/5 px-2 py-0.5 rounded">
                                             #{selectedTransaction.bookingId}
                                         </span>
                                     </div>

@@ -166,7 +166,7 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
           <div className="absolute inset-0 bg-black/25 flex items-center justify-center gap-3 transition-opacity">
             <button
               onClick={() => onView(imageUrl)}
-              className="p-2.5 bg-white/90 rounded-full text-[#004F4D] hover:bg-white transition-colors shadow-lg backdrop-blur-sm"
+              className="p-2.5 bg-white/90 rounded-full text-[#0F172A] hover:bg-white transition-colors shadow-lg backdrop-blur-sm"
               title="View Image"
               type="button"
             >
@@ -192,17 +192,17 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
               type="button"
               onClick={handleCameraCapture}
               disabled={uploading}
-              className="w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors border-[#004F4D] bg-[#004F4D]/5 hover:bg-[#004F4D]/10 disabled:opacity-50"
+              className="w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors border-[#0F172A] bg-[#0F172A]/5 hover:bg-[#0F172A]/10 disabled:opacity-50"
             >
               {uploading ? (
-                <Loader2 size={24} className="text-[#004F4D] animate-spin" />
+                <Loader2 size={24} className="text-[#0F172A] animate-spin" />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-[#004F4D] flex items-center justify-center shadow-sm text-white">
+                <div className="w-10 h-10 rounded-full bg-[#0F172A] flex items-center justify-center shadow-sm text-white">
                   <Camera size={20} />
                 </div>
               )}
               <div className="text-center">
-                <p className="text-xs font-bold text-[#004F4D]">
+                <p className="text-xs font-bold text-[#0F172A]">
                   {uploading ? 'Uploading...' : 'Take Photo'}
                 </p>
                 <p className="text-[10px] text-gray-500 mt-1">Use your camera</p>
@@ -221,10 +221,10 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
             />
             <div className={`
                border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors
-               ${error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-[#004F4D] hover:bg-[#004F4D]/5 bg-gray-50'}
+               ${error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-[#0F172A] hover:bg-[#0F172A]/5 bg-gray-50'}
             `}>
               {uploading ? (
-                <Loader2 size={24} className="text-[#004F4D] animate-spin" />
+                <Loader2 size={24} className="text-[#0F172A] animate-spin" />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400">
                   <Upload size={16} />
@@ -320,7 +320,7 @@ const StepOwnerDetails = () => {
         <div>
           <label className="block text-xs font-bold text-gray-500 mb-1">Aadhaar Number</label>
           <input
-            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#004F4D] tracking-widest font-mono"
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A] tracking-widest font-mono"
             placeholder="XXXX XXXX XXXX"
             maxLength={12}
             onFocus={handleFocus}
@@ -355,7 +355,7 @@ const StepOwnerDetails = () => {
           <div>
             <label className="block text-xs font-bold text-gray-500 mb-1">PAN Number</label>
             <input
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#004F4D] font-mono"
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm uppercase focus:outline-none focus:ring-2 focus:ring-[#0F172A] font-mono"
               placeholder="ABCDE1234F"
               maxLength={10}
               onFocus={handleFocus}

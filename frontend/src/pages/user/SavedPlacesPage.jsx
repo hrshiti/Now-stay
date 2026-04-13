@@ -4,6 +4,7 @@ import PropertyCard from '../../components/user/PropertyCard';
 import { userService } from '../../services/apiService';
 import { Loader2, ArrowLeft, Heart } from 'lucide-react';
 import toast from 'react-hot-toast';
+import AuthRequired from '../../components/ui/AuthRequired';
 
 const SavedPlacesPage = () => {
     const navigate = useNavigate();
@@ -12,6 +13,10 @@ const SavedPlacesPage = () => {
 
     // Fetch saved hotels from backend
     useEffect(() => {
+        if (!localStorage.getItem('token')) {
+            setLoading(false);
+            return;
+        }
         const fetchSavedHotels = async () => {
             try {
                 setLoading(true);
@@ -27,6 +32,10 @@ const SavedPlacesPage = () => {
 
         fetchSavedHotels();
     }, []);
+
+    if (!localStorage.getItem('token')) {
+        return <AuthRequired title="Wishlist" message="Start building your dream stay list. Sign in to save and sync your favorite properties across devices." />;
+    }
 
     return (
         <div className="min-h-screen bg-gray-50">

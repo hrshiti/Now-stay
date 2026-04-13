@@ -13,6 +13,9 @@ const PartnerHeader = ({ title, subtitle, showMenu = true }) => {
     const [walletBalance, setWalletBalance] = useState(0);
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
         const fetchWallet = async () => {
             try {
                 const walletData = await walletService.getWallet({ viewAs: 'partner' });
@@ -40,20 +43,31 @@ const PartnerHeader = ({ title, subtitle, showMenu = true }) => {
         fetchNotifications();
     }, []);
 
+    const token = localStorage.getItem('token');
+
     return (
         <>
-            <div className="flex items-center justify-between relative h-24 px-4 pt-2 bg-white/50 backdrop-blur-sm sticky top-0 z-30 border-b border-gray-100/50">
-                {showMenu ? (
-                    <button
-                        onClick={() => setIsSidebarOpen(true)}
-                        className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
-                    >
-                        <Menu size={18} className="text-[#003836]" />
-                    </button>
+            <div className={`flex items-center justify-between relative h-24 px-4 pt-2 bg-white/50 backdrop-blur-sm sticky top-0 z-30 border-b border-gray-100/50 ${!token ? 'justify-center' : ''}`}>
+                {token ? (
+                    showMenu ? (
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
+                        >
+                            <Menu size={18} className="text-[#003836]" />
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => navigate(-1)}
+                            className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
+                        >
+                            <ChevronLeft size={18} className="text-[#003836]" />
+                        </button>
+                    )
                 ) : (
                     <button
                         onClick={() => navigate(-1)}
-                        className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
+                        className="p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100 absolute left-4"
                     >
                         <ChevronLeft size={18} className="text-[#003836]" />
                     </button>
@@ -63,37 +77,39 @@ const PartnerHeader = ({ title, subtitle, showMenu = true }) => {
                     <NowStayLogo size="md" />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={() => navigate('/hotel/notifications')}
-                        className="relative p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
-                    >
-                        <Bell size={18} className="text-[#003836]" />
-                        {unreadCount > 0 && (
-                            <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                        )}
-                    </button>
+                {token && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => navigate('/hotel/notifications')}
+                            className="relative p-1.5 rounded-full bg-white hover:bg-gray-100 transition shadow-sm border border-gray-100"
+                        >
+                            <Bell size={18} className="text-[#003836]" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                            )}
+                        </button>
 
-                    <button
-                        onClick={() => navigate('/hotel/wallet')}
-                        className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white border border-gray-100 shadow-sm active:scale-95 transition-transform"
-                    >
-                        <div className="w-5 h-5 bg-[#004F4D] rounded-full flex items-center justify-center">
-                            <Wallet size={10} className="text-white" />
-                        </div>
-                        <div className="flex flex-col items-start leading-none mr-0.5">
-                            <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Wallet</span>
-                            <span className="text-[10px] font-bold text-[#003836]">
-                                {new Intl.NumberFormat('en-IN', {
-                                    style: 'currency',
-                                    currency: 'INR',
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0
-                                }).format(walletBalance)}
-                            </span>
-                        </div>
-                    </button>
-                </div>
+                        <button
+                            onClick={() => navigate('/hotel/wallet')}
+                            className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-white border border-gray-100 shadow-sm active:scale-95 transition-transform"
+                        >
+                            <div className="w-5 h-5 bg-[#0F172A] rounded-full flex items-center justify-center">
+                                <Wallet size={10} className="text-white" />
+                            </div>
+                            <div className="flex flex-col items-start leading-none mr-0.5">
+                                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wide">Wallet</span>
+                                <span className="text-[10px] font-bold text-[#003836]">
+                                    {new Intl.NumberFormat('en-IN', {
+                                        style: 'currency',
+                                        currency: 'INR',
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0
+                                    }).format(walletBalance)}
+                                </span>
+                            </div>
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* Render Sidebar Global to Header */}

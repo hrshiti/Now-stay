@@ -196,15 +196,15 @@ const SearchPage = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-white pb-24">
+        <div className="min-h-screen bg-emerald-100 pb-24">
             {/* Sticky Header */}
-            <div className="sticky top-0 z-30 bg-white border-b border-gray-100 pb-3 pt-3 px-4 shadow-sm">
+            <div className="sticky top-0 z-30 bg-white/70 backdrop-blur-xl border-b border-white/50 pb-3 pt-3 px-4 shadow-sm">
                 <div className="relative mb-3">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
                         placeholder="Search by city, hotel, or area..."
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#004F4D] focus:border-[#004F4D] outline-none text-sm font-medium text-gray-700 bg-gray-50/50"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-1 focus:ring-[#0F172A] focus:border-[#0F172A] outline-none text-sm font-medium text-gray-700 bg-gray-50/50"
                         value={filters.search}
                         onChange={(e) => updateFilter('search', e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && applyFilters()}
@@ -214,21 +214,23 @@ const SearchPage = () => {
                 <div className="flex gap-3">
                     <button
                         onClick={handleNearMe}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-bold transition-all active:scale-95
-                        ${location ? 'bg-[#004F4D]/5 text-[#004F4D] border-[#004F4D]' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 transition-all active:scale-95 text-xs font-black
+                        ${location 
+                            ? 'bg-surface text-white border-surface shadow-lg shadow-surface/20' 
+                            : 'bg-white text-surface border-surface/10 hover:border-surface/40 shadow-sm'}`}
                     >
-                        <Navigation size={14} className={location ? "fill-[#004F4D]" : ""} />
+                        <Navigation size={14} className={location ? "fill-white" : "fill-surface"} />
                         {location ? "Nearby Active" : "Near Me"}
                     </button>
 
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-xs font-bold transition-all active:scale-95
+                        className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 transition-all active:scale-95 text-xs font-black
                         ${(filters.minPrice || filters.maxPrice || (Array.isArray(filters.type) && filters.type.length > 0 && filters.type !== 'all') || filters.amenities?.length > 0)
-                                ? 'bg-[#004F4D]/5 text-[#004F4D] border-[#004F4D]'
-                                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                                ? 'bg-surface text-white border-surface shadow-lg shadow-surface/20' 
+                                : 'bg-white text-surface border-surface/10 hover:border-surface/40 shadow-sm'}`}
                     >
-                        <Filter size={14} className={(filters.minPrice || filters.maxPrice || (Array.isArray(filters.type) && filters.type.length > 0 && filters.type !== 'all') || filters.amenities?.length > 0) ? "fill-[#004F4D]" : ""} />
+                        <Filter size={14} className={(filters.minPrice || filters.maxPrice || (Array.isArray(filters.type) && filters.type.length > 0 && filters.type !== 'all') || filters.amenities?.length > 0) ? "fill-white" : "fill-surface"} />
                         Filters
                     </button>
                 </div>
@@ -239,7 +241,7 @@ const SearchPage = () => {
                             <label className="text-xs font-bold text-gray-500 flex items-center gap-1">
                                 <MapPin size={12} /> Search Radius
                             </label>
-                            <span className="text-xs font-bold text-[#004F4D] bg-[#004F4D]/10 px-2 py-0.5 rounded-full">
+                            <span className="text-xs font-bold text-[#0F172A] bg-[#0F172A]/10 px-2 py-0.5 rounded-full">
                                 {filters.radius} km
                             </span>
                         </div>
@@ -249,7 +251,7 @@ const SearchPage = () => {
                             onChange={(e) => updateFilter('radius', Number(e.target.value))}
                             onMouseUp={() => fetchProperties()}
                             onTouchEnd={() => fetchProperties()}
-                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#004F4D]"
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#0F172A]"
                         />
                         <div className="flex justify-between mt-1">
                             <span className="text-[10px] text-gray-400 font-medium">1 km</span>
@@ -298,7 +300,7 @@ const SearchPage = () => {
                                 setLocation(null);
                                 setSearchParams({});
                             }}
-                            className="mt-8 text-sm font-bold text-[#004F4D] hover:underline"
+                            className="mt-8 text-sm font-bold text-[#0F172A] hover:underline"
                         >
                             Clear all filters
                         </button>
@@ -352,7 +354,7 @@ const SearchPage = () => {
                                                     updateFilter('type', currentTypes);
                                                 }
                                             }}
-                                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all truncate ${isSelected ? 'bg-[#004F4D] text-white border-[#004F4D]' : 'bg-white text-gray-500 border-gray-100'}`}
+                                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all truncate ${isSelected ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-white text-gray-500 border-gray-100'}`}
                                         >
                                             {label}
                                         </button>
@@ -365,9 +367,9 @@ const SearchPage = () => {
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price Range</label>
                             <div className="flex items-center gap-2">
-                                <input type="number" placeholder="Min" className="w-full pl-3 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:border-[#004F4D] bg-gray-50" value={filters.minPrice} onChange={(e) => updateFilter('minPrice', e.target.value)} />
+                                <input type="number" placeholder="Min" className="w-full pl-3 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:border-[#0F172A] bg-gray-50" value={filters.minPrice} onChange={(e) => updateFilter('minPrice', e.target.value)} />
                                 <span className="text-gray-300 font-bold text-xs">-</span>
-                                <input type="number" placeholder="Max" className="w-full pl-3 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:border-[#004F4D] bg-gray-50" value={filters.maxPrice} onChange={(e) => updateFilter('maxPrice', e.target.value)} />
+                                <input type="number" placeholder="Max" className="w-full pl-3 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:border-[#0F172A] bg-gray-50" value={filters.maxPrice} onChange={(e) => updateFilter('maxPrice', e.target.value)} />
                             </div>
                         </div>
 
@@ -379,7 +381,7 @@ const SearchPage = () => {
                                     <button
                                         key={opt}
                                         onClick={() => updateFilter('suitability', filters.suitability === opt ? '' : opt)}
-                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${filters.suitability === opt ? 'bg-[#004F4D]/10 text-[#004F4D] border-[#004F4D]' : 'bg-white text-gray-500 border-gray-200'}`}
+                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${filters.suitability === opt ? 'bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]' : 'bg-white text-gray-500 border-gray-200'}`}
                                     >
                                         {opt}
                                     </button>
@@ -401,7 +403,7 @@ const SearchPage = () => {
                                                 : [...currentAmen, amenity];
                                             updateFilter('amenities', newAmenities);
                                         }}
-                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${(filters.amenities || []).includes(amenity) ? 'bg-[#004F4D]/10 text-[#004F4D] border-[#004F4D]' : 'bg-white text-gray-500 border-gray-200'}`}
+                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${(filters.amenities || []).includes(amenity) ? 'bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]' : 'bg-white text-gray-500 border-gray-200'}`}
                                     >
                                         {amenity}
                                     </button>
@@ -436,7 +438,7 @@ const SearchPage = () => {
                                                         : [...currentAct, activity];
                                                     updateFilter('activities', newActivities);
                                                 }}
-                                                className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${(filters.activities || []).includes(activity) ? 'bg-[#004F4D]/10 text-[#004F4D] border-[#004F4D]' : 'bg-white text-gray-500 border-gray-200'}`}
+                                                className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${(filters.activities || []).includes(activity) ? 'bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]' : 'bg-white text-gray-500 border-gray-200'}`}
                                             >
                                                 {activity}
                                             </button>
@@ -447,7 +449,7 @@ const SearchPage = () => {
                         })()}
 
                         <div className="pt-2 pb-6">
-                            <button onClick={applyFilters} className="w-full bg-[#004F4D] text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#004F4D]/20 active:scale-95 transition-transform">Apply Filters</button>
+                            <button onClick={applyFilters} className="w-full bg-[#0F172A] text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#0F172A]/20 active:scale-95 transition-transform">Apply Filters</button>
                         </div>
                     </div>
                 </div>

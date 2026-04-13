@@ -39,7 +39,7 @@ const PartnerDashboard = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-[#004F4D] border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-10 h-10 border-4 border-[#0F172A] border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
@@ -64,7 +64,7 @@ const PartnerDashboard = () => {
                         {/* Add Property - High Visible */}
                         <button
                             onClick={() => navigate('/hotel/join')}
-                            className="flex items-center gap-2 bg-[#004F4D] hover:bg-[#003836] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
+                            className="flex items-center gap-2 bg-[#0F172A] hover:bg-[#003836] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
                         >
                             <Plus size={18} />
                             Add Property

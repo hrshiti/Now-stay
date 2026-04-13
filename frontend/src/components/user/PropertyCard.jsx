@@ -125,79 +125,81 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
   return (
     <div
       onClick={() => navigate(`/hotel/${_id}`)}
-      className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-0 cursor-pointer active:scale-95 transition-transform duration-200 hover:shadow-md ${className}`}
+      className={`group relative bg-white/70 backdrop-blur-xl rounded-[1.5rem] border border-white/50 shadow-sm overflow-hidden cursor-pointer active:scale-[0.98] hover:scale-[1.02] transition-all duration-300 hover:shadow-md ${className}`}
     >
-      <div className="relative h-40 w-full bg-gray-50 flex items-center justify-center overflow-hidden">
+      {/* Image Container - Reduced margin for compactness */}
+      <div className="relative m-1.5 rounded-[1.2rem] overflow-hidden aspect-[16/10] bg-gray-50 flex items-center justify-center">
         <img
           src={imageSrc}
           alt={displayName}
-          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+          className="w-full h-full object-cover transition-transform duration-700"
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
           }}
         />
 
-        {/* Wishlist Button */}
+        {/* Wishlist Button - Standardized */}
         <button
           onClick={handleToggleSave}
-          className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur-md rounded-full shadow-sm z-20 hover:bg-white active:scale-90 transition-all"
+          className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-white/40 backdrop-blur-md border border-white/30 rounded-full shadow-sm z-20 hover:bg-white active:scale-90 transition-all duration-300"
         >
           <Heart
-            size={14}
-            className={`${isSaved ? 'fill-red-500 text-red-500' : 'text-gray-400'}`}
+            size={13}
+            className={`${isSaved ? 'fill-red-500 text-red-500' : 'text-white'}`}
           />
         </button>
 
+        {/* Property Type Badge - Standardized */}
         {typeLabel && (
-          <div className={`absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-[10px] uppercase tracking-wider font-bold ${getTypeColor(badgeTypeKey)} shadow-sm z-10`}>
+          <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/20 backdrop-blur-md border border-white/20 rounded-full text-[9px] uppercase tracking-wider font-bold text-white z-10">
             {typeLabel}
           </div>
         )}
 
-        <div className="absolute bottom-2 right-2 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-md flex items-center gap-1 text-[10px] font-bold text-surface shadow-sm border border-gray-100 z-10">
+        {/* Rating Overlay - Minimalist */}
+        <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg flex items-center gap-1 text-[10px] font-bold text-surface shadow-sm z-10">
           <Star size={10} className="fill-honey text-honey" />
           {displayRating}
         </div>
 
+        {/* Suitability Label */}
         {item.suitability && item.suitability !== 'none' && (
-          <div className="absolute bottom-2 left-2 bg-emerald-500/90 text-white px-2 py-0.5 rounded-md text-[10px] font-bold shadow-sm z-10">
-            {item.suitability === 'Both' ? 'Family Friendly, Couple Friendly' : item.suitability}
+          <div className="absolute bottom-2 left-2 bg-emerald-500/90 text-white px-2 py-0.5 rounded-lg text-[9px] font-bold z-10">
+            {item.suitability === 'Both' ? 'FRIENDLY' : item.suitability.toUpperCase()}
           </div>
         )}
       </div>
 
-      <div className="px-3 py-2">
-        <div className="flex justify-between items-start">
-          <h3 className="font-bold text-xs text-gray-800 line-clamp-1">{displayName}</h3>
-        </div>
+      {/* Content Area - Compressed padding */}
+      <div className="px-3 pb-3 pt-0.5">
+        <h3 className="font-bold text-xs text-gray-800 line-clamp-1 mb-1">
+          {displayName}
+        </h3>
 
-        <div className="flex items-start gap-1 text-gray-500 text-[10px] mb-2 min-h-[2em]">
-          <MapPin size={12} className="mt-0.3 shrink-0" />
-          <span className="leading-tight line-clamp-2">
+        {/* Location */}
+        <div className="flex items-center gap-1 text-gray-400 mb-2">
+          <MapPin size={10} className="shrink-0" />
+          <span className="text-[10px] font-medium leading-tight truncate">
             {(() => {
               const area = address?.area || item.area;
               const city = address?.city || item.city;
-              
-              if (area && area.trim()) {
-                return `${area}, ${city}`;
-              }
-              return city || 'Location not available';
+              return area && area.trim() ? `${area}, ${city}` : (city || 'Nearby');
             })()}
           </span>
         </div>
 
-        <div className="flex items-end justify-between mt-auto">
-          <div>
-            <p className="text-[10px] text-gray-400 font-medium">Starts from</p>
-            <div className="flex items-center gap-1 text-surface font-bold text-xs">
-              <IndianRupee size={12} />
-              {displayPrice ? displayPrice.toLocaleString() : 'Check Price'}
-              <span className="text-[10px] text-gray-400 font-normal ml-0.5">/ night</span>
+        <div className="flex items-center justify-between border-t border-gray-100 pt-2">
+          <div className="flex flex-col leading-tight">
+            <span className="text-[9px] font-medium text-gray-400 capitalize">Starts from</span>
+            <div className="flex items-center gap-0.5 text-surface font-bold text-xs">
+              <IndianRupee size={10} />
+              {displayPrice ? displayPrice.toLocaleString() : 'Check'}
+              <span className="text-[9px] text-gray-400 font-normal ml-0.5">/ night</span>
             </div>
           </div>
 
-          <button className="bg-surface/10 text-surface px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-surface hover:text-white transition-colors">
+          <button className="bg-surface text-white px-3 py-1.5 rounded-xl text-[10px] font-bold hover:bg-surface/90 transition-all active:scale-95 shadow-sm">
             View
           </button>
         </div>

@@ -29,7 +29,7 @@ const PartnerNotificationsPage = () => {
   const [selectedNotif, setSelectedNotif] = useState(null);
 
   useEffect(() => {
-    const event = new CustomEvent('rukkoo:slider', { detail: !!selectedNotif });
+    const event = new CustomEvent('nowstay:slider', { detail: !!selectedNotif });
     window.dispatchEvent(event);
   }, [selectedNotif]);
 

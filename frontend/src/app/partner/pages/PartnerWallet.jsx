@@ -153,7 +153,7 @@ const PartnerWallet = () => {
                     key: order.key,
                     amount: order.amount,
                     currency: order.currency,
-                    name: "Rukkoin Partner",
+                    name: "NowStay Partner",
                     description: "Wallet Top-up",
                     order_id: order.id,
                     handler: async (response) => {
@@ -181,7 +181,7 @@ const PartnerWallet = () => {
                         contact: "",
                     },
                     theme: {
-                        color: "#004F4D",
+                        color: "#0F172A",
                     },
                 };
 
@@ -214,7 +214,7 @@ const PartnerWallet = () => {
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <Loader2 size={32} className="text-[#004F4D] animate-spin" />
+                <Loader2 size={32} className="text-[#0F172A] animate-spin" />
             </div>
         );
     }
@@ -224,7 +224,7 @@ const PartnerWallet = () => {
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
                 <AlertCircle size={40} className="text-red-500 mb-3" />
                 <h3 className="text-lg font-bold text-gray-800">Connection Error</h3>
-                <button onClick={fetchWalletData} className="mt-4 bg-[#004F4D] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg">Retry</button>
+                <button onClick={fetchWalletData} className="mt-4 bg-[#0F172A] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-lg">Retry</button>
             </div>
         );
     }
@@ -238,7 +238,7 @@ const PartnerWallet = () => {
     return (
         <div className="h-screen bg-white flex flex-col font-sans overflow-hidden">
             {/* --- Fixed Header Section --- */}
-            <div className="flex-shrink-0 bg-[#004F4D] pt-10 pb-16 px-6 rounded-b-[40px] text-white text-center shadow-lg relative z-30">
+            <div className="flex-shrink-0 bg-[#0F172A] pt-10 pb-16 px-6 rounded-b-[40px] text-white text-center shadow-lg relative z-30">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60 mb-2">Available Balance</p>
                 <div className="text-5xl font-black mb-10 tracking-tight">
                     <span className="text-3xl font-medium align-top opacity-80 mr-1">₹</span>
@@ -248,7 +248,7 @@ const PartnerWallet = () => {
                 <div className="flex gap-4 justify-center max-w-sm mx-auto">
                     <button
                         onClick={() => setActiveModal('add_money')}
-                        className="flex-1 bg-white text-[#004F4D] py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
+                        className="flex-1 bg-white text-[#0F172A] py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm shadow-xl active:scale-95 transition-transform flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap"
                     >
                         <Plus size={16} strokeWidth={3} className="sm:w-[18px] sm:h-[18px]" /> Add Money
                     </button>
@@ -266,13 +266,13 @@ const PartnerWallet = () => {
                 <div className="bg-white p-1.5 rounded-full shadow-lg border border-gray-100 flex max-w-[280px] mx-auto">
                     <button
                         onClick={() => setActiveTab('transactions')}
-                        className={`flex-1 py-2.5 rounded-full text-xs font-bold transition-all ${activeTab === 'transactions' ? 'bg-[#004F4D] text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}
+                        className={`flex-1 py-2.5 rounded-full text-xs font-bold transition-all ${activeTab === 'transactions' ? 'bg-[#0F172A] text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}
                     >
                         Transactions
                     </button>
                     <button
                         onClick={() => setActiveTab('analytics')}
-                        className={`flex-1 py-2.5 rounded-full text-xs font-bold transition-all ${activeTab === 'analytics' ? 'bg-[#004F4D] text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}
+                        className={`flex-1 py-2.5 rounded-full text-xs font-bold transition-all ${activeTab === 'analytics' ? 'bg-[#0F172A] text-white shadow-md' : 'text-gray-400 hover:bg-gray-50'}`}
                     >
                         Analytics
                     </button>
@@ -323,13 +323,13 @@ const PartnerWallet = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-[#004F4D]/5 p-6 rounded-[2.5rem] mt-4 border border-[#004F4D]/10">
+                            <div className="bg-[#0F172A]/5 p-6 rounded-[2.5rem] mt-4 border border-[#0F172A]/10">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#004F4D] shadow-sm">
+                                    <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#0F172A] shadow-sm">
                                         <Clock size={20} />
                                     </div>
                                     <div>
-                                        <p className="text-[10px] uppercase font-bold text-[#004F4D]/60 tracking-wider">Pending Clearance</p>
+                                        <p className="text-[10px] uppercase font-bold text-[#0F172A]/60 tracking-wider">Pending Clearance</p>
                                         <h4 className="text-xl font-black text-[#003836]">₹{stats?.pendingClearance?.toLocaleString('en-IN') || 0}</h4>
                                     </div>
                                 </div>
@@ -373,28 +373,28 @@ const PartnerWallet = () => {
                                         placeholder="Account Holder Name"
                                         value={bankDetailsInput.accountHolderName}
                                         onChange={(e) => setBankDetailsInput({ ...bankDetailsInput, accountHolderName: e.target.value })}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#004F4D]"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#0F172A]"
                                     />
                                     <input
                                         type="text"
                                         placeholder="Account Number"
                                         value={bankDetailsInput.accountNumber}
                                         onChange={(e) => setBankDetailsInput({ ...bankDetailsInput, accountNumber: e.target.value })}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#004F4D]"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#0F172A]"
                                     />
                                     <input
                                         type="text"
                                         placeholder="IFSC Code"
                                         value={bankDetailsInput.ifscCode}
                                         onChange={(e) => setBankDetailsInput({ ...bankDetailsInput, ifscCode: e.target.value.toUpperCase() })}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#004F4D]"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#0F172A]"
                                     />
                                     <input
                                         type="text"
                                         placeholder="Bank Name"
                                         value={bankDetailsInput.bankName}
                                         onChange={(e) => setBankDetailsInput({ ...bankDetailsInput, bankName: e.target.value })}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#004F4D]"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-[#003836] focus:outline-none focus:border-[#0F172A]"
                                     />
                                 </div>
                             ) : (
@@ -405,7 +405,7 @@ const PartnerWallet = () => {
                                         autoFocus
                                         value={amountInput}
                                         onChange={(e) => setAmountInput(e.target.value)}
-                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-2xl font-black text-[#003836] focus:outline-none focus:border-[#004F4D] focus:bg-white transition-all shadow-inner placeholder:text-gray-300"
+                                        className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4 text-2xl font-black text-[#003836] focus:outline-none focus:border-[#0F172A] focus:bg-white transition-all shadow-inner placeholder:text-gray-300"
                                         placeholder="0"
                                     />
 
@@ -416,7 +416,7 @@ const PartnerWallet = () => {
                                                 {!amountInput ? (
                                                     <div className="flex justify-between">
                                                         <span className="text-gray-400">Min. withdrawal: ₹500</span>
-                                                        <span className="text-[#004F4D]">Available: ₹{wallet?.balance}</span>
+                                                        <span className="text-[#0F172A]">Available: ₹{wallet?.balance}</span>
                                                     </div>
                                                 ) : Number(amountInput) < 500 ? (
                                                     <p className="text-red-500 flex items-center gap-1">
@@ -473,7 +473,7 @@ const PartnerWallet = () => {
                                         (activeModal === 'add_money' && Number(amountInput) < 10))
                                 )
                                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                    : 'bg-[#004F4D] text-white shadow-lg shadow-[#004F4D]/20'
+                                    : 'bg-[#0F172A] text-white shadow-lg shadow-[#0F172A]/20'
                                 }`}
                         >
                             {showBankForm ? 'Save Bank Details' : 'Proceed Securely'}
