@@ -43,12 +43,12 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
       const cameraResult = await openFlutterCamera();
 
       if (!cameraResult.success || !cameraResult.base64) {
-        throw new Error('Camera capture failed');
+        throw new Error(cameraResult.message || 'Camera capture failed');
       }
 
       console.log('[Camera] Image captured, uploading...');
 
-      // Upload base64 to backend
+      // Upload base64 to backend (auto uses axios now)
       const uploadResult = await uploadBase64Image(
         cameraResult.base64,
         cameraResult.mimeType,
@@ -59,7 +59,7 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
         onChange(uploadResult.files[0]);
         console.log('[Camera] Upload success:', uploadResult.files[0].url);
       } else {
-        throw new Error('Upload failed');
+        throw new Error('Upload failed: Server did not return image data');
       }
     } catch (err) {
       console.error('[Camera] Error:', err);

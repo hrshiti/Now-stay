@@ -1,9 +1,9 @@
+import { api } from '../services/apiService';
+
 /**
  * Flutter WebView Bridge - Camera Handler
  * Detects if running in Flutter app and provides camera access
  */
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 // Check if running in Flutter InAppWebView
 export const isFlutterApp = () => {
@@ -21,7 +21,7 @@ export const openFlutterCamera = async () => {
   return new Promise((resolve, reject) => {
     try {
       if (!window.flutter_inappwebview) {
-        reject(new Error('Flutter bridge not available'));
+        reject(new Error('Flutter bridge not available. Please ensure you are opening this in the official app.'));
         return;
       }
 
@@ -48,11 +48,12 @@ export const openFlutterCamera = async () => {
               fileName: images[0].fileName
             });
           } else {
-            reject(new Error('Image capture failed'));
+            console.warn('[Flutter Picker] Failed result:', result);
+            reject(new Error(result?.message || 'Image capture failed or cancelled'));
           }
         })
         .catch((error) => {
-          console.error('[Flutter Picker] Error:', error);
+          console.error('[Flutter Picker] Bridge Error:', error);
           reject(error);
         });
     } catch (error) {
@@ -63,11 +64,7 @@ export const openFlutterCamera = async () => {
 };
 
 /**
- * Upload base64 image(s) to backend
- * @param {string|Array} dataOrBase64 - Either a single base64 string or an array of image objects
- * @param {string} [mimeType] - MIME type (only if first arg is base64 string)
- * @param {string} [fileName] - File name (only if first arg is base64 string)
- * @returns {Promise<Object>} Upload result
+ * Upload base64 image(s) to backend using Axios (api instance)
  */
 export const uploadBase64Image = async (dataOrBase64, mimeType = 'image/jpeg', fileName = 'image.jpg') => {
   try {
@@ -84,28 +81,13 @@ export const uploadBase64Image = async (dataOrBase64, mimeType = 'image/jpeg', f
       }];
     }
 
-    const response = await fetch(`${API_BASE_URL}/auth/partner/upload-docs-base64`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ images })
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      try {
-        const error = JSON.parse(text);
-        throw new Error(error.message || 'Upload failed');
-      } catch (e) {
-        throw new Error(`Upload failed (${response.status}): ${text.substring(0, 50)}...`);
-      }
-    }
-
-    return await response.json();
+    // Use the central Axios instance from apiService for consistency (URL, Headers, Interceptors)
+    const response = await api.post('/auth/partner/upload-docs-base64', { images });
+    return response.data;
   } catch (error) {
-    console.error('[Upload Base64] Error:', error);
-    throw error;
+    const errorMsg = error.response?.data?.message || error.message || 'Upload failed';
+    console.error('[Upload Base64] Error:', errorMsg);
+    throw new Error(errorMsg);
   }
 };
 
@@ -131,9 +113,6 @@ export const pickImage = async (onSuccess, onError) => {
           uploadResult.files.forEach(file => {
             onSuccess && onSuccess(file.url, file.publicId);
           });
-
-          // If the caller explicitly wants the whole array, they can check if the first arg is array
-          // But for compatibility, we trigger onSuccess for each one to update UI lists
         } else {
           throw new Error('Upload failed');
         }

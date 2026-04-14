@@ -222,10 +222,10 @@ const ProfileEdit = () => {
       const cameraResult = await openFlutterCamera();
 
       if (!cameraResult.success || !cameraResult.base64) {
-        throw new Error('Camera capture failed');
+        throw new Error(cameraResult.message || 'Camera capture failed');
       }
 
-      // Use the generic base64 upload utility
+      // Use the generic base64 upload utility (now uses Axios)
       const uploadResult = await uploadBase64Image(
         cameraResult.base64,
         cameraResult.mimeType,
@@ -240,11 +240,14 @@ const ProfileEdit = () => {
           profileImage: url,
           profileImagePublicId: publicId
         }));
-        toast.success('Photo uploaded successfully');
+        toast.success('Photo updated successfully');
+      } else {
+        throw new Error('Upload failed: No file returned from server');
       }
     } catch (err) {
-      console.error('Camera upload failed:', err);
-      toast.error('Camera upload failed');
+      console.error('Profile Image Error:', err);
+      const msg = err.message || 'Failed to update profile photo';
+      toast.error(msg);
     } finally {
       setImageUploading(false);
     }

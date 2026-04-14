@@ -197,7 +197,7 @@ const PartnerProfile = () => {
             const cameraResult = await openFlutterCamera();
 
             if (!cameraResult.success || !cameraResult.base64) {
-                throw new Error('Camera capture failed');
+                throw new Error(cameraResult.message || 'Camera capture failed');
             }
 
             const uploadResult = await uploadBase64Image(
@@ -210,9 +210,13 @@ const PartnerProfile = () => {
                 const newUrl = uploadResult.files[0].url;
                 const newPublicId = uploadResult.files[0].publicId;
                 await updateProfileImage(newUrl, newPublicId);
+                toast.success('Profile photo updated');
+            } else {
+                throw new Error('Upload failed: server error');
             }
         } catch (err) {
             console.error('Camera upload failed:', err);
+            toast.error(err.message || 'Camera upload failed');
         } finally {
             setUploading(false);
         }
