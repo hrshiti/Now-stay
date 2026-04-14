@@ -28,33 +28,71 @@ export const openFlutterCamera = async () => {
       window.flutter_inappwebview
         .callHandler('openCamera')
         .then((result) => {
-          console.log('[Flutter Picker] Result:', result);
-          if (result && result.success) {
-            // Support both single result and multiple results from Flutter
-            const images = result.images || [
-              {
+          console.log('[Flutter Picker] Received Result:', result);
+          
+          if (!result) {
+            reject(new Error('Native app returned no data. Please ensure camera permissions are granted.'));
+            return;
+          }
+
+          // Case 1: Result is already a base64 string (Direct return)
+          if (typeof result === 'string') {
+             // Basic regex check if it looks like base64 or has data-uri
+             if (result.length > 100) {
+                resolve({
+                  success: true,
+                  images: [{ base64: result, mimeType: 'image/jpeg', fileName: 'capture.jpg' }],
+                  base64: result,
+                  mimeType: 'image/jpeg',
+                  fileName: 'capture.jpg'
+                });
+                return;
+             }
+          }
+
+          // Case 2: Result is an object with images array (Multiple selection)
+          if (result.images && Array.isArray(result.images) && result.images.length > 0) {
+             resolve({
+                success: true,
+                images: result.images,
+                base64: result.images[0].base64,
+                mimeType: result.images[0].mimeType || 'image/jpeg',
+                fileName: result.images[0].fileName || 'capture.jpg'
+             });
+             return;
+          }
+
+          // Case 3: Result is an object with base64 property (Single selection)
+          if (result.base64) {
+             resolve({
+                success: true,
+                images: [{ 
+                  base64: result.base64, 
+                  mimeType: result.mimeType || 'image/jpeg', 
+                  fileName: result.fileName || 'capture.jpg' 
+                }],
                 base64: result.base64,
                 mimeType: result.mimeType || 'image/jpeg',
-                fileName: result.fileName || `image-${Date.now()}.jpg`
-              }
-            ];
-
-            resolve({
-              success: true,
-              images: images,
-              // Keep legacy single field for backward compatibility
-              base64: images[0].base64,
-              mimeType: images[0].mimeType,
-              fileName: images[0].fileName
-            });
-          } else {
-            console.warn('[Flutter Picker] Failed result:', result);
-            reject(new Error(result?.message || 'Image capture failed or cancelled'));
+                fileName: result.fileName || 'capture.jpg'
+             });
+             return;
           }
+
+          // Case 4: Result has success: true but no image yet? (Unexpected but possible)
+          if (result && (result.success === true || result === true)) {
+             // If it's just 'true', it's useless for info but maybe it's a multi-step process?
+             // But usually it should have data. Let's log it.
+             console.warn('[Flutter Picker] Success is truthy but no image data found:', result);
+          }
+
+          // If we reach here, it failed the checks
+          console.error('[Flutter Picker] Invalid or empty result format:', result);
+          const customMsg = (typeof result === 'object' && result?.message) ? result.message : 'Image capture failed. Please check camera permissions in your phone settings.';
+          reject(new Error(customMsg));
         })
         .catch((error) => {
-          console.error('[Flutter Picker] Bridge Error:', error);
-          reject(error);
+          console.error('[Flutter Picker] Bridge Call Error:', error);
+          reject(new Error('Unable to communicate with the app for camera. Please restart the app.'));
         });
     } catch (error) {
       console.error('[Flutter Picker] Exception:', error);
