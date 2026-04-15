@@ -17,6 +17,10 @@ const PartnerBottomNavbar = () => {
     return '';
   };
 
+  const userRaw = localStorage.getItem('user');
+  const user = userRaw ? JSON.parse(userRaw) : null;
+  const isApproved = user?.partnerApprovalStatus === 'approved';
+
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, route: '/hotel/dashboard' },
     { name: 'Properties', icon: Building, route: '/hotel/properties' },
@@ -30,6 +34,11 @@ const PartnerBottomNavbar = () => {
   };
 
   const handleNavClick = (item) => {
+    // Restrict access if not approved, except for Dashboard and Profile
+    if (!isApproved && (item.name === 'Properties' || item.name === 'Bookings' || item.name === 'Inventory')) {
+      return; // Do nothing or show a toast
+    }
+
     if (item.name === 'Inventory') {
       handleInventoryClick();
     } else {
@@ -67,11 +76,11 @@ const PartnerBottomNavbar = () => {
 
               <Icon
                 size={22}
-                className={`transition-colors duration-200 ${isActive ? 'text-[#003836] fill-[#003836]/10' : 'text-gray-400'}`}
+                className={`transition-colors duration-200 ${isActive ? 'text-[#003836] fill-[#003836]/10' : 'text-gray-400'} ${!isApproved && (item.name === 'Properties' || item.name === 'Bookings' || item.name === 'Inventory') ? 'opacity-30 cursor-not-allowed' : ''}`}
                 strokeWidth={isActive ? 2.5 : 2}
               />
 
-              <span className={`text-[9px] font-bold tracking-wide transition-colors duration-200 ${isActive ? 'text-[#003836]' : 'text-gray-400'}`}>
+              <span className={`text-[9px] font-bold tracking-wide transition-colors duration-200 ${isActive ? 'text-[#003836]' : 'text-gray-400'} ${!isApproved && (item.name === 'Properties' || item.name === 'Bookings' || item.name === 'Inventory') ? 'opacity-30 cursor-not-allowed' : ''}`}>
                 {item.name}
               </span>
             </button>

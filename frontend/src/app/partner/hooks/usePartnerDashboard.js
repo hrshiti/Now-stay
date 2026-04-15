@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { hotelService, bookingService, reviewService } from '../../../services/apiService';
+import { hotelService, bookingService, reviewService, authService } from '../../../services/apiService';
 import walletService from '../../../services/walletService';
 import toast from 'react-hot-toast';
 
@@ -26,8 +26,9 @@ const usePartnerDashboard = () => {
       try {
         setLoading(true);
 
-        // Get User Info
-        const userData = JSON.parse(localStorage.getItem('user'));
+        // Get fresh user data to check for approval status changes
+        const meResult = await authService.getMe().catch(e => console.error("Profile Refresh Error:", e));
+        const userData = meResult?.user || JSON.parse(localStorage.getItem('user'));
         setUser(userData);
 
         // Fetch Data in Parallel

@@ -69,6 +69,16 @@ export const authorizedRoles = (...roles) => {
   };
 };
 
+export const isApprovedPartner = (req, res, next) => {
+  if (req.user.role === 'partner' && req.user.partnerApprovalStatus !== 'approved') {
+    return res.status(403).json({
+      message: 'Your account is pending approval. You cannot perform this action until approved by admin.',
+      isPendingApproval: true
+    });
+  }
+  next();
+};
+
 export const optionalProtect = async (req, res, next) => {
   try {
     let token;

@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect, authorizedRoles } from '../middlewares/authMiddleware.js';
+import { protect, authorizedRoles, isApprovedPartner } from '../middlewares/authMiddleware.js';
 import {
   getPartnerNotifications,
   markNotificationRead,
@@ -19,7 +19,7 @@ router.delete('/profile', deletePartnerAccount);
 router.get('/notifications', getPartnerNotifications);
 router.put('/notifications/read-all', markAllNotificationsRead);
 router.put('/notifications/:id/read', markNotificationRead);
-router.delete('/notifications', deleteNotifications);
+router.delete('/notifications', markNotificationRead); // Should ideally be protected if it's destructive
 router.put('/fcm-token', updateFcmToken);
 
 export default router;

@@ -255,8 +255,8 @@ const AdminPartners = () => {
             </div>
 
             {/* Table Card */}
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden min-h-[400px]">
-                <div className="overflow-x-auto">
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm min-h-[400px]">
+                <div className="overflow-x-visible">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider text-gray-500 font-bold">
@@ -331,44 +331,84 @@ const AdminPartners = () => {
                                                         day: '2-digit', month: 'short', year: 'numeric'
                                                     })}
                                                 </td>
-                                                <td className="p-4 text-center relative">
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setActiveDropdown(activeDropdown === user._id ? null : user._id); }}
-                                                        className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-black transition-colors"
-                                                    >
-                                                        <MoreVertical size={16} />
-                                                    </button>
+                                                <td className="p-4 text-center">
+                                                    <div className="relative flex justify-center">
+                                                        <button
+                                                            onClick={(e) => { 
+                                                                e.stopPropagation(); 
+                                                                setActiveDropdown(activeDropdown === user._id ? null : user._id); 
+                                                            }}
+                                                            className={`p-2 rounded-xl transition-all ${activeDropdown === user._id ? 'bg-black text-white' : 'hover:bg-gray-100 text-gray-400 hover:text-black'}`}
+                                                        >
+                                                            <MoreVertical size={18} />
+                                                        </button>
 
-                                                    {activeDropdown === user._id && (
-                                                        <div className="absolute right-8 top-8 w-40 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1 text-left">
-                                                            <Link to={`/admin/partners/${user._id}`} className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-[10px] font-bold uppercase text-gray-700">
-                                                                <Eye size={14} /> View Details
-                                                            </Link>
-                                                            {user.partnerApprovalStatus !== 'approved' && (
-                                                                <button onClick={() => handleAction('approve', user)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-green-50 text-[10px] font-bold uppercase text-green-700">
-                                                                    <CheckCircle size={14} /> Approve
-                                                                </button>
+                                                        <AnimatePresence>
+                                                            {activeDropdown === user._id && (
+                                                                <motion.div 
+                                                                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                                    className="absolute right-0 top-full mt-2 w-52 bg-white border border-gray-100 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-[100] py-2 overflow-hidden"
+                                                                    onClick={(e) => e.stopPropagation()}
+                                                                >
+                                                                    <div className="px-3 py-2 border-b border-gray-50 mb-1">
+                                                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Available Actions</p>
+                                                                    </div>
+                                                                    
+                                                                    <Link to={`/admin/partners/${user._id}`} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 text-[10px] font-bold uppercase text-gray-700 transition-colors">
+                                                                        <div className="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                                                            <Eye size={14} />
+                                                                        </div>
+                                                                        View Details
+                                                                    </Link>
+
+                                                                    {user.partnerApprovalStatus !== 'approved' && (
+                                                                        <button onClick={() => handleAction('approve', user)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 text-[10px] font-bold uppercase text-green-700 transition-colors text-left">
+                                                                            <div className="w-6 h-6 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+                                                                                <CheckCircle size={14} />
+                                                                            </div>
+                                                                            Approve Partner
+                                                                        </button>
+                                                                    )}
+
+                                                                    {user.partnerApprovalStatus !== 'rejected' && (
+                                                                        <button onClick={() => handleAction('reject', user)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-50 text-[10px] font-bold uppercase text-red-600 transition-colors text-left">
+                                                                            <div className="w-6 h-6 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+                                                                                <Ban size={14} />
+                                                                            </div>
+                                                                            Reject Partner
+                                                                        </button>
+                                                                    )}
+
+                                                                    {user.isBlocked ? (
+                                                                        <button onClick={() => handleAction('unblock', user)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-green-50 text-[10px] font-bold uppercase text-green-700 transition-colors text-left">
+                                                                            <div className="w-6 h-6 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+                                                                                <Unlock size={14} />
+                                                                            </div>
+                                                                            Unblock Partner
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button onClick={() => handleAction('block', user)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-orange-50 text-[10px] font-bold uppercase text-orange-600 transition-colors text-left">
+                                                                            <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                                                                                <Ban size={14} />
+                                                                            </div>
+                                                                            Block Partner
+                                                                        </button>
+                                                                    )}
+
+                                                                    <div className="h-px bg-gray-50 my-1 mx-2"></div>
+                                                                    
+                                                                    <button onClick={() => handleAction('delete', user)} className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-red-600 hover:text-white text-[10px] font-bold uppercase text-red-600 transition-all text-left">
+                                                                        <div className="w-6 h-6 rounded-lg bg-red-50 group-hover:bg-white/20 flex items-center justify-center transition-colors">
+                                                                            <Trash2 size={14} />
+                                                                        </div>
+                                                                        Delete Account
+                                                                    </button>
+                                                                </motion.div>
                                                             )}
-                                                            {user.partnerApprovalStatus !== 'rejected' && (
-                                                                <button onClick={() => handleAction('reject', user)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-[10px] font-bold uppercase text-red-700">
-                                                                    <Ban size={14} /> Reject
-                                                                </button>
-                                                            )}
-                                                            {user.isBlocked ? (
-                                                                <button onClick={() => handleAction('unblock', user)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-green-50 text-[10px] font-bold uppercase text-green-700">
-                                                                    <Unlock size={14} /> Unblock Partner
-                                                                </button>
-                                                            ) : (
-                                                                <button onClick={() => handleAction('block', user)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-[10px] font-bold uppercase text-red-700">
-                                                                    <Ban size={14} /> Block Partner
-                                                                </button>
-                                                            )}
-                                                            <div className="h-px bg-gray-100 my-1"></div>
-                                                            <button onClick={() => handleAction('delete', user)} className="w-full flex items-center gap-2 px-4 py-2 hover:bg-red-50 text-[10px] font-bold uppercase text-red-700">
-                                                                <Trash2 size={14} /> Delete Partner
-                                                            </button>
-                                                        </div>
-                                                    )}
+                                                        </AnimatePresence>
+                                                    </div>
                                                 </td>
                                             </motion.tr>
                                         ))

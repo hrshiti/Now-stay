@@ -210,7 +210,7 @@ const UserSignup = () => {
                                             <input
                                                 type="text"
                                                 value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value.replace(/[0-9]/g, '') })}
                                                 placeholder="Sakshi"
                                                 className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-transparent rounded-[1.2rem] focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300"
                                                 required
@@ -228,7 +228,7 @@ const UserSignup = () => {
                                             <input
                                                 type="tel"
                                                 value={formData.phone}
-                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                                onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
                                                 placeholder="9876543210"
                                                 maxLength={10}
                                                 className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-transparent rounded-[1.2rem] focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300"
@@ -247,7 +247,7 @@ const UserSignup = () => {
                                             <input
                                                 type="email"
                                                 value={formData.email}
-                                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
                                                 placeholder="you@example.com"
                                                 className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-transparent rounded-[1.2rem] focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300"
                                             />

@@ -187,7 +187,7 @@ const UserLogin = () => {
                                             <input
                                                 type="tel"
                                                 value={phone}
-                                                onChange={(e) => setPhone(e.target.value)}
+                                                onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                                                 placeholder="9876543210"
                                                 maxLength={10}
                                                 className="w-full pl-12 pr-4 py-3.5 bg-white/50 border-2 border-transparent rounded-[1.5rem] focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-black text-gray-800 text-lg placeholder:text-gray-300 shadow-sm"

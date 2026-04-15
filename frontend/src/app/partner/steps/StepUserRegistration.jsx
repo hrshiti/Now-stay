@@ -17,7 +17,7 @@ const StepUserRegistration = () => {
           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]"
           placeholder="Enter your full name"
           value={formData.full_name}
-          onChange={e => handleChange('full_name', e.target.value)}
+          onChange={e => handleChange('full_name', e.target.value.replace(/[0-9]/g, ''))}
         />
       </div>
       <div>
@@ -27,7 +27,7 @@ const StepUserRegistration = () => {
           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]"
           placeholder="name@business.com"
           value={formData.email}
-          onChange={e => handleChange('email', e.target.value)}
+          onChange={e => handleChange('email', e.target.value.toLowerCase().trim())}
         />
       </div>
       <div>

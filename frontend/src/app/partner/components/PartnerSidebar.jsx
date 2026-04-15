@@ -57,23 +57,36 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
         navigate('/hotel/login');
     };
 
-    const MenuItem = ({ icon: Icon, label, path, badge }) => (
-        <button
-            onClick={() => handleNavigation(path)}
-            className="flex items-center gap-4 w-full p-2.5 hover:bg-gray-50 rounded-xl transition-all group active:scale-95"
-        >
-            <div className="w-8 h-8 rounded-full bg-[#0F172A]/5 flex items-center justify-center group-hover:bg-[#0F172A]/10 transition-colors">
-                <Icon size={16} className="text-[#0F172A]" />
-            </div>
-            <span className="flex-1 text-left font-medium text-gray-700 text-sm">{label}</span>
-            {badge && (
-                <span className="text-[10px] font-bold bg-[#0F172A] text-white px-2 py-0.5 rounded-full">
-                    {badge}
-                </span>
-            )}
-            <ChevronRight size={14} className="text-gray-300 group-hover:text-[#0F172A] transition-colors" />
-        </button>
-    );
+    const isApproved = user?.partnerApprovalStatus === 'approved';
+
+    const MenuItem = ({ icon: Icon, label, path, badge }) => {
+        const isRestricted = !isApproved && [
+            'My Subscription', 
+            'Wallet', 
+            'Booking History', 
+            'My Properties', 
+            'Manage Inventory', 
+            'Reviews & Ratings'
+        ].includes(label);
+
+        return (
+            <button
+                onClick={() => !isRestricted && handleNavigation(path)}
+                className={`flex items-center gap-4 w-full p-2.5 rounded-xl transition-all group active:scale-95 ${isRestricted ? 'opacity-30 cursor-not-allowed grayscale' : 'hover:bg-gray-50'}`}
+            >
+                <div className="w-8 h-8 rounded-full bg-[#0F172A]/5 flex items-center justify-center group-hover:bg-[#0F172A]/10 transition-colors">
+                    <Icon size={16} className="text-[#0F172A]" />
+                </div>
+                <span className="flex-1 text-left font-medium text-gray-700 text-sm">{label}</span>
+                {badge && (
+                    <span className="text-[10px] font-bold bg-[#0F172A] text-white px-2 py-0.5 rounded-full">
+                        {badge}
+                    </span>
+                )}
+                {!isRestricted && <ChevronRight size={14} className="text-gray-300 group-hover:text-[#0F172A] transition-colors" />}
+            </button>
+        );
+    };
 
     const menuGroups = [
         {

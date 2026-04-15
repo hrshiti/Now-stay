@@ -157,6 +157,19 @@ export const authService = {
     }
   },
 
+  // Refresh current user data
+  getMe: async () => {
+    try {
+      const response = await api.get('/auth/me');
+      if (response.data.success && response.data.user) {
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Logout
   logout: () => {
     localStorage.removeItem('token');

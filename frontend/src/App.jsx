@@ -328,15 +328,13 @@ const PartnerProtectedRoute = ({ children }) => {
     const allowedPending = [
       '/hotel/dashboard',
       '/hotel/partner-dashboard',
-      '/hotel/join',
       '/hotel/profile',
-      '/hotel/join-hotel',
-      '/hotel/join-resort',
-      '/hotel/join-hostel',
-      '/hotel/join-villa',
-      '/hotel/join-pg',
-      '/hotel/join-homestay',
-      '/hotel/join-tent'
+      '/hotel/kyc',
+      '/hotel/support',
+      '/hotel/contact',
+      '/hotel/privacy',
+      '/hotel/terms',
+      '/hotel/about'
     ];
     if (!allowedPending.some(p => location.pathname.startsWith(p))) {
       return <Navigate to="/hotel/dashboard" replace />;

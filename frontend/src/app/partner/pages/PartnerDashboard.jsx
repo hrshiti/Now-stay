@@ -56,89 +56,126 @@ const PartnerDashboard = () => {
                             Welcome back, {user?.name?.split(' ')[0] || 'Partner'}! 👋
                         </h1>
                         <p className="text-gray-500 mt-1 text-sm font-medium">
-                            Here's what's happening with your properties today.
+                            {user?.partnerApprovalStatus === 'approved' 
+                                ? "Here's what's happening with your properties today."
+                                : "Your account is currently under review by our team."}
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        {/* Add Property - High Visible */}
-                        <button
-                            onClick={() => navigate('/hotel/join')}
-                            className="flex items-center gap-2 bg-[#0F172A] hover:bg-[#003836] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
-                        >
-                            <Plus size={18} />
-                            Add Property
-                        </button>
-                    </div>
+                    {user?.partnerApprovalStatus === 'approved' && (
+                        <div className="flex items-center gap-3">
+                            {/* Add Property - High Visible */}
+                            <button
+                                onClick={() => navigate('/hotel/join')}
+                                className="flex items-center gap-2 bg-[#0F172A] hover:bg-[#003836] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
+                            >
+                                <Plus size={18} />
+                                Add Property
+                            </button>
+                        </div>
+                    )}
                 </div>
+
+                {/* Status Notice for Unapproved Partners */}
+                {user?.partnerApprovalStatus !== 'approved' && (
+                    <div className="bg-white border-2 border-orange-100 rounded-3xl p-6 mb-8 shadow-sm">
+                        <div className="flex flex-col md:flex-row items-center gap-6">
+                            <div className="w-16 h-16 bg-orange-50 rounded-2xl flex items-center justify-center shrink-0">
+                                <Clock className="w-8 h-8 text-orange-500" />
+                            </div>
+                            <div className="flex-1 text-center md:text-left">
+                                <h2 className="text-xl font-bold text-gray-900 mb-1">Approval is Pending</h2>
+                                <p className="text-gray-500 text-sm md:text-base mb-4">
+                                    Admin is currently verifying your KYC documents and details. Once approved, you will be able to add properties, manage bookings, and access full dashboard features.
+                                </p>
+                                <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                                    <button 
+                                        onClick={() => navigate('/hotel/kyc')}
+                                        className="text-orange-600 bg-orange-50 px-4 py-2 rounded-lg font-bold text-sm hover:bg-orange-100 transition-colors"
+                                    >
+                                        Check KYC Status
+                                    </button>
+                                    <button 
+                                        onClick={() => navigate('/hotel/support')}
+                                        className="text-gray-600 bg-gray-50 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition-colors"
+                                    >
+                                        Contact Support
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Priority Actions */}
                 <ActionRequired items={actionItems} />
 
                 {/* KPI Grid */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-                    <DashboardStatCard
-                        icon={Calendar}
-                        label="Total Bookings"
-                        value={stats.totalBookings}
-                        subtext={stats.bookingsThisWeek > 0 ? `+${stats.bookingsThisWeek} this week` : 'No new bookings this week'}
-                        actionLabel="View All"
-                        onAction={() => navigate('/hotel/bookings')}
-                    />
+                <div className={`${user?.partnerApprovalStatus !== 'approved' ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+                        <DashboardStatCard
+                            icon={Calendar}
+                            label="Total Bookings"
+                            value={stats.totalBookings}
+                            subtext={stats.bookingsThisWeek > 0 ? `+${stats.bookingsThisWeek} this week` : 'No new bookings this week'}
+                            actionLabel="View All"
+                            onAction={() => navigate('/hotel/bookings')}
+                        />
 
-                    <DashboardStatCard
-                        icon={Wallet}
-                        label="Wallet Balance"
-                        value={formatCurrency(stats.walletBalance)}
-                        subtext="Available to withdraw"
-                        actionLabel="Withdraw"
-                        onAction={() => navigate('/hotel/wallet')}
-                        colorClass="text-blue-600"
-                    />
+                        <DashboardStatCard
+                            icon={Wallet}
+                            label="Wallet Balance"
+                            value={formatCurrency(stats.walletBalance)}
+                            subtext="Available to withdraw"
+                            actionLabel="Withdraw"
+                            onAction={() => navigate('/hotel/wallet')}
+                            colorClass="text-blue-600"
+                        />
 
-                    <DashboardStatCard
-                        icon={CheckCircle2}
-                        label="Approved"
-                        value={stats.approvedProperties}
-                        subtext="Online & Bookable"
-                        actionLabel="Manage"
-                        onAction={() => navigate('/hotel/properties')}
-                        colorClass="text-green-600"
-                    />
+                        <DashboardStatCard
+                            icon={CheckCircle2}
+                            label="Approved"
+                            value={stats.approvedProperties}
+                            subtext="Online & Bookable"
+                            actionLabel="Manage"
+                            onAction={() => navigate('/hotel/properties')}
+                            colorClass="text-green-600"
+                        />
 
-                    <DashboardStatCard
-                        icon={Clock}
-                        label="Pending"
-                        value={stats.pendingProperties}
-                        subtext="Under verification"
-                        actionLabel="Check Status"
-                        onAction={() => navigate('/hotel/properties')}
-                        colorClass="text-orange-500"
-                    />
+                        <DashboardStatCard
+                            icon={Clock}
+                            label="Pending"
+                            value={stats.pendingProperties}
+                            subtext="Under verification"
+                            actionLabel="Check Status"
+                            onAction={() => navigate('/hotel/properties')}
+                            colorClass="text-orange-500"
+                        />
 
-                    <DashboardStatCard
-                        icon={XCircle}
-                        label="Rejected"
-                        value={stats.rejectedProperties}
-                        subtext="Needs attention"
-                        actionLabel="Fix Issues"
-                        onAction={() => navigate('/hotel/properties')}
-                        colorClass="text-red-500"
-                    />
+                        <DashboardStatCard
+                            icon={XCircle}
+                            label="Rejected"
+                            value={stats.rejectedProperties}
+                            subtext="Needs attention"
+                            actionLabel="Fix Issues"
+                            onAction={() => navigate('/hotel/properties')}
+                            colorClass="text-red-500"
+                        />
 
-                    <DashboardStatCard
-                        icon={Star}
-                        label="Pending Reviews"
-                        value={stats.pendingReviews}
-                        subtext="Action required"
-                        actionLabel="Reply"
-                        onAction={() => navigate('/hotel/reviews')}
-                        colorClass="text-purple-600"
-                    />
+                        <DashboardStatCard
+                            icon={Star}
+                            label="Pending Reviews"
+                            value={stats.pendingReviews}
+                            subtext="Action required"
+                            actionLabel="Reply"
+                            onAction={() => navigate('/hotel/reviews')}
+                            colorClass="text-purple-600"
+                        />
+                    </div>
+
+                    {/* Recent Activity Section */}
+                    <RecentBookingsTable bookings={recentBookings} />
                 </div>
-
-                {/* Recent Activity Section */}
-                <RecentBookingsTable bookings={recentBookings} />
 
             </main>
         </div>
