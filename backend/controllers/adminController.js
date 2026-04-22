@@ -1085,7 +1085,7 @@ export const upsertLegalPage = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid audience' });
     }
 
-    if (!['terms', 'privacy', 'about', 'contact'].includes(slug)) {
+    if (!['terms', 'privacy', 'about', 'contact', 'cancellation'].includes(slug)) {
       return res.status(400).json({ success: false, message: 'Invalid page type' });
     }
 

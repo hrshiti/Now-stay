@@ -4,7 +4,7 @@ import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
 import {
   CheckCircle, FileText, Home, Image, Plus, Trash2, MapPin, Search,
-  BedDouble, Wifi, Coffee, Car, Users, CheckSquare, Snowflake, Tv, ShowerHead, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X
+  BedDouble, Wifi, Coffee, Car, Users, CheckSquare, Snowflake, Tv, ShowerHead, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X, Eye
 } from 'lucide-react';
 
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
@@ -128,14 +128,18 @@ const AddHomestayWizard = () => {
 
   // --- WebView History / Back Button Fix ---
   useEffect(() => {
-    const currentHash = window.location.hash;
-    const targetHash = `#step${step}`;
-    if (currentHash !== targetHash) {
-      if (step === 1 && (!currentHash || currentHash === '#step1')) {
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
-      } else {
-        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+    try {
+      const currentHash = window.location.hash;
+      const targetHash = `#step${step}`;
+      if (currentHash !== targetHash) {
+        if (step === 1 && (!currentHash || currentHash === '#step1')) {
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        } else {
+          window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        }
       }
+    } catch (e) {
+      console.warn('[History] Navigation failed:', e);
     }
   }, [step]);
 
@@ -154,6 +158,15 @@ const AddHomestayWizard = () => {
   }, []);
 
   // Helper Functions
+  
+  // Reset sub-item editing states when switching steps to prevent UI locks
+  useEffect(() => {
+    setEditingRoomType(null);
+    setEditingRoomTypeIndex(null);
+    setEditingNearbyIndex(null);
+    setError("");
+  }, [step]);
+
   const updatePropertyForm = (path, value) => {
     setPropertyForm(prev => {
       const clone = JSON.parse(JSON.stringify(prev));
@@ -335,11 +348,11 @@ const AddHomestayWizard = () => {
       inventoryType: 'room',
       roomCategory: 'private',
       maxAdults: '',
-      maxChildren: 0,
+      maxChildren: '',
       totalInventory: '',
       pricePerNight: '',
-      extraAdultPrice: 0,
-      extraChildPrice: 0,
+      extraAdultPrice: '',
+      extraChildPrice: '',
       images: [],
       amenities: [],
       isActive: true
@@ -352,6 +365,10 @@ const AddHomestayWizard = () => {
     const rt = roomTypes[index];
     setEditingRoomType({
       ...rt,
+      maxChildren: rt.maxChildren === 0 ? '' : rt.maxChildren,
+      extraAdultPrice: rt.extraAdultPrice === 0 ? '' : rt.extraAdultPrice,
+      extraChildPrice: rt.extraChildPrice === 0 ? '' : rt.extraChildPrice,
+      pricePerNight: rt.pricePerNight === 0 ? '' : rt.pricePerNight,
       images: Array.isArray(rt.images) ? rt.images : [],
       amenities: Array.isArray(rt.amenities) ? rt.amenities : []
     });
@@ -770,6 +787,7 @@ const AddHomestayWizard = () => {
   };
 
   const handleBack = () => {
+    setError('');
     if (step > 1) {
       setStep(step - 1);
     } else {
@@ -793,6 +811,8 @@ const AddHomestayWizard = () => {
       setPropertyForm(prev => ({ ...prev, coverImage: '', propertyImages: [] }));
     } else if (step === 6) {
       setRoomTypes([]);
+      setEditingRoomType(null);
+      setEditingRoomTypeIndex(null);
     } else if (step === 7) {
       setPropertyForm(prev => ({ ...prev, checkInTime: '12:00 PM', checkOutTime: '11:00 AM', cancellationPolicy: '', houseRules: [] }));
     } else if (step === 8) {
@@ -965,7 +985,7 @@ const AddHomestayWizard = () => {
 
               <div className="space-y-4">
                 <div className="relative">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                  <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400">
                     <Search size={18} />
                   </div>
                   <input
@@ -1001,7 +1021,7 @@ const AddHomestayWizard = () => {
                   <input className="input" placeholder="City" value={propertyForm.address.city} onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} />
                   <input className="input" placeholder="Area / Sector" value={propertyForm.address.area} onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} />
                   <input className="input col-span-2" placeholder="Full Street Address" value={propertyForm.address.fullAddress} onChange={e => updatePropertyForm(['address', 'fullAddress'], e.target.value)} />
-                  <input className="input" placeholder="Pincode / Zip" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
+                  <input className="input" placeholder="Pincode / Zip" maxLength={6} value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value.replace(/\D/g, ''))} />
                 </div>
 
                 <button
@@ -1138,7 +1158,7 @@ const AddHomestayWizard = () => {
                         <button
                           type="button"
                           onClick={searchNearbyPlaces}
-                          className="px-4 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm"
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold text-sm"
                         >
                           Search
                         </button>
@@ -1188,7 +1208,7 @@ const AddHomestayWizard = () => {
 
                     <div className="flex gap-3 pt-2">
                       <button type="button" onClick={cancelEditNearbyPlace} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save Place</button>
+                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all transform active:scale-95">Save Place</button>
                     </div>
                   </div>
                 </div>
@@ -1243,7 +1263,7 @@ const AddHomestayWizard = () => {
                     {propertyForm.propertyImages.map((img, i) => (
                       <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group">
                         <img src={img} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-emerald-700/20 transition-all" />
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(img, 'gallery', i)}
@@ -1296,7 +1316,7 @@ const AddHomestayWizard = () => {
                               <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                                 <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">{rt.inventoryType === 'entire' ? 'Entire Place' : 'Private Room'}</span>
                                 <span>•</span>
-                                <span className="font-semibold text-gray-900">₹{rt.pricePerNight}</span>
+                                <span className="font-semibold text-gray-900">₹ {rt.pricePerNight}</span>
                                 <span className="text-xs">/ night</span>
                               </div>
                               <div className="flex flex-wrap gap-2 mt-3">
@@ -1355,8 +1375,8 @@ const AddHomestayWizard = () => {
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Price per Night (₹)</label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input pl-7" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
+                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input !pl-10" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -1376,11 +1396,11 @@ const AddHomestayWizard = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹/night)</label>
-                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraAdultPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value === '' ? '' : e.target.value })} />
+                        <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10" type="number" placeholder="0" min="0" value={editingRoomType.extraAdultPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value === '' ? '' : e.target.value })} /></div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹/night)</label>
-                        <input className="input" type="number" placeholder="0" min="0" value={editingRoomType.extraChildPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value === '' ? '' : e.target.value })} />
+                        <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10" type="number" placeholder="0" min="0" value={editingRoomType.extraChildPrice ?? ''} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value === '' ? '' : e.target.value })} /></div>
                       </div>
                     </div>
 
@@ -1427,9 +1447,24 @@ const AddHomestayWizard = () => {
                       </div>
                     </div>
 
-                    <div className="pt-2 flex gap-3">
-                      <button onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
-                      <button onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-200">{editingRoomTypeIndex === -1 ? 'Add Inventory' : 'Save Changes'}</button>
+                    <div className="pt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          if (window.confirm("Clear all fields for this inventory?")) {
+                            if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
+                              startAddRoomType();
+                            } else {
+                              startEditRoomType(editingRoomTypeIndex);
+                            }
+                          }
+                        }}
+                        className="flex-1 py-3 text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors"
+                      >
+                        Clear
+                      </button>
+                      <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100">{editingRoomTypeIndex === -1 ? 'Add Inventory' : 'Save Changes'}</button>
                     </div>
                   </div>
                 </div>
@@ -1443,15 +1478,25 @@ const AddHomestayWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-In Time</label>
                   <div className="relative">
-                    <input className="input !pl-12" placeholder="e.g. 12:00 PM" value={propertyForm.checkInTime} onChange={e => updatePropertyForm('checkInTime', e.target.value)} />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <input 
+                      type="time"
+                      className="input !pl-10" 
+                      value={propertyForm.checkInTime} 
+                      onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                    />
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-Out Time</label>
                   <div className="relative">
-                    <input className="input !pl-12" placeholder="e.g. 11:00 AM" value={propertyForm.checkOutTime} onChange={e => updatePropertyForm('checkOutTime', e.target.value)} />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <input 
+                      type="time"
+                      className="input !pl-10" 
+                      value={propertyForm.checkOutTime} 
+                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                    />
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
                 </div>
               </div>
@@ -1534,7 +1579,7 @@ const AddHomestayWizard = () => {
                         </button>
                         {doc.fileUrl && (
                           <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-2.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-gray-200 hover:border-emerald-200 bg-white">
-                            <Search size={18} />
+                            <Eye size={18} />
                           </a>
                         )}
                       </div>
@@ -1633,7 +1678,7 @@ const AddHomestayWizard = () => {
               </div>
               <button
                 onClick={() => navigate('/hotel/properties')}
-                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95"
+                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95"
               >
                 Go to My Properties
               </button>
@@ -1642,7 +1687,7 @@ const AddHomestayWizard = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200 z-40">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
           <button
             onClick={handleBack}
@@ -1669,7 +1714,7 @@ const AddHomestayWizard = () => {
               isEditingSubItem ||
               (step === 6 && roomTypes.length === 0)
             }
-            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

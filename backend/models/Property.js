@@ -29,6 +29,19 @@ const propertySchema = new mongoose.Schema({
     type: String,
     enum: ["boys", "girls", "unisex"]
   },
+  mealsIncluded: {
+    type: String,
+    enum: ["Yes", "No"],
+    default: "No"
+  },
+  foodType: {
+    type: String,
+    enum: ["Veg", "Non-Veg", "Both", "none"],
+    default: "none"
+  },
+  noticePeriod: {
+    type: String
+  },
 
   hostelType: {
     type: String,

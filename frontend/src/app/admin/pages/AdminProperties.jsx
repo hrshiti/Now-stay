@@ -231,6 +231,7 @@ const AdminProperties = () => {
                         <option value="pg">PG</option>
                         <option value="resort">Resort</option>
                         <option value="homestay">Homestay</option>
+                        <option value="tent">Tent</option>
                     </select>
                 </div>
             </div>

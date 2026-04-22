@@ -4,7 +4,7 @@ import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
 import {
   CheckCircle, FileText, Home, Image, Plus, Trash2, MapPin, Search,
-  BedDouble, Wifi, Tv, Snowflake, Coffee, ShowerHead, Umbrella, Waves, Mountain, Trees, Sun, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X
+  BedDouble, Wifi, Tv, Snowflake, Coffee, ShowerHead, Umbrella, Waves, Mountain, Trees, Sun, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X, Eye
 } from 'lucide-react';
 
 
@@ -147,14 +147,18 @@ const AddTentWizard = () => {
 
   // --- WebView History / Back Button Fix ---
   useEffect(() => {
-    const currentHash = window.location.hash;
-    const targetHash = `#step${step}`;
-    if (currentHash !== targetHash) {
-      if (step === 1 && (!currentHash || currentHash === '#step1')) {
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
-      } else {
-        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+    try {
+      const currentHash = window.location.hash;
+      const targetHash = `#step${step}`;
+      if (currentHash !== targetHash) {
+        if (step === 1 && (!currentHash || currentHash === '#step1')) {
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        } else {
+          window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        }
       }
+    } catch (e) {
+      console.warn('[History] Navigation failed:', e);
     }
   }, [step]);
 
@@ -173,6 +177,15 @@ const AddTentWizard = () => {
   }, []);
 
   // Helper Functions
+  
+  // Reset sub-item editing states when switching steps to prevent UI locks
+  useEffect(() => {
+    setEditingRoomType(null);
+    setEditingRoomTypeIndex(null);
+    setEditingNearbyIndex(null);
+    setError("");
+  }, [step]);
+
   const updatePropertyForm = (path, value) => {
     setPropertyForm(prev => {
       const clone = JSON.parse(JSON.stringify(prev));
@@ -412,11 +425,11 @@ const AddTentWizard = () => {
       inventoryType: 'room',
       roomCategory: 'private',
       maxAdults: '',
-      maxChildren: 0,
+      maxChildren: '',
       totalInventory: '',
       pricePerNight: '',
-      extraAdultPrice: 0,
-      extraChildPrice: 0,
+      extraAdultPrice: '',
+      extraChildPrice: '',
       images: [],
       amenities: [],
       isActive: true
@@ -429,6 +442,10 @@ const AddTentWizard = () => {
     const rt = roomTypes[index];
     setEditingRoomType({
       ...rt,
+      maxChildren: rt.maxChildren === 0 ? '' : rt.maxChildren,
+      extraAdultPrice: rt.extraAdultPrice === 0 ? '' : rt.extraAdultPrice,
+      extraChildPrice: rt.extraChildPrice === 0 ? '' : rt.extraChildPrice,
+      pricePerNight: rt.pricePerNight === 0 ? '' : rt.pricePerNight,
       images: Array.isArray(rt.images) ? rt.images : [],
       amenities: Array.isArray(rt.amenities) ? rt.amenities : []
     });
@@ -861,6 +878,7 @@ const AddTentWizard = () => {
   };
 
   const handleBack = () => {
+    setError('');
     if (step > 1) {
       setStep(step - 1);
     } else {
@@ -884,6 +902,8 @@ const AddTentWizard = () => {
       setPropertyForm(prev => ({ ...prev, coverImage: '', propertyImages: [] }));
     } else if (step === 6) {
       setRoomTypes([]);
+      setEditingRoomType(null);
+      setEditingRoomTypeIndex(null);
     } else if (step === 7) {
       setPropertyForm(prev => ({ ...prev, checkInTime: '', checkOutTime: '', cancellationPolicy: '', houseRules: [] }));
     } else if (step === 8) {
@@ -1179,7 +1199,7 @@ const AddTentWizard = () => {
                 <input className="input" placeholder="City" value={propertyForm.address.city} onChange={e => updatePropertyForm(['address', 'city'], e.target.value)} />
                 <input className="input" placeholder="State" value={propertyForm.address.state} onChange={e => updatePropertyForm(['address', 'state'], e.target.value)} />
                 <input className="input" placeholder="Country" value={propertyForm.address.country} onChange={e => updatePropertyForm(['address', 'country'], e.target.value)} />
-                <input className="input" placeholder="Pincode" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
+                <input className="input" placeholder="Pincode" maxLength={6} value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value.replace(/\D/g, ''))} />
                 <input className="input" placeholder="Area" value={propertyForm.address.area} onChange={e => updatePropertyForm(['address', 'area'], e.target.value)} />
               </div>
 
@@ -1320,7 +1340,7 @@ const AddTentWizard = () => {
                         <button
                           type="button"
                           onClick={searchNearbyPlaces}
-                          className="px-4 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm"
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold text-sm"
                         >
                           Search
                         </button>
@@ -1370,7 +1390,7 @@ const AddTentWizard = () => {
 
                     <div className="flex gap-3 pt-2">
                       <button type="button" onClick={cancelEditNearbyPlace} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save Place</button>
+                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all transform active:scale-95">Save Place</button>
                     </div>
                   </div>
                 </div>
@@ -1467,7 +1487,7 @@ const AddTentWizard = () => {
                                 Inventory: <span className="text-gray-900">{rt.totalInventory}</span> · Capacity: <span className="text-gray-900">{rt.maxAdults}A, {rt.maxChildren}C</span>
                               </div>
                             </div>
-                            <div className="text-lg font-bold text-emerald-600">₹{rt.pricePerNight}</div>
+                            <div className="text-lg font-bold text-emerald-600">₹ {rt.pricePerNight}</div>
                           </div>
 
                           {rt.amenities && rt.amenities.length > 0 && (
@@ -1530,7 +1550,10 @@ const AddTentWizard = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Price / Night (₹)</label>
-                        <input className="input w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
+                        <div className="relative">
+                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Total Units</label>
@@ -1552,11 +1575,17 @@ const AddTentWizard = () => {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
-                        <input className="input w-full" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value })} />
+                        <div className="relative">
+                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value })} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
-                        <input className="input w-full" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value })} />
+                        <div className="relative">
+                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value })} />
+                        </div>
                       </div>
                     </div>
 
@@ -1601,9 +1630,24 @@ const AddTentWizard = () => {
                     </div>
 
                     {/* Save / Cancel inside content so page scrolls to reveal them */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex flex-wrap gap-2 pt-2">
                       <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          if (window.confirm("Clear all fields for this tent/room?")) {
+                            if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
+                              startAddRoomType();
+                            } else {
+                              startEditRoomType(editingRoomTypeIndex);
+                            }
+                          }
+                        }}
+                        className="flex-1 py-3 text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors"
+                      >
+                        Clear
+                      </button>
+                      <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all transform active:scale-95">Save</button>
                     </div>
                   </div>
                 </div>
@@ -1624,17 +1668,12 @@ const AddTentWizard = () => {
                     </label>
                     <div className="relative">
                       <input
-                        className={`input w-full !pl-12 ${!propertyForm.checkInTime && error ? 'border-red-400 ring-1 ring-red-400' : ''}`}
-                        placeholder="e.g. 12:00 PM"
+                        type="time"
+                        className={`input w-full !pl-10 ${!propertyForm.checkInTime && error ? 'border-red-400 ring-1 ring-red-400' : ''}`}
                         value={propertyForm.checkInTime}
-                        onChange={e => {
-                          // Allow only digits, colon, space, A, P, M (for AM/PM)
-                          const filtered = e.target.value.replace(/[^0-9: AaPpMm]/g, '').slice(0, 8);
-                          updatePropertyForm('checkInTime', filtered.toUpperCase());
-                        }}
-                        maxLength={8}
+                        onChange={e => updatePropertyForm('checkInTime', e.target.value)}
                       />
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1643,17 +1682,12 @@ const AddTentWizard = () => {
                     </label>
                     <div className="relative">
                       <input
-                        className={`input w-full !pl-12 ${!propertyForm.checkOutTime && error ? 'border-red-400 ring-1 ring-red-400' : ''}`}
-                        placeholder="e.g. 11:00 AM"
+                        type="time"
+                        className={`input w-full !pl-10 ${!propertyForm.checkOutTime && error ? 'border-red-400 ring-1 ring-red-400' : ''}`}
                         value={propertyForm.checkOutTime}
-                        onChange={e => {
-                          // Allow only digits, colon, space, A, P, M (for AM/PM)
-                          const filtered = e.target.value.replace(/[^0-9: AaPpMm]/g, '').slice(0, 8);
-                          updatePropertyForm('checkOutTime', filtered.toUpperCase());
-                        }}
-                        maxLength={8}
+                        onChange={e => updatePropertyForm('checkOutTime', e.target.value)}
                       />
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                     </div>
                   </div>
                 </div>
@@ -1746,7 +1780,7 @@ const AddTentWizard = () => {
                         </button>
                         {doc.fileUrl && (
                           <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-2.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-gray-200 hover:border-emerald-200 bg-white">
-                            <Search size={18} />
+                            <Eye size={18} />
                           </a>
                         )}
                       </div>
@@ -1811,7 +1845,7 @@ const AddTentWizard = () => {
                       {roomTypes.map((rt, i) => (
                         <div key={i} className="flex justify-between items-center text-sm">
                           <span className="text-gray-600 font-medium">{rt.name}</span>
-                          <span className="font-bold text-gray-900">₹{rt.pricePerNight}</span>
+                          <span className="font-bold text-gray-900">₹ {rt.pricePerNight}</span>
                         </div>
                       ))}
                     </div>
@@ -1847,7 +1881,7 @@ const AddTentWizard = () => {
               </div>
               <button
                 onClick={() => navigate('/hotel/properties')}
-                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95"
+                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95"
               >
                 Go to My Properties
               </button>
@@ -1877,10 +1911,10 @@ const AddTentWizard = () => {
           <button
             onClick={handleNext}
             disabled={loading || (step === 6 && roomTypes.length === 0)}
-            className="flex-1 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
           >
             {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            {step === 9 ? (loading ? 'Submitting...' : 'Submit Property') : 'Continue'}
+            {step === 9 ? (loading ? 'Submitting...' : 'Submit Property') : 'Next Step'}
           </button>
         </div>
       </footer>

@@ -133,6 +133,16 @@ const PartnerProfile = () => {
 
     const handleToggleEdit = async () => {
         if (isEditing) {
+            const nameRegex = /^[A-Za-z\s]+$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!profile.name || !nameRegex.test(profile.name)) {
+                return toast.error('Full name should only contain alphabets');
+            }
+            if (!profile.email || !emailRegex.test(profile.email)) {
+                return toast.error('Please enter a valid email address');
+            }
+
             const addressObj = parseAddress(profile.address);
             try {
                 const res = await authService.updateProfile({

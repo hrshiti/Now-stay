@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Calendar, Users, MapPin, CreditCard,
-  ShieldCheck, Lock, ChevronRight, Building, CheckCircle, Tag, Wallet
+  ArrowLeft, CreditCard,
+  Lock, ChevronRight, Building, CheckCircle, Tag, Wallet, X, FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { bookingService, paymentService } from '../../services/apiService';
+import { bookingService, paymentService, legalService } from '../../services/apiService';
 import walletService from '../../services/walletService';
 
 const loadRazorpay = () => {
@@ -16,6 +16,22 @@ const loadRazorpay = () => {
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
+};
+
+// Simple Markdown to HTML converter
+const parseMarkdown = (text) => {
+  if (!text) return '';
+  return text
+    .replace(/^### (.+)$/gm, '<h3 class="text-base font-black text-gray-800 mt-4 mb-1">$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2 class="text-lg font-black text-gray-900 mt-5 mb-2">$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1 class="text-xl font-black text-gray-900 mt-5 mb-2">$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-black text-gray-800">$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/^\* (.+)$/gm, '<li class="ml-4 list-disc text-gray-600">$1</li>')
+    .replace(/(<li.*<\/li>)/gs, '<ul class="space-y-1 my-2">$1</ul>')
+    .replace(/\n\n/g, '</p><p class="text-gray-600 my-2">')
+    .replace(/\n/g, '<br />')
+    .replace(/^(?!<)(.+)$/gm, '<p class="text-gray-600 my-1">$1</p>');
 };
 
 const BookingCheckoutPage = () => {
@@ -37,6 +53,24 @@ const BookingCheckoutPage = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [walletBalance, setWalletBalance] = useState(0);
   const [useWallet, setUseWallet] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [legalModal, setLegalModal] = useState(null); // 'terms' | 'privacy' | null
+  const [legalContent, setLegalContent] = useState(null);
+  const [legalLoading, setLegalLoading] = useState(false);
+
+  const openLegalModal = async (type) => {
+    setLegalModal(type);
+    setLegalContent(null);
+    setLegalLoading(true);
+    try {
+      const res = await legalService.getPage('user', type);
+      setLegalContent(res?.page || null);
+    } catch (e) {
+      setLegalContent(null);
+    } finally {
+      setLegalLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!property || !dates) {
@@ -48,6 +82,7 @@ const BookingCheckoutPage = () => {
   }, [property, dates, navigate]);
 
   const fetchWalletBalance = async () => {
+    if (!localStorage.getItem('token')) return;
     try {
       const data = await walletService.getWallet({ viewAs: 'user' });
       if (data.success && data.wallet) {
@@ -235,6 +270,7 @@ const BookingCheckoutPage = () => {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-emerald-100 pb-20 md:pb-10">
       <div className="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 shadow-sm shadow-emerald-900/5">
         <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
@@ -487,12 +523,43 @@ const BookingCheckoutPage = () => {
           </div>
         </div>
 
+        {/* Terms & Conditions Checkbox */}
+        <label className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${termsAccepted ? 'border-surface bg-surface/5' : 'border-gray-200 bg-white/60'}`}>
+          <div className="relative flex items-center pt-0.5 shrink-0">
+            <input
+              type="checkbox"
+              className="w-5 h-5 rounded-md accent-surface cursor-pointer"
+              checked={termsAccepted}
+              onChange={e => setTermsAccepted(e.target.checked)}
+            />
+          </div>
+          <p className="text-xs text-gray-600 font-medium leading-relaxed">
+            I have read and agree to the{' '}
+            <button
+              type="button"
+              className="text-surface font-black underline"
+              onClick={e => { e.preventDefault(); openLegalModal('terms'); }}
+            >
+              Terms &amp; Conditions
+            </button>
+            {' '}and{' '}
+            <button
+              type="button"
+              className="text-surface font-black underline"
+              onClick={e => { e.preventDefault(); openLegalModal('privacy'); }}
+            >
+              Privacy Policy
+            </button>
+            {' '}of NowStay.
+          </p>
+        </label>
+
         {/* Confirm Button */}
-        <div className="pt-4">
+        <div className="pt-2">
           <button
             onClick={handleConfirmBooking}
-            disabled={loading}
-            className="w-full bg-surface text-white font-black text-lg py-5 rounded-[2rem] shadow-2xl shadow-emerald-900/40 hover:bg-surface-dark active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            disabled={loading || !termsAccepted}
+            className="w-full bg-surface text-white font-black text-lg py-5 rounded-[2rem] shadow-2xl shadow-emerald-900/40 hover:bg-surface-dark active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
           >
             {loading ? (
               <span className="animate-pulse">Finalizing...</span>
@@ -505,12 +572,70 @@ const BookingCheckoutPage = () => {
           </button>
           <p className="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1">
             <Lock size={10} />
-            Your data is secure. By booking, you agree to our Terms.
+            Your data is secure &amp; encrypted.
           </p>
         </div>
 
       </div>
     </div>
+
+    {/* Legal Content Bottom Sheet Modal */}
+    {legalModal && (
+      <div className="fixed inset-0 z-[200] flex flex-col justify-end">
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={() => setLegalModal(null)}
+        />
+        {/* Sheet */}
+        <div className="relative bg-white rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-2xl">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+            <div className="flex items-center gap-2">
+              <FileText size={18} className="text-surface" />
+              <h2 className="font-black text-gray-900 text-base">
+                {legalModal === 'terms' ? 'Terms & Conditions' : 'Privacy Policy'}
+              </h2>
+            </div>
+            <button
+              onClick={() => setLegalModal(null)}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors active:scale-90"
+            >
+              <X size={20} className="text-gray-500" />
+            </button>
+          </div>
+
+          {/* Content */}
+          <div className="overflow-y-auto flex-1 px-6 py-4 text-sm text-gray-600 leading-relaxed space-y-3">
+            {legalLoading ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <div className="w-8 h-8 border-2 border-surface border-t-transparent rounded-full animate-spin" />
+                <p className="text-gray-400 text-sm">Loading...</p>
+              </div>
+            ) : legalContent ? (
+              <div
+                className="prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: parseMarkdown(legalContent.content || legalContent.body || String(legalContent)) }}
+              />
+            ) : (
+              <p className="text-gray-400 text-center py-10">Content not available. Please try again.</p>
+            )}
+          </div>
+
+          {/* Agree Button */}
+          <div className="px-6 py-4 border-t border-gray-100 shrink-0">
+            <button
+              onClick={() => { setTermsAccepted(true); setLegalModal(null); }}
+              className="w-full bg-surface text-white font-black py-4 rounded-[1.5rem] shadow-lg shadow-emerald-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <CheckCircle size={18} />
+              I Agree &amp; Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

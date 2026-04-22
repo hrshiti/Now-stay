@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { propertyService, legalService, reviewService, offerService, availabilityService, userService } from '../../services/apiService';
 import {
   MapPin, Star, Share2, Heart, ArrowLeft,
@@ -13,6 +13,9 @@ import ModernDatePicker from '../../components/ui/ModernDatePicker';
 const PropertyDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Only allow reviews from completed bookings (via ?canReview=true)
+  const canReview = new URLSearchParams(location.search).get('canReview') === 'true';
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -188,6 +191,8 @@ const PropertyDetailsPage = () => {
             pgType: p.pgType,
             resortType: p.resortType,
             foodType: p.foodType,
+            mealsIncluded: p.mealsIncluded,
+            noticePeriod: p.noticePeriod,
             hotelCategory: p.hotelCategory,
             starRating: p.starRating
           }
@@ -581,12 +586,6 @@ const PropertyDetailsPage = () => {
       return;
     }
 
-    if (!localStorage.getItem('token')) {
-      toast.error("Please login to book");
-      navigate('/login', { state: { from: `/hotel/${id}` } });
-      return;
-    }
-
     if (!priceBreakdown) {
       toast.error("Unable to calculate price. Please check dates.");
       return;
@@ -699,7 +698,17 @@ const PropertyDetailsPage = () => {
           </>
         )}
         <div className="absolute top-4 left-4 z-10">
-          <button onClick={() => navigate(-1)} className="bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-colors">
+          <button 
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.history.length > 2) {
+                navigate(-1);
+              } else {
+                navigate('/listings');
+              }
+            }} 
+            className="bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-colors cursor-pointer"
+          >
             <ArrowLeft size={20} className="text-surface" />
           </button>
         </div>
@@ -1372,15 +1381,18 @@ const PropertyDetailsPage = () => {
                   <Star size={14} className="fill-honey text-honey" />
                 </div>
               </div>
-              <button
-                onClick={() => setShowReviewForm(!showReviewForm)}
-                className="text-xs font-black text-surface border border-surface/20 px-4 py-2 rounded-xl bg-white shadow-sm hover:bg-surface hover:text-white transition-all flex items-center gap-2 active:scale-95"
-              >
-                <div className="p-1 bg-surface/10 rounded-lg group-hover:bg-white/20">
-                  <MessageSquare size={14} />
-                </div>
-                <span>Write a Review</span>
-              </button>
+              {/* Write a Review - only shown after a completed stay */}
+              {canReview && (
+                <button
+                  onClick={() => setShowReviewForm(!showReviewForm)}
+                  className="text-xs font-black text-surface border border-surface/20 px-4 py-2 rounded-xl bg-white shadow-sm hover:bg-surface hover:text-white transition-all flex items-center gap-2 active:scale-95"
+                >
+                  <div className="p-1 bg-surface/10 rounded-lg group-hover:bg-white/20">
+                    <MessageSquare size={14} />
+                  </div>
+                  <span>Write a Review</span>
+                </button>
+              )}
             </div>
 
             {/* Review Form */}

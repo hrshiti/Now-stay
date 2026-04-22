@@ -83,7 +83,7 @@ const UserSignup = () => {
             if (isDuplicate) {
                 setError(`${errorMessage} Redirecting to login...`);
                 setTimeout(() => {
-                    navigate('/login', { state: { phone: formData.phone } });
+                    navigate('/login', { state: { phone: formData.phone, from: location.state?.from } });
                 }, 2000);
             } else {
                 setError(errorMessage || 'Failed to send OTP');
@@ -157,7 +157,8 @@ const UserSignup = () => {
             console.log(`[REFERRAL_DEBUG] Registration successful, clearing localStorage referralCode`);
             localStorage.removeItem('referralCode');
             const redirectTo = location.state?.from?.pathname || '/';
-            navigate(redirectTo, { replace: true });
+            const redirectState = location.state?.from?.state || {};
+            navigate(redirectTo, { replace: true, state: redirectState });
         } catch (err) {
             setError(err.message || 'Verification failed');
         } finally {
@@ -388,7 +389,7 @@ const UserSignup = () => {
                         <p className="text-gray-400 text-xs font-medium">
                             Already have an account?{' '}
                             <button
-                                onClick={() => navigate('/login')}
+                                onClick={() => navigate('/login', { state: { from: location.state?.from } })}
                                 className="text-emerald-600 font-black hover:underline"
                             >
                                 Login

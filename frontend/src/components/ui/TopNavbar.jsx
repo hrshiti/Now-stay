@@ -64,7 +64,7 @@ const TopNavbar = () => {
                 </Link>
 
                 <Link
-                    to="/settings"
+                    to="/profile"
                     className="pl-3 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-full flex items-center gap-3 hover:border-surface transition group"
                 >
                     <div className="w-8 h-8 rounded-full bg-surface text-white flex items-center justify-center font-bold text-xs">

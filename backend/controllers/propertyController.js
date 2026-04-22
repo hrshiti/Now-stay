@@ -35,7 +35,7 @@ const notifySubmission = async (property) => {
 
 export const createProperty = async (req, res) => {
   try {
-    const { propertyName, contactNumber, propertyType, propertyTemplate, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, resortType, activities, hotelCategory, starRating } = req.body;
+    const { propertyName, contactNumber, propertyType, propertyTemplate, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, resortType, activities, hotelCategory, starRating, mealsIncluded, foodType, noticePeriod } = req.body;
     if (!propertyName || !propertyType || !coverImage) return res.status(400).json({ message: 'Missing required fields' });
 
     // Validate contact number if provided (Indian mobile: 10 digits, starts with 6-9)
@@ -78,6 +78,9 @@ export const createProperty = async (req, res) => {
       activities: (lowerType === 'resort' || lowerType === 'tent') ? activities : undefined,
       hotelCategory: lowerType === 'hotel' ? hotelCategory : undefined,
       starRating: lowerType === 'hotel' ? starRating : undefined,
+      mealsIncluded: (lowerType === 'pg' || lowerType === 'homestay') ? mealsIncluded : undefined,
+      foodType: (lowerType === 'pg' || lowerType === 'homestay') ? foodType : undefined,
+      noticePeriod: lowerType === 'pg' ? noticePeriod : undefined,
       suitability: req.body.suitability || 'none'
     });
     await doc.save();
@@ -160,7 +163,8 @@ export const updateProperty = async (req, res) => {
       'propertyName', 'shortDescription', 'address', 'location', 'nearbyPlaces',
       'amenities', 'coverImage', 'propertyImages', 'checkInTime', 'checkOutTime',
       'cancellationPolicy', 'houseRules', 'pgType', 'hostLivesOnProperty', 'resortType',
-      'activities', 'hotelCategory', 'starRating', 'contactNumber', 'suitability', 'isLive'
+      'activities', 'hotelCategory', 'starRating', 'contactNumber', 'suitability', 'isLive',
+      'mealsIncluded', 'foodType', 'noticePeriod'
     ];
 
     updatableFields.forEach(field => {

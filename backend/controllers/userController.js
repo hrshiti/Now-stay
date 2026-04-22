@@ -63,8 +63,23 @@ export const updateUserProfile = async (req, res) => {
     }
 
     if (user) {
-      user.name = req.body.name || user.name;
-      if (req.body.email) user.email = req.body.email;
+      const nameRegex = /^[A-Za-z\s]+$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+      if (req.body.name) {
+        if (!nameRegex.test(req.body.name)) {
+          return res.status(400).json({ message: 'Full name should only contain alphabets and spaces' });
+        }
+        user.name = req.body.name;
+      }
+
+      if (req.body.email) {
+        if (!emailRegex.test(req.body.email)) {
+          return res.status(400).json({ message: 'Please provide a valid email address' });
+        }
+        user.email = req.body.email;
+      }
+
       if (req.body.phone) user.phone = req.body.phone;
 
       if (req.body.password) {

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
-import { CheckCircle, FileText, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, Wifi, Clock, Loader2, Camera } from 'lucide-react';
+import { CheckCircle, FileText, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, Wifi, Clock, Loader2, Camera, Eye } from 'lucide-react';
 
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
@@ -81,6 +81,9 @@ const AddPGWizard = () => {
     cancellationPolicy: '',
     suitability: 'none',
     houseRules: [],
+    mealsIncluded: 'No',
+    foodType: 'none',
+    noticePeriod: '',
     documents: REQUIRED_DOCS_PG.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
   });
 
@@ -120,14 +123,18 @@ const AddPGWizard = () => {
 
   // --- WebView History / Back Button Fix ---
   useEffect(() => {
-    const currentHash = window.location.hash;
-    const targetHash = `#step${step}`;
-    if (currentHash !== targetHash) {
-      if (step === 1 && (!currentHash || currentHash === '#step1')) {
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
-      } else {
-        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+    try {
+      const currentHash = window.location.hash;
+      const targetHash = `#step${step}`;
+      if (currentHash !== targetHash) {
+        if (step === 1 && (!currentHash || currentHash === '#step1')) {
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        } else {
+          window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        }
       }
+    } catch (e) {
+      console.warn('[History] Navigation failed:', e);
     }
   }, [step]);
 
@@ -144,6 +151,15 @@ const AddPGWizard = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  
+  // Reset sub-item editing states when switching steps to prevent UI locks
+  useEffect(() => {
+    setEditingRoomType(null);
+    setEditingRoomTypeIndex(null);
+    setEditingNearbyIndex(null);
+    setError("");
+  }, [step]);
 
   const updatePropertyForm = (path, value) => {
     setPropertyForm(prev => {
@@ -171,6 +187,9 @@ const AddPGWizard = () => {
           propertyName: prop.propertyName || '',
           propertyType: 'pg',
           pgType: prop.pgType || 'boys',
+          mealsIncluded: prop.mealsIncluded || 'No',
+          foodType: prop.foodType || 'none',
+          noticePeriod: prop.noticePeriod || '',
           description: prop.description || '',
           shortDescription: prop.shortDescription || '',
           coverImage: prop.coverImage || '',
@@ -523,12 +542,12 @@ const AddPGWizard = () => {
       inventoryType: 'bed',
       roomCategory: 'shared',
       maxAdults: '',
-      maxChildren: 0,
+      maxChildren: '',
       bedsPerRoom: '',
       totalInventory: '',
       pricePerNight: '',
-      extraAdultPrice: 0,
-      extraChildPrice: 0,
+      extraAdultPrice: '',
+      extraChildPrice: '',
       images: [],
       amenities: [],
       isActive: true
@@ -541,6 +560,10 @@ const AddPGWizard = () => {
     const rt = roomTypes[index];
     setEditingRoomType({
       ...rt,
+      maxChildren: rt.maxChildren === 0 ? '' : rt.maxChildren,
+      extraAdultPrice: rt.extraAdultPrice === 0 ? '' : rt.extraAdultPrice,
+      extraChildPrice: rt.extraChildPrice === 0 ? '' : rt.extraChildPrice,
+      pricePerNight: rt.pricePerNight === 0 ? '' : rt.pricePerNight,
       images: Array.isArray(rt.images) ? rt.images : [],
       amenities: Array.isArray(rt.amenities) ? rt.amenities : []
     });
@@ -688,6 +711,9 @@ const AddPGWizard = () => {
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
         pgType: propertyForm.pgType,
+        mealsIncluded: propertyForm.mealsIncluded,
+        foodType: propertyForm.foodType,
+        noticePeriod: propertyForm.noticePeriod,
         description: propertyForm.description,
         shortDescription: propertyForm.shortDescription,
         coverImage: propertyForm.coverImage,
@@ -782,6 +808,7 @@ const AddPGWizard = () => {
   const isEditingSubItem = editingRoomType !== null || editingNearbyIndex !== null;
 
   const handleBack = () => {
+    setError('');
     if (step === 1) {
       localStorage.removeItem(STORAGE_KEY);
       navigate(-1);
@@ -806,6 +833,8 @@ const AddPGWizard = () => {
       setPropertyForm(prev => ({ ...prev, coverImage: '', propertyImages: [] }));
     } else if (step === 6) {
       setRoomTypes([]);
+      setEditingRoomType(null);
+      setEditingRoomTypeIndex(null);
     } else if (step === 7) {
       setPropertyForm(prev => ({ ...prev, checkInTime: '12:00 PM', checkOutTime: '10:00 AM', cancellationPolicy: 'No refund after check-in', houseRules: [] }));
       setHouseRulesDraft('');
@@ -913,6 +942,55 @@ const AddPGWizard = () => {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Meals Included</label>
+                    <div className="relative">
+                      <select
+                        className="input appearance-none bg-white pr-10"
+                        value={propertyForm.mealsIncluded}
+                        onChange={e => updatePropertyForm('mealsIncluded', e.target.value)}
+                      >
+                        <option value="No">Not Included</option>
+                        <option value="Yes">Food Included</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <ChevronLeft size={16} className="-rotate-90" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Food Type</label>
+                    <div className="relative">
+                      <select
+                        className="input appearance-none bg-white pr-10"
+                        value={propertyForm.foodType}
+                        onChange={e => updatePropertyForm('foodType', e.target.value)}
+                      >
+                        <option value="none">N/A</option>
+                        <option value="Veg">Veg Only</option>
+                        <option value="Non-Veg">Non-Veg</option>
+                        <option value="Both">Veg & Non-Veg</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <ChevronLeft size={16} className="-rotate-90" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Notice Period</label>
+                  <input
+                    type="text"
+                    className="input"
+                    placeholder="e.g. 1 Month, 15 Days"
+                    value={propertyForm.noticePeriod}
+                    onChange={e => updatePropertyForm('noticePeriod', e.target.value)}
+                  />
+                </div>
+
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</label>
                   <textarea
@@ -987,7 +1065,7 @@ const AddPGWizard = () => {
             <div className="space-y-6">
               <div className="bg-white rounded-2xl p-1 relative z-20">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <Search className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                   <input
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-xl text-gray-800 placeholder:text-gray-400 focus:ring-0"
                     placeholder="Search area, street or landmark..."
@@ -1043,7 +1121,7 @@ const AddPGWizard = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Pincode/Zip</label>
-                  <input className="input" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
+                  <input className="input" maxLength={6} value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value.replace(/\D/g, ''))} />
                 </div>
               </div>
 
@@ -1178,7 +1256,7 @@ const AddPGWizard = () => {
                         <button
                           type="button"
                           onClick={searchNearbyPlaces}
-                          className="px-4 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm"
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold text-sm"
                         >
                           Search
                         </button>
@@ -1228,7 +1306,7 @@ const AddPGWizard = () => {
 
                     <div className="flex gap-3 pt-2">
                       <button type="button" onClick={cancelEditNearbyPlace} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save Place</button>
+                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all transform active:scale-95">Save Place</button>
                     </div>
                   </div>
                 </div>
@@ -1333,7 +1411,7 @@ const AddPGWizard = () => {
                                 <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                                   <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">{rt.roomCategory}</span>
                                   <span>•</span>
-                                  <span className="font-semibold text-gray-900">₹{rt.pricePerNight}</span>
+                                  <span className="font-semibold text-gray-900">₹ {rt.pricePerNight}</span>
                                   <span className="text-xs">/ night</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2 mt-3">
@@ -1392,8 +1470,8 @@ const AddPGWizard = () => {
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Price per Night (₹)</label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input pl-7" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
+                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input !pl-10" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
                         </div>
                       </div>
                       <div className="space-y-1">
@@ -1425,11 +1503,11 @@ const AddPGWizard = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.extraAdultPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value }))} />
+                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value }))} /></div>
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.extraChildPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value }))} />
+                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value }))} /></div>
                         </div>
                       </div>
                     </div>
@@ -1482,9 +1560,24 @@ const AddPGWizard = () => {
                       </div>
                     </div>
 
-                    <div className="pt-2 flex gap-3">
-                      <button onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
-                      <button onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-200">{editingRoomTypeIndex === -1 ? 'Add Inventory' : 'Save Changes'}</button>
+                    <div className="pt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          if (window.confirm("Clear all fields for this inventory?")) {
+                            if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
+                              startAddRoomType();
+                            } else {
+                              startEditRoomType(editingRoomTypeIndex);
+                            }
+                          }
+                        }}
+                        className="flex-1 py-3 text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors"
+                      >
+                        Clear
+                      </button>
+                      <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100">{editingRoomTypeIndex === -1 ? 'Add Inventory' : 'Save Changes'}</button>
                     </div>
                   </div>
                 </div>
@@ -1498,15 +1591,25 @@ const AddPGWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-In Time</label>
                   <div className="relative">
-                    <input className="input !pl-12" placeholder="e.g. 12:00 PM" value={propertyForm.checkInTime} onChange={e => updatePropertyForm('checkInTime', e.target.value)} />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <input 
+                      type="time"
+                      className="input !pl-10" 
+                      value={propertyForm.checkInTime} 
+                      onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                    />
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-Out Time</label>
                   <div className="relative">
-                    <input className="input !pl-12" placeholder="e.g. 11:00 AM" value={propertyForm.checkOutTime} onChange={e => updatePropertyForm('checkOutTime', e.target.value)} />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <input 
+                      type="time"
+                      className="input !pl-10" 
+                      value={propertyForm.checkOutTime} 
+                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                    />
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
                 </div>
               </div>
@@ -1586,7 +1689,7 @@ const AddPGWizard = () => {
                         </button>
                         {doc.fileUrl && (
                           <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-2.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-gray-200 hover:border-emerald-200 bg-white">
-                            <Search size={18} />
+                            <Eye size={18} />
                           </a>
                         )}
                       </div>
@@ -1677,7 +1780,7 @@ const AddPGWizard = () => {
               </div>
               <button
                 onClick={() => navigate('/hotel/properties')}
-                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95"
+                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95"
               >
                 Go to My Properties
               </button>
@@ -1686,7 +1789,7 @@ const AddPGWizard = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200 z-40">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
           <button
             onClick={handleBack}
@@ -1713,7 +1816,7 @@ const AddPGWizard = () => {
               isEditingSubItem ||
               (step === 6 && roomTypes.length === 0)
             }
-            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, MapPin, Pencil, PlusCircle, Trash2, Eye } from 'lucide-react';
+import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 import { propertyService } from '../../../services/apiService';
 import PartnerHeader from '../components/PartnerHeader';
 
@@ -92,7 +93,10 @@ const PartnerProperties = () => {
           </h2>
           <div className="flex gap-2">
             <button
-              onClick={() => navigate('/hotel/join')}
+              onClick={() => {
+                clearPropertyDrafts();
+                navigate('/hotel/join');
+              }}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0F172A] text-white text-[11px] font-bold uppercase tracking-wide active:scale-95"
             >
               <PlusCircle size={14} /> Add New

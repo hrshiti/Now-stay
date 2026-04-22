@@ -59,7 +59,7 @@ const UserLogin = () => {
             } else if (err.requiresRegistration || err.response?.data?.requiresRegistration || err.status === 404) {
                 setError('Account not found. Redirecting to signup...');
                 setTimeout(() => {
-                    navigate('/signup', { state: { phone } });
+                    navigate('/signup', { state: { phone, from: location.state?.from } });
                 }, 1500);
             } else {
                 setError(err.message || 'Failed to send OTP');
@@ -123,7 +123,8 @@ const UserLogin = () => {
 
             // Redirect back to the page the user was trying to access, or home
             const redirectTo = location.state?.from?.pathname || '/';
-            navigate(redirectTo, { replace: true });
+            const redirectState = location.state?.from?.state || {};
+            navigate(redirectTo, { replace: true, state: redirectState });
         } catch (err) {
             // Check if account is blocked or not found
             if (err.isBlocked || err.response?.data?.isBlocked || err.status === 403) {
@@ -131,7 +132,7 @@ const UserLogin = () => {
             } else if (err.requiresRegistration || err.response?.data?.requiresRegistration || err.status === 404) {
                 setError('Account not found. Redirecting to signup...');
                 setTimeout(() => {
-                    navigate('/signup', { state: { phone } });
+                    navigate('/signup', { state: { phone, from: location.state?.from } });
                 }, 1500);
             } else {
                 setError(err.message || 'Verification failed');
@@ -313,7 +314,7 @@ const UserLogin = () => {
                         <p className="text-gray-400 text-xs font-medium">
                             New to Now Stay?{' '}
                             <button
-                                onClick={() => navigate('/signup')}
+                                onClick={() => navigate('/signup', { state: { from: location.state?.from } })}
                                 className="text-emerald-600 font-black hover:underline"
                             >
                                 Create Account

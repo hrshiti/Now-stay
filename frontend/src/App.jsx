@@ -594,7 +594,7 @@ function App() {
               <Route path="/serviced" element={<div className="pt-20 text-center text-surface font-bold">Serviced Page</div>} />
               
               {/* These routes are now public but will handle Auth in-page */}
-              <Route path="/profile/edit" element={<ProfileEdit />} />
+              <Route path="/profile" element={<ProfileEdit />} />
               <Route path="/bookings" element={<BookingsPage />} />
               <Route path="/wallet" element={<WalletPage />} />
               <Route path="/refer" element={<ReferAndEarnPage />} />

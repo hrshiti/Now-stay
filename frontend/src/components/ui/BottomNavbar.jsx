@@ -13,7 +13,7 @@ const BottomNavbar = () => {
         { name: 'Home', icon: Home, route: '/' },
         { name: 'Bookings', icon: Briefcase, route: '/bookings' },
         { name: 'Near By', icon: Navigation, route: null, handler: 'nearBy' },
-        { name: 'Profile', icon: User, route: '/profile/edit' },
+        { name: 'Profile', icon: User, route: '/profile' },
     ];
 
     const getActiveTab = (path) => {

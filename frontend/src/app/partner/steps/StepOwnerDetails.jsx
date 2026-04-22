@@ -214,7 +214,7 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
           <div className="relative">
             <input
               type="file"
-              accept="image/png, image/jpeg, image/jpg, image/webp, image/heic"
+              accept="image/*"
               onChange={handleFileChange}
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               disabled={uploading}

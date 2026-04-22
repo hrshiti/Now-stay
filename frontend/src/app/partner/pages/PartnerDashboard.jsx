@@ -8,6 +8,7 @@ import RecentBookingsTable from '../components/dashboard/RecentBookingsTable';
 import ActionRequired from '../components/dashboard/ActionRequired';
 import { Calendar, Wallet, Building2, Star, Plus, Clock, XCircle, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 
 const PartnerDashboard = () => {
     useLenis();
@@ -66,7 +67,10 @@ const PartnerDashboard = () => {
                         <div className="flex items-center gap-3">
                             {/* Add Property - High Visible */}
                             <button
-                                onClick={() => navigate('/hotel/join')}
+                                onClick={() => {
+                                    clearPropertyDrafts();
+                                    navigate('/hotel/join');
+                                }}
                                 className="flex items-center gap-2 bg-[#0F172A] hover:bg-[#003836] text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-md active:scale-95"
                             >
                                 <Plus size={18} />

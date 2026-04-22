@@ -176,7 +176,7 @@ const PartnerTransactionsTab = ({ partnerId }) => {
 
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-center md:text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm relative overflow-hidden group">
                     <div className="relative z-10 flex flex-col justify-between h-full">
                         <div>
@@ -199,19 +199,7 @@ const PartnerTransactionsTab = ({ partnerId }) => {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Earnings</p>
-                    <h3 className="text-2xl font-black text-green-600">₹{stats?.totalEarnings?.toLocaleString() || 0}</h3>
-                    <p className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-tight">+₹{stats?.thisMonthEarnings?.toLocaleString() || 0} this month</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Total Payouts</p>
-                    <h3 className="text-2xl font-black text-orange-600">₹{stats?.totalWithdrawals?.toLocaleString() || 0}</h3>
-                </div>
-                <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Pending Clearance</p>
-                    <h3 className="text-2xl font-black text-blue-600">₹{stats?.pendingClearance?.toLocaleString() || 0}</h3>
-                </div>
+
             </div>
 
             {/* Adjustment Modal */}
@@ -478,11 +466,11 @@ const AdminPartnerDetail = () => {
                     <div className="space-y-4">
                         <div className="flex items-center gap-3 text-sm">
                             <Mail size={16} className="text-gray-400" />
-                            <span className="text-gray-900 font-bold">{partner.email || 'N/A'}</span>
+                            <a href={`mailto:${partner.email}`} className="text-gray-900 font-bold hover:text-blue-600 transition-colors">{partner.email || 'N/A'}</a>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                             <Phone size={16} className="text-gray-400" />
-                            <span className="text-gray-900 font-bold">{partner.phone}</span>
+                            <a href={`tel:${partner.phone}`} className="text-gray-900 font-bold hover:text-blue-600 transition-colors">{partner.phone}</a>
                         </div>
                         <div className="flex items-center gap-3 text-sm">
                             <User size={16} className="text-gray-400" />

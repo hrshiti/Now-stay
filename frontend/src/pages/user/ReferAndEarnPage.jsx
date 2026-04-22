@@ -67,11 +67,16 @@ const ReferAndEarnPage = () => {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const APP_LINK = 'https://play.google.com/store/apps/details?id=com.nowstay.userapp';
+    const whatsappHref = `https://wa.me/?text=${encodeURIComponent(`Book hotels at amazing prices! Use my referral code ${referralData.code} and get ₹100 off! Download the app: ${APP_LINK}`)}`;
+    const emailHref = `https://mail.google.com/mail/?view=cm&su=${encodeURIComponent('Get ₹100 off on NowStay.in')}&body=${encodeURIComponent(`Hey! Use my referral code ${referralData.code} to get ₹100 off on your first hotel booking at NowStay!
+
+Download the app: ${APP_LINK}`)}`;
+
     const shareOptions = [
-        { icon: MessageCircle, label: "WhatsApp", color: "bg-[#25D366]", action: () => window.open(`https://wa.me/?text=Book hotels at amazing prices! Use my referral code ${referralData.code} and get ₹100 off! ${referralData.link}`) },
-        { icon: Twitter, label: "Twitter", color: "bg-[#1DA1F2]", action: () => window.open(`https://twitter.com/intent/tweet?text=Get ₹100 off on your first hotel booking with NowStay.in! Use code: ${referralData.code}`) },
-        { icon: Facebook, label: "Facebook", color: "bg-[#4267B2]", action: () => { } },
-        { icon: Mail, label: "Email", color: "bg-gray-600", action: () => window.open(`mailto:?subject=Get ₹100 off on NowStay.in&body=Use my code ${referralData.code} to get ₹100 off! ${referralData.link}`) },
+        { icon: MessageCircle, label: "WhatsApp", color: "bg-[#25D366]", href: whatsappHref },
+        { icon: Facebook, label: "Facebook", color: "bg-[#1877F2]", href: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(APP_LINK)}&quote=${encodeURIComponent(`Use my referral code ${referralData.code} to get ₹100 off on NowStay!`)}` },
+        { icon: Mail, label: "Email", color: "bg-gray-600", href: emailHref },
     ];
 
     const howItWorks = [
@@ -263,19 +268,20 @@ const ReferAndEarnPage = () => {
                                 {/* Share Options */}
                                 <div>
                                     <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 ml-1">Share Via</p>
-                                    <div className="grid grid-cols-4 gap-3">
+                                    <div className="grid grid-cols-3 gap-3">
                                         {shareOptions.map((option, i) => (
-                                            <motion.button
+                                            <a
                                                 key={i}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={option.action}
+                                                href={option.href}
+                                                target={option.href.startsWith('http') ? "_blank" : undefined}
+                                                rel="noopener noreferrer"
                                                 className="flex flex-col items-center gap-2 p-4 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
                                             >
                                                 <div className={`w-12 h-12 ${option.color} rounded-full flex items-center justify-center text-white shadow-lg`}>
                                                     <option.icon size={22} />
                                                 </div>
                                                 <span className="text-[10px] font-bold text-gray-600">{option.label}</span>
-                                            </motion.button>
+                                            </a>
                                         ))}
                                     </div>
                                 </div>
@@ -305,8 +311,11 @@ const ReferAndEarnPage = () => {
                                 </div>
 
                                 {/* Terms */}
-                                <div className="text-center">
-                                    <button className="text-xs font-bold text-accent underline underline-offset-2">
+                                <div className="text-center mt-6">
+                                    <button 
+                                        onClick={() => navigate('/terms')}
+                                        className="text-xs font-bold text-accent underline underline-offset-2 cursor-pointer hover:text-surface transition-colors"
+                                    >
                                         View Terms & Conditions
                                     </button>
                                 </div>

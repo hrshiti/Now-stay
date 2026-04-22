@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogOut, Trash2, UserPlus, AlertCircle } from 'lucide-react';
+import { ArrowLeft, LogOut, Trash2, UserPlus, AlertCircle, User } from 'lucide-react';
 import { userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
 import AuthRequired from '../../components/ui/AuthRequired';
@@ -56,6 +56,22 @@ const SettingsPage = () => {
             <div className="px-5 mt-8 relative z-10 space-y-4 pb-24">
                 {user ? (
                     <>
+                        {/* Profile Section */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <button
+                                onClick={() => navigate('/profile')}
+                                className="w-full flex items-center gap-3 p-5 text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                                <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                    <User size={20} />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-sm font-bold">My Profile</p>
+                                    <p className="text-[10px] text-gray-400">View and update your personal details</p>
+                                </div>
+                            </button>
+                        </div>
+
                         {/* Logout Section */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <button

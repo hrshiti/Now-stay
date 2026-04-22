@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
-import { CheckCircle, FileText, Home, Image, Plus, Trash2, MapPin, Search, BedDouble, Wifi, Snowflake, Coffee, ShowerHead, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, X, Clock, Loader2, Camera } from 'lucide-react';
+import { CheckCircle, FileText, Home, Image, Plus, Trash2, MapPin, Search, BedDouble, Wifi, Snowflake, Coffee, ShowerHead, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, X, Clock, Loader2, Camera, Eye } from 'lucide-react';
 
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
@@ -111,14 +111,18 @@ const AddVillaWizard = () => {
 
   // --- WebView History / Back Button Fix ---
   useEffect(() => {
-    const currentHash = window.location.hash;
-    const targetHash = `#step${step}`;
-    if (currentHash !== targetHash) {
-      if (step === 1 && (!currentHash || currentHash === '#step1')) {
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
-      } else {
-        window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+    try {
+      const currentHash = window.location.hash;
+      const targetHash = `#step${step}`;
+      if (currentHash !== targetHash) {
+        if (step === 1 && (!currentHash || currentHash === '#step1')) {
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        } else {
+          window.history.pushState(null, '', `${window.location.pathname}${window.location.search}${targetHash}`);
+        }
       }
+    } catch (e) {
+      console.warn('[History] Navigation failed:', e);
     }
   }, [step]);
 
@@ -135,6 +139,15 @@ const AddVillaWizard = () => {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  
+  // Reset sub-item editing states when switching steps to prevent UI locks
+  useEffect(() => {
+    setEditingRoomType(null);
+    setEditingRoomTypeIndex(null);
+    setEditingNearbyIndex(null);
+    setError("");
+  }, [step]);
 
   const updatePropertyForm = (path, value) => {
     setPropertyForm(prev => {
@@ -548,11 +561,11 @@ const AddVillaWizard = () => {
       inventoryType: 'entire',
       roomCategory: 'entire',
       maxAdults: '',
-      maxChildren: 0,
+      maxChildren: '',
       totalInventory: '1',
       pricePerNight: '',
-      extraAdultPrice: 0,
-      extraChildPrice: 0,
+      extraAdultPrice: '',
+      extraChildPrice: '',
       images: [],
       amenities: [],
       isActive: true
@@ -565,6 +578,10 @@ const AddVillaWizard = () => {
     const rt = roomTypes[index];
     setEditingRoomType({
       ...rt,
+      maxChildren: rt.maxChildren === 0 ? '' : rt.maxChildren,
+      extraAdultPrice: rt.extraAdultPrice === 0 ? '' : rt.extraAdultPrice,
+      extraChildPrice: rt.extraChildPrice === 0 ? '' : rt.extraChildPrice,
+      pricePerNight: rt.pricePerNight === 0 ? '' : rt.pricePerNight,
       images: Array.isArray(rt.images) ? rt.images : [],
       amenities: Array.isArray(rt.amenities) ? rt.amenities : []
     });
@@ -796,6 +813,7 @@ const AddVillaWizard = () => {
   const isEditingSubItem = editingRoomType !== null || editingNearbyIndex !== null;
 
   const handleBack = () => {
+    setError('');
     if (step === 1) {
       localStorage.removeItem(STORAGE_KEY);
       navigate(-1);
@@ -820,6 +838,8 @@ const AddVillaWizard = () => {
       updatePropertyForm('propertyImages', []);
     } else if (step === 6) {
       setRoomTypes([]);
+      setEditingRoomType(null);
+      setEditingRoomTypeIndex(null);
     } else if (step === 7) {
       setPropertyForm(prev => ({ ...prev, checkInTime: '', checkOutTime: '', cancellationPolicy: '', houseRules: [] }));
       setCustomHouseRulesDraft('');
@@ -974,7 +994,7 @@ const AddVillaWizard = () => {
             <div className="space-y-6">
               <div className="bg-white rounded-2xl p-1 relative z-20">
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <Search className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                   <input
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-none rounded-xl text-gray-800 placeholder:text-gray-400 focus:ring-0"
                     placeholder="Search area, street or landmark..."
@@ -1030,7 +1050,7 @@ const AddVillaWizard = () => {
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Pincode/Zip</label>
-                  <input className="input" value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value)} />
+                  <input className="input" maxLength={6} value={propertyForm.address.pincode} onChange={e => updatePropertyForm(['address', 'pincode'], e.target.value.replace(/\D/g, ''))} />
                 </div>
               </div>
 
@@ -1174,7 +1194,7 @@ const AddVillaWizard = () => {
                         <button
                           type="button"
                           onClick={searchNearbyPlaces}
-                          className="px-4 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm"
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold text-sm"
                         >
                           Search
                         </button>
@@ -1224,7 +1244,7 @@ const AddVillaWizard = () => {
 
                     <div className="flex gap-3 pt-2">
                       <button type="button" onClick={cancelEditNearbyPlace} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-200 transition-all transform active:scale-95">Save Place</button>
+                      <button type="button" onClick={saveNearbyPlace} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all transform active:scale-95">Save Place</button>
                     </div>
                   </div>
                 </div>
@@ -1286,7 +1306,7 @@ const AddVillaWizard = () => {
                     {propertyForm.propertyImages.map((img, i) => (
                       <div key={i} className="aspect-square rounded-xl bg-gray-100 relative group overflow-hidden border border-gray-200">
                         <img src={img} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-emerald-700/20 transition-all" />
                         <button
                           onClick={() => updatePropertyForm('propertyImages', propertyForm.propertyImages.filter((_, x) => x !== i))}
                           className="absolute top-1 right-1 p-1.5 bg-white text-red-500 rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
@@ -1344,7 +1364,7 @@ const AddVillaWizard = () => {
                               <div>
                                 <div className="font-bold text-gray-900 text-lg">{rt.name}</div>
                                 <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                  <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">₹{rt.pricePerNight} / night</span>
+                                  <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">₹ {rt.pricePerNight} / night</span>
                                 </div>
                                 <div className="flex flex-wrap gap-2 mt-3">
                                   <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded flex items-center gap-1">Adults: {rt.maxAdults}</span>
@@ -1397,8 +1417,8 @@ const AddVillaWizard = () => {
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Price per Night (₹)</label>
                         <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input pl-7" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
+                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input !pl-10" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
                         </div>
                       </div>
                       {/* Total Units Hidden for Villa - Always 1 */}
@@ -1469,9 +1489,24 @@ const AddVillaWizard = () => {
                       </div>
                     </div>
 
-                    <div className="pt-2 flex gap-3">
-                      <button onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
-                      <button onClick={saveEditingRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-200">{editingRoomTypeIndex === -1 ? 'Add Details' : 'Save Changes'}</button>
+                    <div className="pt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          if (window.confirm("Clear all fields for this detail?")) {
+                            if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
+                              startAddRoomType();
+                            } else {
+                              startEditRoomType(editingRoomTypeIndex);
+                            }
+                          }
+                        }}
+                        className="flex-1 py-3 text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors"
+                      >
+                        Clear
+                      </button>
+                      <button type="button" onClick={saveEditingRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100">{editingRoomTypeIndex === -1 ? 'Add Details' : 'Save Changes'}</button>
                     </div>
                   </div>
                 </div>
@@ -1485,15 +1520,25 @@ const AddVillaWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-In Time</label>
                   <div className="relative">
-                    <input className="input !pl-12" placeholder="e.g. 12:00 PM" value={propertyForm.checkInTime} onChange={e => updatePropertyForm('checkInTime', e.target.value)} />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <input 
+                      type="time"
+                      className="input !pl-10" 
+                      value={propertyForm.checkInTime} 
+                      onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                    />
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-Out Time</label>
                   <div className="relative">
-                    <input className="input !pl-12" placeholder="e.g. 11:00 AM" value={propertyForm.checkOutTime} onChange={e => updatePropertyForm('checkOutTime', e.target.value)} />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <input 
+                      type="time"
+                      className="input !pl-10" 
+                      value={propertyForm.checkOutTime} 
+                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                    />
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
                 </div>
               </div>
@@ -1592,7 +1637,7 @@ const AddVillaWizard = () => {
                         </button>
                         {doc.fileUrl && (
                           <a href={doc.fileUrl} target="_blank" rel="noreferrer" className="p-2.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors border border-gray-200 hover:border-emerald-200 bg-white">
-                            <Search size={18} />
+                            <Eye size={18} />
                           </a>
                         )}
                       </div>
@@ -1683,7 +1728,7 @@ const AddVillaWizard = () => {
               </div>
               <button
                 onClick={() => navigate('/hotel/properties')}
-                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all active:scale-95"
+                className="px-8 py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-100 hover:bg-emerald-700 transition-all active:scale-95"
               >
                 Go to My Properties
               </button>
@@ -1692,7 +1737,7 @@ const AddVillaWizard = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 z-40">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200 z-40">
         <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
           <button
             onClick={handleBack}
@@ -1719,7 +1764,7 @@ const AddVillaWizard = () => {
               isEditingSubItem ||
               (step === 6 && roomTypes.length === 0)
             }
-            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

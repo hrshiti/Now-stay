@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     Wallet, TrendingUp, ArrowUpRight, ArrowDownLeft,
-    Plus, Clock, Loader2, AlertCircle, RefreshCw, Menu, CheckCircle2
+    Plus, Clock, Loader2, AlertCircle, RefreshCw, X, CheckCircle2
 } from 'lucide-react';
 import walletService from '../../../services/walletService';
 import { toast } from 'react-hot-toast';
@@ -349,9 +349,9 @@ const PartnerWallet = () => {
                             </h3>
                             <button
                                 onClick={() => setActiveModal(null)}
-                                className="w-8 h-8 rounded-full bg-gray-100/50 flex items-center justify-center text-gray-400 hover:bg-gray-100"
+                                className="w-8 h-8 rounded-full bg-gray-100/50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors"
                             >
-                                <Menu size={16} className="rotate-45" />
+                                <X size={18} />
                             </button>
                         </div>
 

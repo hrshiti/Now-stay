@@ -54,8 +54,12 @@ const HotelSignup = () => {
 
         // --- STEP 1: BASIC INFO & PROACTIVE VALIDATION ---
         if (currentStep === 1) {
-            if (!formData.full_name || formData.full_name.length < 3) return setError('Please enter a valid full name');
-            if (!formData.email || !formData.email.includes('@')) return setError('Please enter a valid email');
+            const nameRegex = /^[A-Za-z\s]+$/;
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+            if (!formData.full_name || formData.full_name.trim().length < 3) return setError('Please enter a valid full name (min 3 chars)');
+            if (!nameRegex.test(formData.full_name)) return setError('Full name should only contain alphabets');
+            if (!formData.email || !emailRegex.test(formData.email)) return setError('Please enter a valid email address (e.g., aaa@gmail.com)');
             if (!formData.phone || formData.phone.length !== 10) return setError('Please enter a valid 10-digit phone number');
             if (!formData.termsAccepted) return setError('You must accept the Terms & Conditions');
 

@@ -183,16 +183,32 @@ export const registerPartner = async (req, res) => {
     const panImageUrl = getUrl(pan_card_image);
 
     // Validation
-    if (!full_name || !email || !phone) {
-      return res.status(400).json({ message: 'Name, email, and phone are required' });
+    const nameRegex = /^[A-Za-z\s]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+
+    if (!full_name || !nameRegex.test(full_name)) {
+      return res.status(400).json({ message: 'Full name should only contain alphabets and spaces' });
+    }
+
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address (e.g., user@example.com)' });
+    }
+
+    if (!phone || phone.length !== 10) {
+      return res.status(400).json({ message: 'Valid 10-digit phone number is required' });
     }
 
     if (!aadhaar_number || !aadhaarFrontUrl || !aadhaarBackUrl) {
       return res.status(400).json({ message: 'Aadhaar details and documents are required' });
     }
 
-    if (!pan_number || !panImageUrl) {
-      return res.status(400).json({ message: 'PAN details are required' });
+    if (!pan_number || !panRegex.test(pan_number)) {
+      return res.status(400).json({ message: 'Invalid PAN format. It should be like ASDFR1234D' });
+    }
+
+    if (!panImageUrl) {
+      return res.status(400).json({ message: 'PAN Card Image is required' });
     }
 
     if (!termsAccepted) {
@@ -684,8 +700,20 @@ export const updateProfile = async (req, res) => {
     }
 
     // Update fields if provided
-    if (name) user.name = name;
+    const nameRegex = /^[A-Za-z\s]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (name) {
+      if (!nameRegex.test(name)) {
+        return res.status(400).json({ message: 'Full name should only contain alphabets and spaces' });
+      }
+      user.name = name;
+    }
+
     if (email) {
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Please provide a valid email address' });
+      }
       if (email !== user.email) {
         const existingUser = await Model.findOne({ email, _id: { $ne: user._id } });
         if (existingUser) {

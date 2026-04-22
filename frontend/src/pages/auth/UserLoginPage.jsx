@@ -74,8 +74,12 @@ const UserLoginPage = () => {
             await authService.verifyOtp({ phone, otp: otpValue });
             // Re-register FCM token now that user is logged in
             try { window.dispatchEvent(new CustomEvent('fcm:register')); } catch (_) { }
-            const redirectTo = location.state?.from?.pathname || '/';
-            navigate(redirectTo, { replace: true });
+            
+            const fromObj = location.state?.from;
+            const redirectTo = typeof fromObj === 'string' ? fromObj : (fromObj?.pathname || '/');
+            const redirectState = typeof fromObj === 'object' ? fromObj?.state : undefined;
+            
+            navigate(redirectTo, { replace: true, state: redirectState });
         } catch (err) {
             setError(err.message || 'Invalid OTP');
         } finally {

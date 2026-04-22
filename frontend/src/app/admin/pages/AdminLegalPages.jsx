@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, Shield, Info, PhoneCall, Save } from 'lucide-react';
+import { FileText, Shield, Info, PhoneCall, Save, Ban } from 'lucide-react';
 import adminService from '../../../services/adminService';
 
 const SLUG_META = [
   { slug: 'terms', label: 'Terms & Conditions', icon: FileText },
   { slug: 'privacy', label: 'Privacy Policy', icon: Shield },
   { slug: 'about', label: 'About Us', icon: Info },
-  { slug: 'contact', label: 'Contact Us', icon: PhoneCall }
+  { slug: 'contact', label: 'Contact Us', icon: PhoneCall },
+  { slug: 'cancellation', label: 'Cancellation & Refund', icon: Ban }
 ];
 
 const AdminLegalPages = () => {

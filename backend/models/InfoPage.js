@@ -9,7 +9,7 @@ const infoPageSchema = new mongoose.Schema(
     },
     slug: {
       type: String,
-      enum: ['terms', 'privacy', 'about', 'contact'],
+      enum: ['terms', 'privacy', 'about', 'contact', 'cancellation'],
       required: true
     },
     title: {

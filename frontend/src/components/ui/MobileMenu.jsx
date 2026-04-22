@@ -130,7 +130,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
     };
 
     const handleEditProfile = () => {
-        navigate('/profile/edit');
+        navigate('/profile');
         onClose();
     };
 

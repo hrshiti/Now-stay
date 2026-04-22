@@ -43,24 +43,26 @@ const SupportPage = () => {
                 <div className="bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-white">
                     <h3 className="font-bold text-surface text-sm mb-4">Contact Us</h3>
                     <div className="grid grid-cols-2 gap-3">
-                        <button
-                            onClick={() => navigate('/contact')}
+                         <a
+                            href="https://wa.me/919970907005"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-blue-50 border border-blue-100 group active:scale-95 transition-transform"
                         >
                             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
                                 <MessageSquare size={20} />
                             </div>
                             <span className="text-xs font-bold text-blue-700">Chat with Us</span>
-                        </button>
-                        <button
-                            onClick={() => navigate('/contact')}
+                        </a>
+                        <a
+                            href="tel:9970907005"
                             className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-green-50 border border-green-100 group active:scale-95 transition-transform"
                         >
                             <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
                                 <Phone size={20} />
                             </div>
                             <span className="text-xs font-bold text-green-700">Call Support</span>
-                        </button>
+                        </a>
                     </div>
                 </div>
 
@@ -73,7 +75,10 @@ const SupportPage = () => {
                                 <Loader2 className="animate-spin text-gray-400" />
                             </div>
                         ) : faqs.length === 0 ? (
-                            <div className="p-8 text-center text-gray-400 text-xs">No FAQs available.</div>
+                            <div className="p-10 text-center space-y-2">
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">No FAQs found yet</p>
+                                <p className="text-[10px] text-gray-300">We are currently updating our help section. Feel free to contact us directly!</p>
+                            </div>
                         ) : (
                             faqs.map((faq, i) => (
                                 <div key={faq._id || i} className="group">
@@ -95,9 +100,7 @@ const SupportPage = () => {
                     </div>
                 </div>
 
-                <div className="text-center mt-4">
-                    <button className="text-xs font-bold text-surface underline">View all FAQs</button>
-                </div>
+
 
             </div>
         </div>

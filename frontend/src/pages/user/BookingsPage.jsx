@@ -4,16 +4,42 @@ import { useNavigate } from 'react-router-dom';
 import {
     MapPin, Clock,
     Star,
-    CheckCircle, XCircle, AlertCircle, Ticket
+    CheckCircle, XCircle, AlertCircle, Ticket, MessageSquare, X
 } from 'lucide-react';
-import { bookingService } from '../../services/apiService';
+import { bookingService, reviewService } from '../../services/apiService';
 import AuthRequired from '../../components/ui/AuthRequired';
+import toast from 'react-hot-toast';
 
 const BookingsPage = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState('upcoming');
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Review Modal State
+    const [reviewModalData, setReviewModalData] = useState(null);
+    const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
+    const [submitReviewLoading, setSubmitReviewLoading] = useState(false);
+
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        if (!reviewModalData) return;
+        
+        setSubmitReviewLoading(true);
+        try {
+            await reviewService.createReview({
+                propertyId: reviewModalData.propertyId,
+                ...reviewData
+            });
+            toast.success('Review submitted successfully!');
+            setReviewModalData(null);
+            setReviewData({ rating: 5, comment: '' });
+        } catch (error) {
+            toast.error(error.message || 'Failed to submit review');
+        } finally {
+            setSubmitReviewLoading(false);
+        }
+    };
 
     // Filter Tabs Configuration
     const tabs = [
@@ -244,6 +270,25 @@ const BookingsPage = () => {
                                                 )}
                                             </div>
                                         </div>
+
+                                        {/* Write a Review - only for completed stays */}
+                                        {(bookingStatus === 'completed' || bookingStatus === 'checked_out') && (
+                                            <div
+                                                className="border-t border-gray-100 px-3 py-2"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setReviewModalData({ propertyId: hotel._id });
+                                                    }}
+                                                    className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-surface/5 border border-surface/15 text-surface text-[11px] font-bold hover:bg-surface hover:text-white transition-all active:scale-95"
+                                                >
+                                                    <MessageSquare size={12} />
+                                                    Write a Review
+                                                </button>
+                                            </div>
+                                        )}
                                     </motion.div>
                                 );
 
@@ -252,6 +297,79 @@ const BookingsPage = () => {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* Review Modal */}
+            <AnimatePresence>
+                {reviewModalData && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+                        onClick={() => setReviewModalData(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl"
+                        >
+                            <div className="flex justify-between items-center p-5 border-b border-gray-100">
+                                <h3 className="font-bold text-lg text-surface">Rate your stay</h3>
+                                <button
+                                    onClick={() => setReviewModalData(null)}
+                                    className="p-2 bg-gray-50 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                    <X size={18} className="text-gray-500" />
+                                </button>
+                            </div>
+                            
+                            <form onSubmit={handleReviewSubmit} className="p-5">
+                                <div className="flex justify-center gap-2 mb-6">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <button
+                                            key={star}
+                                            type="button"
+                                            onClick={() => setReviewData({ ...reviewData, rating: star })}
+                                            className="focus:outline-none transition-transform hover:scale-110"
+                                        >
+                                            <Star
+                                                size={36}
+                                                className={`${reviewData.rating >= star ? 'fill-yellow-400 text-yellow-400' : 'text-gray-200'} transition-colors`}
+                                            />
+                                        </button>
+                                    ))}
+                                </div>
+                                
+                                <div className="mb-6">
+                                    <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">Your Experience</label>
+                                    <textarea
+                                        value={reviewData.comment}
+                                        onChange={(e) => setReviewData({ ...reviewData, comment: e.target.value })}
+                                        placeholder="Tell us about your stay, room cleanliness, staff behavior..."
+                                        rows={4}
+                                        className="w-full p-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-surface/20 focus:border-surface outline-none text-sm resize-none bg-gray-50 focus:bg-white transition-all"
+                                        required
+                                    />
+                                </div>
+                                
+                                <button
+                                    type="submit"
+                                    disabled={submitReviewLoading}
+                                    className="w-full py-3.5 bg-surface text-white rounded-xl font-bold text-sm shadow-lg shadow-surface/30 active:scale-[0.98] transition-all flex items-center justify-center"
+                                >
+                                    {submitReviewLoading ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        'Submit Review'
+                                    )}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

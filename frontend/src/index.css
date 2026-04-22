@@ -60,6 +60,26 @@
   textarea {
     font-size: 16px !important;
   }
+
+  /* Hide native browser icons for time and date inputs to use our custom icons instead */
+  input[type="time"]::-webkit-calendar-picker-indicator,
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    /* Optional: display: none to completely hide if we handle the click elsewhere */
+    /* display: none; */
+  }
+
+  /* Remove default spinner for number inputs */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type=number] {
+    -moz-appearance: textfield;
+  }
 }
 
 /* COMPATIBILITY: Force dark background for Hotel Module to match white text */
