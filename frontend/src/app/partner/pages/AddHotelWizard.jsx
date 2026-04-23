@@ -323,7 +323,10 @@ const AddHotelWizard = () => {
       arr[editingNearbyIndex] = tempNearbyPlace;
     }
     updatePropertyForm('nearbyPlaces', arr);
+    // Bug Fix 2: Reset all sub-item states so Next button re-enables
     setEditingNearbyIndex(null);
+    setEditingRoomType(null);
+    setEditingRoomTypeIndex(null);
     setError('');
   };
 
@@ -419,8 +422,10 @@ const AddHotelWizard = () => {
       next[editingRoomTypeIndex] = editingRoomType;
     }
     setRoomTypes(next);
+    // Bug Fix 2: Reset all sub-item states so Next button re-enables
     setEditingRoomType(null);
     setEditingRoomTypeIndex(null);
+    setEditingNearbyIndex(null);
     setError('');
   };
 
@@ -800,6 +805,8 @@ const AddHotelWizard = () => {
     } else if (step === 4) {
       updatePropertyForm('nearbyPlaces', []);
     } else if (step === 5) {
+      // Bug Fix 3: Also clear coverImage
+      updatePropertyForm('coverImage', '');
       updatePropertyForm('propertyImages', []);
     } else if (step === 6) {
       setRoomTypes([]);

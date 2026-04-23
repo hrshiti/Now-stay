@@ -61,7 +61,6 @@ const BookingCheckoutPage = () => {
   // Guest Details State
   const [guestDetails, setGuestDetails] = useState({
     name: user?.name || '',
-    email: user?.email || '',
     phone: user?.phone || ''
   });
 
@@ -138,16 +137,8 @@ const BookingCheckoutPage = () => {
     setLoading(true);
 
     // Validate Guest Details
-    if (!guestDetails.name.trim() || !guestDetails.email.trim() || !guestDetails.phone.trim()) {
+    if (!guestDetails.name?.trim() || !guestDetails.phone?.trim()) {
       toast.error("Please fill in all guest details");
-      setLoading(false);
-      return;
-    }
-
-    // Basic Email Validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(guestDetails.email)) {
-      toast.error("Please enter a valid email address");
       setLoading(false);
       return;
     }
@@ -243,7 +234,7 @@ const BookingCheckoutPage = () => {
             },
             prefill: {
               name: guestDetails.name || '',
-              email: guestDetails.email || '',
+              email: user?.email || '',
               contact: guestDetails.phone || ''
             },
             theme: { color: "#000000" },
@@ -376,18 +367,7 @@ const BookingCheckoutPage = () => {
                 />
               </div>
             </div>
-            <div>
-              <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Email Address</label>
-              <input
-                type="email"
-                value={guestDetails.email}
-                onChange={(e) => setGuestDetails({ ...guestDetails, email: e.target.value })}
-                placeholder="Enter email address"
-                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all"
-                required
-              />
-              <p className="text-[9px] text-gray-400 mt-1.5 ml-1">Confirmation and invoice will be sent to this email.</p>
-            </div>
+
           </div>
         </div>
 

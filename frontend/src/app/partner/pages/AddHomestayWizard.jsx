@@ -324,7 +324,10 @@ const AddHomestayWizard = () => {
       arr[editingNearbyIndex] = tempNearbyPlace;
     }
     updatePropertyForm('nearbyPlaces', arr);
+    // Bug Fix 2: Reset all sub-item states so Next button re-enables
     setEditingNearbyIndex(null);
+    setEditingRoomType(null);
+    setEditingRoomTypeIndex(null);
     setError('');
   };
 
@@ -405,8 +408,10 @@ const AddHomestayWizard = () => {
       next[editingRoomTypeIndex] = editingRoomType;
     }
     setRoomTypes(next);
+    // Bug Fix 2: Reset all sub-item states so Next button re-enables
     setEditingRoomType(null);
     setEditingRoomTypeIndex(null);
+    setEditingNearbyIndex(null);
     setError('');
   };
 

@@ -437,7 +437,10 @@ const AddVillaWizard = () => {
       arr[editingNearbyIndex] = tempNearbyPlace;
     }
     updatePropertyForm('nearbyPlaces', arr);
+    // Bug Fix 2: Explicitly reset all sub-item states so Next button re-enables
     setEditingNearbyIndex(null);
+    setEditingRoomType(null);
+    setEditingRoomTypeIndex(null);
     setError('');
   };
 
@@ -600,7 +603,7 @@ const AddVillaWizard = () => {
       return;
     }
     if (!rt.images || rt.images.filter(Boolean).length < 4) {
-      setError('At least 4 images required');
+      setError('At least 4 images required — please upload at least 4 photos');
       return;
     }
     const payload = { ...rt, totalInventory: 1 };
@@ -609,8 +612,10 @@ const AddVillaWizard = () => {
     } else {
       setRoomTypes(prev => prev.map((x, i) => (i === editingRoomTypeIndex ? payload : x)));
     }
+    // Bug Fix 2: Explicitly reset sub-item state so Next button re-enables
     setEditingRoomTypeIndex(null);
     setEditingRoomType(null);
+    setEditingNearbyIndex(null);
     setError('');
   };
 
@@ -835,6 +840,8 @@ const AddVillaWizard = () => {
     } else if (step === 4) {
       updatePropertyForm('nearbyPlaces', []);
     } else if (step === 5) {
+      // Bug Fix 3: Clear both coverImage AND gallery images
+      updatePropertyForm('coverImage', '');
       updatePropertyForm('propertyImages', []);
     } else if (step === 6) {
       setRoomTypes([]);
@@ -1490,7 +1497,8 @@ const AddVillaWizard = () => {
                     </div>
 
                     <div className="pt-2 flex flex-wrap gap-2">
-                      <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+                      {/* Bug Fix 1: Changed 'Cancel' to 'Close' to avoid confusion with cancellation */}
+                      <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Close</button>
                       <button 
                         type="button" 
                         onClick={() => {
