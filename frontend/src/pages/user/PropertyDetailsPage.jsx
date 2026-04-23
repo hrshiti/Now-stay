@@ -18,26 +18,47 @@ const PropertyDetailsPage = () => {
   const canReview = new URLSearchParams(location.search).get('canReview') === 'true';
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedRoom, setSelectedRoom] = useState(null);
-  const [dates, setDates] = useState(() => {
-    try {
-      const saved = JSON.parse(sessionStorage.getItem('homeSearchData'));
-      if (saved && saved.dates && saved.dates.checkIn && saved.dates.checkOut) {
-        return saved.dates;
-      }
-    } catch(e) {}
-    return { checkIn: '', checkOut: '' };
-  });
-  
   const [guests, setGuests] = useState(() => {
     try {
-      const saved = JSON.parse(sessionStorage.getItem('homeSearchData'));
-      if (saved && saved.guests) {
-        return saved.guests;
-      }
+      const saved = JSON.parse(sessionStorage.getItem(`property_draft_${id}`));
+      if (saved && saved.guests) return saved.guests;
+      
+      const searchSaved = JSON.parse(sessionStorage.getItem('homeSearchData'));
+      if (searchSaved && searchSaved.guests) return searchSaved.guests;
     } catch(e) {}
     return { rooms: 1, adults: 2, children: 0 };
   });
+
+  const [dates, setDates] = useState(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(`property_draft_${id}`));
+      if (saved && saved.dates && saved.dates.checkIn && saved.dates.checkOut) return saved.dates;
+
+      const searchSaved = JSON.parse(sessionStorage.getItem('homeSearchData'));
+      if (searchSaved && searchSaved.dates && searchSaved.dates.checkIn && searchSaved.dates.checkOut) return searchSaved.dates;
+    } catch(e) {}
+    return { checkIn: '', checkOut: '' };
+  });
+
+  const [selectedRoom, setSelectedRoom] = useState(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(`property_draft_${id}`));
+      if (saved && saved.selectedRoom) return saved.selectedRoom;
+    } catch(e) {}
+    return null;
+  });
+
+  // Persist Selections
+  useEffect(() => {
+    if (id) {
+      sessionStorage.setItem(`property_draft_${id}`, JSON.stringify({
+        dates,
+        guests,
+        selectedRoom
+      }));
+    }
+  }, [id, dates, guests, selectedRoom]);
+
   const [bookingLoading, setBookingLoading] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [taxRate, setTaxRate] = useState(0); // Fetched from backend
@@ -776,32 +797,46 @@ const PropertyDetailsPage = () => {
             </p>
           </div>
 
-          {/* Amenities - Dynamic Switching */}
+          {/* Amenities - Show both Property and Room amenities */}
           {(() => {
-            // 1. Determine which list to use: Room-specific if selected, otherwise Property-wide
-            const showRoomAmenities = selectedRoom && selectedRoom.amenities && selectedRoom.amenities.length > 0;
-            const displayAmenities = showRoomAmenities ? selectedRoom.amenities : amenities;
-            const title = showRoomAmenities ? 'Room Amenities' : 'Amenities';
-
-            // 2. Filter valid items
-            const validAmenities = displayAmenities?.filter(item => item && typeof item === 'string' && item.trim().length > 0) || [];
-
-            // 3. Render if items exist
-            if (validAmenities.length === 0) return null;
+            const validPropertyAmenities = amenities?.filter(item => item && typeof item === 'string' && item.trim().length > 0) || [];
+            const validRoomAmenities = (selectedRoom && selectedRoom.amenities) 
+              ? selectedRoom.amenities.filter(item => item && typeof item === 'string' && item.trim().length > 0) 
+              : [];
 
             return (
-              <div className="mb-4">
-                <h2 className="text-lg font-bold text-textDark mb-2">{title}</h2>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {validAmenities.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-3 text-gray-600 text-sm">
-                      <div className="p-2 bg-gray-50 rounded-lg">
-                        <CheckCircle size={16} className="text-surface" />
-                      </div>
-                      {item}
+              <div className="mb-8 space-y-6">
+                {validPropertyAmenities.length > 0 && (
+                  <div>
+                    <h2 className="text-lg font-bold text-textDark mb-3">Property Amenities</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {validPropertyAmenities.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3 text-gray-600 text-sm">
+                          <div className="p-2 bg-gray-50 rounded-lg shrink-0">
+                            <CheckCircle size={16} className="text-surface" />
+                          </div>
+                          <span>{item}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
+                
+                {validRoomAmenities.length > 0 && (
+                  <div>
+                    <h2 className="text-lg font-bold text-textDark mb-3">Room Amenities</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {validRoomAmenities.map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3 text-gray-600 text-sm">
+                          <div className="p-2 bg-gray-50 rounded-lg shrink-0">
+                            <CheckCircle size={16} className="text-surface" />
+                          </div>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
@@ -887,9 +922,10 @@ const PropertyDetailsPage = () => {
                 <div className="p-4 bg-teal-50 rounded-xl">
                   <h3 className="font-bold text-teal-900 mb-2">Resort Highlights</h3>
                   <ul className="text-sm text-teal-800 space-y-1">
-                    <li>Theme: {config.resortTheme}</li>
-                    <li>Category: {config.resortCategory}</li>
-                    <li>Reception: {config.receptionAvailable ? '24/7' : 'Limited Hours'}</li>
+                    <li className="capitalize">Theme: {property.resortType || 'Not specified'}</li>
+                    {property.suitability && property.suitability !== 'none' && (
+                      <li>Suitability: {property.suitability}</li>
+                    )}
                   </ul>
                 </div>
                 {property.mealPlans && property.mealPlans.length > 0 && (
@@ -905,14 +941,20 @@ const PropertyDetailsPage = () => {
                   </div>
                 )}
               </div>
-              {property.activities && property.activities.length > 0 && (
+              {property.activities && property.activities.filter(a => a && (typeof a === 'string' ? a.trim() : a.name)).length > 0 && (
                 <div className="p-4 bg-indigo-50 rounded-xl">
                   <h3 className="font-bold text-indigo-900 mb-2">Activities</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {property.activities.map((act, i) => (
+                    {property.activities.filter(a => a && (typeof a === 'string' ? a.trim() : a.name)).map((act, i) => (
                       <div key={i} className="text-sm text-indigo-800">
-                        <span className="font-semibold">{act.name}</span>
-                        <span className="text-xs ml-1 opacity-75">({act.type})</span>
+                        {typeof act === 'string' ? (
+                          <span className="font-semibold">{act}</span>
+                        ) : (
+                          <>
+                            <span className="font-semibold">{act.name}</span>
+                            {act.type && <span className="text-xs ml-1 opacity-75">({act.type})</span>}
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -963,7 +1005,6 @@ const PropertyDetailsPage = () => {
                     whileTap={{ scale: 0.99 }}
                     onClick={() => {
                       setSelectedRoom(room);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
                     className={`
                       border-2 rounded-xl p-5 cursor-pointer transition-all relative overflow-hidden flex flex-col justify-between
@@ -1002,7 +1043,7 @@ const PropertyDetailsPage = () => {
                       )}
 
                       <div className="flex gap-2 flex-wrap mb-4">
-                        {room.amenities?.filter(a => a && typeof a === 'string' && a.trim()).slice(0, 4).map((am, i) => (
+                        {room.amenities?.filter(a => a && typeof a === 'string' && a.trim()).map((am, i) => (
                           <span key={i} className="text-[10px] bg-gray-100 px-2.5 py-1 rounded-full text-gray-600 font-medium">{am}</span>
                         ))}
                       </div>

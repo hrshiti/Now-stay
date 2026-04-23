@@ -290,10 +290,10 @@ export const createBooking = async (req, res) => {
     if (activeSub && activeSub.planId) {
       // Subscribed Partner -> use Plan's commission (typically 0%)
       appliedCommissionRate = activeSub.planId.commissionRate;
-      adminCommission = Math.round((grossAmount * appliedCommissionRate) / 100);
+      adminCommission = Math.round((taxableAmount * appliedCommissionRate) / 100);
     } else {
       // Non-Subscribed Partner -> Standard deduction
-      adminCommission = Math.round((grossAmount * commissionRate) / 100);
+      adminCommission = Math.round((taxableAmount * commissionRate) / 100);
       if (adminCommission < PaymentConfig.minCommission) {
         adminCommission = PaymentConfig.minCommission;
       }
@@ -302,7 +302,7 @@ export const createBooking = async (req, res) => {
     // Calculate Partner Payout
     // Partner Payout = (Gross - Discount) - Commission
     // Verification: TotalAmount - Tax - Commission = ((Gross - Discount) + Tax) - Tax - Commission = Gross - Discount - Commission.
-    const partnerPayout = Math.floor(totalAmount - taxes - adminCommission);
+    const partnerPayout = Math.max(0, Math.floor(totalAmount - taxes - adminCommission));
 
     const bookingId = `BK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -1380,7 +1380,7 @@ export const downloadReceipt = async (req, res) => {
     const titleStart = 50;
 
     // --- HEADER ---
-    doc.fontSize(20).font('Helvetica-Bold').fillColor(primaryColor).text('Rukkoo.in', 50, 40);
+    doc.fontSize(20).font('Helvetica-Bold').fillColor(primaryColor).text('NowStay.in', 50, 40);
     doc.fontSize(10).font('Helvetica').fillColor(secondaryColor).text('Booking Receipt', 50, 65);
 
     // Draw Line

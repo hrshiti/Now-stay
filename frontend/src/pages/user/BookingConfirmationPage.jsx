@@ -277,7 +277,9 @@ const BookingConfirmationPage = () => {
                                 </div>
                                 <div>
                                     <p className="text-xs text-gray-400 font-bold mb-1">Booking Unit</p>
-                                    <p className="font-semibold text-gray-900 capitalize">{booking.bookingUnit}</p>
+                                    <p className="font-semibold text-gray-900 capitalize">
+                                        {booking.guests?.rooms || 1} {booking.bookingUnit}{((booking.guests?.rooms || 1) > 1) ? 's' : ''}
+                                    </p>
                                 </div>
                             </div>
                         </div>

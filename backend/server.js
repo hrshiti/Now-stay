@@ -25,7 +25,7 @@ const io = new Server(server, {
     origin: process.env.FRONTEND_URL || [
       'http://localhost:5173',
       'http://127.0.0.1:5173',
-      'https://rukkoo.in',
+      'https://nowstay.in',
       'https://nowstay.in',
       'https://www.nowstay.in',
       'nowstay.in'
@@ -79,7 +79,7 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:5173',
       'http://127.0.0.1:5173',
-      'https://rukkoo.in',
+      'https://nowstay.in',
       'https://nowstay.in',
       'https://www.nowstay.in',
       'nowstay.in'
@@ -156,7 +156,7 @@ app.use((err, req, res, next) => {
 
 // Basic Route
 app.get('/', (req, res) => {
-  res.send({ message: 'Rukkoin API is running successfully' });
+  res.send({ message: 'NowStay API is running successfully' });
 });
 
 // MongoDB Connection Options with retry logic

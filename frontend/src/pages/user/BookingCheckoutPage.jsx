@@ -57,6 +57,13 @@ const BookingCheckoutPage = () => {
   const [legalModal, setLegalModal] = useState(null); // 'terms' | 'privacy' | null
   const [legalContent, setLegalContent] = useState(null);
   const [legalLoading, setLegalLoading] = useState(false);
+  
+  // Guest Details State
+  const [guestDetails, setGuestDetails] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || ''
+  });
 
   const openLegalModal = async (type) => {
     setLegalModal(type);
@@ -130,6 +137,21 @@ const BookingCheckoutPage = () => {
 
     setLoading(true);
 
+    // Validate Guest Details
+    if (!guestDetails.name.trim() || !guestDetails.email.trim() || !guestDetails.phone.trim()) {
+      toast.error("Please fill in all guest details");
+      setLoading(false);
+      return;
+    }
+
+    // Basic Email Validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(guestDetails.email)) {
+      toast.error("Please enter a valid email address");
+      setLoading(false);
+      return;
+    }
+
     const payload = {
       propertyId: property._id,
       roomTypeId: selectedRoom._id,
@@ -142,6 +164,7 @@ const BookingCheckoutPage = () => {
         extraAdults: priceBreakdown?.extraAdultsCount || 0,
         extraChildren: priceBreakdown?.extraChildrenCount || 0
       },
+      guestDetails: guestDetails,
       bookingUnit: selectedRoom.inventoryType || (['hostel', 'pg'].includes((property.propertyTemplate || property.propertyType || '').toLowerCase()) ? 'bed' : 'room'),
       couponCode: priceBreakdown?.couponCode || null,
       paymentMethod: paymentMethod === 'online' ? 'razorpay' : paymentMethod,
@@ -219,9 +242,9 @@ const BookingCheckoutPage = () => {
               }
             },
             prefill: {
-              name: user?.name || '',
-              email: user?.email || '',
-              contact: user?.phone || ''
+              name: guestDetails.name || '',
+              email: guestDetails.email || '',
+              contact: guestDetails.phone || ''
             },
             theme: { color: "#000000" },
             // Enhanced Configuration for UPI Intent & App Redirects
@@ -321,6 +344,49 @@ const BookingCheckoutPage = () => {
             <div className="col-span-2 pt-2">
               <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Room Type</p>
               <p className="text-sm font-black text-gray-800 leading-tight">{selectedRoom.type || selectedRoom.name}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 2.5. Guest Details (NEW) */}
+        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Guest Details</h3>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Full Name</label>
+                <input
+                  type="text"
+                  value={guestDetails.name}
+                  onChange={(e) => setGuestDetails({ ...guestDetails, name: e.target.value })}
+                  placeholder="Enter guest name"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Phone Number</label>
+                <input
+                  type="tel"
+                  value={guestDetails.phone}
+                  onChange={(e) => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+                  placeholder="Enter phone number"
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all"
+                  required
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Email Address</label>
+              <input
+                type="email"
+                value={guestDetails.email}
+                onChange={(e) => setGuestDetails({ ...guestDetails, email: e.target.value })}
+                placeholder="Enter email address"
+                className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all"
+                required
+              />
+              <p className="text-[9px] text-gray-400 mt-1.5 ml-1">Confirmation and invoice will be sent to this email.</p>
             </div>
           </div>
         </div>

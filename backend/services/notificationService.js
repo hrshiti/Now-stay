@@ -53,13 +53,13 @@ class NotificationService {
         stringifiedData.notificationId = String(cleanupMeta.notificationId);
       }
 
-      const appUrl = process.env.FRONTEND_URL || 'https://rukkoo.in';
+      const appUrl = process.env.FRONTEND_URL || 'https://nowstay.in';
       const fallbackLink = (data.url && data.url.startsWith('http')) ? data.url : `${appUrl}${data.url || '/'}`;
 
       const message = {
         token: fcmToken,
         notification: {
-          title: notification.title || 'Rukkoin',
+          title: notification.title || 'NowStay',
           body: notification.body || 'New Notification',
         },
         data: {
@@ -190,7 +190,7 @@ class NotificationService {
           userId: user._id,
           userType: userType,
           userModel: userModelMap[userType] || 'User',
-          title: notification.title || 'Rukkoin',
+          title: notification.title || 'NowStay',
           body: notification.body || '',
           data: data || {},
           type: data.type || 'general',
@@ -348,7 +348,7 @@ class NotificationService {
       // ── 3. Bulk-save Notification records (one DB call) ───────────────────
       const userModelMap = { admin: 'Admin', partner: 'Partner', user: 'User' };
       const notifType = data.type || 'broadcast';
-      const notifTitle = notification.title || 'Rukkoin';
+      const notifTitle = notification.title || 'NowStay';
       const notifBody = notification.body || '';
 
       try {
@@ -369,7 +369,7 @@ class NotificationService {
       }
 
       // ── 4. Build FCM multicast message template ────────────────────────────
-      const appUrl = process.env.FRONTEND_URL || 'https://rukkoo.in';
+      const appUrl = process.env.FRONTEND_URL || 'https://nowstay.in';
       const fallbackLink = (data.url && data.url.startsWith('http')) ? data.url : `${appUrl}${data.url || '/'}`;
 
       const stringifiedData = {};

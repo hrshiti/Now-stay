@@ -556,8 +556,8 @@ const AddHostelWizard = () => {
     setEditingRoomType({
       ...rt,
       maxChildren: rt.maxChildren === 0 ? '' : rt.maxChildren,
-      extraAdultPrice: rt.extraAdultPrice === 0 ? '' : rt.extraAdultPrice,
-      extraChildPrice: rt.extraChildPrice === 0 ? '' : rt.extraChildPrice,
+      extraAdultPrice: (rt.extraAdultPrice === 0 || rt.extraAdultPrice === "0") ? '' : rt.extraAdultPrice,
+      extraChildPrice: (rt.extraChildPrice === 0 || rt.extraChildPrice === "0") ? '' : rt.extraChildPrice,
       pricePerNight: rt.pricePerNight === 0 ? '' : rt.pricePerNight,
       images: Array.isArray(rt.images) ? rt.images : [],
       amenities: Array.isArray(rt.amenities) ? rt.amenities : []
@@ -581,11 +581,18 @@ const AddHostelWizard = () => {
       setError('Please upload at least 3 room images');
       return;
     }
+    
+    const processedRoomType = {
+      ...editingRoomType,
+      extraAdultPrice: (editingRoomType.extraAdultPrice === "0" || editingRoomType.extraAdultPrice === 0) ? "" : editingRoomType.extraAdultPrice,
+      extraChildPrice: (editingRoomType.extraChildPrice === "0" || editingRoomType.extraChildPrice === 0) ? "" : editingRoomType.extraChildPrice,
+    };
+
     const next = [...roomTypes];
     if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
-      next.push(editingRoomType);
+      next.push(processedRoomType);
     } else {
-      next[editingRoomTypeIndex] = editingRoomType;
+      next[editingRoomTypeIndex] = processedRoomType;
     }
     setRoomTypes(next);
     setEditingRoomType(null);
@@ -1315,7 +1322,7 @@ const AddHostelWizard = () => {
                     disabled={!!uploading}
                     className="aspect-square rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-emerald-400 hover:bg-emerald-50/20 hover:text-emerald-600 transition-all"
                   >
-                    {uploading === 'gallery' ? <Loader2 className="animate-spin text-emerald-600" size={24} /> : (isFlutter ? <Camera size={24} /> : <Plus size={24} />)}
+                    {uploading === 'gallery' ? <Loader2 className="animate-spin text-emerald-600" size={24} /> : <Camera size={24} />}
                   </button>
                   <input ref={propertyImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => uploadImages(e.target.files, 'gallery', u => updatePropertyForm('propertyImages', [...propertyForm.propertyImages, ...u]))} />
                 </div>
@@ -1461,7 +1468,7 @@ const AddHostelWizard = () => {
                         ))}
                         {(editingRoomType.images || []).length < 3 && (
                           <button type="button" onClick={() => isFlutter ? handleCameraUpload('room', url => setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), url].slice(0, 3) }))) : roomImagesFileInputRef.current?.click()} disabled={!!uploading} className="w-20 h-20 flex-shrink-0 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:border-emerald-400 hover:text-emerald-600 hover:bg-emerald-50/20 transition-all">
-                            {uploading === 'room' ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Plus size={20} />}
+                            {uploading === 'room' ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Camera size={20} />}
                           </button>
                         )}
                         <input ref={roomImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => {
@@ -1528,9 +1535,10 @@ const AddHostelWizard = () => {
                   <div className="relative">
                     <input 
                       type="time"
-                      className="input !pl-10" 
+                      className="input !pl-10 w-full" 
                       value={propertyForm.checkInTime} 
                       onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                      onClick={(e) => e.target.showPicker && e.target.showPicker()}
                     />
                     <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>
@@ -1540,9 +1548,10 @@ const AddHostelWizard = () => {
                   <div className="relative">
                     <input 
                       type="time"
-                      className="input !pl-10" 
+                      className="input !pl-10 w-full" 
                       value={propertyForm.checkOutTime} 
                       onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                      onClick={(e) => e.target.showPicker && e.target.showPicker()}
                     />
                     <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
                   </div>

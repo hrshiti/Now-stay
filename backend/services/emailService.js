@@ -121,7 +121,7 @@ class EmailService {
       
       <p>Start exploring amazing stays tailored just for you.</p>
       <div style="text-align: center;">
-        <a href="https://rukkoo.in" class="btn">Explore Now</a>
+        <a href="https://nowstay.in" class="btn">Explore Now</a>
       </div>
     `;
     const html = this.generateHtmlTemplate(title, body, 'Let the journey begin');
@@ -159,7 +159,7 @@ class EmailService {
         ${(booking.paymentMethod === 'pay_at_hotel' || booking.paymentStatus !== 'paid') ?
         `<p style="font-size: 13px; color: #666; font-style: italic; margin-top:10px;">Want to finish your payment online? Securely pay via our payment portal below:</p>
            <div style="text-align: center; margin-top: 15px; margin-bottom: 5px;">
-             <a href="https://rukkoo.in/payment/${booking._id}" style="background-color: #0F766E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Pay Now Securely</a>
+             <a href="https://nowstay.in/payment/${booking._id}" style="background-color: #0F766E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Pay Now Securely</a>
            </div>`
         : ''}
       </div>
@@ -216,7 +216,7 @@ class EmailService {
       
       ${!isBlocked ? `
       <div style="text-align: center;">
-        <a href="https://rukkoo.in" class="btn">Login to Your Account</a>
+        <a href="https://nowstay.in" class="btn">Login to Your Account</a>
       </div>` : '<p>If you have any questions or would like to appeal this decision, please contact our support team.</p>'}
     `;
 
@@ -239,7 +239,7 @@ class EmailService {
       <p>Thank you for being a part of our community.</p>
     `;
 
-    const html = this.generateHtmlTemplate(subject, body, 'Farewell from RukkooIn');
+    const html = this.generateHtmlTemplate(subject, body, 'Farewell from NowStay');
     return this.sendEmail({ to: user.email, subject, html, text: subject });
   }
 
@@ -335,7 +335,7 @@ class EmailService {
       <p>The amount should reflect in your bank account shortly (depending on your bank's processing time).</p>
       
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/hotel/wallet" class="btn">View Wallet history</a>
+        <a href="https://nowstay.in/hotel/wallet" class="btn">View Wallet history</a>
       </div>
     `;
 
@@ -359,7 +359,7 @@ class EmailService {
       <p>Keep up the great work! Providing excellent service leads to better reviews and more bookings.</p>
       
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/hotel/stats" class="btn">View Detailed Analytics</a>
+        <a href="https://nowstay.in/hotel/stats" class="btn">View Detailed Analytics</a>
       </div>
     `;
 
@@ -383,7 +383,7 @@ class EmailService {
       <p>Safe travels! If you need help with directions, you can find the property on Google Maps through our app.</p>
       
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/bookings/${booking._id}" class="btn">View My Booking</a>
+        <a href="https://nowstay.in/bookings/${booking._id}" class="btn">View My Booking</a>
       </div>
     `;
 
@@ -401,7 +401,7 @@ class EmailService {
       
       <div style="background-color: #f8fafc; padding: 20px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0;">
         <p style="margin-bottom: 15px; font-weight: bold;">How would you rate your experience?</p>
-        <a href="https://rukkoo.in/review/${booking._id}" class="btn">Rate & Review Now</a>
+        <a href="https://nowstay.in/review/${booking._id}" class="btn">Rate & Review Now</a>
       </div>
       
       <p>Thank you for choosing ${this.companyName}!</p>
@@ -426,7 +426,7 @@ class EmailService {
       <p>Keep referring friends to earn more rewards for your future travels!</p>
       
       <div style="text-align: center; margin-top: 20px;">
-        <a href="https://rukkoo.in/referral" class="btn">Invite More Friends</a>
+        <a href="https://nowstay.in/referral" class="btn">Invite More Friends</a>
       </div>
     `;
 
@@ -489,11 +489,11 @@ class EmailService {
       </ul>
       
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/hotel" class="btn">Go to Partner Dashboard</a>
+        <a href="https://nowstay.in/hotel" class="btn">Go to Partner Dashboard</a>
       </div>
     `;
 
-    const html = this.generateHtmlTemplate('Welcome to RukkooIn Partners', body, 'You are now live!');
+    const html = this.generateHtmlTemplate('Welcome to NowStay Partners', body, 'You are now live!');
     return this.sendEmail({ to: partner.email, subject, html, text: subject });
   }
 
@@ -541,7 +541,7 @@ class EmailService {
       
       ${!isBlocked ? `
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/hotel" class="btn">Login to Account</a>
+        <a href="https://nowstay.in/hotel" class="btn">Login to Account</a>
       </div>` : '<p>If you believe this is a mistake, please contact our administrative support team for clarification.</p>'}
     `;
 
@@ -564,7 +564,7 @@ class EmailService {
       <p>We thank you for the time you spent as our partner.</p>
     `;
 
-    const html = this.generateHtmlTemplate('Account Deletion Confirmation', body, 'Farewell from RukkooIn');
+    const html = this.generateHtmlTemplate('Account Deletion Confirmation', body, 'Farewell from NowStay');
     return this.sendEmail({ to: partner.email, subject, html, text: subject });
   }
 
@@ -626,7 +626,7 @@ class EmailService {
       <p>Travelers can now see and book your property. Make sure to keep your inventory and pricing updated.</p>
       
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/hotel/properties" class="btn">Manage Property</a>
+        <a href="https://nowstay.in/hotel/properties" class="btn">Manage Property</a>
       </div>
     `;
 
@@ -654,7 +654,7 @@ class EmailService {
       <p>You can update the documents or details in your dashboard and resubmit for verification.</p>
       
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/hotel/properties" class="btn">Edit Property</a>
+        <a href="https://nowstay.in/hotel/properties" class="btn">Edit Property</a>
       </div>
     `;
 
@@ -714,7 +714,7 @@ class EmailService {
         : 'Your property has been temporarily suspended or hidden. Please contact support or check your dashboard for more details.'}</p>
       
       <div style="text-align: center;">
-        <a href="https://rukkoo.in/hotel/properties" class="btn">${isLive ? 'View Property' : 'Check Dashboard'}</a>
+        <a href="https://nowstay.in/hotel/properties" class="btn">${isLive ? 'View Property' : 'Check Dashboard'}</a>
       </div>
     `;
 
@@ -737,7 +737,7 @@ class EmailService {
         <div class="detail-row"><span class="label">Location</span><span class="value">${property.address?.city}</span></div>
       </div>
       
-      <p><a href="https://rukkoo.in/admin">Go to Admin Panel</a></p>
+      <p><a href="https://nowstay.in/admin">Go to Admin Panel</a></p>
     `;
 
     const html = this.generateHtmlTemplate(subject, body, 'Action Required');
@@ -797,7 +797,7 @@ class EmailService {
       </div>
 
       <div style="text-align: center; margin-top: 15px;">
-        <a href="https://rukkoo.in/hotel/bookings/${booking._id}" class="btn" style="background-color: #0F766E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Booking</a>
+        <a href="https://nowstay.in/hotel/bookings/${booking._id}" class="btn" style="background-color: #0F766E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">View Booking</a>
       </div>
     `;
 

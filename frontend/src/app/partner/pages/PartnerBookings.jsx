@@ -48,7 +48,7 @@ const BookingCard = ({ booking }) => {
     const checkOutDate = formatDate(booking.checkOutDate || booking.checkOut);
     const nights = calculateNights(booking.checkInDate || booking.checkIn, booking.checkOutDate || booking.checkOut);
     const guestCount = (booking.guests?.adults || 1) + (booking.guests?.children || 0);
-    const roomsCount = 1;
+    const roomsCount = booking.guests?.rooms || 1;
     const hotelName = booking.propertyId?.propertyName || booking.propertyId?.name || 'Hotel Property';
     const bookingId = booking.bookingId || booking._id?.slice(-8).toUpperCase(); // Show bookingId if available
 
@@ -91,7 +91,7 @@ const BookingCard = ({ booking }) => {
                 </div>
                 <div className="flex items-center gap-2 text-gray-600">
                     <BedDouble size={14} className="text-[#0F172A]" />
-                    <span className="font-medium">{roomsCount} Room</span>
+                    <span className="font-medium">{roomsCount} {roomsCount > 1 ? 'Rooms' : 'Room'}</span>
                 </div>
             </div>
 
