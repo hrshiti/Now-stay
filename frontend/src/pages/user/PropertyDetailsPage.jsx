@@ -311,7 +311,16 @@ const PropertyDetailsPage = () => {
       url: window.location.href
     };
 
-    if (navigator.share) {
+    if (window.flutter_inappwebview || navigator.userAgent.includes('FlutterWebView')) {
+      // Import dynamically or assume it's loaded to avoid breaking the file import structure
+      import('../../utils/flutterBridge').then(({ shareViaFlutter }) => {
+        shareViaFlutter(shareData).catch(err => {
+          console.error("Flutter share failed:", err);
+          navigator.clipboard.writeText(window.location.href);
+          toast.success("Link copied to clipboard!");
+        });
+      });
+    } else if (navigator.share) {
       try {
         await navigator.share(shareData);
       } catch (err) {

@@ -165,9 +165,30 @@ export const pickImage = async (onSuccess, onError) => {
   }
 };
 
+/**
+ * Trigger Native Share Sheet
+ */
+export const shareViaFlutter = async (shareData) => {
+  return new Promise((resolve, reject) => {
+    try {
+      if (!window.flutter_inappwebview) {
+        reject(new Error('Flutter bridge not available.'));
+        return;
+      }
+      
+      window.flutter_inappwebview.callHandler('nativeShare', shareData)
+        .then((result) => resolve(result))
+        .catch((error) => reject(error));
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 export default {
   isFlutterApp,
   openFlutterCamera,
   uploadBase64Image,
-  pickImage
+  pickImage,
+  shareViaFlutter
 };
