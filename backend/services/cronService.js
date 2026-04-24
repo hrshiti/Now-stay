@@ -23,14 +23,40 @@ class CronService {
       this.processBookingReminders();
     });
 
-    // 2. Run daily at midnight: Property Recaps (Future)
-    // cron.schedule('0 0 * * *', () => { ... });
+    // 2. Run daily at midnight: Deactivate Expired Subscriptions
+    cron.schedule('0 0 * * *', () => {
+      console.log('🗓️ Running Subscription Expiry Cron...');
+      this.processSubscriptionExpiry();
+    });
 
     // 3. Run on the 1st of every month at 8:00 AM: Monthly Earnings Recap
     cron.schedule('0 8 1 * *', () => {
       console.log('📊 Running Monthly Partner Recap Cron...');
       this.sendMonthlyPartnerRecaps();
     });
+  }
+
+  async processSubscriptionExpiry() {
+    try {
+      const now = new Date();
+      const PartnerSubscription = mongoose.model('PartnerSubscription');
+      
+      const result = await PartnerSubscription.updateMany(
+        { 
+          isActive: true, 
+          endDate: { $lte: now } 
+        },
+        { 
+          $set: { isActive: false } 
+        }
+      );
+      
+      if (result.modifiedCount > 0) {
+        console.log(`[Cron] Deactivated ${result.modifiedCount} expired subscriptions.`);
+      }
+    } catch (error) {
+      console.error('[Cron Error] processSubscriptionExpiry failed:', error);
+    }
   }
 
   async processBookingReminders() {

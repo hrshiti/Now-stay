@@ -17,6 +17,7 @@ const partnerSubscriptionSchema = new mongoose.Schema({
   paymentId: String,
   paymentMethod: String,
   amountPaid: Number,
+  commissionRate: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 

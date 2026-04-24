@@ -242,22 +242,20 @@ const BookingCheckoutPage = () => {
             config: {
               display: {
                 blocks: {
-                  head: {
-                    name: "Pay via UPI / Apps",
-                    instruments: [
-                      { method: "upi" }, // Prioritize UPI Intent (GPay, PhonePe, etc.)
-                      { method: "wallet", wallets: ["paytm", "phonepe"] }
-                    ]
+                  phonepe: {
+                    name: "PhonePe",
+                    instruments: [{ method: "upi", apps: ["phonepe"] }]
                   },
-                  cards: {
-                    name: "Cards & Netbanking",
-                    instruments: [
-                      { method: "card" },
-                      { method: "netbanking" }
-                    ]
+                  gpay: {
+                    name: "Google Pay",
+                    instruments: [{ method: "upi", apps: ["google_pay"] }]
+                  },
+                  paytm: {
+                    name: "Paytm",
+                    instruments: [{ method: "upi", apps: ["paytm"] }]
                   }
                 },
-                sequence: ["block.head", "block.cards"],
+                sequence: ["block.phonepe", "block.gpay", "block.paytm"],
                 preferences: {
                   show_default_blocks: true
                 }

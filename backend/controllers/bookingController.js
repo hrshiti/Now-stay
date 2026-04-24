@@ -280,6 +280,7 @@ export const createBooking = async (req, res) => {
       activeSub = await PartnerSubscription.findOne({
         partnerId: property.partnerId,
         isActive: true,
+        startDate: { $lte: new Date() },
         endDate: { $gt: new Date() }
       }).populate('planId');
     } catch (err) {

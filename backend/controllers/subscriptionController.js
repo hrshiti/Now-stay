@@ -144,6 +144,7 @@ export const createSubscriptionOrder = async (req, res) => {
     const currentSub = await PartnerSubscription.findOne({
       partnerId: req.user._id,
       isActive: true,
+      startDate: { $lte: new Date() },
       endDate: { $gt: new Date() }
     }).populate('planId');
 

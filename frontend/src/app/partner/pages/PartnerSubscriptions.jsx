@@ -63,6 +63,28 @@ const PartnerSubscriptions = () => {
           email: user.email || '',
           contact: user.phone || ''
         },
+        config: {
+          display: {
+            blocks: {
+              phonepe: {
+                name: "PhonePe",
+                instruments: [{ method: "upi", apps: ["phonepe"] }]
+              },
+              gpay: {
+                name: "Google Pay",
+                instruments: [{ method: "upi", apps: ["google_pay"] }]
+              },
+              paytm: {
+                name: "Paytm",
+                instruments: [{ method: "upi", apps: ["paytm"] }]
+              }
+            },
+            sequence: ["block.phonepe", "block.gpay", "block.paytm"],
+            preferences: {
+              show_default_blocks: true
+            }
+          }
+        },
         theme: {
           color: "#000000"
         }
