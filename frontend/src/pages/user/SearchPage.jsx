@@ -143,6 +143,10 @@ const SearchPage = () => {
     };
 
     const applyFilters = () => {
+        if (filters.minPrice && filters.maxPrice && Number(filters.minPrice) > Number(filters.maxPrice)) {
+            toast.error("Min price cannot be greater than Max price");
+            return;
+        }
         const params = {};
         if (filters.search) params.search = filters.search;
         if (filters.type) {

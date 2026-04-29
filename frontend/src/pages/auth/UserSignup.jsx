@@ -14,9 +14,10 @@ const UserSignup = () => {
         name: '',
         phone: '',
         email: '',
-        referralCode: ''
+        referralCode: '',
+        termsAccepted: false
     });
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [resendTimer, setResendTimer] = useState(120);
@@ -63,9 +64,17 @@ const UserSignup = () => {
             return;
         }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (formData.email && !emailRegex.test(formData.email)) {
-            setError('Please enter a valid email address');
+        if (!formData.email) {
+            setError('Please enter your email address');
+            return;
+        }
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+        if (!emailRegex.test(formData.email)) {
+            setError('Please enter a valid Gmail address (e.g., name@gmail.com)');
+            return;
+        }
+        if (!formData.termsAccepted) {
+            setError('Please accept Terms & Conditions to continue');
             return;
         }
 
@@ -101,7 +110,7 @@ const UserSignup = () => {
         newOtp[index] = value;
         setOtp(newOtp);
 
-        if (value && index < 5) {
+        if (value && index < 3) {
             document.getElementById(`otp-${index + 1}`)?.focus();
         }
     };
@@ -115,7 +124,7 @@ const UserSignup = () => {
             await authService.sendOtp(formData.phone, 'register');
             setResendTimer(120);
             setCanResend(false);
-            setOtp(['', '', '', '', '', '']); // Clear OTP
+            setOtp(['', '', '', '']); // Clear OTP
             toast.success('OTP sent successfully!');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP');
@@ -128,19 +137,19 @@ const UserSignup = () => {
     const handleVerifyOTP = async (e) => {
         e.preventDefault();
         const otpString = otp.join('');
-        if (otpString.length !== 6) {
+        if (otpString.length !== 4) {
             setError('Please enter complete OTP');
             return;
         }
 
         try {
             setLoading(true);
-            // Send name (required), phone, otp, and email (optional)
+            // Send name, phone, otp, and email (required)
             const payload = {
                 phone: formData.phone,
                 otp: otpString,
                 name: formData.name,
-                email: formData.email || undefined, // Only send if provided
+                email: formData.email,
                 referralCode: formData.referralCode || undefined
             };
             console.log(`[REFERRAL_DEBUG] Verifying OTP with payload:`, payload);
@@ -211,7 +220,7 @@ const UserSignup = () => {
                                             <input
                                                 type="text"
                                                 value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value.replace(/[0-9]/g, '') })}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value.replace(/[^a-zA-Z\s]/g, '') })}
                                                 placeholder="Sakshi"
                                                 className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-transparent rounded-[1.2rem] focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300"
                                                 required
@@ -241,7 +250,7 @@ const UserSignup = () => {
                                     {/* Email */}
                                     <div className="space-y-1.5">
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">
-                                            Email <span className="text-[9px] font-medium opacity-60">(Optional)</span>
+                                            Email Address
                                         </label>
                                         <div className="relative group">
                                             <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-surface transition-colors" />
@@ -249,10 +258,20 @@ const UserSignup = () => {
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
-                                                placeholder="you@example.com"
-                                                className="w-full pl-11 pr-4 py-3 bg-white/50 border-2 border-transparent rounded-[1.2rem] focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300"
+                                                placeholder="you@gmail.com"
+                                                className={`w-full pl-11 pr-4 py-3 bg-white/50 border-2 rounded-[1.2rem] outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300 ${
+                                                    formData.email 
+                                                        ? /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email)
+                                                            ? 'border-emerald-500/50 focus:bg-white focus:ring-4 focus:ring-emerald-500/5'
+                                                            : 'border-red-500/50 focus:bg-white focus:ring-4 focus:ring-red-500/5'
+                                                        : 'border-transparent focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5'
+                                                }`}
+                                                required
                                             />
                                         </div>
+                                        {formData.email && !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email) && (
+                                            <p className="text-[10px] text-red-500 mt-1 ml-2 font-medium italic">Invalid Gmail format: must end with @gmail.com</p>
+                                        )}
                                     </div>
 
                                     {/* Referral Code (Extra Compact) */}
@@ -270,6 +289,20 @@ const UserSignup = () => {
                                                 className="w-full pl-10 pr-4 py-2 bg-white border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all placeholder:text-emerald-200 font-bold tracking-widest text-emerald-900 text-xs"
                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Terms and Conditions Checkbox */}
+                                    <div className="flex items-start gap-2.5 px-2 py-1">
+                                        <input
+                                            id="terms-modal"
+                                            type="checkbox"
+                                            checked={formData.termsAccepted}
+                                            onChange={(e) => setFormData({ ...formData, termsAccepted: e.target.checked })}
+                                            className="mt-1 w-3.5 h-3.5 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        <label htmlFor="terms-modal" className="text-[10px] text-gray-500 leading-relaxed">
+                                            I agree to the <button type="button" onClick={() => navigate('/terms')} className="text-emerald-600 font-bold hover:underline">Terms & Conditions</button> and <button type="button" onClick={() => navigate('/privacy')} className="text-emerald-600 font-bold hover:underline">Privacy Policy</button> of NowStay.
+                                        </label>
                                     </div>
 
                                     {error && (

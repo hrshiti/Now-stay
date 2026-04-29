@@ -133,7 +133,7 @@ const BookingConfirmationPage = () => {
     const contactPhone = (property.contactNumber || property.partnerId?.phone || '').replace(/\D/g, '') || null;
 
     return (
-        <div className="min-h-screen bg-emerald-100 pb-12">
+        <div className="min-h-screen bg-emerald-100 pb-12 print:bg-white print:min-h-0 print:pb-0">
             {/* Header */}
             <div className="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 print:hidden shadow-sm shadow-emerald-900/5">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -150,21 +150,33 @@ const BookingConfirmationPage = () => {
                 </div>
             </div>
 
-            <main className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+            <main className="max-w-4xl mx-auto px-4 py-8 space-y-6 print:py-2 print:space-y-4">
+
+                {/* Print-Only Invoice Header */}
+                <div className="hidden print:flex items-end justify-between border-b-2 border-gray-100 pb-4 mb-4">
+                    <div>
+                        <h2 className="text-3xl font-black text-emerald-600 tracking-tighter">NOWSTAY<span className="text-emerald-400">.in</span></h2>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Official Booking Invoice</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-xs text-gray-400 font-bold mb-0.5">Generated On</p>
+                        <p className="text-sm font-bold text-gray-800">{new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                </div>
 
                 {/* 1. Status Message */}
-                <div className={`bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-xl shadow-emerald-900/5 border border-white/50 ${isCancelled ? 'border-red-100' : ''}`}>
+                <div className={`bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-xl shadow-emerald-900/5 border border-white/50 ${isCancelled ? 'border-red-100' : ''} print:p-0 print:shadow-none print:border-none print:bg-transparent`}>
                     {isCancelled ? (
                         <>
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-red-600"></div>
-                            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-red-600 print:hidden"></div>
+                            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 print:hidden">
                                 <XCircle size={40} className="text-red-600" />
                             </div>
-                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Booking Cancelled!</h1>
-                            <p className="text-gray-500 max-w-md mx-auto">
+                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 print:text-xl print:text-left print:mb-1">Booking Cancelled!</h1>
+                            <p className="text-gray-500 max-w-md mx-auto print:mx-0 print:text-sm print:text-left">
                                 Your reservation ID is <span className="font-mono font-bold text-gray-800">#{booking.bookingId || booking._id?.slice(-8).toUpperCase()}</span>.
                                 {booking.cancellationReason && (
-                                    <span className="block mt-2 text-sm text-gray-600">
+                                    <span className="block mt-2 text-sm text-gray-600 print:mt-1">
                                         Reason: <span className="font-medium">{booking.cancellationReason}</span>
                                     </span>
                                 )}
@@ -172,26 +184,26 @@ const BookingConfirmationPage = () => {
                         </>
                     ) : (
                         <>
-                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600"></div>
-                            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-400 to-emerald-600 print:hidden"></div>
+                            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce print:hidden">
                                 <CheckCircle size={40} className="text-green-600" />
                             </div>
-                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Booking Confirmed!</h1>
-                            <p className="text-gray-500 max-w-md mx-auto">
+                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2 print:text-xl print:text-left print:mb-1">Booking Confirmed!</h1>
+                            <p className="text-gray-500 max-w-md mx-auto print:mx-0 print:text-sm print:text-left">
                                 Your reservation ID is <span className="font-mono font-bold text-gray-800">#{booking.bookingId || booking._id?.slice(-8).toUpperCase()}</span>.
-                                We've sent a confirmation email to <span className="font-medium text-gray-800">{user.email}</span>.
+                                <span className="print:hidden"> We've sent a confirmation email to <span className="font-medium text-gray-800">{user.email}</span>.</span>
                             </p>
                         </>
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-6 print:gap-4">
 
                     {/* Left Col: Property & Actions */}
-                    <div className="md:col-span-2 space-y-6">
+                    <div className="md:col-span-2 print:col-span-2 space-y-6 print:space-y-4">
 
                         {/* Property Card */}
-                        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100">
+                        <div className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 print:break-inside-avoid print:p-3 print:shadow-none print:border-gray-200">
                             <div className="flex flex-col sm:flex-row gap-5">
                                 <div className="w-full sm:w-32 h-32 bg-gray-200 rounded-2xl overflow-hidden shrink-0">
                                     <img
@@ -242,7 +254,7 @@ const BookingConfirmationPage = () => {
                         </div>
 
                         {/* Booking Details */}
-                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 print:break-inside-avoid print:p-4 print:shadow-none print:border-gray-200">
                             <h3 className="font-bold text-gray-900 mb-5 flex items-center gap-2">
                                 <FileText size={18} className="text-gray-400" />
                                 Reservation Details
@@ -287,9 +299,9 @@ const BookingConfirmationPage = () => {
                     </div>
 
                     {/* Right Col: Price & Payment */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 print:space-y-4">
 
-                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-fit">
+                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 h-fit print:break-inside-avoid print:p-4 print:shadow-none print:border-gray-200">
                             <h3 className="font-bold text-gray-900 mb-5">Payment Summary</h3>
 
                             <div className="space-y-3 mb-6">
@@ -344,12 +356,20 @@ const BookingConfirmationPage = () => {
                             </div>
                         </div>
 
-                        <button
-                            onClick={() => navigate('/bookings')}
-                            className="w-full bg-surface text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-900/20 hover:bg-surface-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2 print:hidden"
-                        >
-                            My Bookings
-                        </button>
+                        <div className="flex flex-col gap-3 print:hidden">
+                            <button
+                                onClick={() => navigate('/bookings')}
+                                className="w-full bg-surface text-white font-black py-4 rounded-2xl shadow-xl shadow-emerald-900/20 hover:bg-surface-dark active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                            >
+                                My Bookings
+                            </button>
+                            <button
+                                onClick={handlePrint}
+                                className="w-full bg-white border-2 border-emerald-100 text-emerald-600 font-bold py-3.5 rounded-2xl shadow-sm hover:bg-emerald-50 hover:border-emerald-200 transition-all flex items-center justify-center gap-2"
+                            >
+                                <Download size={18} /> Download Invoice
+                            </button>
+                        </div>
 
                         {/* Cancel Booking Option */}
                         {(() => {

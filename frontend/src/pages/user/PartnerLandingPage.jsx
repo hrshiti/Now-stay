@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, TrendingUp, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { clearPropertyDrafts } from '../../utils/localStorageUtils';
 
 const PartnerLandingPage = () => {
     const navigate = useNavigate();
@@ -57,7 +58,10 @@ const PartnerLandingPage = () => {
                     </div>
 
                     <button
-                        onClick={() => navigate('/hotel/join')}
+                        onClick={() => {
+                            clearPropertyDrafts();
+                            navigate('/hotel/join');
+                        }}
                         className="w-full py-4 bg-accent text-surface text-lg font-black rounded-2xl shadow-xl shadow-accent/20 hover:scale-[1.02] transition-transform active:scale-95"
                     >
                         List Your Property

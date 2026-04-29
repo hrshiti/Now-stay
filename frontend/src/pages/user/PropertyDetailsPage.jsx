@@ -60,6 +60,7 @@ const PropertyDetailsPage = () => {
   }, [id, dates, guests, selectedRoom]);
 
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [taxRate, setTaxRate] = useState(0); // Fetched from backend
   const [availability, setAvailability] = useState(null);
@@ -220,11 +221,26 @@ const PropertyDetailsPage = () => {
         };
         setProperty(adapted);
 
-        // Auto-select room for 'Whole Unit' properties (Villa, etc.) 
-        // because the selection UI is hidden for them.
-        const isWholeUnitType = p.propertyTemplate === 'villa' || (['homestay', 'apartment'].includes(p.propertyTemplate) && rts.length === 1);
-        if (isWholeUnitType && adapted.inventory && adapted.inventory.length > 0) {
-          setSelectedRoom(adapted.inventory[0]);
+        // Auto-select room if only one option is available
+        // This prevents ₹0 amount on checkout if the user doesn't explicitly click the card
+        const isWholeUnitType = p.propertyTemplate === 'villa' || (['homestay', 'apartment'].includes(p.propertyTemplate) && rts.length <= 1);
+        const hasSingleInventory = adapted.inventory && adapted.inventory.length === 1;
+        
+        if (isWholeUnitType || hasSingleInventory) {
+          if (adapted.inventory && adapted.inventory.length > 0) {
+            setSelectedRoom(adapted.inventory[0]);
+          } else if (isWholeUnitType) {
+            // Create a virtual room if inventory is empty but it's a whole unit
+            const virtualRoom = {
+              _id: 'virtual-whole-unit-' + p._id,
+              type: p.propertyName || 'Whole Unit',
+              price: p.minPrice || 0,
+              pricing: { basePrice: p.minPrice || 0 },
+              description: p.shortDescription || 'Full Property Booking',
+              amenities: p.amenities || []
+            };
+            setSelectedRoom(virtualRoom);
+          }
         }
       } else {
         setProperty(response);
@@ -498,7 +514,18 @@ const PropertyDetailsPage = () => {
   const baseChildrenPerUnit = selectedRoom?.baseChildren ?? (selectedRoom?.maxChildren !== undefined ? selectedRoom?.maxChildren : 0);
 
   const getPriceBreakdown = () => {
-    if (!selectedRoom || !dates.checkIn || !dates.checkOut) return null;
+    // If not selectedRoom, try to use property price as fallback
+    let effectiveRoom = selectedRoom;
+    if (!effectiveRoom && property) {
+      effectiveRoom = {
+        _id: 'fallback-' + property._id,
+        pricing: { basePrice: property.minPrice || 0 },
+        price: property.minPrice || 0
+      };
+    }
+
+    if (!effectiveRoom || !dates.checkIn || !dates.checkOut) return null;
+    const currentSelectedRoom = effectiveRoom;
 
     const { nights, perNight } = stayPricing;
     if (nights === 0) return null;
@@ -510,9 +537,9 @@ const PropertyDetailsPage = () => {
     const extraAdultsCount = Math.max(0, guests.adults - (baseAdultsPerUnit * units));
     const extraChildrenCount = Math.max(0, guests.children - (baseChildrenPerUnit * units));
 
-    const pricePerNight = getRoomPrice(selectedRoom);
-    const extraAdultPrice = selectedRoom.pricing?.extraAdultPrice || 0;
-    const extraChildPrice = selectedRoom.pricing?.extraChildPrice || 0;
+    const pricePerNight = getRoomPrice(currentSelectedRoom);
+    const extraAdultPrice = currentSelectedRoom.pricing?.extraAdultPrice || 0;
+    const extraChildPrice = currentSelectedRoom.pricing?.extraChildPrice || 0;
 
     const totalBasePrice = pricePerNight * nights * units;
     const totalExtraAdultCharge = extraAdultsCount * extraAdultPrice * nights;
@@ -593,15 +620,17 @@ const PropertyDetailsPage = () => {
   };
 
   const handleBook = async () => {
-    if (!dates.checkIn || !dates.checkOut) {
-      toast.error("Please select check-in and check-out dates");
+    const newErrors = {};
+    if (!dates.checkIn || !dates.checkOut) newErrors.dates = true;
+    if (!selectedRoom) newErrors.room = true;
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error("Please select dates and room to continue");
       return;
     }
 
-    if (!selectedRoom) {
-      toast.error("Please select a room/unit");
-      return;
-    }
+    setErrors({});
 
     // Capture availability result (either from state or fresh check)
     let currentAvailability = availability;
@@ -1003,8 +1032,9 @@ const PropertyDetailsPage = () => {
           {/* Inventory / Rooms - Conditional */}
           {!isWholeUnit && inventory && inventory.length > 0 && (
             <div className="mb-8">
-              <h2 className="text-lg font-bold text-textDark mb-4">
+              <h2 className={`text-lg font-bold ${errors.room ? 'text-red-500' : 'text-textDark'} mb-4 flex items-center gap-2`}>
                 {isBedBased ? 'Choose your Bed/Room' : 'Choose your room'}
+                {errors.room && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase tracking-widest font-black">Selection Required</span>}
               </h2>
               <div className="grid md:grid-cols-2 gap-4">
                 {inventory.map((room) => (
@@ -1014,6 +1044,7 @@ const PropertyDetailsPage = () => {
                     whileTap={{ scale: 0.99 }}
                     onClick={() => {
                       setSelectedRoom(room);
+                      if (errors.room) setErrors(prev => ({ ...prev, room: false }));
                     }}
                     className={`
                       border-2 rounded-xl p-5 cursor-pointer transition-all relative overflow-hidden flex flex-col justify-between
@@ -1078,14 +1109,20 @@ const PropertyDetailsPage = () => {
           )}
 
           {/* Booking Inputs (Date & Guest) */}
-          <div className="mb-8 p-4 bg-gray-50 rounded-xl border border-gray-100">
-            <h3 className="font-bold text-textDark mb-3">Trip Details</h3>
+          <div className={`mb-8 p-4 rounded-xl border-2 transition-all ${errors.dates ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-100'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`font-bold ${errors.dates ? 'text-red-600' : 'text-textDark'}`}>Trip Details</h3>
+              {errors.dates && <span className="text-[10px] text-red-500 font-black uppercase tracking-widest">Select Dates</span>}
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="col-span-1">
                 <ModernDatePicker
                   label="Check-in"
                   date={dates.checkIn}
-                  onChange={(newDate) => setDates({ ...dates, checkIn: newDate })}
+                  onChange={(newDate) => {
+                    setDates({ ...dates, checkIn: newDate });
+                    if (errors.dates) setErrors(prev => ({ ...prev, dates: false }));
+                  }}
                   minDate={new Date().toISOString().split('T')[0]}
                   placeholder="Select Check-in"
                 />
@@ -1094,7 +1131,10 @@ const PropertyDetailsPage = () => {
                 <ModernDatePicker
                   label="Check-out"
                   date={dates.checkOut}
-                  onChange={(newDate) => setDates({ ...dates, checkOut: newDate })}
+                  onChange={(newDate) => {
+                    setDates({ ...dates, checkOut: newDate });
+                    if (errors.dates) setErrors(prev => ({ ...prev, dates: false }));
+                  }}
                   minDate={dates.checkIn ? new Date(new Date(dates.checkIn).getTime() + 86400000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
                   placeholder="Select Check-out"
                   align="right"

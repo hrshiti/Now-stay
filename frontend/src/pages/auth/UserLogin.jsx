@@ -11,7 +11,7 @@ const UserLogin = () => {
     const location = useLocation();
     const [step, setStep] = useState(1); // 1: Enter Phone, 2: Enter OTP
     const [phone, setPhone] = useState('');
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [resendTimer, setResendTimer] = useState(120);
@@ -78,7 +78,7 @@ const UserLogin = () => {
         newOtp[index] = value;
         setOtp(newOtp);
 
-        if (value && index < 5) {
+        if (value && index < 3) {
             document.getElementById(`otp-${index + 1}`)?.focus();
         }
     };
@@ -92,7 +92,7 @@ const UserLogin = () => {
             await authService.sendOtp(phone, 'login');
             setResendTimer(120);
             setCanResend(false);
-            setOtp(['', '', '', '', '', '']); // Clear OTP
+            setOtp(['', '', '', '']); // Clear OTP
             toast.success('OTP sent successfully!');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP');
@@ -104,7 +104,7 @@ const UserLogin = () => {
     const handleVerifyOTP = async (e) => {
         e.preventDefault();
         const otpString = otp.join('');
-        if (otpString.length !== 6) {
+        if (otpString.length !== 4) {
             setError('Please enter complete OTP');
             return;
         }
@@ -320,6 +320,20 @@ const UserLogin = () => {
                                 Create Account
                             </button>
                         </p>
+                        <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1">
+                            <button 
+                                onClick={() => navigate('/terms')}
+                                className="text-[10px] text-gray-400 font-bold hover:text-emerald-600 transition-colors"
+                            >
+                                Terms & Conditions
+                            </button>
+                            <button 
+                                onClick={() => navigate('/privacy')}
+                                className="text-[10px] text-gray-400 font-bold hover:text-emerald-600 transition-colors"
+                            >
+                                Privacy Policy
+                            </button>
+                        </div>
                     </div>
                 </div>
             </motion.div>

@@ -63,6 +63,25 @@ const BookingCheckoutPage = () => {
     name: user?.name || '',
     phone: user?.phone || ''
   });
+  const [errors, setErrors] = useState({});
+
+  const validateFields = () => {
+    const newErrors = {};
+    if (!guestDetails.name?.trim()) {
+      newErrors.name = "Full Name is required";
+    } else if (guestDetails.name.trim().length < 3) {
+      newErrors.name = "Name must be at least 3 characters";
+    }
+
+    if (!guestDetails.phone?.trim()) {
+      newErrors.phone = "Phone Number is required";
+    } else if (!/^\d{10}$/.test(guestDetails.phone.trim())) {
+      newErrors.phone = "Enter a valid 10-digit phone number";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const openLegalModal = async (type) => {
     setLegalModal(type);
@@ -137,8 +156,8 @@ const BookingCheckoutPage = () => {
     setLoading(true);
 
     // Validate Guest Details
-    if (!guestDetails.name?.trim() || !guestDetails.phone?.trim()) {
-      toast.error("Please fill in all guest details");
+    if (!validateFields()) {
+      toast.error("Please correct the errors in guest details");
       setLoading(false);
       return;
     }
@@ -347,22 +366,30 @@ const BookingCheckoutPage = () => {
                 <input
                   type="text"
                   value={guestDetails.name}
-                  onChange={(e) => setGuestDetails({ ...guestDetails, name: e.target.value })}
+                  onChange={(e) => {
+                    setGuestDetails({ ...guestDetails, name: e.target.value });
+                    if (errors.name) setErrors({ ...errors, name: null });
+                  }}
                   placeholder="Enter guest name"
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all"
+                  className={`w-full bg-gray-50 border ${errors.name ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
                   required
                 />
+                {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.name}</p>}
               </div>
               <div>
                 <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Phone Number</label>
                 <input
                   type="tel"
                   value={guestDetails.phone}
-                  onChange={(e) => setGuestDetails({ ...guestDetails, phone: e.target.value })}
+                  onChange={(e) => {
+                    setGuestDetails({ ...guestDetails, phone: e.target.value });
+                    if (errors.phone) setErrors({ ...errors, phone: null });
+                  }}
                   placeholder="Enter phone number"
-                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all"
+                  className={`w-full bg-gray-50 border ${errors.phone ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
                   required
                 />
+                {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.phone}</p>}
               </div>
             </div>
 

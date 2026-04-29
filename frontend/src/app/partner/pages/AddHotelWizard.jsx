@@ -1210,7 +1210,7 @@ const AddHotelWizard = () => {
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Distance (km)</label>
-                          <input className="input w-full" type="number" value={tempNearbyPlace.distanceKm} onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, distanceKm: e.target.value })} />
+                          <input className="input w-full" type="number" value={tempNearbyPlace.distanceKm} onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, distanceKm: e.target.value.replace(/^0+(?!$)/, '') })} />
                         </div>
                       </div>
                     </div>
@@ -1407,23 +1407,23 @@ const AddHotelWizard = () => {
                         <label className="text-xs font-semibold text-gray-500">Price / Night (₹)</label>
                         <div className="relative">
                           <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value }))} />
+                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value.replace(/^0+(?!$)/, '') }))} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Total Rooms</label>
-                        <input className="input w-full" type="number" value={editingRoomType.totalInventory} onChange={e => setEditingRoomType(prev => ({ ...prev, totalInventory: e.target.value }))} />
+                        <input className="input w-full" type="number" value={editingRoomType.totalInventory} onChange={e => setEditingRoomType(prev => ({ ...prev, totalInventory: e.target.value.replace(/^0+(?!$)/, '') }))} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Max Adults</label>
-                        <input className="input w-full" type="number" value={editingRoomType.maxAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, maxAdults: e.target.value }))} />
+                        <input className="input w-full" type="number" value={editingRoomType.maxAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, maxAdults: e.target.value.replace(/^0+(?!$)/, '') }))} />
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Max Children</label>
-                        <input className="input w-full" type="number" value={editingRoomType.maxChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, maxChildren: e.target.value }))} />
+                        <input className="input w-full" type="number" value={editingRoomType.maxChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, maxChildren: e.target.value.replace(/^0+(?!$)/, '') }))} />
                       </div>
                     </div>
 
@@ -1432,11 +1432,11 @@ const AddHotelWizard = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value }))} placeholder="e.g. 2" />
+                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 2" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value }))} placeholder="e.g. 0" />
+                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 0" />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -1444,14 +1444,14 @@ const AddHotelWizard = () => {
                           <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
                           <div className="relative">
                             <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                            <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value }))} />
+                            <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value.replace(/^0+(?!$)/, '') }))} />
                           </div>
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
                           <div className="relative">
                             <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                            <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value }))} />
+                            <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value.replace(/^0+(?!$)/, '') }))} />
                           </div>
                         </div>
                       </div>
@@ -1537,8 +1537,9 @@ const AddHotelWizard = () => {
                         className="input w-full !pl-10" 
                         value={propertyForm.checkInTime} 
                         onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                        onClick={e => e.target.showPicker?.()}
                       />
-                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1549,8 +1550,9 @@ const AddHotelWizard = () => {
                         className="input w-full !pl-10" 
                         value={propertyForm.checkOutTime} 
                         onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                        onClick={e => e.target.showPicker?.()}
                       />
-                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>
                   </div>
                 </div>
@@ -1670,55 +1672,113 @@ const AddHotelWizard = () => {
           )}
 
           {step === 9 && (
-            <div className="space-y-6">
-              <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 flex gap-3">
-                <div className="bg-emerald-100 text-emerald-700 p-2 rounded-full h-fit"><CheckCircle size={20} /></div>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 flex gap-4 items-center">
+                <div className="bg-white text-emerald-600 p-3 rounded-2xl shadow-sm"><CheckCircle size={24} /></div>
                 <div>
-                  <h3 className="font-bold text-gray-900">Review Compliance</h3>
-                  <p className="text-xs text-gray-600 mt-1">Please review the details below carefully before submitting. Ensuring accurate information helps in faster approval.</p>
+                  <h3 className="font-bold text-gray-900">Review Your Listing</h3>
+                  <p className="text-xs text-gray-600 mt-0.5">Please check all details before submitting for approval.</p>
                 </div>
               </div>
 
-              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl font-medium">{error}</div>}
 
               <div className="space-y-4">
-                <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
-                  <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 mb-3">Property Details</h3>
-                  <div className="space-y-1">
-                    <div className="text-lg font-bold text-emerald-900">{propertyForm.propertyName || 'No Name'}</div>
-                    <div className="text-sm text-gray-600 flex items-start gap-1">
-                      <MapPin size={14} className="mt-0.5 shrink-0" /> {propertyForm.address.fullAddress || 'No Address'}
+                {/* 1. Basic Info */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Basic Information</h3>
+                    <button onClick={() => setStep(1)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex gap-4">
+                      {propertyForm.coverImage && <img src={propertyForm.coverImage} className="w-20 h-20 rounded-xl object-cover" />}
+                      <div className="flex-1">
+                        <div className="text-lg font-bold text-emerald-900 leading-tight">{propertyForm.propertyName || 'No Name'}</div>
+                        <div className="text-xs text-gray-500 mt-1 line-clamp-2">{propertyForm.shortDescription || 'No description'}</div>
+                        <div className="flex gap-2 mt-2">
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded uppercase tracking-tighter">Contact: {propertyForm.contactNumber || 'N/A'}</span>
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded uppercase tracking-tighter">{propertyForm.suitability || 'General'}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
-                  <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 mb-3">Room Types ({roomTypes.length})</h3>
-                  {roomTypes.length > 0 ? (
-                    <div className="space-y-2">
-                      {roomTypes.map((rt, i) => (
-                        <div key={i} className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 font-medium">{rt.name}</span>
-                          <span className="font-bold text-gray-900">₹ {rt.pricePerNight}</span>
-                        </div>
-                      ))}
+                {/* 2. Location */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Location & Nearby</h3>
+                    <button onClick={() => setStep(2)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex gap-2 text-sm text-gray-700 items-start">
+                      <MapPin size={16} className="text-gray-400 shrink-0 mt-0.5" />
+                      <span>{propertyForm.address.fullAddress || 'No address provided'}</span>
                     </div>
-                  ) : <div className="text-xs text-red-500 font-medium bg-red-50 p-2 rounded-lg">No room types added!</div>}
+                    {propertyForm.nearbyPlaces.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {propertyForm.nearbyPlaces.map((p, i) => (
+                          <span key={i} className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-lg border border-emerald-100">
+                            {p.name} ({p.distanceKm}km)
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="border border-gray-200 rounded-2xl p-5 bg-white shadow-sm">
-                  <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2 mb-3">Documents ({propertyForm.documents.filter(d => d.fileUrl).length}/{propertyForm.documents.length})</h3>
-                  <div className="space-y-2">
-                    {propertyForm.documents.map((doc, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          {doc.fileUrl ? <CheckCircle size={14} className="text-emerald-500" /> : <div className="w-3.5 h-3.5 rounded-full border border-gray-300 bg-gray-50"></div>}
-                          <span className={doc.fileUrl ? 'text-gray-700' : 'text-gray-500'}>{doc.name}</span>
+                {/* 3. Rooms & Pricing */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Room Types ({roomTypes.length})</h3>
+                    <button onClick={() => setStep(6)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                  </div>
+                  <div className="divide-y divide-gray-50">
+                    {roomTypes.map((rt, i) => (
+                      <div key={i} className="py-2 first:pt-0 last:pb-0 flex justify-between items-center">
+                        <div>
+                          <div className="text-sm font-bold text-gray-800">{rt.name}</div>
+                          <div className="text-[10px] text-gray-400">Inventory: {rt.totalInventory} · {rt.maxAdults}A, {rt.maxChildren}C</div>
                         </div>
-                        <span className="text-xs text-gray-400">{doc.fileUrl ? 'Attached' : 'Optional'}</span>
+                        <div className="text-emerald-600 font-extrabold text-sm">₹ {rt.pricePerNight}</div>
                       </div>
                     ))}
+                    {roomTypes.length === 0 && <div className="text-xs text-red-500 font-medium py-2">No rooms added yet!</div>}
                   </div>
+                </div>
+
+                {/* 4. Amenities & Rules */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Amenities</h3>
+                    <div className="flex flex-wrap gap-1">
+                      {propertyForm.amenities.slice(0, 4).map(a => (
+                        <span key={a} className="px-1.5 py-0.5 bg-gray-50 text-gray-600 text-[9px] font-bold rounded border border-gray-100">{a}</span>
+                      ))}
+                      {propertyForm.amenities.length > 4 && <span className="text-[9px] text-gray-400">+{propertyForm.amenities.length - 4} more</span>}
+                    </div>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Rules & Policy</h3>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-in:</span> {propertyForm.checkInTime || '--:--'}</div>
+                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-out:</span> {propertyForm.checkOutTime || '--:--'}</div>
+                      <div className="text-[9px] text-gray-400 line-clamp-1 italic mt-1">{propertyForm.cancellationPolicy || 'No policy'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Documents Status */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"><FileText size={18} /></div>
+                    <div>
+                      <div className="text-xs font-bold text-gray-900">Required Documents</div>
+                      <div className="text-[10px] text-gray-500">{propertyForm.documents.filter(d => d.fileUrl).length} of {propertyForm.documents.length} uploaded</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setStep(8)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
                 </div>
               </div>
             </div>
@@ -1744,34 +1804,36 @@ const AddHotelWizard = () => {
         </div>
       </main >
 
-      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 md:px-6 z-40 bg-white/80 backdrop-blur-md">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <button
-            onClick={handleBack}
-            disabled={step === 1 || loading}
-            className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            Back
-          </button>
-          {step < 9 && (
+      {step < 10 && (
+        <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 md:px-6 z-40 bg-white/80 backdrop-blur-md">
+          <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <button
-              onClick={clearCurrentStep}
-              disabled={loading}
-              className="px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-sm"
+              onClick={handleBack}
+              disabled={step === 1 || loading}
+              className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              Clear Step
+              Back
             </button>
-          )}
-          <button
-            onClick={handleNext}
-            disabled={loading || (step === 6 && roomTypes.length === 0)}
-            className="flex-1 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
-          >
-            {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-            {step === 9 ? (loading ? 'Submitting...' : 'Submit Property') : 'Next Step'}
-          </button>
-        </div>
-      </footer>
+            {step < 9 && (
+              <button
+                onClick={clearCurrentStep}
+                disabled={loading}
+                className="px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-sm"
+              >
+                Clear Step
+              </button>
+            )}
+            <button
+              onClick={handleNext}
+              disabled={loading || (step === 6 && roomTypes.length === 0)}
+              className="flex-1 px-6 py-3 rounded-xl bg-emerald-600 text-white font-bold shadow-lg shadow-emerald-100 hover:bg-emerald-700 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+            >
+              {loading && <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+              {step === 9 ? (loading ? 'Submitting...' : 'Submit Property') : 'Next Step'}
+            </button>
+          </div>
+        </footer>
+      )}
 
       <style>{`
         .hide-scrollbar::-webkit-scrollbar { display: none; }

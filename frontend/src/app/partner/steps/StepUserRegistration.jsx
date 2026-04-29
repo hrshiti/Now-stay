@@ -17,18 +17,27 @@ const StepUserRegistration = () => {
           className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]"
           placeholder="Enter your full name"
           value={formData.full_name}
-          onChange={e => handleChange('full_name', e.target.value.replace(/[0-9]/g, ''))}
+          onChange={e => handleChange('full_name', e.target.value.replace(/[^a-zA-Z\s]/g, ''))}
         />
       </div>
       <div>
         <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
         <input
           type="email"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0F172A]"
-          placeholder="name@business.com"
+          className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-all ${
+            formData.email 
+              ? /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email)
+                ? 'border-green-500 ring-1 ring-green-500/20'
+                : 'border-red-500 ring-1 ring-red-500/20'
+              : 'border-gray-200 focus:ring-2 focus:ring-[#0F172A]'
+          }`}
+          placeholder="name@gmail.com"
           value={formData.email}
           onChange={e => handleChange('email', e.target.value.toLowerCase().trim())}
         />
+        {formData.email && !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email) && (
+          <p className="text-[10px] text-red-500 mt-1 font-medium italic">Invalid Gmail format: must end with @gmail.com</p>
+        )}
       </div>
       <div>
         <label className="block text-xs font-bold text-gray-500 mb-1">Phone Number</label>

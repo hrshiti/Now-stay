@@ -1304,7 +1304,7 @@ const AddPGWizard = () => {
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Distance (km)</label>
-                          <input className="input w-full" type="number" value={tempNearbyPlace.distanceKm} onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, distanceKm: e.target.value })} />
+                          <input className="input w-full" type="number" value={tempNearbyPlace.distanceKm} onChange={e => setTempNearbyPlace({ ...tempNearbyPlace, distanceKm: e.target.value.replace(/^0+(?!$)/, '') })} />
                         </div>
                       </div>
                     </div>
@@ -1476,20 +1476,20 @@ const AddPGWizard = () => {
                         <label className="text-xs font-semibold text-gray-500">Price per Night (₹)</label>
                         <div className="relative">
                           <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input !pl-10" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value })} />
+                          <input className="input !pl-10" type="number" placeholder="0" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType({ ...editingRoomType, pricePerNight: e.target.value.replace(/^0+(?!$)/, '') })} />
                         </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Units/Inventory</label>
-                        <input className="input" type="number" placeholder="1" value={editingRoomType.totalInventory} onChange={e => setEditingRoomType({ ...editingRoomType, totalInventory: e.target.value })} />
+                        <input className="input" type="number" placeholder="1" value={editingRoomType.totalInventory} onChange={e => setEditingRoomType({ ...editingRoomType, totalInventory: e.target.value.replace(/^0+(?!$)/, '') })} />
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Beds per Room</label>
-                        <input className="input" type="number" placeholder="1" value={editingRoomType.bedsPerRoom} onChange={e => setEditingRoomType({ ...editingRoomType, bedsPerRoom: e.target.value })} />
+                        <input className="input" type="number" placeholder="1" value={editingRoomType.bedsPerRoom} onChange={e => setEditingRoomType({ ...editingRoomType, bedsPerRoom: e.target.value.replace(/^0+(?!$)/, '') })} />
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-gray-500">Max Adults</label>
-                        <input className="input" type="number" placeholder="1" value={editingRoomType.maxAdults} onChange={e => setEditingRoomType({ ...editingRoomType, maxAdults: e.target.value })} />
+                        <input className="input" type="number" placeholder="1" value={editingRoomType.maxAdults} onChange={e => setEditingRoomType({ ...editingRoomType, maxAdults: e.target.value.replace(/^0+(?!$)/, '') })} />
                       </div>
                     </div>
 
@@ -1498,21 +1498,21 @@ const AddPGWizard = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseAdults ?? 1} onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value }))} placeholder="e.g. 1" />
+                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseAdults ?? 1} onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 1" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseChildren ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value }))} placeholder="e.g. 0" />
+                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseChildren ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 0" />
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
-                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value }))} /></div>
+                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value.replace(/^0+(?!$)/, '') }))} /></div>
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
-                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value }))} /></div>
+                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value.replace(/^0+(?!$)/, '') }))} /></div>
                         </div>
                       </div>
                     </div>
@@ -1601,8 +1601,9 @@ const AddPGWizard = () => {
                       className="input !pl-10" 
                       value={propertyForm.checkInTime} 
                       onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                      onClick={e => e.target.showPicker?.()}
                     />
-                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -1613,8 +1614,9 @@ const AddPGWizard = () => {
                       className="input !pl-10" 
                       value={propertyForm.checkOutTime} 
                       onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                      onClick={e => e.target.showPicker?.()}
                     />
-                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                   </div>
                 </div>
               </div>
@@ -1725,53 +1727,115 @@ const AddPGWizard = () => {
           )}
 
           {step === 9 && (
-            <div className="space-y-6">
-              <div className="bg-emerald-50 rounded-2xl p-6 text-center">
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm text-emerald-600">
-                  <CheckCircle size={32} />
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100 flex gap-4 items-center">
+                <div className="bg-white text-emerald-600 p-3 rounded-2xl shadow-sm"><CheckCircle size={24} /></div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Review Your Listing</h3>
+                  <p className="text-xs text-gray-600 mt-0.5">Please check all details before submitting for approval.</p>
                 </div>
-                <h3 className="text-xl font-bold text-emerald-900">Ready to Submit!</h3>
-                <p className="text-emerald-700 text-sm mt-1">Review your PG details below.</p>
               </div>
 
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl font-medium">{error}</div>}
+
               <div className="space-y-4">
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden p-4 space-y-3">
-                  <div className="flex gap-4">
-                    <img src={propertyForm.coverImage} className="w-20 h-20 rounded-lg object-cover bg-gray-100" />
-                    <div>
-                      <div className="font-bold text-gray-900">{propertyForm.propertyName}</div>
-                      <div className="text-sm text-gray-500 mt-1 line-clamp-1">{propertyForm.address.fullAddress}</div>
-                      <div className="flex gap-2 mt-2">
-                        <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[10px] font-bold rounded uppercase">{roomTypes.length} Inventory Types</span>
+                {/* 1. Basic Info */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Basic Information</h3>
+                    <button onClick={() => setStep(1)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex gap-4">
+                      {propertyForm.coverImage && <img src={propertyForm.coverImage} className="w-20 h-20 rounded-xl object-cover" />}
+                      <div className="flex-1">
+                        <div className="text-lg font-bold text-emerald-900 leading-tight">{propertyForm.propertyName || 'No Name'}</div>
+                        <div className="text-xs text-gray-500 mt-1 line-clamp-2">{propertyForm.shortDescription || 'No description'}</div>
+                        <div className="flex gap-2 mt-2">
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded uppercase tracking-tighter">Contact: {propertyForm.contactNumber || 'N/A'}</span>
+                          <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold rounded uppercase tracking-tighter">{propertyForm.suitability || 'General'}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl border border-gray-200 bg-white">
-                  <div className="font-bold text-gray-900 text-sm mb-3">Submission Checklist</div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Inventory Setup</span>
-                      <span className={roomTypes.length > 0 ? "text-emerald-600 font-bold" : "text-red-500 font-bold"}>{roomTypes.length > 0 ? "Complete" : "Missing"}</span>
+                {/* 2. Location */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Location & Nearby</h3>
+                    <button onClick={() => setStep(2)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex gap-2 text-sm text-gray-700 items-start">
+                      <MapPin size={16} className="text-gray-400 shrink-0 mt-0.5" />
+                      <span>{propertyForm.address.fullAddress || 'No address provided'}</span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Documents</span>
-                      <span className="text-gray-500 font-medium">{propertyForm.documents.filter(d => d.fileUrl).length}/{propertyForm.documents.length} (Optional)</span>
+                    {propertyForm.nearbyPlaces.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        {propertyForm.nearbyPlaces.map((p, i) => (
+                          <span key={i} className="px-2 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-lg border border-emerald-100">
+                            {p.name} ({p.distanceKm}km)
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 3. Inventory & Pricing */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Inventory Types ({roomTypes.length})</h3>
+                    <button onClick={() => setStep(6)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                  </div>
+                  <div className="divide-y divide-gray-50">
+                    {roomTypes.map((rt, i) => (
+                      <div key={i} className="py-2 first:pt-0 last:pb-0 flex justify-between items-center">
+                        <div>
+                          <div className="text-sm font-bold text-gray-800">{rt.name}</div>
+                          <div className="text-[10px] text-gray-400">Inventory: {rt.totalInventory} · {rt.maxAdults}A, {rt.maxChildren}C</div>
+                        </div>
+                        <div className="text-emerald-600 font-extrabold text-sm">₹ {rt.pricePerNight}</div>
+                      </div>
+                    ))}
+                    {roomTypes.length === 0 && <div className="text-xs text-red-500 font-medium py-2">No inventory added yet!</div>}
+                  </div>
+                </div>
+
+                {/* 4. Amenities & Rules */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Amenities</h3>
+                    <div className="flex flex-wrap gap-1">
+                      {propertyForm.amenities.slice(0, 4).map(a => (
+                        <span key={a} className="px-1.5 py-0.5 bg-gray-50 text-gray-600 text-[9px] font-bold rounded border border-gray-100">{a}</span>
+                      ))}
+                      {propertyForm.amenities.length > 4 && <span className="text-[9px] text-gray-400">+{propertyForm.amenities.length - 4} more</span>}
                     </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Photos</span>
-                      <span className={propertyForm.propertyImages.length >= 4 ? "text-emerald-600 font-bold" : "text-orange-500 font-bold"}>{propertyForm.propertyImages.length}/4</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">House Rules</span>
-                      <span className={propertyForm.houseRules.length > 0 ? "text-emerald-600 font-bold" : "text-gray-400 italic"}>{propertyForm.houseRules.length > 0 ? "Added" : "None"}</span>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Rules & Policy</h3>
+                    <div className="space-y-1">
+                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-in:</span> {propertyForm.checkInTime || '--:--'}</div>
+                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-out:</span> {propertyForm.checkOutTime || '--:--'}</div>
+                      <div className="text-[9px] text-gray-400 line-clamp-1 italic mt-1">{propertyForm.cancellationPolicy || 'No policy'}</div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {error && <div className="p-4 bg-red-50 text-red-600 rounded-xl text-sm text-center font-medium">{error}</div>}
+                {/* 5. Documents Status */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-gray-400"><FileText size={18} /></div>
+                    <div>
+                      <div className="text-xs font-bold text-gray-900">Required Documents</div>
+                      <div className="text-[10px] text-gray-500">{propertyForm.documents.filter(d => d.fileUrl).length} of {propertyForm.documents.length} uploaded</div>
+                    </div>
+                  </div>
+                  <button onClick={() => setStep(8)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                </div>
+              </div>
             </div>
           )}
           {step === 10 && (
@@ -1794,46 +1858,48 @@ const AddPGWizard = () => {
         </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200 z-40">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
-          <button
-            onClick={handleBack}
-            disabled={step === 1 || loading || isEditingSubItem}
-            className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Back
-          </button>
-
-          {step < 9 && (
+      {step < 10 && (
+        <footer className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-md border-t border-gray-200 z-40">
+          <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <button
-              onClick={clearCurrentStep}
-              disabled={loading}
-              className="px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-sm"
+              onClick={handleBack}
+              disabled={step === 1 || loading || isEditingSubItem}
+              className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Clear Step
+              Back
             </button>
-          )}
 
-          <button
-            onClick={step === 9 ? submitAll : handleNext}
-            disabled={
-              loading ||
-              isEditingSubItem ||
-              (step === 6 && roomTypes.length === 0)
-            }
-            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Processing...
-              </>
-            ) : (
-              step === 9 ? 'Submit Property' : 'Next Step'
+            {step < 9 && (
+              <button
+                onClick={clearCurrentStep}
+                disabled={loading}
+                className="px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-sm"
+              >
+                Clear Step
+              </button>
             )}
-          </button>
-        </div>
-      </div>
+
+            <button
+              onClick={step === 9 ? submitAll : handleNext}
+              disabled={
+                loading ||
+                isEditingSubItem ||
+                (step === 6 && roomTypes.length === 0)
+              }
+              className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-100 transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>{step === 9 ? "Submit Property" : "Next Step"}</>
+              )}
+            </button>
+          </div>
+        </footer>
+      )}
 
 
     </div>

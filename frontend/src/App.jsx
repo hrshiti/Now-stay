@@ -273,10 +273,12 @@ const PublicOrProtectedRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   const userRaw = localStorage.getItem('user');
   const user = userRaw ? JSON.parse(userRaw) : null;
-  // For both Browser and WebView:
-  // If a partner is logged in and tries to access user-facing public routes,
-  // redirect them to the partner dashboard. Otherwise allow access.
-  if (token && user?.role === 'partner') {
+  const location = useLocation();
+
+  // If a partner is logged in and tries to access AUTH routes (login/signup),
+  // redirect them to the partner dashboard. Otherwise allow access to public pages.
+  const authRoutes = ['/login', '/signup', '/register'];
+  if (token && user?.role === 'partner' && authRoutes.some(r => location.pathname === r)) {
     return <Navigate to="/hotel/dashboard" replace />;
   }
 
@@ -334,9 +336,17 @@ const PartnerProtectedRoute = ({ children }) => {
       '/hotel/contact',
       '/hotel/privacy',
       '/hotel/terms',
-      '/hotel/about'
+      '/hotel/about',
+      '/hotel/join',
+      '/hotel/settings',
+      '/hotel/bank-details',
+      '/hotel/notifications'
     ];
-    if (!allowedPending.some(p => location.pathname.startsWith(p))) {
+    // Also allow all "join-" wizard routes
+    const isWizard = location.pathname.startsWith('/hotel/join-');
+    
+    if (!isWizard && !allowedPending.some(p => location.pathname.startsWith(p))) {
+      console.warn(`[AUTH] Pending partner ${user._id} attempted restricted path: ${location.pathname}. Redirecting to dashboard.`);
       return <Navigate to="/hotel/dashboard" replace />;
     }
   }
@@ -362,12 +372,19 @@ function App() {
     }
   }, []);
 
-  // One-time cleanup: remove the legacy persisted WebView flag.
-  // Old deviceDetect.js stored '__nowstay_app_mode__ = "1"' in localStorage permanently.
-  // This caused isWebView() to return true in real browsers that share storage with the app,
-  // blocking web push registration. Safe to remove — detection is now done via live UA/URL check.
+  // Sync user status on load to handle admin approval changes without re-login
   React.useEffect(() => {
-    localStorage.removeItem('__nowstay_app_mode__');
+    const syncUser = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          await authService.getMe();
+        } catch (err) {
+          console.warn("[AUTH] Failed to sync user status:", err);
+        }
+      }
+    };
+    syncUser();
   }, []);
 
 

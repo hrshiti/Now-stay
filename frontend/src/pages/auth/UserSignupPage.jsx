@@ -11,11 +11,12 @@ const UserSignupPage = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        phone: ''
+        phone: '',
+        termsAccepted: false
     });
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [errors, setErrors] = useState({});
     const [resendTimer, setResendTimer] = useState(120); // 2 minutes = 120 seconds
     const [canResend, setCanResend] = useState(false);
 
@@ -39,8 +40,11 @@ const UserSignupPage = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        if (errors[name]) setErrors({ ...errors, [name]: null });
         if (name === 'phone') {
             setFormData({ ...formData, [name]: value.replace(/\D/g, '').slice(0, 10) });
+        } else if (name === 'name') {
+            setFormData({ ...formData, [name]: value.replace(/[^a-zA-Z\s]/g, '') });
         } else {
             setFormData({ ...formData, [name]: value });
         }
@@ -48,23 +52,31 @@ const UserSignupPage = () => {
 
     const handleSendOtp = async (e) => {
         e.preventDefault();
-        console.log("Attempting to send OTP...", { formData, signupMethod });
+        const newErrors = {};
 
-        // Validation
         if (!formData.name.trim()) {
-            setError('Please enter your full name');
-            return;
+            newErrors.name = 'Please enter your full name';
         }
+
         if (signupMethod === 'phone' && formData.phone.length !== 10) {
-            setError('Please enter a valid 10-digit phone number');
-            return;
+            newErrors.phone = 'Please enter a valid 10-digit phone number';
         }
-        if (signupMethod === 'email' && !formData.email.includes('@')) {
-            setError('Please enter a valid email address');
+
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+        if (signupMethod === 'email' && !emailRegex.test(formData.email)) {
+            newErrors.email = 'Please enter a valid Gmail address (@gmail.com)';
+        }
+
+        if (!formData.termsAccepted) {
+            newErrors.terms = 'Please accept Terms & Conditions';
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
-        setError('');
+        setErrors({});
         setLoading(true);
 
         try {
@@ -93,7 +105,7 @@ const UserSignupPage = () => {
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
-        if (value && index < 5) {
+        if (value && index < 3) {
             document.getElementById(`signup-otp-${index + 1}`).focus();
         }
     };
@@ -117,7 +129,7 @@ const UserSignupPage = () => {
             });
             navigate('/');
         } catch (err) {
-            setError(err.message || 'Invalid OTP');
+            setErrors({ otp: err.message || 'Invalid OTP' });
         } finally {
             setLoading(false);
         }
@@ -140,7 +152,7 @@ const UserSignupPage = () => {
             await authService.sendOtp(formData.phone, 'register', 'user');
             setResendTimer(120);
             setCanResend(false);
-            setOtp(['', '', '', '', '', '']); // Clear OTP inputs
+            setOtp(['', '', '', '']); // Clear OTP inputs
             toast.success('OTP sent successfully!');
         } catch (err) {
             console.error("Resend OTP Error:", err);
@@ -175,8 +187,8 @@ const UserSignupPage = () => {
                                     <label className="block text-sm font-bold text-gray-700 mb-2">
                                         Full Name
                                     </label>
-                                    <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-teal-500 focus-within:border-teal-500 transition-all bg-white">
-                                        <User className="text-gray-400 mr-3" size={20} />
+                                    <div className={`flex items-center border rounded-xl px-4 py-3 transition-all bg-white ${errors.name ? 'border-red-500 ring-2 ring-red-500/10' : 'border-gray-200 focus-within:ring-2 focus-within:ring-teal-500 focus-within:border-teal-500'}`}>
+                                        <User className={`mr-3 ${errors.name ? 'text-red-400' : 'text-gray-400'}`} size={20} />
                                         <input
                                             type="text"
                                             name="name"
@@ -187,6 +199,7 @@ const UserSignupPage = () => {
                                             autoFocus
                                         />
                                     </div>
+                                    {errors.name && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase">{errors.name}</p>}
                                 </div>
 
                                 {/* Tabs */}
@@ -212,10 +225,14 @@ const UserSignupPage = () => {
                                     <label className="block text-sm font-bold text-gray-700 mb-2">
                                         {signupMethod === 'phone' ? 'Phone Number' : 'Email Address'}
                                     </label>
-                                    <div className="flex items-center border border-gray-200 rounded-xl px-4 py-3 focus-within:ring-2 focus-within:ring-teal-500 focus-within:border-teal-500 transition-all bg-white">
+                                    <div className={`flex items-center border rounded-xl px-4 py-3 transition-all bg-white ${
+                                        errors.phone || errors.email
+                                            ? 'border-red-500 ring-2 ring-red-500/10'
+                                            : 'border-gray-200 focus-within:ring-2 focus-within:ring-teal-500'
+                                    }`}>
                                         {signupMethod === 'phone' ? (
                                             <>
-                                                <Phone className="text-gray-400 mr-3" size={20} />
+                                                <Phone className={`mr-3 ${errors.phone ? 'text-red-400' : 'text-gray-400'}`} size={20} />
                                                 <input
                                                     type="tel"
                                                     name="phone"
@@ -227,20 +244,38 @@ const UserSignupPage = () => {
                                             </>
                                         ) : (
                                             <>
-                                                <Mail className="text-gray-400 mr-3" size={20} />
+                                                <Mail className={`mr-3 ${errors.email ? 'text-red-400' : 'text-gray-400'}`} size={20} />
                                                 <input
                                                     type="email"
                                                     name="email"
                                                     value={formData.email}
                                                     onChange={handleChange}
-                                                    placeholder="john@example.com"
+                                                    placeholder="john@gmail.com"
                                                     className="flex-1 outline-none text-gray-900 font-medium placeholder:text-gray-300"
                                                 />
                                             </>
                                         )}
                                     </div>
-                                    {error && <p className="text-red-500 text-xs mt-2 font-medium">{error}</p>}
+                                    {errors.phone && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase">{errors.phone}</p>}
+                                    {errors.email && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase">{errors.email}</p>}
                                 </div>
+
+                                    <div className={`flex items-start gap-3 mb-6 px-1 p-2 rounded-xl border transition-all ${errors.terms ? 'border-red-200 bg-red-50/30' : 'border-transparent'}`}>
+                                        <input
+                                            id="terms-page"
+                                            type="checkbox"
+                                            checked={formData.termsAccepted}
+                                            onChange={(e) => {
+                                                setFormData({ ...formData, termsAccepted: e.target.checked });
+                                                if (errors.terms) setErrors({ ...errors, terms: null });
+                                            }}
+                                            className="mt-1 w-4 h-4 rounded border-gray-200 text-teal-600 focus:ring-teal-500"
+                                        />
+                                        <label htmlFor="terms-page" className="text-xs text-gray-500 leading-relaxed">
+                                            I agree to the <button type="button" onClick={() => navigate('/terms')} className="text-teal-600 font-bold hover:underline">Terms & Conditions</button> and <button type="button" onClick={() => navigate('/privacy')} className="text-teal-600 font-bold hover:underline">Privacy Policy</button> of NowStay.
+                                            {errors.terms && <span className="block text-red-500 text-[10px] mt-1 font-bold uppercase">{errors.terms}</span>}
+                                        </label>
+                                    </div>
 
                                 <button
                                     type="submit"
@@ -279,7 +314,7 @@ const UserSignupPage = () => {
                                         />
                                     ))}
                                 </div>
-                                {error && <p className="text-red-500 text-xs text-center font-medium mb-4">{error}</p>}
+                                {errors.otp && <p className="text-red-500 text-xs text-center font-medium mb-4">{errors.otp}</p>}
 
                                 <div className="text-center mb-6">
                                     <p className="text-gray-500 text-sm">

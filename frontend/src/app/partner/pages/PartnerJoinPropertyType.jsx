@@ -6,6 +6,7 @@ import {
   Coffee, Snowflake, MapPin, Globe, Zap, Shield, Heart, Star, Camera, Compass, Loader2
 } from 'lucide-react';
 import { api } from '../../../services/apiService';
+import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 
 const STATIC_ICONS = {
   Building2, Home, Palmtree, Hotel, Building, BedDouble, Tent, 
@@ -19,6 +20,9 @@ const PartnerJoinPropertyType = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Ensure all previous property drafts are cleared when starting fresh
+    clearPropertyDrafts();
+    
     const fetchCategories = async () => {
       try {
         const res = await api.get('/categories');

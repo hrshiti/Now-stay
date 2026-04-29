@@ -126,7 +126,7 @@ export const sendOtp = async (req, res) => {
     const isTestNumber = testNumbers.includes(phone) || (role === 'partner' && phone === '9589814119');
 
     // Generate OTP - Use 123456 for test numbers, random for others
-    const otp = isTestNumber ? '123456' : Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = isTestNumber ? '1234' : Math.floor(1000 + Math.random() * 9000).toString();
     const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
 
     if (user) {
@@ -146,7 +146,7 @@ export const sendOtp = async (req, res) => {
     if (!isTestNumber) {
       await smsService.sendOTP(phone, otp);
     } else {
-      console.log(`🧪 Test Number Detected: ${phone} - Using default OTP: 123456`);
+      console.log(`🧪 Test Number Detected: ${phone} - Using default OTP: 1234`);
     }
 
     res.status(200).json({
@@ -389,6 +389,11 @@ export const verifyOtp = async (req, res) => {
       // REGISTRATION FLOW - Name is required
       if (!name) {
         return res.status(400).json({ message: 'Name is required for registration.' });
+      }
+
+      const nameRegex = /^[A-Za-z\s]+$/;
+      if (!nameRegex.test(name)) {
+        return res.status(400).json({ message: 'Full name should only contain alphabets and spaces.' });
       }
       if (email) {
         const emailExists = await Model.findOne({ email });

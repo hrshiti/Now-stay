@@ -3,9 +3,11 @@ import { useLenis } from '../../shared/hooks/useLenis';
 import { playHeroAnimation } from '../../shared/animations/heroAnimations';
 import { initScrollReveal } from '../../shared/animations/scrollReveal';
 import { ArrowRight, TrendingUp, ShieldCheck, Star } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 
 const PartnerHome = () => {
+    const navigate = useNavigate();
     // 1. Initialize Smooth Scroll
     useLenis();
 
@@ -163,11 +165,15 @@ const PartnerHome = () => {
                     <div className="relative z-10">
                         <h2 className="text-2xl md:text-5xl font-bold mb-4 md:mb-6">Ready to transform your business?</h2>
                         <p className="text-white/80 mb-8 text-sm md:text-lg">Join 500+ hotel partners growing with NowStay Hub today.</p>
-                        <Link to="/hotel/join">
-                            <button className="bg-white text-[#0F172A] px-8 py-3.5 md:px-10 md:py-4 rounded-full font-bold text-sm md:text-base hover:bg-gray-100 hover:scale-105 transition-all">
-                                List Your Property
-                            </button>
-                        </Link>
+                        <button 
+                            onClick={() => {
+                                clearPropertyDrafts();
+                                navigate('/hotel/join');
+                            }}
+                            className="bg-white text-[#0F172A] px-8 py-3.5 md:px-10 md:py-4 rounded-full font-bold text-sm md:text-base hover:bg-gray-100 hover:scale-105 transition-all"
+                        >
+                            List Your Property
+                        </button>
                     </div>
                 </div>
             </section>

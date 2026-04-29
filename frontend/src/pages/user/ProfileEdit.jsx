@@ -16,6 +16,7 @@ const ProfileEdit = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -267,21 +268,27 @@ const ProfileEdit = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const newErrors = {};
 
-    if (!formData.name || formData.name.length < 3) {
-      toast.error('Name must be at least 3 characters');
+    if (!formData.name || formData.name.trim().length < 3) {
+      newErrors.name = 'Name must be at least 3 characters';
+    }
+
+    if (formData.phone && !/^\d{10}$/.test(formData.phone.trim())) {
+      newErrors.phone = 'Please enter a valid 10-digit phone number';
+    }
+
+    if (formData.address.zipCode && !/^\d{6}$/.test(formData.address.zipCode.trim())) {
+      newErrors.zipCode = 'Please enter a valid 6-digit pincode';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      toast.error('Please correct the highlighted errors');
       return;
     }
 
-    if (formData.phone && formData.phone.length !== 10) {
-      toast.error('Please enter a valid 10-digit phone number');
-      return;
-    }
-
-    if (formData.address.zipCode && formData.address.zipCode.length !== 6) {
-      toast.error('Please enter a valid 6-digit pincode');
-      return;
-    }
+    setErrors({});
 
     try {
       setLoading(true);
@@ -482,16 +489,20 @@ const ProfileEdit = () => {
                   {/* Name */}
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Full Name</label>
-                    <div className="flex items-center gap-3 border-b border-gray-100 pb-2 focus-within:border-surface transition-colors">
-                      <User size={16} className="text-gray-300" />
+                    <div className={`flex items-center gap-3 border-b pb-2 transition-colors ${errors.name ? 'border-red-500' : 'border-gray-100 focus-within:border-surface'}`}>
+                      <User size={16} className={errors.name ? 'text-red-400' : 'text-gray-300'} />
                       <input
                         type="text"
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, name: e.target.value });
+                          if (errors.name) setErrors({ ...errors, name: null });
+                        }}
                         className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300"
                         placeholder="Your Name"
                       />
                     </div>
+                    {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tight">{errors.name}</p>}
                   </div>
 
                   {/* Email */}
@@ -512,18 +523,21 @@ const ProfileEdit = () => {
                   {/* Phone */}
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Phone Number</label>
-                    <div className="flex items-center gap-3 border-b border-gray-100 pb-2 focus-within:border-surface transition-colors">
-                      <Phone size={16} className="text-gray-300" />
+                    <div className={`flex items-center gap-3 border-b pb-2 transition-colors ${errors.phone ? 'border-red-500' : 'border-gray-100 focus-within:border-surface'}`}>
+                      <Phone size={16} className={errors.phone ? 'text-red-400' : 'text-gray-300'} />
                       <input
                         type="tel"
                         maxLength={10}
-                        pattern="[0-9]{10}"
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
+                        onChange={(e) => {
+                          setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') });
+                          if (errors.phone) setErrors({ ...errors, phone: null });
+                        }}
                         className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300"
                         placeholder="9876543210"
                       />
                     </div>
+                    {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tight">{errors.phone}</p>}
                   </div>
                 </div>
 
@@ -577,17 +591,21 @@ const ProfileEdit = () => {
                       {/* Pincode */}
                       <div>
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Pincode</label>
-                        <div className="border-b border-gray-100 focus-within:border-surface transition-colors">
+                        <div className={`border-b transition-colors ${errors.zipCode ? 'border-red-500' : 'border-gray-100 focus-within:border-surface'}`}>
                           <input
                             type="text"
                             inputMode="numeric"
                             maxLength={6}
                             value={formData.address.zipCode}
-                            onChange={(e) => handleAddressChange('zipCode', e.target.value.replace(/\D/g, ''))}
+                            onChange={(e) => {
+                              handleAddressChange('zipCode', e.target.value.replace(/\D/g, ''));
+                              if (errors.zipCode) setErrors({ ...errors, zipCode: null });
+                            }}
                             className="w-full py-2 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300 bg-transparent"
                             placeholder="000000"
                           />
                         </div>
+                        {errors.zipCode && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tight">{errors.zipCode}</p>}
                       </div>
                     </div>
 

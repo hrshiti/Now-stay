@@ -11,7 +11,7 @@ const UserLoginPage = () => {
     const [step, setStep] = useState('input'); // input | otp
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -55,7 +55,7 @@ const UserLoginPage = () => {
         const newOtp = [...otp];
         newOtp[index] = value;
         setOtp(newOtp);
-        if (value && index < 5) {
+        if (value && index < 3) {
             document.getElementById(`otp-${index + 1}`).focus();
         }
     };
@@ -250,6 +250,14 @@ const UserLoginPage = () => {
                         Create Account
                     </button>
                 </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2">
+                    <button onClick={() => navigate('/terms')} className="text-xs text-gray-400 font-medium hover:text-teal-600 transition-colors">
+                        Terms & Conditions
+                    </button>
+                    <button onClick={() => navigate('/privacy')} className="text-xs text-gray-400 font-medium hover:text-teal-600 transition-colors">
+                        Privacy Policy
+                    </button>
+                </div>
             </div>
 
         </div>

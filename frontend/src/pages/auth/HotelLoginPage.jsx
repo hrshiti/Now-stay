@@ -5,12 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/apiService';
 import NowStayLogo from '../../components/ui/NowStayLogo';
 import toast from 'react-hot-toast';
+import { clearPropertyDrafts } from '../../utils/localStorageUtils';
 
 const HotelLoginPage = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [phone, setPhone] = useState('');
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [resendTimer, setResendTimer] = useState(120);
@@ -74,7 +75,7 @@ const HotelLoginPage = () => {
         newOtp[index] = value;
         setOtp(newOtp);
 
-        if (value && index < 5) {
+        if (value && index < 3) {
             document.getElementById(`otp-${index + 1}`)?.focus();
         }
         if (value === '' && index > 0) {
@@ -91,7 +92,7 @@ const HotelLoginPage = () => {
             await authService.sendOtp(phone, 'login', 'partner');
             setResendTimer(120);
             setCanResend(false);
-            setOtp(['', '', '', '', '', '']); // Clear OTP
+            setOtp(['', '', '', '']); // Clear OTP
             toast.success('OTP sent successfully!');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP');
@@ -103,7 +104,7 @@ const HotelLoginPage = () => {
     const handleVerifyOTP = async (e) => {
         e.preventDefault();
         const otpString = otp.join('');
-        if (otpString.length !== 6) {
+        if (otpString.length !== 4) {
             setError('Please enter complete OTP');
             return;
         }
@@ -313,12 +314,23 @@ const HotelLoginPage = () => {
                     <p className="text-gray-400 text-sm font-medium">
                     New to NowStay?{' '}
                         <button
-                            onClick={() => navigate('/hotel/register')}
+                            onClick={() => {
+                                clearPropertyDrafts();
+                                navigate('/hotel/register');
+                            }}
                             className="text-[#0F172A] font-bold hover:underline"
                         >
                             Register as a partner
                         </button>
                     </p>
+                    <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2">
+                        <button onClick={() => navigate('/hotel/terms')} className="text-xs text-gray-400 font-medium hover:text-[#0F172A] transition-colors">
+                            Terms & Conditions
+                        </button>
+                        <button onClick={() => navigate('/hotel/privacy')} className="text-xs text-gray-400 font-medium hover:text-[#0F172A] transition-colors">
+                            Privacy Policy
+                        </button>
+                    </div>
                 </div>
             </main>
         </div>

@@ -4,13 +4,14 @@ import { Phone, Mail, ArrowRight, Loader2, Shield, Building2 } from 'lucide-reac
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/apiService';
 import NowStayLogo from '../../../components/ui/NowStayLogo';
+import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 
 const HotelLogin = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
     const [method, setMethod] = useState('phone');
     const [contact, setContact] = useState('');
-    const [otp, setOtp] = useState(['', '', '', '', '', '']);
+    const [otp, setOtp] = useState(['', '', '', '']);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -60,7 +61,7 @@ const HotelLogin = () => {
         newOtp[index] = value;
         setOtp(newOtp);
 
-        if (value && index < 5) {
+        if (value && index < 3) {
             document.getElementById(`otp-${index + 1}`)?.focus();
         }
     };
@@ -68,7 +69,7 @@ const HotelLogin = () => {
     const handleVerifyOTP = async (e) => {
         e.preventDefault();
         const otpString = otp.join('');
-        if (otpString.length !== 6) {
+        if (otpString.length !== 4) {
             setError('Please enter complete OTP');
             return;
         }
@@ -276,7 +277,10 @@ const HotelLogin = () => {
                 <p className="text-center text-teal-100 text-sm mt-6">
                     New partner?{' '}
                     <button
-                        onClick={() => navigate('/hotel/join')}
+                        onClick={() => {
+                            clearPropertyDrafts();
+                            navigate('/hotel/join');
+                        }}
                         className="text-white font-bold hover:underline"
                     >
                         Register Your Property
