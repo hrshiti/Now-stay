@@ -5,6 +5,7 @@ import { userService } from '../../services/apiService';
 import { MapPin, Search, Filter, Star, IndianRupee, Navigation, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import PropertyCard from '../../components/user/PropertyCard';
+import { createPortal } from 'react-dom';
 
 const SearchPage = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -15,6 +16,21 @@ const SearchPage = () => {
     const [loading, setLoading] = useState(true);
     const [showFilters, setShowFilters] = useState(false); // Mobile toggle
     const [dynamicCats, setDynamicCats] = useState([]);
+
+    // Scroll Lock
+    useEffect(() => {
+        if (showFilters) {
+            document.body.style.overflow = 'hidden';
+            window.lenis?.stop();
+        } else {
+            document.body.style.overflow = 'unset';
+            window.lenis?.start();
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+            window.lenis?.start();
+        };
+    }, [showFilters]);
 
     // Unified lists — matches exactly with partner wizard naming
     const AMENITIES_LIST = ['Wi-Fi', 'AC', 'TV', 'Parking', 'Swimming Pool', 'Gym', 'Spa', 'Restaurant', 'Room Service', 'Lift', 'Bar', 'Geyser', 'Power Backup', 'Kitchen', 'Barbeque', 'First Aid', 'Pet Friendly'];
@@ -318,146 +334,182 @@ const SearchPage = () => {
                 )}
             </div>
 
-            {/* Filter Modal */}
-            <div className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${showFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={() => setShowFilters(false)}>
-                <div className={`absolute right-0 top-0 bottom-0 w-80 bg-white shadow-2xl p-4 overflow-y-auto transition-transform duration-300 ${showFilters ? 'translate-x-0' : 'translate-x-full'}`} onClick={e => e.stopPropagation()}>
-                    <div className="flex justify-between items-center mb-5">
-                        <h2 className="text-lg font-bold text-gray-800">Filters</h2>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setFilters(prev => ({ ...prev, type: 'all', minPrice: '', maxPrice: '', amenities: [], activities: [], suitability: '' }))} className="text-xs font-bold text-red-500 hover:text-red-600">Clear</button>
-                            <button onClick={() => setShowFilters(false)} className="p-1.5 rounded-full hover:bg-gray-100"><X size={18} /></button>
-                        </div>
-                    </div>
-
-                    <div className="space-y-6">
-                        {/* Type */}
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Property Type</label>
-                            <div className="grid grid-cols-3 gap-2">
-                                {propertyTypes.map(typeObj => {
-                                    const { label, value: typeValue } = typeObj;
-                                    const isSelected = typeValue === 'all'
-                                        ? filters.type === 'all'
-                                        : (Array.isArray(filters.type) && filters.type.includes(typeValue));
-
-                                    return (
-                                        <button
-                                            key={typeValue}
-                                            onClick={() => {
-                                                if (typeValue === 'all') {
-                                                    updateFilter('type', 'all');
-                                                } else {
-                                                    let currentTypes = Array.isArray(filters.type) ? [...filters.type] : [];
-                                                    if (filters.type === 'all') currentTypes = [];
-                                                    if (currentTypes.includes(typeValue)) {
-                                                        currentTypes = currentTypes.filter(t => t !== typeValue);
-                                                        if (currentTypes.length === 0) currentTypes = 'all';
-                                                    } else {
-                                                        currentTypes.push(typeValue);
-                                                    }
-                                                    updateFilter('type', currentTypes);
-                                                }
-                                            }}
-                                            className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border transition-all truncate ${isSelected ? 'bg-[#0F172A] text-white border-[#0F172A]' : 'bg-white text-gray-500 border-gray-100'}`}
-                                        >
-                                            {label}
-                                        </button>
-                                    );
-                                })}
+            {/* Filter Modal - Portalized for stability */}
+            {createPortal(
+                <div className={`fixed inset-0 z-[1000] flex justify-end transition-opacity duration-300 ${showFilters ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                    {/* Backdrop */}
+                    <div 
+                        className="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity duration-300" 
+                        onClick={() => setShowFilters(false)}
+                    />
+                    
+                    {/* Sidebar Modal */}
+                    <div 
+                        className={`relative w-[85%] max-w-sm h-full bg-white shadow-2xl flex flex-col transition-transform duration-500 ease-out ${showFilters ? 'translate-x-0' : 'translate-x-full'}`} 
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div className="flex justify-between items-center p-5 border-b border-gray-50 bg-white z-10 shrink-0">
+                            <h2 className="text-xl font-black text-gray-800">Filters</h2>
+                            <div className="flex items-center gap-3">
+                                <button 
+                                    onClick={() => setFilters(prev => ({ ...prev, type: 'all', minPrice: '', maxPrice: '', amenities: [], activities: [], suitability: '' }))} 
+                                    className="text-xs font-black text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors"
+                                >
+                                    Reset
+                                </button>
+                                <button 
+                                    onClick={() => setShowFilters(false)} 
+                                    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-50 hover:bg-gray-100 transition-colors"
+                                >
+                                    <X size={20} className="text-gray-800" />
+                                </button>
                             </div>
                         </div>
 
-                        {/* Price */}
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price Range</label>
-                            <div className="flex items-center gap-2">
-                                <input type="number" placeholder="Min" className="w-full pl-3 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:border-[#0F172A] bg-gray-50" value={filters.minPrice} onChange={(e) => updateFilter('minPrice', e.target.value)} />
-                                <span className="text-gray-300 font-bold text-xs">-</span>
-                                <input type="number" placeholder="Max" className="w-full pl-3 pr-2 py-1.5 border border-gray-200 rounded-lg text-xs font-medium outline-none focus:border-[#0F172A] bg-gray-50" value={filters.maxPrice} onChange={(e) => updateFilter('maxPrice', e.target.value)} />
-                            </div>
-                        </div>
+                        {/* Scrollable Content */}
+                        <div className="flex-1 overflow-y-auto no-scrollbar p-5 space-y-9">
+                            {/* Type */}
+                            <section>
+                                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Property Type</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {propertyTypes.map(typeObj => {
+                                        const { label, value: typeValue } = typeObj;
+                                        const isSelected = typeValue === 'all'
+                                            ? filters.type === 'all'
+                                            : (Array.isArray(filters.type) && filters.type.includes(typeValue));
 
-                        {/* Suitability */}
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Suitable For</label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {SUITABILITY_OPTIONS.map((opt) => (
-                                    <button
-                                        key={opt}
-                                        onClick={() => updateFilter('suitability', filters.suitability === opt ? '' : opt)}
-                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${filters.suitability === opt ? 'bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]' : 'bg-white text-gray-500 border-gray-200'}`}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Amenities */}
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Amenities</label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {AMENITIES_LIST.map((amenity) => (
-                                    <button
-                                        key={amenity}
-                                        onClick={() => {
-                                            const currentAmen = filters.amenities || [];
-                                            const newAmenities = currentAmen.includes(amenity)
-                                                ? currentAmen.filter(a => a !== amenity)
-                                                : [...currentAmen, amenity];
-                                            updateFilter('amenities', newAmenities);
-                                        }}
-                                        className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${(filters.amenities || []).includes(amenity) ? 'bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]' : 'bg-white text-gray-500 border-gray-200'}`}
-                                    >
-                                        {amenity}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Activities */}
-                        {(() => {
-                            const selectedTypes = Array.isArray(filters.type) ? filters.type : (filters.type === 'all' ? [] : [filters.type]);
-                            const isTentOrResortSelected = selectedTypes.some(t => {
-                                const lowerT = t.toLowerCase();
-                                if (['tent', 'resort'].includes(lowerT)) return true;
-                                // Check by slug for dynamic categories
-                                const dynCat = dynamicCats.find(c => c.slug === lowerT || c.name.toLowerCase() === lowerT);
-                                return dynCat && ['tent', 'resort'].includes(dynCat.templateType);
-                            });
-
-                            if (!isTentOrResortSelected) return null;
-
-                            return (
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Activities (for Tents/Resorts)</label>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {ACTIVITIES_LIST.map((activity) => (
+                                        return (
                                             <button
-                                                key={activity}
+                                                key={typeValue}
                                                 onClick={() => {
-                                                    const currentAct = filters.activities || [];
-                                                    const newActivities = currentAct.includes(activity)
-                                                        ? currentAct.filter(a => a !== activity)
-                                                        : [...currentAct, activity];
-                                                    updateFilter('activities', newActivities);
+                                                    if (typeValue === 'all') {
+                                                        updateFilter('type', 'all');
+                                                    } else {
+                                                        let currentTypes = Array.isArray(filters.type) ? [...filters.type] : [];
+                                                        if (filters.type === 'all') currentTypes = [];
+                                                        if (currentTypes.includes(typeValue)) {
+                                                            currentTypes = currentTypes.filter(t => t !== typeValue);
+                                                            if (currentTypes.length === 0) currentTypes = 'all';
+                                                        } else {
+                                                            currentTypes.push(typeValue);
+                                                        }
+                                                        updateFilter('type', currentTypes);
+                                                    }
                                                 }}
-                                                className={`px-3 py-1.5 rounded-full text-[10px] font-bold border transition-all ${(filters.activities || []).includes(activity) ? 'bg-[#0F172A]/10 text-[#0F172A] border-[#0F172A]' : 'bg-white text-gray-500 border-gray-200'}`}
+                                                className={`px-2 py-2.5 rounded-xl text-[10px] font-black border transition-all truncate ${isSelected ? 'bg-surface text-white border-surface shadow-md' : 'bg-gray-50 text-gray-500 border-gray-100 hover:border-gray-200'}`}
                                             >
-                                                {activity}
+                                                {label}
                                             </button>
-                                        ))}
+                                        );
+                                    })}
+                                </div>
+                            </section>
+
+                            {/* Price */}
+                            <section>
+                                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Price Range</label>
+                                <div className="flex items-center gap-3">
+                                    <div className="relative flex-1 group">
+                                        <IndianRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-surface transition-colors" size={14} />
+                                        <input type="number" placeholder="Min" className="w-full pl-9 pr-3 py-3 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-surface bg-gray-50 transition-all" value={filters.minPrice} onChange={(e) => updateFilter('minPrice', e.target.value)} />
+                                    </div>
+                                    <span className="text-gray-300 font-bold">/</span>
+                                    <div className="relative flex-1 group">
+                                        <IndianRupee className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-surface transition-colors" size={14} />
+                                        <input type="number" placeholder="Max" className="w-full pl-9 pr-3 py-3 border border-gray-100 rounded-2xl text-sm font-bold outline-none focus:border-surface bg-gray-50 transition-all" value={filters.maxPrice} onChange={(e) => updateFilter('maxPrice', e.target.value)} />
                                     </div>
                                 </div>
-                            );
-                        })()}
+                            </section>
 
-                        <div className="pt-2 pb-6">
-                            <button onClick={applyFilters} className="w-full bg-[#0F172A] text-white py-3 rounded-xl font-bold text-sm shadow-lg shadow-[#0F172A]/20 active:scale-95 transition-transform">Apply Filters</button>
+                            {/* Suitability */}
+                            <section>
+                                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Suitable For</label>
+                                <div className="flex flex-wrap gap-2.5">
+                                    {SUITABILITY_OPTIONS.map((opt) => (
+                                        <button
+                                            key={opt}
+                                            onClick={() => updateFilter('suitability', filters.suitability === opt ? '' : opt)}
+                                            className={`px-5 py-2.5 rounded-full text-[11px] font-black border transition-all ${filters.suitability === opt ? 'bg-surface/10 text-surface border-surface' : 'bg-gray-50 text-gray-500 border-gray-100 hover:border-gray-200'}`}
+                                        >
+                                            {opt}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Amenities */}
+                            <section>
+                                <label className="block text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Amenities</label>
+                                <div className="flex flex-wrap gap-2.5">
+                                    {AMENITIES_LIST.map((amenity) => (
+                                        <button
+                                            key={amenity}
+                                            onClick={() => {
+                                                const currentAmen = filters.amenities || [];
+                                                const newAmenities = currentAmen.includes(amenity)
+                                                    ? currentAmen.filter(a => a !== amenity)
+                                                    : [...currentAmen, amenity];
+                                                updateFilter('amenities', newAmenities);
+                                            }}
+                                            className={`px-5 py-2.5 rounded-full text-[11px] font-black border transition-all ${(filters.amenities || []).includes(amenity) ? 'bg-surface/10 text-surface border-surface' : 'bg-gray-50 text-gray-500 border-gray-100 hover:border-gray-200'}`}
+                                        >
+                                            {amenity}
+                                        </button>
+                                    ))}
+                                </div>
+                            </section>
+
+                            {/* Activities */}
+                            {(() => {
+                                const selectedTypes = Array.isArray(filters.type) ? filters.type : (filters.type === 'all' ? [] : [filters.type]);
+                                const isTentOrResortSelected = selectedTypes.some(t => {
+                                    const lowerT = t.toLowerCase();
+                                    if (['tent', 'resort'].includes(lowerT)) return true;
+                                    const dynCat = dynamicCats.find(c => c.slug === lowerT || c.name.toLowerCase() === lowerT);
+                                    return dynCat && ['tent', 'resort'].includes(dynCat.templateType);
+                                });
+
+                                if (!isTentOrResortSelected) return null;
+
+                                return (
+                                    <section>
+                                        <label className="block text-[11px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Activities</label>
+                                        <div className="flex flex-wrap gap-2.5">
+                                            {ACTIVITIES_LIST.map((activity) => (
+                                                <button
+                                                    key={activity}
+                                                    onClick={() => {
+                                                        const currentAct = filters.activities || [];
+                                                        const newActivities = currentAct.includes(activity)
+                                                            ? currentAct.filter(a => a !== activity)
+                                                            : [...currentAct, activity];
+                                                        updateFilter('activities', newActivities);
+                                                    }}
+                                                    className={`px-5 py-2.5 rounded-full text-[11px] font-black border transition-all ${(filters.activities || []).includes(activity) ? 'bg-surface/10 text-surface border-surface' : 'bg-gray-50 text-gray-500 border-gray-100 hover:border-gray-200'}`}
+                                                >
+                                                    {activity}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </section>
+                                );
+                            })()}
+                        </div>
+
+                        {/* Footer - Fixed at bottom */}
+                        <div className="p-5 border-t border-gray-50 bg-white shrink-0">
+                            <button 
+                                onClick={applyFilters} 
+                                className="w-full bg-surface text-white py-4.5 rounded-[20px] font-black text-base shadow-xl shadow-surface/20 active:scale-[0.98] transition-all"
+                            >
+                                Apply Filters
+                            </button>
                         </div>
                     </div>
-                </div>
-            </div>
+                </div>,
+                document.body
+            )}
         </div>
     );
 };
