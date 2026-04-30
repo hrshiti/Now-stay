@@ -120,10 +120,11 @@ const PartnerBookingDetail = () => {
           </div>
           <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${booking.bookingStatus === 'confirmed' ? 'bg-green-50 text-green-700 border-green-100' :
             booking.bookingStatus === 'cancelled' ? 'bg-red-50 text-red-700 border-red-100' :
-              booking.bookingStatus === 'no_show' ? 'bg-gray-100 text-gray-600 border-gray-200' :
-                'bg-yellow-50 text-yellow-700 border-yellow-100'
+              (booking.bookingStatus === 'no_show') ? 'bg-gray-100 text-gray-600 border-gray-200' :
+                (booking.bookingStatus === 'checked_out' || booking.bookingStatus === 'completed') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                  'bg-yellow-50 text-yellow-700 border-yellow-100'
             }`}>
-            {booking.bookingStatus.replace('_', ' ')}
+            {booking.bookingStatus === 'checked_out' ? 'completed' : booking.bookingStatus.replace('_', ' ')}
           </div>
         </div>
 

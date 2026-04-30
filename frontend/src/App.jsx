@@ -11,6 +11,7 @@ import Footer from './components/ui/Footer';
 import PartnerBottomNavbar from './app/partner/components/PartnerBottomNavbar';
 
 import ScrollToTop from './components/ui/ScrollToTop';
+import PullToRefresh from './components/ui/PullToRefresh';
 
 // Hooks & Services
 import { useLenis } from './app/shared/hooks/useLenis';
@@ -135,6 +136,7 @@ const PageLoader = () => (
 // Wrapper to conditionally render Navbars & Handle Lenis
 const Layout = ({ children }) => {
   const location = useLocation();
+  console.log(`[LAYOUT] Rendering path: ${location.pathname}${location.hash}`);
   const [platformStatus, setPlatformStatus] = React.useState({
     loading: true,
     maintenanceMode: false,
@@ -310,10 +312,19 @@ const UserPrivateRoute = ({ children }) => {
 
 // Partner Protected Route
 const PartnerProtectedRoute = ({ children }) => {
+  const [isAuthChecked, setIsAuthChecked] = React.useState(false);
+  const location = useLocation();
   const token = localStorage.getItem('token');
   const userRaw = localStorage.getItem('user');
   const user = userRaw ? JSON.parse(userRaw) : null;
-  const location = useLocation();
+
+  React.useEffect(() => {
+    // Small delay to ensure localStorage is stable on refresh
+    const timer = setTimeout(() => {
+      setIsAuthChecked(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Allow access to login/register/join/privacy/contact
   const publicPartnerPaths = ['/hotel/login', '/hotel/register', '/hotel/privacy', '/hotel/contact'];
@@ -321,7 +332,13 @@ const PartnerProtectedRoute = ({ children }) => {
     return children ? children : <Outlet />;
   }
 
+  // If we haven't checked yet, show nothing or a loader to prevent premature redirect
+  if (!isAuthChecked && token) {
+    return null; 
+  }
+
   if (!token || !user || user.role !== 'partner') {
+    console.warn(`[AUTH] PartnerProtectedRoute failed. Token: ${!!token}, Role: ${user?.role}. Redirecting to /hotel/login`);
     return <Navigate to="/hotel/login" state={{ from: location }} replace />;
   }
 
@@ -358,6 +375,7 @@ const PartnerProtectedRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (token) {
+    console.warn(`[AUTH] PublicRoute redirecting to / because token exists. Path: ${window.location.pathname}`);
     return <Navigate to="/" replace />;
   }
   return children;
@@ -499,8 +517,9 @@ function App() {
           zIndex: 10000
         }}
       />
-      <Layout>
-        <Suspense fallback={<PageLoader />}>
+      <PullToRefresh>
+        <Layout>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* User Auth Routes (Public Only) */}
             <Route path="/login" element={<PublicRoute><UserLogin /></PublicRoute>} />
@@ -636,6 +655,7 @@ function App() {
           </Routes>
         </Suspense>
       </Layout>
+    </PullToRefresh>
     </Router>
   );
 }

@@ -4,6 +4,7 @@ import Admin from '../models/Admin.js';
 import User from '../models/User.js';
 import Partner from '../models/Partner.js';
 import Otp from '../models/Otp.js';
+import ReferralCode from '../models/ReferralCode.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import smsService from '../utils/smsService.js';
@@ -24,7 +25,7 @@ export const checkExists = async (req, res) => {
       const existingByPhone = await Model.findOne({ phone, isDeleted: false });
       if (existingByPhone) {
         return res.status(409).json({
-          message: `${role.charAt(0).toUpperCase() + role.slice(1)} with this phone number already exists.`,
+          message: `${role.charAt(0).toUpperCase() + role.slice(1)} already exists. Please login.`,
           requiresLogin: true
         });
       }
@@ -50,7 +51,7 @@ export const checkExists = async (req, res) => {
 
 export const sendOtp = async (req, res) => {
   try {
-    const { phone, type, role = 'user', email: rawEmail } = req.body; // type: 'login' or 'register'
+    const { phone, type, role = 'user', email: rawEmail, referralCode } = req.body; // type: 'login' or 'register'
     const email = rawEmail ? rawEmail.trim().toLowerCase() : '';
 
     if (!phone) {
@@ -63,7 +64,7 @@ export const sendOtp = async (req, res) => {
     // FOR LOGIN: Check if user exists & is not blocked BEFORE sending OTP
     if (type === 'login') {
       user = await Model.findOne({ phone });
-      if (!user) {
+      if (!user || user.isDeleted) {
         if (role === 'partner') {
           return res.status(404).json({ message: 'Partner account not found. Please register first.' });
         }
@@ -80,11 +81,6 @@ export const sendOtp = async (req, res) => {
           isBlocked: true
         });
       }
-
-      if (user.isDeleted) {
-        // We allow them to request OTP. Re-activation happens in verifyOtp.
-        console.log(`[AUTH] Deleted account ${phone} requesting OTP for re-activation.`);
-      }
     }
 
     // FOR REGISTER: Check if phone or email already exists
@@ -94,11 +90,19 @@ export const sendOtp = async (req, res) => {
         return res.status(400).json({ message: 'Valid 10-digit phone number is required' });
       }
 
+      // Validate referral code BEFORE sending OTP
+      if (referralCode) {
+        const validReferral = await ReferralCode.findOne({ code: referralCode.toUpperCase(), isActive: true });
+        if (!validReferral) {
+          return res.status(400).json({ message: 'Invalid referral code provided. Please check and try again.' });
+        }
+      }
+
       // 1. Check Phone
       const existingByPhone = await Model.findOne({ phone, isDeleted: false });
       if (existingByPhone) {
         return res.status(409).json({
-          message: `${role.charAt(0).toUpperCase() + role.slice(1)} with this phone number already exists. Please login instead.`,
+          message: `${role.charAt(0).toUpperCase() + role.slice(1)} already exists. Please login.`,
           requiresLogin: true
         });
       }
@@ -328,15 +332,16 @@ export const verifyOtp = async (req, res) => {
 
     // Try verifying with User OTP (Existing User/Login Flow)
     if (user && user.otp && user.otp === otp && user.otpExpires >= Date.now()) {
+      if (user.isDeleted) {
+        return res.status(404).json({
+          message: 'Account not found. Please create an account first.',
+          requiresRegistration: true
+        });
+      }
+      
       verified = true;
       user.otp = undefined;
       user.otpExpires = undefined;
-      
-      // If found but deleted, this is a direct login-based re-activation
-      if (user.isDeleted) {
-        user.isDeleted = false;
-        console.log(`[AUTH] Account ${user._id} re-activated via Login flow.`);
-      }
     } 
     // Try verifying with Otp Record (Registration Flow / Deleted Account Recovery)
     else if (otpRecord && otpRecord.otp === otp && otpRecord.expiresAt >= Date.now()) {
@@ -398,6 +403,14 @@ export const verifyOtp = async (req, res) => {
       if (email) {
         const emailExists = await Model.findOne({ email });
         if (emailExists) return res.status(409).json({ message: 'Email already exists.' });
+      }
+
+      // Validate referral code BEFORE creating user
+      if (referralCode) {
+        const validReferral = await ReferralCode.findOne({ code: referralCode.toUpperCase(), isActive: true });
+        if (!validReferral) {
+          return res.status(400).json({ message: 'Invalid referral code provided. Please check and try again.' });
+        }
       }
 
       user = new User({

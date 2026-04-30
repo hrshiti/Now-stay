@@ -85,8 +85,30 @@ const AdminPartners = () => {
 
     // Handlers
     const handleFilterChange = (key, value) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
-        setCurrentPage(1); // Reset to first page on filter change
+        if (key === 'viewStatus') {
+            // Map combined filter to individual status fields
+            const newFilters = { ...filters, viewStatus: value };
+            if (value === 'pending') {
+                newFilters.approvalStatus = 'pending';
+                newFilters.status = '';
+            } else if (value === 'approved') {
+                newFilters.approvalStatus = 'approved';
+                newFilters.status = 'active';
+            } else if (value === 'rejected') {
+                newFilters.approvalStatus = 'rejected';
+                newFilters.status = '';
+            } else if (value === 'blocked') {
+                newFilters.approvalStatus = '';
+                newFilters.status = 'blocked';
+            } else {
+                newFilters.approvalStatus = '';
+                newFilters.status = '';
+            }
+            setFilters(newFilters);
+        } else {
+            setFilters(prev => ({ ...prev, [key]: value }));
+        }
+        setCurrentPage(1);
     };
 
     const handleUpdateStatus = async (userId, isBlocked) => {
@@ -241,15 +263,16 @@ const AdminPartners = () => {
                     />
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
-                    {/* Role select removed as this is strictly for Partners */}
                     <select
-                        value={filters.status}
-                        onChange={(e) => handleFilterChange('status', e.target.value)}
-                        className="px-4 py-2 bg-gray-50 border border-transparent rounded-xl text-[10px] font-bold uppercase outline-none focus:bg-white focus:border-black transition-all"
+                        value={filters.viewStatus || ""}
+                        onChange={(e) => handleFilterChange('viewStatus', e.target.value)}
+                        className="px-4 py-2 bg-gray-50 border border-transparent rounded-xl text-[10px] font-bold uppercase outline-none focus:bg-white focus:border-black transition-all min-w-[150px]"
                     >
-                        <option value="">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="blocked">Blocked</option>
+                        <option value="">ALL STATUS</option>
+                        <option value="pending">PENDING REQUESTS</option>
+                        <option value="approved">APPROVED PARTNERS</option>
+                        <option value="rejected">REJECTED PARTNERS</option>
+                        <option value="blocked">BLOCKED PARTNERS</option>
                     </select>
                 </div>
             </div>

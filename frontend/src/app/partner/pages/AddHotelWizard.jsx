@@ -23,9 +23,9 @@ const ROOM_AMENITIES = [
 const AddHotelWizard = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const existingProperty = location.state?.property || null;
+  const existingProperty = location.state?.property || (localStorage.getItem(`rukko_hotel_wizard_draft_edit`) ? JSON.parse(localStorage.getItem(`rukko_hotel_wizard_draft_edit`)) : null);
   const isEditMode = !!existingProperty;
-  const initialStep = location.state?.initialStep || 1;
+  const initialStep = location.state?.initialStep || (window.location.hash.startsWith('#step') ? parseInt(window.location.hash.replace('#step', ''), 10) : 1);
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -133,7 +133,7 @@ const AddHotelWizard = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  
+
   // Reset sub-item editing states when switching steps to prevent UI locks
   useEffect(() => {
     setEditingRoomType(null);
@@ -316,6 +316,11 @@ const AddHotelWizard = () => {
       return;
     }
 
+    if (Number(tempNearbyPlace.distanceKm) > 10) {
+      setError('Distance should not exceed 10 km');
+      return;
+    }
+
     const arr = [...propertyForm.nearbyPlaces];
     if (editingNearbyIndex === -1) {
       arr.push(tempNearbyPlace);
@@ -333,6 +338,65 @@ const AddHotelWizard = () => {
   const cancelEditNearbyPlace = () => {
     setEditingNearbyIndex(null);
     setError('');
+  };
+
+  const handleTimePeriodChange = (field, period) => {
+    const currentTime = propertyForm[field] || '12:00';
+    
+    let [hoursStr, minsStr] = currentTime.split(':');
+    let hours = parseInt(hoursStr);
+    let mins = parseInt(minsStr);
+
+    if (isNaN(hours)) hours = 12;
+    if (isNaN(mins)) mins = 0;
+
+    if (period === 'PM' && hours < 12) {
+      hours += 12;
+    } else if (period === 'AM' && hours >= 12) {
+      hours -= 12;
+    }
+    
+    // Ensure hours stay in 0-23 range
+    hours = hours % 24;
+    
+    const newTime = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    updatePropertyForm(field, newTime);
+  };
+
+  const handleTimeInputChange = (field, val) => {
+    let digits = val.replace(/\D/g, '');
+    if (digits.length > 4) digits = digits.slice(0, 4);
+
+    let hours = parseInt(digits.slice(0, 2)) || 0;
+    let mins = parseInt(digits.slice(2, 4)) || 0;
+
+    if (hours > 12) hours = 12;
+    if (mins > 59) mins = 59;
+
+    const currentPeriod = propertyForm[field] ? (parseInt(propertyForm[field].split(':')[0]) >= 12 ? 'PM' : 'AM') : 'AM';
+    let hours24 = hours;
+    if (currentPeriod === 'PM' && hours < 12) hours24 += 12;
+    if (currentPeriod === 'AM' && hours === 12) hours24 = 0;
+
+    const formatted24 = `${String(hours24).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    updatePropertyForm(field, formatted24);
+  };
+
+  const getDisplayTime = (val) => {
+    if (!val) return '';
+    let [h, m] = val.split(':').map(Number);
+    if (isNaN(h)) return val;
+    let h12 = h % 12 || 12;
+    return `${String(h12).padStart(2, '0')}:${String(m || 0).padStart(2, '0')}`;
+  };
+
+  const getReviewTime = (val) => {
+    if (!val) return '--:--';
+    let [h, m] = val.split(':').map(Number);
+    if (isNaN(h)) return val;
+    let period = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12 || 12;
+    return `${String(h12).padStart(2, '0')}:${String(m || 0).padStart(2, '0')} ${period}`;
   };
 
   const nextFromNearbyPlaces = () => {
@@ -1318,241 +1382,288 @@ const AddHotelWizard = () => {
               </div>
             </div>
           )}
-
           {step === 6 && (
             <div className="space-y-4">
-              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+              {!editingRoomType && error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
-              {!editingRoomType && (
-                <div className="space-y-4">
-                  {roomTypes.length === 0 ? (
-                    <div className="text-center py-10 px-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
-                      <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <BedDouble size={24} />
-                      </div>
-                      <p className="text-gray-500 font-medium">No room types added yet</p>
-                      <p className="text-xs text-gray-400 mt-1">Add details for atleast one room type.</p>
+            {!editingRoomType && (
+              <div className="space-y-4">
+                {roomTypes.length === 0 ? (
+                  <div className="text-center py-10 px-6 border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50/50">
+                    <div className="w-12 h-12 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <BedDouble size={24} />
                     </div>
-                  ) : (
-                    <div className="grid gap-4">
-                      {roomTypes.map((rt, index) => (
-                        <div key={rt.id || index} className="p-4 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <h3 className="font-bold text-gray-900">{rt.name || `Room Type ${index + 1}`}</h3>
-                              <div className="text-xs text-gray-500 font-medium mt-0.5">
-                                Inventory: <span className="text-gray-900">{rt.totalInventory}</span> · Capacity: <span className="text-gray-900">{rt.maxAdults}A, {rt.maxChildren}C</span>
-                              </div>
+                    <p className="text-gray-500 font-medium">No room types added yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Add details for atleast one room type.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {roomTypes.map((rt, index) => (
+                      <div key={rt.id || index} className="p-4 bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-bold text-gray-900">{rt.name || `Room Type ${index + 1}`}</h3>
+                            <div className="text-xs text-gray-500 font-medium mt-0.5">
+                              Inventory: <span className="text-gray-900">{rt.totalInventory}</span> · Capacity: <span className="text-gray-900">{rt.maxAdults}A, {rt.maxChildren}C</span>
                             </div>
-                            <div className="text-lg font-bold text-emerald-600">₹ {rt.pricePerNight}</div>
                           </div>
-
-                          {rt.amenities && rt.amenities.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mb-3">
-                              {rt.amenities.slice(0, 3).map(a => (
-                                <span key={a} className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-medium border border-gray-200">{a}</span>
-                              ))}
-                              {rt.amenities.length > 3 && <span className="px-2 py-0.5 text-[10px] text-gray-400">+{rt.amenities.length - 3} more</span>}
-                            </div>
-                          )}
-
-                          <div className="flex gap-2 mt-2 pt-3 border-t border-gray-100">
-                            <button onClick={() => startEditRoomType(index)} className="flex-1 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
-                              Edit
-                            </button>
-                            <button onClick={() => deleteRoomType(index)} className="px-3 py-2 text-xs font-bold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+                          <div className="text-lg font-bold text-emerald-600">₹ {rt.pricePerNight}</div>
                         </div>
-                      ))}
-                    </div>
-                  )}
 
-                  <button
-                    type="button"
-                    onClick={startAddRoomType}
-                    className="w-full py-4 border border-emerald-200 text-emerald-700 bg-emerald-50/50 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-50 transition-colors"
-                  >
-                    <Plus size={20} />
-                    Add Room Type
+                        {rt.amenities && rt.amenities.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {rt.amenities.slice(0, 3).map(a => (
+                              <span key={a} className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-600 text-[10px] font-medium border border-gray-200">{a}</span>
+                            ))}
+                            {rt.amenities.length > 3 && <span className="px-2 py-0.5 text-[10px] text-gray-400">+{rt.amenities.length - 3} more</span>}
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 mt-2 pt-3 border-t border-gray-100">
+                          <button onClick={() => startEditRoomType(index)} className="flex-1 py-2 text-xs font-bold text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors">
+                            Edit
+                          </button>
+                          <button onClick={() => deleteRoomType(index)} className="px-3 py-2 text-xs font-bold text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={startAddRoomType}
+                  className="w-full py-4 border border-emerald-200 text-emerald-700 bg-emerald-50/50 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-emerald-50 transition-colors"
+                >
+                  <Plus size={20} />
+                  Add Room Type
+                </button>
+              </div>
+            )}
+
+            {editingRoomType && (
+              <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+                  <span className="font-bold text-emerald-800 text-sm">
+                    {editingRoomTypeIndex === -1 || editingRoomTypeIndex == null ? 'Add Room Type' : 'Edit Room Type'}
+                  </span>
+                  <button onClick={cancelEditRoomType} className="text-emerald-600 hover:bg-emerald-100 p-1 rounded-md">
+                    <span className="text-xs font-bold">Close</span>
                   </button>
                 </div>
-              )}
 
-              {editingRoomType && (
-                <div className="bg-white rounded-2xl border border-emerald-100 shadow-lg overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
-                  <div className="px-4 py-3 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
-                    <span className="font-bold text-emerald-800 text-sm">
-                      {editingRoomTypeIndex === -1 || editingRoomTypeIndex == null ? 'Add Room Type' : 'Edit Room Type'}
-                    </span>
-                    <button onClick={cancelEditRoomType} className="text-emerald-600 hover:bg-emerald-100 p-1 rounded-md">
-                      <span className="text-xs font-bold">Close</span>
-                    </button>
+                <div className="p-4 space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">Name</label>
+                    <input
+                      className="input w-full"
+                      placeholder="e.g. Deluxe Suite"
+                      value={editingRoomType.name}
+                      onChange={e => setEditingRoomType(prev => ({ ...prev, name: e.target.value }))}
+                    />
                   </div>
 
-                  <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">Name</label>
-                      <input
-                        className="input w-full"
-                        placeholder="e.g. Deluxe Suite"
-                        value={editingRoomType.name}
-                        onChange={e => setEditingRoomType(prev => ({ ...prev, name: e.target.value }))}
-                      />
+                      <label className="text-xs font-semibold text-gray-500">Price / Night (₹)</label>
+                      <div className="relative">
+                        <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                        <input className="input !pl-10 w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value.replace(/^0+(?!$)/, '') }))} />
+                      </div>
                     </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-500">Total Rooms</label>
+                      <input className="input w-full" type="number" value={editingRoomType.totalInventory} onChange={e => setEditingRoomType(prev => ({ ...prev, totalInventory: e.target.value.replace(/^0+(?!$)/, '') }))} />
+                    </div>
+                  </div>
 
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-500">Max Adults</label>
+                      <input className="input w-full" type="number" value={editingRoomType.maxAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, maxAdults: e.target.value.replace(/^0+(?!$)/, '') }))} />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-500">Max Children</label>
+                      <input className="input w-full" type="number" value={editingRoomType.maxChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, maxChildren: e.target.value.replace(/^0+(?!$)/, '') }))} />
+                    </div>
+                  </div>
+
+                  <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100 space-y-3">
+                    <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Pricing Configuration</span>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Price / Night (₹)</label>
+                        <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
+                        <input className="input w-full bg-white" type="number" value={editingRoomType.baseAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 2" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
+                        <input className="input w-full bg-white" type="number" value={editingRoomType.baseChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 0" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
                         <div className="relative">
                           <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.pricePerNight} onChange={e => setEditingRoomType(prev => ({ ...prev, pricePerNight: e.target.value.replace(/^0+(?!$)/, '') }))} />
+                          <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value.replace(/^0+(?!$)/, '') }))} />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Total Rooms</label>
-                        <input className="input w-full" type="number" value={editingRoomType.totalInventory} onChange={e => setEditingRoomType(prev => ({ ...prev, totalInventory: e.target.value.replace(/^0+(?!$)/, '') }))} />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Max Adults</label>
-                        <input className="input w-full" type="number" value={editingRoomType.maxAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, maxAdults: e.target.value.replace(/^0+(?!$)/, '') }))} />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Max Children</label>
-                        <input className="input w-full" type="number" value={editingRoomType.maxChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, maxChildren: e.target.value.replace(/^0+(?!$)/, '') }))} />
-                      </div>
-                    </div>
-
-                    <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100 space-y-3">
-                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Pricing Configuration</span>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseAdults} onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 2" />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseChildren} onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 0" />
+                        <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
+                        <div className="relative">
+                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
+                          <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value.replace(/^0+(?!$)/, '') }))} />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
-                          <div className="relative">
-                            <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                            <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraAdultPrice: e.target.value.replace(/^0+(?!$)/, '') }))} />
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
-                          <div className="relative">
-                            <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                            <input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType(prev => ({ ...prev, extraChildPrice: e.target.value.replace(/^0+(?!$)/, '') }))} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 pt-2 border-t border-gray-100">
-                      <div className="flex justify-between items-center">
-                        <label className="text-xs font-semibold text-gray-500">Room Photos</label>
-                        <span className="text-[10px] text-gray-400">{(editingRoomType.images || []).filter(Boolean).length} / 3 min</span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {(editingRoomType.images || []).filter(Boolean).map((img, i) => (
-                          <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
-                            <img src={img} alt="" className="w-full h-full object-cover" />
-                            <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ))}
-                        <button type="button" onClick={() => isFlutter ? handleCameraUpload('room', url => setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), url] }))) : roomImagesFileInputRef.current?.click()} disabled={!!uploading} className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50 transition-all">
-                          {uploading === 'room' ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Plus size={20} />}
-                        </button>
-                        <input ref={roomImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => {
-                          if (e.target.files?.length) uploadImages(e.target.files, 'room', urls => urls.length && setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), ...urls.filter(Boolean)] })));
-                        }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 pt-2 border-t border-gray-100">
-                      <label className="text-xs font-semibold text-gray-500">Amenities</label>
-                      <div className="flex flex-wrap gap-2">
-                        {ROOM_AMENITIES.map(opt => {
-                          const selected = editingRoomType.amenities.includes(opt.label);
-                          const Icon = opt.icon;
-                          return (
-                            <button key={opt.key} type="button" onClick={() => toggleRoomAmenity(opt.label)}
-                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${selected ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                            >
-                              <Icon size={14} /> {opt.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 pt-4">
-                      <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button 
-                        type="button" 
-                        onClick={() => {
-                          if (window.confirm("Clear all fields for this room type?")) {
-                            if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
-                              startAddRoomType();
-                            } else {
-                              startEditRoomType(editingRoomTypeIndex);
-                            }
-                          }
-                        }}
-                        className="flex-1 py-3 text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors"
-                      >
-                        Clear
-                      </button>
-                      <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all transform active:scale-95">Save Room</button>
                     </div>
                   </div>
+
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <div className="flex justify-between items-center">
+                      <label className="text-xs font-semibold text-gray-500">Room Photos</label>
+                      <span className="text-[10px] text-gray-400">{(editingRoomType.images || []).filter(Boolean).length} / 3 min</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(editingRoomType.images || []).filter(Boolean).map((img, i) => (
+                        <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200 group">
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => handleRemoveImage(img, 'room', i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-white text-red-500 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      <button type="button" onClick={() => isFlutter ? handleCameraUpload('room', url => setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), url] }))) : roomImagesFileInputRef.current?.click()} disabled={!!uploading} className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:text-emerald-600 hover:border-emerald-400 hover:bg-emerald-50 transition-all">
+                        {uploading === 'room' ? <Loader2 size={20} className="animate-spin text-emerald-600" /> : <Plus size={20} />}
+                      </button>
+                      <input ref={roomImagesFileInputRef} type="file" multiple accept="image/*" className="hidden" onChange={e => {
+                        if (e.target.files?.length) uploadImages(e.target.files, 'room', urls => urls.length && setEditingRoomType(prev => ({ ...prev, images: [...(prev.images || []), ...urls.filter(Boolean)] })));
+                      }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-gray-100">
+                    <label className="text-xs font-semibold text-gray-500">Amenities</label>
+                    <div className="flex flex-wrap gap-2">
+                      {ROOM_AMENITIES.map(opt => {
+                        const selected = editingRoomType.amenities.includes(opt.label);
+                        const Icon = opt.icon;
+                        return (
+                          <button key={opt.key} type="button" onClick={() => toggleRoomAmenity(opt.label)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${selected ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                          >
+                            <Icon size={14} /> {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+
+                  <div className="flex flex-wrap gap-2 pt-4">
+                    <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("Clear all fields for this room type?")) {
+                          if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
+                            startAddRoomType();
+                          } else {
+                            startEditRoomType(editingRoomTypeIndex);
+                          }
+                        }
+                      }}
+                      className="flex-1 py-3 text-red-600 font-semibold bg-red-50 border border-red-100 rounded-xl hover:bg-red-100 transition-colors"
+                    >
+                      Clear
+                    </button>
+                    <button type="button" onClick={saveRoomType} className="flex-1 py-3 text-white font-bold bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-md shadow-emerald-100 transition-all transform active:scale-95">Save Room</button>
+                  </div>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            )}
+          </div>
+        )}
 
           {step === 7 && (
             <div className="space-y-6">
               {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">Check-in Time</label>
-                    <div className="relative">
-                      <input 
-                        type="time"
-                        className="input w-full !pl-10" 
-                        value={propertyForm.checkInTime} 
-                        onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
-                        onClick={e => e.target.showPicker?.()}
-                      />
-                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1 group">
+                        <input
+                          type="text"
+                          placeholder="12:00"
+                          className="input w-full !pl-10 !pr-24 font-mono tracking-wider"
+                          value={getDisplayTime(propertyForm.checkInTime)}
+                          onChange={e => handleTimeInputChange('checkInTime', e.target.value)}
+                        />
+                        <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                        
+                        {/* Integrated Toggles */}
+                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+                          {['AM', 'PM'].map(period => {
+                            const isCurrent = propertyForm.checkInTime ? (parseInt(propertyForm.checkInTime.split(':')[0]) >= 12 ? 'PM' : 'AM') === period : false;
+                            return (
+                              <button
+                                key={period}
+                                type="button"
+                                onClick={() => handleTimePeriodChange('checkInTime', period)}
+                                className={`px-2.5 py-1 rounded-md text-[9px] font-black transition-all ${
+                                  isCurrent 
+                                    ? 'bg-white text-emerald-600 shadow-sm border border-emerald-100' 
+                                    : 'text-gray-400 hover:text-gray-600'
+                                }`}
+                              >
+                                {period}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">Check-out Time</label>
-                    <div className="relative">
-                      <input 
-                        type="time"
-                        className="input w-full !pl-10" 
-                        value={propertyForm.checkOutTime} 
-                        onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
-                        onClick={e => e.target.showPicker?.()}
-                      />
-                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1 group">
+                        <input
+                          type="text"
+                          placeholder="11:00"
+                          className="input w-full !pl-10 !pr-24 font-mono tracking-wider"
+                          value={getDisplayTime(propertyForm.checkOutTime)}
+                          onChange={e => handleTimeInputChange('checkOutTime', e.target.value)}
+                        />
+                        <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400"><Clock size={18} /></div>
+                        
+                        {/* Integrated Toggles */}
+                        <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex gap-1 bg-gray-100 p-0.5 rounded-lg border border-gray-200">
+                          {['AM', 'PM'].map(period => {
+                            const isCurrent = propertyForm.checkOutTime ? (parseInt(propertyForm.checkOutTime.split(':')[0]) >= 12 ? 'PM' : 'AM') === period : false;
+                            return (
+                              <button
+                                key={period}
+                                type="button"
+                                onClick={() => handleTimePeriodChange('checkOutTime', period)}
+                                className={`px-2.5 py-1 rounded-md text-[9px] font-black transition-all ${
+                                  isCurrent 
+                                    ? 'bg-white text-emerald-600 shadow-sm border border-emerald-100' 
+                                    : 'text-gray-400 hover:text-gray-600'
+                                }`}
+                              >
+                                {period}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1762,8 +1873,8 @@ const AddHotelWizard = () => {
                   <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Rules & Policy</h3>
                     <div className="space-y-1">
-                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-in:</span> {propertyForm.checkInTime || '--:--'}</div>
-                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-out:</span> {propertyForm.checkOutTime || '--:--'}</div>
+                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-in:</span> {getReviewTime(propertyForm.checkInTime)}</div>
+                      <div className="text-[10px] text-gray-600"><span className="font-bold">Check-out:</span> {getReviewTime(propertyForm.checkOutTime)}</div>
                       <div className="text-[9px] text-gray-400 line-clamp-1 italic mt-1">{propertyForm.cancellationPolicy || 'No policy'}</div>
                     </div>
                   </div>

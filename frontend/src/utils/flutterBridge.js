@@ -185,10 +185,37 @@ export const shareViaFlutter = async (shareData) => {
   });
 };
 
+/**
+ * Get Location from Flutter Native
+ */
+export const getFlutterLocation = async () => {
+  return new Promise((resolve, reject) => {
+    try {
+      if (!window.flutter_inappwebview) {
+        reject(new Error('Flutter bridge not available.'));
+        return;
+      }
+      
+      window.flutter_inappwebview.callHandler('getLocation')
+        .then((result) => {
+          if (result && result.success) {
+            resolve(result);
+          } else {
+            reject(new Error(result?.message || 'Failed to get location from app'));
+          }
+        })
+        .catch((error) => reject(error));
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
+
 export default {
   isFlutterApp,
   openFlutterCamera,
   uploadBase64Image,
   pickImage,
-  shareViaFlutter
+  shareViaFlutter,
+  getFlutterLocation
 };

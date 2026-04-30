@@ -19,26 +19,24 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
     // Disable body scroll when sidebar is open
     useEffect(() => {
         if (isOpen) {
-            const scrollY = window.scrollY;
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
             document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+            document.body.style.height = '100%';
+            document.documentElement.style.height = '100%';
+            document.body.style.overscrollBehavior = 'none';
         } else {
-            const scrollY = document.body.style.top;
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
             document.body.style.overflow = '';
-            if (scrollY) {
-                window.scrollTo(0, parseInt(scrollY || '0') * -1);
-            }
+            document.documentElement.style.overflow = '';
+            document.body.style.height = '';
+            document.documentElement.style.height = '';
+            document.body.style.overscrollBehavior = '';
         }
         return () => {
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
             document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+            document.body.style.height = '';
+            document.documentElement.style.height = '';
+            document.body.style.overscrollBehavior = '';
         };
     }, [isOpen]);
 
@@ -136,7 +134,7 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
                         transition={{ duration: 0.3 }}
                         onClick={onClose}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[2000]"
-                        style={{ pointerEvents: 'auto' }}
+                        style={{ pointerEvents: 'auto', touchAction: 'none' }}
                     />
 
                     <motion.div
@@ -144,8 +142,8 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
                         animate={{ x: 0 }}
                         exit={{ x: '-100%' }}
                         transition={{ type: 'tween', ease: 'circOut', duration: 0.4 }}
-                        className="fixed top-0 left-0 h-[100dvh] w-[85%] max-w-[300px] bg-white z-[2001] overflow-y-auto overscroll-contain shadow-2xl"
-                        style={{ touchAction: 'pan-y' }}
+                        className="fixed top-0 left-0 h-[100dvh] w-[85%] max-w-[300px] bg-white z-[2001] overflow-y-auto overscroll-contain shadow-2xl pb-safe"
+                        style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-5 pb-2">

@@ -8,27 +8,30 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PartnerHeader from '../components/PartnerHeader';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../../utils/flutterBridge';
 
-const Field = ({ label, value, icon: Icon, isEditing, onChange }) => (
+const Field = ({ label, value, icon: Icon, isEditing, onChange, type = "text", error }) => (
     <div className="mb-6 group">
         <div className="flex items-center justify-between mb-2">
             <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{label}</label>
         </div>
-        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${isEditing ? 'bg-white border-[#0F172A] ring-4 ring-[#0F172A]/5 shadow-inner' : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isEditing ? 'bg-[#0F172A] text-white' : 'bg-white text-gray-400 shadow-sm'}`}>
+        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${isEditing ? (error ? 'bg-white border-red-500/50 ring-4 ring-red-500/5 shadow-inner' : 'bg-white border-[#0F172A] ring-4 ring-[#0F172A]/5 shadow-inner') : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isEditing ? (error ? 'bg-red-500 text-white' : 'bg-[#0F172A] text-white') : 'bg-white text-gray-400 shadow-sm'}`}>
                 <Icon size={18} />
             </div>
             {isEditing ? (
                 <input
-                    type="text"
+                    type={type}
                     value={value}
                     onChange={onChange}
-                    className="flex-1 bg-transparent text-sm font-bold text-[#003836] focus:outline-none placeholder:text-gray-300"
+                    className={`flex-1 bg-transparent text-sm font-bold focus:outline-none placeholder:text-gray-300 ${error ? 'text-red-500' : 'text-[#003836]'}`}
                     placeholder={`Enter ${label}`}
                 />
             ) : (
                 <span className="flex-1 text-sm font-bold text-[#003836]">{value || 'Not set'}</span>
             )}
         </div>
+        {isEditing && error && (
+            <p className="text-[10px] text-red-500 mt-1 ml-2 font-medium italic">{error}</p>
+        )}
     </div>
 );
 
@@ -116,8 +119,30 @@ const PartnerProfile = () => {
         fetchProfile();
     }, []);
 
+    // Prevent background scroll when modal is open
+    useEffect(() => {
+        if (showDeleteConfirm) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showDeleteConfirm]);
+
     const handleChange = (field, e) => {
-        setProfile({ ...profile, [field]: e.target.value });
+        let value = e.target.value;
+        if (field === 'email') {
+            value = value.toLowerCase().trim();
+        }
+        if (field === 'name') {
+            value = value.replace(/[^a-zA-Z\s]/g, '');
+        }
+        if (field === 'phone') {
+            value = value.replace(/\D/g, '').slice(0, 10);
+        }
+        setProfile({ ...profile, [field]: value });
     };
 
     const parseAddress = (str) => {
@@ -134,7 +159,7 @@ const PartnerProfile = () => {
     const handleToggleEdit = async () => {
         if (isEditing) {
             const nameRegex = /^[A-Za-z\s]+$/;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 
             if (!profile.name || !nameRegex.test(profile.name)) {
                 return toast.error('Full name should only contain alphabets');
@@ -354,6 +379,8 @@ const PartnerProfile = () => {
                         icon={Mail}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('email', e)}
+                        type="email"
+                        error={profile.email && !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(profile.email) ? 'Invalid format: must end with @gmail.com' : ''}
                     />
                     <Field
                         label="Phone Number"
@@ -404,49 +431,49 @@ const PartnerProfile = () => {
                 <div className="mt-8 text-center text-xs text-gray-400">
                     <p className="font-bold tracking-widest uppercase text-[10px]">Member since {memberSince ? new Date(memberSince).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : '—'}</p>
                 </div>
+            </main>
 
-                {/* Delete Confirmation Modal */}
-                <AnimatePresence>
-                    {showDeleteConfirm && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="bg-white w-full max-w-sm rounded-[3rem] p-8 overflow-hidden relative shadow-2xl border-4 border-red-50"
-                            >
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6 border-2 border-red-100/50">
-                                        <AlertTriangle size={36} className="text-red-500" />
-                                    </div>
-                                    <h3 className="text-2xl font-black text-[#003836] mb-2 uppercase tracking-tight">Delete Account?</h3>
-                                    <p className="text-sm font-medium text-gray-500 leading-relaxed mb-8">
-                                        Are you absolutely sure? This action is <span className="text-red-500 font-black">permanent</span> and will deactivate all your properties immediately.
-                                    </p>
-
-                                    <div className="flex flex-col w-full gap-3">
-                                        <button
-                                            onClick={handleDeleteAccount}
-                                            disabled={deleteLoading}
-                                            className="w-full bg-red-500 text-white font-black py-4.5 rounded-[1.5rem] shadow-xl shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 text-sm uppercase tracking-widest"
-                                        >
-                                            {deleteLoading ? <Loader2 size={18} className="animate-spin" /> : 'Confirm Deletion'}
-                                        </button>
-                                        <button
-                                            onClick={() => setShowDeleteConfirm(false)}
-                                            disabled={deleteLoading}
-                                            className="w-full bg-gray-50 text-gray-600 font-black py-4 rounded-[1.5rem] active:scale-95 transition-all text-xs uppercase tracking-widest"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
+            {/* Delete Confirmation Modal */}
+            <AnimatePresence>
+                {showDeleteConfirm && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: -20 }}
+                            className="bg-white w-full max-w-sm rounded-[3rem] p-8 overflow-hidden relative shadow-2xl border-4 border-red-50"
+                        >
+                            <div className="flex flex-col items-center text-center">
+                                <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mb-6 border-2 border-red-100/50">
+                                    <AlertTriangle size={36} className="text-red-500" />
                                 </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-            </main >
-        </div >
+                                <h3 className="text-2xl font-black text-[#003836] mb-2 uppercase tracking-tight">Delete Account?</h3>
+                                <p className="text-sm font-medium text-gray-500 leading-relaxed mb-8">
+                                    Are you absolutely sure? This action is <span className="text-red-500 font-black">permanent</span> and will deactivate all your properties immediately.
+                                </p>
+
+                                <div className="flex flex-col w-full gap-3">
+                                    <button
+                                        onClick={handleDeleteAccount}
+                                        disabled={deleteLoading}
+                                        className="w-full bg-red-500 text-white font-black py-4.5 rounded-[1.5rem] shadow-xl shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 text-sm uppercase tracking-widest"
+                                    >
+                                        {deleteLoading ? <Loader2 size={18} className="animate-spin" /> : 'Confirm Deletion'}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        disabled={deleteLoading}
+                                        className="w-full bg-gray-50 text-gray-600 font-black py-4 rounded-[1.5rem] active:scale-95 transition-all text-xs uppercase tracking-widest"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 };
 

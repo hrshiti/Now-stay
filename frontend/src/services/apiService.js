@@ -70,9 +70,9 @@ export const authService = {
   },
 
   // Send OTP
-  sendOtp: async (phone, type = 'login', role = 'user', email = '') => {
+  sendOtp: async (phone, type = 'login', role = 'user', email = '', referralCode = '') => {
     try {
-      const response = await api.post('/auth/send-otp', { phone, type, role, email });
+      const response = await api.post('/auth/send-otp', { phone, type, role, email, referralCode });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
