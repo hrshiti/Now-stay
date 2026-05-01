@@ -589,9 +589,17 @@ export const userService = {
       throw error.response?.data || error.message;
     }
   },
-  deleteAccount: async () => {
+  requestDeletion: async (reason) => {
     try {
-      const response = await api.delete('/users/profile');
+      const response = await api.post('/auth/request-account-deletion', { reason });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  verifyDeletion: async (otp) => {
+    try {
+      const response = await api.post('/auth/verify-account-deletion', { otp });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

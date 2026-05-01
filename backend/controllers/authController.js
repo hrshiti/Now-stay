@@ -9,6 +9,9 @@ import jwt from 'jsonwebtoken';
 import smsService from '../utils/smsService.js';
 import referralService from '../services/referralService.js';
 import { uploadToCloudinary, deleteFromCloudinary, uploadBase64ToCloudinary } from '../utils/cloudinary.js';
+import Booking from '../models/Booking.js';
+import Property from '../models/Property.js';
+import Wallet from '../models/Wallet.js';
 
 const generateToken = (id, role) => {
   // No expiresIn: tokens never expire; users only get logged out manually
@@ -1012,5 +1015,149 @@ export const uploadDocsBase64 = async (req, res) => {
   } catch (error) {
     console.error('Upload Docs Base64 Error:', error);
     res.status(500).json({ message: error.message || 'Base64 doc upload failed' });
+  }
+};
+
+/**
+ * @desc    Request Account Deletion (with pending check)
+ * @route   POST /api/auth/request-account-deletion
+ * @access  Private
+ */
+export const requestAccountDeletion = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const user = req.user;
+    const Model = user.role === 'partner' ? Partner : User;
+
+    if (!reason) {
+      return res.status(400).json({ message: 'Reason for deletion is required' });
+    }
+
+    // --- PENDING ACTIONS CHECK ---
+    
+    // 1. Wallet Balance Check
+    const wallet = await Wallet.findOne({ partnerId: user._id });
+    if (wallet && Math.abs(wallet.balance) > 0) {
+      const msg = 'Cannot delete account with a non-zero wallet balance. Please settle your dues or withdraw your balance first.';
+      emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
+      return res.status(400).json({ 
+        message: msg,
+        pendingBalance: wallet.balance
+      });
+    }
+
+    // 2. Active Bookings Check
+    const pendingBookingStatuses = ["pending", "awaiting_payment", "confirmed", "checked_in"];
+    
+    if (user.role === 'partner') {
+        // Partner check: Active bookings in any of their properties
+        const properties = await Property.find({ partnerId: user._id });
+        const propertyIds = properties.map(p => p._id);
+        
+        const activeBookings = await Booking.findOne({ 
+            propertyId: { $in: propertyIds },
+            bookingStatus: { $in: pendingBookingStatuses }
+        });
+
+        if (activeBookings) {
+            const msg = 'You have active bookings in your properties. Please complete or cancel them before deleting your account.';
+            emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
+            return res.status(400).json({ 
+                message: msg
+            });
+        }
+
+    } else {
+        // User check: Their own active bookings
+        const activeBookings = await Booking.findOne({ 
+            userId: user._id,
+            bookingStatus: { $in: pendingBookingStatuses }
+        });
+
+        if (activeBookings) {
+            const msg = 'You have active bookings. Please complete or cancel them before deleting your account.';
+            emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
+            return res.status(400).json({ 
+                message: msg
+            });
+        }
+    }
+
+    // --- SEND OTP ---
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otpExpires = Date.now() + 10 * 60 * 1000;
+
+    await Model.findByIdAndUpdate(user._id, { 
+        otp, 
+        otpExpires,
+        deletionReason: reason // Temporary field for context
+    });
+
+    // Send via Email only
+    if (user.email) {
+      await emailService.sendDeletionOTP(user, otp).catch(console.error);
+    }
+
+    res.status(200).json({ 
+        success: true, 
+        message: 'A deletion verification OTP has been sent to your registered email.'
+    });
+
+  } catch (error) {
+    console.error('Request Account Deletion Error:', error);
+    res.status(500).json({ message: 'Server error processing deletion request' });
+  }
+};
+
+/**
+ * @desc    Verify & Perform Hard Delete
+ * @route   POST /api/auth/verify-account-deletion
+ * @access  Private
+ */
+export const verifyAccountDeletion = async (req, res) => {
+  try {
+    const { otp } = req.body;
+    const currentUser = req.user;
+    const Model = currentUser.role === 'partner' ? Partner : User;
+
+    const user = await Model.findById(currentUser._id).select('+otp +otpExpires +deletionReason');
+
+    if (!user || user.otp !== otp || user.otpExpires < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    const reason = user.deletionReason || 'No reason provided';
+    const userName = user.name;
+    const userPhone = user.phone;
+    const userRole = user.role;
+
+    // --- HARD DELETE ---
+
+    if (userRole === 'partner') {
+        // Cleanup Partner Data
+        await Property.deleteMany({ partnerId: user._id });
+        await Wallet.deleteMany({ partnerId: user._id });
+    }
+
+    await Model.findByIdAndDelete(user._id);
+
+    // --- NOTIFY USER & ADMIN ---
+    if (currentUser.email) {
+      emailService.sendUserAccountDeletedEmail({ name: userName, email: currentUser.email }).catch(console.error);
+    }
+
+    notificationService.sendToAdmins({
+        title: `Account Deleted: ${userName} (${userRole})`,
+        body: `Reason: ${reason}\nPhone: ${userPhone}`
+    }, { type: 'account_deletion', phone: userPhone }).catch(console.error);
+
+    res.status(200).json({ 
+        success: true, 
+        message: 'Your account and associated data have been permanently deleted.'
+    });
+
+  } catch (error) {
+    console.error('Verify Account Deletion Error:', error);
+    res.status(500).json({ message: 'Server error during account deletion' });
   }
 };

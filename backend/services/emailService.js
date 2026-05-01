@@ -243,6 +243,44 @@ class EmailService {
     return this.sendEmail({ to: user.email, subject, html, text: subject });
   }
 
+  async sendAccountDeletionBlockedEmail(user, reason) {
+    const subject = 'Action Required: Account Deletion Blocked';
+    const body = `
+      <p>Hi <strong>${user.name}</strong>,</p>
+      <p>We received a request to delete your account, but we were unable to process it due to pending actions on your profile.</p>
+      
+      <div class="card" style="border-left: 4px solid #ef4444;">
+        <h3>Reason for Block</h3>
+        <p>${reason}</p>
+      </div>
+
+      <p>To ensure a smooth closure of your account, please resolve these pending items (such as active bookings or wallet balances) and then try requesting deletion again.</p>
+      <p>If you need assistance, please contact our support team.</p>
+    `;
+
+    const html = this.generateHtmlTemplate(subject, body, 'Account Security Update');
+    return this.sendEmail({ to: user.email, subject, html, text: subject });
+  }
+
+  async sendDeletionOTP(user, otp) {
+    const subject = 'Verify Account Deletion Request';
+    const body = `
+      <p>Hi <strong>${user.name}</strong>,</p>
+      <p>We received a request to permanently delete your ${this.companyName} account. To proceed, please use the verification code below:</p>
+      
+      <div style="text-align: center; padding: 20px; background: #f8fafc; border-radius: 12px; margin: 20px 0; border: 2px dashed ${this.brandColor};">
+        <h1 style="font-size: 32px; letter-spacing: 10px; color: ${this.brandColor}; margin: 0;">${otp}</h1>
+        <p style="color: #64748b; font-size: 12px; margin-top: 10px;">This code will expire in 10 minutes.</p>
+      </div>
+
+      <p style="color: #ef4444; font-weight: bold;">Important: This action will permanently wipe your bookings, properties, and wallet data. It cannot be undone.</p>
+      <p>If you did not request this, please ignore this email and secure your account immediately.</p>
+    `;
+
+    const html = this.generateHtmlTemplate('Security Verification', body, 'Account Deletion');
+    return this.sendEmail({ to: user.email, subject, html, text: `Your deletion verification code is: ${otp}` });
+  }
+
   async sendReviewReplyEmail(user, review, property, reply) {
     const subject = `New Reply to Your Review of ${property.propertyName}`;
     const body = `

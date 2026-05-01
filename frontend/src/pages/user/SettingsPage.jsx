@@ -10,6 +10,9 @@ const SettingsPage = () => {
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [showOtpStep, setShowOtpStep] = useState(false);
+    const [deletionReason, setDeletionReason] = useState('');
+    const [deletionOtp, setDeletionOtp] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
 
     if (!token) {
@@ -22,21 +25,38 @@ const SettingsPage = () => {
         navigate('/login');
     };
 
-    const handleDeleteAccount = async () => {
+    const handleRequestDeletion = async () => {
+        if (!deletionReason.trim()) {
+            return toast.error('Please provide a reason for deletion');
+        }
+
         try {
             setIsDeleting(true);
-            const res = await userService.deleteAccount();
-            if (res.success) {
-                toast.success("Account deleted successfully");
-                localStorage.clear();
-                navigate('/login');
-            }
-        } catch (err) {
-            console.error("Delete Account Error:", err);
-            toast.error(err.message || "Failed to delete account");
+            await userService.requestDeletion(deletionReason);
+            setShowOtpStep(true);
+            toast.success('Verification OTP sent to your email');
+        } catch (error) {
+            toast.error(error.message || 'Deletion request failed');
         } finally {
             setIsDeleting(false);
-            setShowDeleteConfirm(false);
+        }
+    };
+
+    const handleVerifyDeletion = async () => {
+        if (!deletionOtp || deletionOtp.length < 4) {
+            return toast.error('Please enter a valid OTP');
+        }
+
+        try {
+            setIsDeleting(true);
+            await userService.verifyDeletion(deletionOtp);
+            toast.success('Account permanently deleted');
+            localStorage.clear();
+            navigate('/login');
+        } catch (error) {
+            toast.error(error.message || 'Verification failed');
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -134,26 +154,71 @@ const SettingsPage = () => {
                         <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
                             <AlertCircle size={40} className="text-red-500" />
                         </div>
-                        <h3 className="text-xl font-black text-gray-900 mb-2">Are you sure?</h3>
-                        <p className="text-sm text-gray-500 leading-relaxed mb-8">
-                            This action is permanent and cannot be undone. All your bookings and wallet balance will be lost.
-                        </p>
+                        <h3 className="text-xl font-black text-gray-900 mb-2">
+                            {showOtpStep ? 'Verify Identity' : 'Are you sure?'}
+                        </h3>
                         
-                        <div className="space-y-3">
-                            <button
-                                onClick={handleDeleteAccount}
-                                disabled={isDeleting}
-                                className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2"
-                            >
-                                {isDeleting ? "Deleting..." : "Yes, Delete Account"}
-                            </button>
-                            <button
-                                onClick={() => setShowDeleteConfirm(false)}
-                                className="w-full bg-gray-100 text-gray-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
-                            >
-                                Cancel
-                            </button>
-                        </div>
+                        {!showOtpStep ? (
+                            <>
+                                <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                                    This action is permanent and cannot be undone. All your bookings and wallet balance will be lost.
+                                </p>
+                                <div className="w-full mb-6">
+                                    <textarea
+                                        value={deletionReason}
+                                        onChange={(e) => setDeletionReason(e.target.value)}
+                                        placeholder="Reason for leaving..."
+                                        className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 text-sm font-bold text-gray-800 focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/30 transition-all resize-none h-24"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <button
+                                        onClick={handleRequestDeletion}
+                                        disabled={isDeleting}
+                                        className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {isDeleting ? "Requesting..." : "Send Verification OTP"}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(false)}
+                                        className="w-full bg-gray-100 text-gray-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                                    Enter the code sent to your registered email <span className="font-bold text-gray-900">{user.email || 'account email'}</span>
+                                </p>
+                                <div className="w-full mb-8">
+                                    <input
+                                        type="text"
+                                        maxLength={4}
+                                        value={deletionOtp}
+                                        onChange={(e) => setDeletionOtp(e.target.value.replace(/\D/g, ''))}
+                                        placeholder="0000"
+                                        className="w-full text-center text-3xl font-black tracking-[0.5em] p-4 rounded-2xl bg-gray-50 border border-gray-100 focus:outline-none focus:ring-4 focus:ring-surface/10 focus:border-surface/30 transition-all"
+                                    />
+                                </div>
+                                <div className="space-y-3">
+                                    <button
+                                        onClick={handleVerifyDeletion}
+                                        disabled={isDeleting}
+                                        className="w-full bg-surface text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {isDeleting ? "Verifying..." : "Confirm Permanent Deletion"}
+                                    </button>
+                                    <button
+                                        onClick={() => setShowOtpStep(false)}
+                                        className="w-full bg-gray-100 text-gray-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
+                                    >
+                                        Back
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

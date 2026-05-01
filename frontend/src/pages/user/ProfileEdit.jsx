@@ -14,6 +14,9 @@ const ProfileEdit = () => {
   const [imageUploading, setImageUploading] = useState(false);
   const [fetchingLocation, setFetchingLocation] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showOtpStep, setShowOtpStep] = useState(false);
+  const [deletionReason, setDeletionReason] = useState('');
+  const [deletionOtp, setDeletionOtp] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [errors, setErrors] = useState({});
@@ -306,18 +309,38 @@ const ProfileEdit = () => {
     }
   };
 
-  const handleDeleteAccount = async () => {
+  const handleRequestDeletion = async () => {
+    if (!deletionReason.trim()) {
+      return toast.error('Please provide a reason for deletion');
+    }
+
     try {
       setDeleteLoading(true);
-      await userService.deleteAccount();
-      authService.logout();
-      toast.success('Account deleted successfully');
-      navigate('/', { replace: true });
+      await userService.requestDeletion(deletionReason);
+      setShowOtpStep(true);
+      toast.success('Verification OTP sent to your email');
     } catch (error) {
-      toast.error(error.message || 'Failed to delete account');
+      toast.error(error.message || 'Deletion request failed');
     } finally {
       setDeleteLoading(false);
-      setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleVerifyDeletion = async () => {
+    if (!deletionOtp || deletionOtp.length < 4) {
+      return toast.error('Please enter a valid OTP');
+    }
+
+    try {
+      setDeleteLoading(true);
+      await userService.verifyDeletion(deletionOtp);
+      toast.success('Account permanently deleted');
+      authService.logout();
+      navigate('/', { replace: true });
+    } catch (error) {
+      toast.error(error.message || 'Verification failed');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -674,27 +697,74 @@ const ProfileEdit = () => {
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mb-6">
                 <AlertTriangle size={32} className="text-red-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Account?</h3>
-              <p className="text-sm text-gray-500 leading-relaxed mb-8">
-                Are you absolutely sure? This action is <span className="text-red-500 font-bold">permanent</span> and will deactivate your account immediately.
-              </p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {showOtpStep ? 'Verify Identity' : 'Delete Account?'}
+              </h3>
 
-              <div className="flex flex-col w-full gap-3">
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={deleteLoading}
-                  className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
-                >
-                  {deleteLoading ? <Loader2 size={18} className="animate-spin" /> : 'Yes, Delete Permanently'}
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={deleteLoading}
-                  className="w-full bg-gray-50 text-gray-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
-                >
-                  Cancel
-                </button>
-              </div>
+              {!showOtpStep ? (
+                <>
+                  <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                    Are you absolutely sure? This action is <span className="text-red-500 font-bold">permanent</span> and will deactivate your account immediately.
+                  </p>
+                  <div className="w-full mb-6">
+                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest text-left mb-2 ml-1">Reason for leaving</label>
+                    <textarea
+                      value={deletionReason}
+                      onChange={(e) => setDeletionReason(e.target.value)}
+                      placeholder="Tell us why you want to delete your account..."
+                      className="w-full p-4 rounded-2xl bg-gray-50 border border-gray-100 text-sm font-bold text-gray-800 focus:outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500/30 transition-all resize-none h-24"
+                    />
+                  </div>
+                  <div className="flex flex-col w-full gap-3">
+                    <button
+                      onClick={handleRequestDeletion}
+                      disabled={deleteLoading}
+                      className="w-full bg-red-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-red-200 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                    >
+                      {deleteLoading ? <Loader2 size={18} className="animate-spin" /> : 'Send Verification OTP'}
+                    </button>
+                    <button
+                      onClick={() => setShowDeleteConfirm(false)}
+                      disabled={deleteLoading}
+                      className="w-full bg-gray-50 text-gray-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-500 leading-relaxed mb-6">
+                    Enter the 4-digit code sent to your registered email <span className="font-bold text-gray-900">{formData.email || 'account email'}</span>
+                  </p>
+                  <div className="w-full mb-8">
+                    <input
+                      type="text"
+                      maxLength={4}
+                      value={deletionOtp}
+                      onChange={(e) => setDeletionOtp(e.target.value.replace(/\D/g, ''))}
+                      placeholder="0000"
+                      className="w-full text-center text-3xl font-black tracking-[0.5em] p-4 rounded-2xl bg-gray-50 border border-gray-100 focus:outline-none focus:ring-4 focus:ring-surface/10 focus:border-surface/30 transition-all"
+                    />
+                  </div>
+                  <div className="flex flex-col w-full gap-3">
+                    <button
+                      onClick={handleVerifyDeletion}
+                      disabled={deleteLoading}
+                      className="w-full bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                    >
+                      {deleteLoading ? <Loader2 size={18} className="animate-spin" /> : 'Confirm Permanent Deletion'}
+                    </button>
+                    <button
+                      onClick={() => setShowOtpStep(false)}
+                      disabled={deleteLoading}
+                      className="w-full bg-gray-50 text-gray-600 font-bold py-4 rounded-2xl active:scale-95 transition-all"
+                    >
+                      Back
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </motion.div>
         </div>

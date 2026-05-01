@@ -1,4 +1,4 @@
-import { sendOtp, verifyOtp, verifyPartnerOtp, adminLogin, getMe, updateProfile, updateAdminProfile, updateAdminPassword, registerPartner, uploadDocs, deleteDoc, uploadDocsBase64, checkExists } from '../controllers/authController.js';
+import { sendOtp, verifyOtp, verifyPartnerOtp, adminLogin, getMe, updateProfile, updateAdminProfile, updateAdminPassword, registerPartner, uploadDocs, deleteDoc, uploadDocsBase64, checkExists, requestAccountDeletion, verifyAccountDeletion } from '../controllers/authController.js';
 import { protect } from '../middlewares/authMiddleware.js';
 import { uploadDocuments } from '../utils/multer.js';
 import express from "express";
@@ -21,5 +21,9 @@ router.get('/me', protect, getMe);
 router.put('/update-profile', protect, updateProfile);
 router.put('/admin/update-profile', protect, updateAdminProfile);
 router.put('/admin/update-password', protect, updateAdminPassword);
+
+// Account Deletion Flow
+router.post('/request-account-deletion', protect, requestAccountDeletion);
+router.post('/verify-account-deletion', protect, verifyAccountDeletion);
 
 export default router;
