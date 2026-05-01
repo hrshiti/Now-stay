@@ -46,7 +46,6 @@ const HotelLogin = () => {
         try {
             // Use authService
             await authService.sendOtp(contact, 'login', 'partner');
-            setOtp(['', '', '', '']); // Clear previous OTP
             setStep(2);
 
         } catch (err) {
@@ -63,7 +62,7 @@ const HotelLogin = () => {
         setOtp(newOtp);
 
         if (value && index < 3) {
-            document.getElementById(`partner-otp-${index + 1}`)?.focus();
+            document.getElementById(`otp-${index + 1}`)?.focus();
         }
     };
 
@@ -229,10 +228,8 @@ const HotelLogin = () => {
                                         {otp.map((digit, index) => (
                                             <input
                                                 key={index}
-                                                id={`partner-otp-${index}`}
+                                                id={`otp-${index}`}
                                                 type="text"
-                                                inputMode="numeric"
-                                                autoComplete="off"
                                                 maxLength={1}
                                                 value={digit}
                                                 onChange={(e) => handleOTPChange(index, e.target.value)}
@@ -265,11 +262,7 @@ const HotelLogin = () => {
 
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setStep(1);
-                                            setOtp(['', '', '', '']);
-                                            setError('');
-                                        }}
+                                        onClick={() => setStep(1)}
                                         className="w-full text-gray-500 text-sm hover:text-gray-700"
                                     >
                                         Change {method === 'phone' ? 'number' : 'email'}

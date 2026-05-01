@@ -42,25 +42,34 @@ const MobileMenu = ({ isOpen, onClose }) => {
     // Disable body scroll when sidebar is open
     useEffect(() => {
         if (isOpen) {
+            // Save current scroll position
+            const scrollY = window.scrollY;
+
+            // Apply styles to prevent scrolling
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
             document.body.style.overflow = 'hidden';
-            document.documentElement.style.overflow = 'hidden';
-            document.body.style.height = '100%';
-            document.documentElement.style.height = '100%';
-            document.body.style.overscrollBehavior = 'none';
         } else {
+            // Restore scroll position
+            const scrollY = document.body.style.top;
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
             document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-            document.body.style.height = '';
-            document.documentElement.style.height = '';
-            document.body.style.overscrollBehavior = '';
+
+            // Restore scroll position
+            if (scrollY) {
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
         }
 
+        // Cleanup on unmount
         return () => {
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
             document.body.style.overflow = '';
-            document.documentElement.style.overflow = '';
-            document.body.style.height = '';
-            document.documentElement.style.height = '';
-            document.body.style.overscrollBehavior = '';
         };
     }, [isOpen]);
 
@@ -136,7 +145,7 @@ const MobileMenu = ({ isOpen, onClose }) => {
                         transition={{ duration: 0.3 }}
                         onClick={onClose}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] md:hidden"
-                        style={{ pointerEvents: 'auto', touchAction: 'none' }}
+                        style={{ pointerEvents: 'auto' }}
                     />
 
                     <motion.div
@@ -144,8 +153,8 @@ const MobileMenu = ({ isOpen, onClose }) => {
                         animate={{ x: 0 }}
                         exit={{ x: '-100%' }}
                         transition={{ type: 'tween', ease: 'circOut', duration: 0.4 }}
-                        className="fixed top-0 left-0 h-[100dvh] w-[85%] max-w-[300px] bg-white z-[101] overflow-y-auto overscroll-contain md:hidden shadow-2xl pb-safe"
-                        style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+                        className="fixed top-0 left-0 h-full w-[85%] max-w-[300px] bg-white z-[101] overflow-y-auto overscroll-contain md:hidden shadow-2xl"
+                        style={{ touchAction: 'pan-y' }}
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="flex items-center justify-between p-5 pb-2">

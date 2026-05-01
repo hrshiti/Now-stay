@@ -80,10 +80,9 @@ const UserSignup = () => {
 
         try {
             setLoading(true);
-            await authService.sendOtp(formData.phone, 'register', 'user', formData.email, formData.referralCode);
+            await authService.sendOtp(formData.phone, 'register', 'user', formData.email);
             setResendTimer(120);
             setCanResend(false);
-            setOtp(['', '', '', '']);
             setStep(2);
         } catch (err) {
             // Check if account already exists
@@ -122,7 +121,7 @@ const UserSignup = () => {
         try {
             setLoading(true);
             setError('');
-            await authService.sendOtp(formData.phone, 'register', 'user', formData.email, formData.referralCode);
+            await authService.sendOtp(formData.phone, 'register');
             setResendTimer(120);
             setCanResend(false);
             setOtp(['', '', '', '']); // Clear OTP

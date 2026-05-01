@@ -5,7 +5,7 @@ import { User, Phone, Mail, ArrowLeft, Save, Loader2, MapPin, Navigation, Home, 
 import { authService, userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
 import AuthRequired from '../../components/ui/AuthRequired';
-import { isFlutterApp, openFlutterCamera, uploadBase64Image, getFlutterLocation } from '../../utils/flutterBridge';
+import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../utils/flutterBridge';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
@@ -137,35 +137,9 @@ const ProfileEdit = () => {
     }
   };
 
-  const handleGetCurrentLocation = async () => {
-    // 1. If running in Flutter App, use Native Bridge
-    if (isFlutterApp()) {
-      try {
-        setFetchingLocation(true);
-        const result = await getFlutterLocation();
-        if (result && result.latitude && result.longitude) {
-          await autoFillAddress(result.latitude, result.longitude);
-        } else {
-          throw new Error("Invalid location data received from app");
-        }
-      } catch (error) {
-        console.error('Flutter Location Error:', error);
-        toast.error(error.message || 'Failed to get location from app');
-      } finally {
-        setFetchingLocation(false);
-      }
-      return;
-    }
-
-    // 2. If running in Browser
+  const handleGetCurrentLocation = () => {
     if (!('geolocation' in navigator)) {
-      toast.error('Geolocation not supported by this browser');
-      return;
-    }
-
-    // Check for secure context (Chrome blocks Geolocation on non-localhost HTTP)
-    if (!window.isSecureContext && window.location.hostname !== 'localhost') {
-      toast.error('Auto-detect requires a secure connection (HTTPS)');
+      toast.error('Geolocation not supported');
       return;
     }
 
@@ -179,13 +153,9 @@ const ProfileEdit = () => {
       (error) => {
         console.error('Location error:', error);
         setFetchingLocation(false);
-        let msg = 'Unable to retrieve location';
-        if (error.code === 1) msg = 'Location permission denied';
-        else if (error.code === 2) msg = 'Location unavailable (check GPS)';
-        else if (error.code === 3) msg = 'Location request timed out';
-        toast.error(msg);
+        toast.error('Unable to retrieve location');
       },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 15000 }
     );
   };
 
@@ -381,7 +351,12 @@ const ProfileEdit = () => {
           <ArrowLeft size={20} className="text-gray-700" />
         </button>
         <h1 className="text-lg font-black text-gray-900 tracking-tight">{isEditing ? 'Edit Profile' : 'My Profile'}</h1>
-        <div className="w-10"></div>
+        {!isEditing && (
+          <button onClick={() => setIsEditing(true)} className="p-2 rounded-full bg-surface text-white shadow-lg shadow-surface/20 hover:scale-105 transition-all active:scale-95">
+            <Save size={18} />
+          </button>
+        )}
+        {isEditing && <div className="w-10"></div>}
       </div>
 
       <motion.div
@@ -466,15 +441,15 @@ const ProfileEdit = () => {
                 >
                   Edit Profile Information
                 </button>
-
+                
                 <button
                   onClick={handleLogout}
-                  className="w-full text-red-500 font-bold text-xs py-3 rounded-2xl hover:bg-red-50 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-gray-50 text-gray-700 py-4 rounded-3xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  <LogOut size={18} />
+                  <LogOut size={18} className="text-gray-400" />
                   Logout
                 </button>
-                
+
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="w-full text-red-500 font-bold text-xs py-3 rounded-2xl hover:bg-red-50 transition-colors"

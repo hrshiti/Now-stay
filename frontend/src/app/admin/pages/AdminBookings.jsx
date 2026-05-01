@@ -27,14 +27,12 @@ const BookingStatusBadge = ({ status }) => {
         refunded: <ArrowRight size={10} className="mr-1" />,
     };
 
-        const displayStatus = status === 'checked_out' ? 'completed' : status;
-
-        return (
-            <span className={`flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase ${styles[displayStatus] || styles.pending}`}>
-                {icons[displayStatus] || icons.pending}
-                {displayStatus}
-            </span>
-        );
+    return (
+        <span className={`flex items-center w-fit px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase ${styles[status] || styles.pending}`}>
+            {icons[status] || icons.pending}
+            {status}
+        </span>
+    );
 };
 
 const MetricCard = ({ label, value, subLabel, loading }) => (
@@ -233,6 +231,7 @@ const AdminBookings = () => {
                         className="px-4 py-2 bg-gray-50 border border-transparent rounded-xl text-[10px] font-bold uppercase outline-none focus:bg-white focus:border-black transition-all"
                     >
                         <option value="">All Status</option>
+                        <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="completed">Completed</option>

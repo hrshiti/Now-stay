@@ -212,7 +212,7 @@ export const updateProperty = async (req, res) => {
 export const addRoomType = async (req, res) => {
   try {
     const { propertyId } = req.params;
-    const { name, inventoryType, roomCategory, baseAdults, baseChildren, maxAdults, maxChildren, bedsPerRoom, totalInventory, pricePerNight, extraAdultPrice, extraChildPrice, images, amenities } = req.body;
+    const { name, inventoryType, roomCategory, maxAdults, maxChildren, bedsPerRoom, totalInventory, pricePerNight, extraAdultPrice, extraChildPrice, images, amenities } = req.body;
     const property = await Property.findById(propertyId);
     if (!property) return res.status(404).json({ message: 'Property not found' });
     if (!pricePerNight) return res.status(400).json({ message: 'pricePerNight required' });
@@ -233,7 +233,7 @@ export const addRoomType = async (req, res) => {
         : [];
 
     const rt = await RoomType.create({
-      propertyId, name, inventoryType, roomCategory, baseAdults, baseChildren, maxAdults, maxChildren,
+      propertyId, name, inventoryType, roomCategory, maxAdults, maxChildren,
       bedsPerRoom, totalInventory, pricePerNight, extraAdultPrice, extraChildPrice,
       images: normalizedImages, amenities
     });
@@ -257,7 +257,7 @@ export const updateRoomType = async (req, res) => {
     const roomType = await RoomType.findOne({ _id: roomTypeId, propertyId });
     if (!roomType) return res.status(404).json({ message: 'Room type not found' });
 
-    const updatableFields = ['name', 'inventoryType', 'roomCategory', 'baseAdults', 'baseChildren', 'maxAdults', 'maxChildren', 'bedsPerRoom', 'totalInventory', 'pricePerNight', 'extraAdultPrice', 'extraChildPrice', 'images', 'amenities', 'isActive'];
+    const updatableFields = ['name', 'inventoryType', 'roomCategory', 'maxAdults', 'maxChildren', 'bedsPerRoom', 'totalInventory', 'pricePerNight', 'extraAdultPrice', 'extraChildPrice', 'images', 'amenities', 'isActive'];
     updatableFields.forEach(field => {
       if (Object.prototype.hasOwnProperty.call(payload, field)) {
         roomType[field] = payload[field];

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Shield, FileText, CheckCircle, ExternalLink } from 'lucide-react';
+import { Shield, FileText } from 'lucide-react';
 import gsap from 'gsap';
 import PartnerHeader from '../components/PartnerHeader';
 import { legalService } from '../../../services/apiService';
@@ -98,16 +98,7 @@ const PartnerTerms = () => {
                         </div>
                     )}
 
-                    <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-green-600">
-                            <CheckCircle size={16} />
-                            <span className="text-xs font-bold">You accepted these terms on 12 Aug 2024</span>
-                        </div>
-                        <button className="flex items-center gap-1 text-xs font-bold text-[#0F172A] hover:underline">
-                            Download PDF <ExternalLink size={12} />
-                        </button>
                     </div>
-                </div>
 
             </main>
         </div>

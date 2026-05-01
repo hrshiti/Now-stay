@@ -44,9 +44,7 @@ export const getDashboardStats = async (req, res) => {
       currentBookingRevenueAgg, lastMonthBookingRevenueAgg,
       currentSubRevenueAgg, lastMonthSubRevenueAgg,
       activeSubscribersCount,
-      recentSubscriptions,
-      pendingPartnersCount,
-      pendingPropertiesCount
+      recentSubscriptions
     ] = await Promise.all([
       User.countDocuments({}),
       User.countDocuments({ createdAt: { $lt: startOfThisMonth } }),
@@ -90,9 +88,7 @@ export const getDashboardStats = async (req, res) => {
         .populate('partnerId', 'name email')
         .populate('planId', 'name')
         .sort({ createdAt: -1 })
-        .limit(5),
-      Partner.countDocuments({ partnerApprovalStatus: 'pending' }),
-      Property.countDocuments({ status: 'pending' })
+        .limit(5)
     ]);
 
     const totalBookingRevenue = currentBookingRevenueAgg[0]?.total || 0;
@@ -209,8 +205,6 @@ export const getDashboardStats = async (req, res) => {
         bookingRevenue: totalBookingRevenue,
         subscriptionRevenue: totalSubRevenue,
         activeSubscribers: activeSubscribersCount,
-        pendingPartners: pendingPartnersCount,
-        pendingProperties: pendingPropertiesCount,
         trends
       },
       charts: {
@@ -347,14 +341,9 @@ export const getAllBookings = async (req, res) => {
     const { status, search } = req.query;
 
     const query = {};
+
     if (status) {
-      if (status === 'completed') {
-        query.bookingStatus = { $in: ['completed', 'checked_out'] };
-      } else {
-        query.bookingStatus = status;
-      }
-    } else {
-      query.bookingStatus = { $nin: ['pending', 'awaiting_payment'] };
+      query.bookingStatus = status;
     }
 
     if (search) {
@@ -407,7 +396,7 @@ export const getAllBookings = async (req, res) => {
       Booking.countDocuments({ bookingStatus: 'confirmed' }),
       Booking.countDocuments({ bookingStatus: 'pending' }),
       Booking.countDocuments({ bookingStatus: 'cancelled' }),
-      Booking.countDocuments({ bookingStatus: { $in: ['completed', 'checked_out'] } })
+      Booking.countDocuments({ bookingStatus: 'completed' })
     ]);
 
     res.status(200).json({
@@ -933,13 +922,7 @@ export const updateBookingStatus = async (req, res) => {
 export const getUserDetails = async (req, res) => {
   try {
     const { id } = req.params;
-    let user = await User.findById(id);
-    
-    // If not found in User, try Partner (Bug 228)
-    if (!user) {
-      user = await Partner.findById(id);
-    }
-    
+    const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     const bookings = await Booking.find({ userId: id })
@@ -947,36 +930,24 @@ export const getUserDetails = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    const wallet = await Wallet.findOne({ partnerId: id }); // Role-agnostic wallet lookup
+    const wallet = await Wallet.findOne({ partnerId: id, role: 'user' });
     let walletTransactions = wallet
       ? await Transaction.find({ walletId: wallet._id }).sort({ createdAt: -1 }).lean()
       : [];
 
-    // Extract booking IDs already in wallet transactions to avoid duplicates
-    const walletBookingIds = walletTransactions
-      .filter(txn => txn.metadata?.bookingId || txn.reference)
-      .map(txn => (txn.metadata?.bookingId || txn.reference).toString());
-
     const bookingTransactions = bookings
-      .filter(b => !walletBookingIds.includes(b.bookingId.toString()) && !walletBookingIds.includes(b._id.toString()))
-      .map(b => {
-        let label = 'Online Payment';
-        if (b.paymentStatus === 'pending') label = 'Pay At Hotel (Expected)';
-        if (b.paymentStatus === 'refunded') label = 'Refund';
-        if (b.paymentStatus === 'partial') label = 'Partial Payment';
-
-        return {
-          _id: b._id,
-          bookingId: b.bookingId,
-          type: b.paymentStatus === 'refunded' ? 'credit' : 'debit',
-          amount: b.totalAmount,
-          description: `Booking: ${b.propertyId?.propertyName || b.propertyId?.name || 'Hotel Stay'} (${label})`,
-          status: b.bookingStatus === 'checked_out' ? 'completed' : b.bookingStatus,
-          paymentStatus: b.paymentStatus,
-          isBooking: true,
-          createdAt: b.createdAt
-        };
-      });
+      .filter(b => ['paid', 'refunded', 'partial'].includes(b.paymentStatus))
+      .map(b => ({
+        _id: b._id,
+        bookingId: b.bookingId,
+        type: b.paymentStatus === 'refunded' ? 'credit' : 'debit',
+        amount: b.totalAmount,
+        description: `Booking: ${b.propertyId?.propertyName || b.propertyId?.name || 'Hotel Stay'}`,
+        status: b.bookingStatus,
+        paymentStatus: b.paymentStatus,
+        isBooking: true,
+        createdAt: b.createdAt
+      }));
 
     const transactions = [...walletTransactions, ...bookingTransactions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 

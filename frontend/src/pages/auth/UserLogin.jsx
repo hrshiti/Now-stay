@@ -51,7 +51,6 @@ const UserLogin = () => {
             await authService.sendOtp(phone, 'login');
             setResendTimer(120);
             setCanResend(false);
-            setOtp(['', '', '', '']); // Clear OTP for fresh start
             setStep(2);
         } catch (err) {
             // Check if account doesn't exist or is blocked
@@ -80,7 +79,7 @@ const UserLogin = () => {
         setOtp(newOtp);
 
         if (value && index < 3) {
-            document.getElementById(`user-otp-${index + 1}`)?.focus();
+            document.getElementById(`otp-${index + 1}`)?.focus();
         }
     };
 
@@ -246,10 +245,9 @@ const UserLogin = () => {
                                         {otp.map((digit, index) => (
                                             <input
                                                 key={index}
-                                                id={`user-otp-${index}`}
+                                                id={`otp-${index}`}
                                                 type="tel"
                                                 inputMode="numeric"
-                                                autoComplete="off"
                                                 pattern="[0-9]*"
                                                 maxLength={1}
                                                 value={digit}
@@ -300,11 +298,7 @@ const UserLogin = () => {
 
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                setStep(1);
-                                                setOtp(['', '', '', '']);
-                                                setError('');
-                                            }}
+                                            onClick={() => setStep(1)}
                                             className="w-full text-gray-400 text-[10px] font-bold hover:text-emerald-600 transition-colors pt-1"
                                         >
                                             Change Number

@@ -8,10 +8,10 @@ import { Clock, Loader2 } from 'lucide-react';
 import BottomNavbar from './components/ui/BottomNavbar';
 import TopNavbar from './components/ui/TopNavbar';
 import Footer from './components/ui/Footer';
+import PartnerFooter from './app/partner/components/PartnerFooter';
 import PartnerBottomNavbar from './app/partner/components/PartnerBottomNavbar';
 
 import ScrollToTop from './components/ui/ScrollToTop';
-import PullToRefresh from './components/ui/PullToRefresh';
 
 // Hooks & Services
 import { useLenis } from './app/shared/hooks/useLenis';
@@ -136,7 +136,6 @@ const PageLoader = () => (
 // Wrapper to conditionally render Navbars & Handle Lenis
 const Layout = ({ children }) => {
   const location = useLocation();
-  console.log(`[LAYOUT] Rendering path: ${location.pathname}${location.hash}`);
   const [platformStatus, setPlatformStatus] = React.useState({
     loading: true,
     maintenanceMode: false,
@@ -194,8 +193,13 @@ const Layout = ({ children }) => {
   const isUserHotelDetail = /^\/hotel\/[0-9a-fA-F]{24}(\/(amenities|reviews|offers))?$/.test(location.pathname);
   const isPartnerApp = location.pathname.startsWith('/hotel') && !isUserHotelDetail;
 
+  const searchParams = new URLSearchParams(location.search);
+  const audience = searchParams.get('audience');
+  const isPartnerContext = isPartnerApp || audience === 'partner';
+
   // 3. NAVBAR VISIBILITY
-  const showUserNavs = !isPartnerApp;
+  const showUserNavs = !isPartnerApp && audience !== 'partner';
+  const showPartnerNavs = isPartnerContext && !location.pathname.startsWith('/admin');
 
   // Specific user pages where BottomNav is hidden
   const hideUserBottomNavOn = ['/booking-confirmation', '/payment', '/support', '/refer', '/hotel/', '/legal', '/terms', '/privacy'];
@@ -243,7 +247,8 @@ const Layout = ({ children }) => {
 
       {showUserBottomNav && <BottomNavbar />}
       {showPartnerBottomNav && <PartnerBottomNavbar />}
-      {showUserNavs && <Footer />}
+      
+      {showPartnerNavs ? <PartnerFooter /> : showUserNavs && <Footer />}
     </>
 
   );
@@ -312,19 +317,10 @@ const UserPrivateRoute = ({ children }) => {
 
 // Partner Protected Route
 const PartnerProtectedRoute = ({ children }) => {
-  const [isAuthChecked, setIsAuthChecked] = React.useState(false);
-  const location = useLocation();
   const token = localStorage.getItem('token');
   const userRaw = localStorage.getItem('user');
   const user = userRaw ? JSON.parse(userRaw) : null;
-
-  React.useEffect(() => {
-    // Small delay to ensure localStorage is stable on refresh
-    const timer = setTimeout(() => {
-      setIsAuthChecked(true);
-    }, 50);
-    return () => clearTimeout(timer);
-  }, []);
+  const location = useLocation();
 
   // Allow access to login/register/join/privacy/contact
   const publicPartnerPaths = ['/hotel/login', '/hotel/register', '/hotel/privacy', '/hotel/contact'];
@@ -332,13 +328,7 @@ const PartnerProtectedRoute = ({ children }) => {
     return children ? children : <Outlet />;
   }
 
-  // If we haven't checked yet, show nothing or a loader to prevent premature redirect
-  if (!isAuthChecked && token) {
-    return null; 
-  }
-
   if (!token || !user || user.role !== 'partner') {
-    console.warn(`[AUTH] PartnerProtectedRoute failed. Token: ${!!token}, Role: ${user?.role}. Redirecting to /hotel/login`);
     return <Navigate to="/hotel/login" state={{ from: location }} replace />;
   }
 
@@ -375,7 +365,6 @@ const PartnerProtectedRoute = ({ children }) => {
 const PublicRoute = ({ children }) => {
   const token = localStorage.getItem('token');
   if (token) {
-    console.warn(`[AUTH] PublicRoute redirecting to / because token exists. Path: ${window.location.pathname}`);
     return <Navigate to="/" replace />;
   }
   return children;
@@ -517,9 +506,8 @@ function App() {
           zIndex: 10000
         }}
       />
-      <PullToRefresh>
-        <Layout>
-          <Suspense fallback={<PageLoader />}>
+      <Layout>
+        <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* User Auth Routes (Public Only) */}
             <Route path="/login" element={<PublicRoute><UserLogin /></PublicRoute>} />
@@ -655,7 +643,6 @@ function App() {
           </Routes>
         </Suspense>
       </Layout>
-    </PullToRefresh>
     </Router>
   );
 }

@@ -1285,7 +1285,7 @@ export const markCheckOut = async (req, res) => {
       }
     }
 
-    booking.bookingStatus = 'completed';
+    booking.bookingStatus = 'checked_out';
     // booking.actualCheckOutDate = new Date(); // Ideally add to schema
     await booking.save();
 

@@ -223,7 +223,7 @@ export const registerPartner = async (req, res) => {
     let user = await User.findOne({ phone });
 
     if (user && user.isVerified) {
-      return res.status(409).json({ message: 'User already exists. Please log in.' });
+      return res.status(409).json({ message: 'User with this phone already exists. Please login.' });
     }
 
     if (email) {

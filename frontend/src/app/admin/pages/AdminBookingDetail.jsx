@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
     Calendar, User, Users, MapPin, CreditCard, Clock,
     CheckCircle, XCircle, AlertTriangle, FileText,
-    Download, ShieldCheck, Phone, Mail, Loader2, ArrowRight
+    Download, ShieldCheck, Phone, Mail, Loader2
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -58,7 +58,7 @@ const AdminBookingDetail = () => {
     const getStatusColor = (s) => {
         if (s === 'confirmed') return 'text-green-600 bg-green-50 border-green-200 font-bold';
         if (s === 'cancelled') return 'text-red-600 bg-red-50 border-red-200 font-bold';
-        if (s === 'completed' || s === 'checked_out') return 'text-blue-600 bg-blue-50 border-blue-200 font-bold';
+        if (s === 'completed') return 'text-blue-600 bg-blue-50 border-blue-200 font-bold';
         return 'text-amber-600 bg-amber-50 border-amber-200 font-bold';
     };
 
@@ -140,8 +140,8 @@ const AdminBookingDetail = () => {
                     <div className="flex items-center gap-3 mb-1">
                         <h1 className="text-2xl font-bold text-gray-900 uppercase">Booking #{booking.bookingId || booking._id.slice(-6)}</h1>
                         <span className={`px-2.5 py-0.5 text-[10px] font-bold rounded-full border uppercase ${getStatusColor(booking.bookingStatus || booking.status)} flex items-center gap-1`}>
-                            {((booking.bookingStatus || booking.status) === 'confirmed' || (booking.bookingStatus || booking.status) === 'completed' || (booking.bookingStatus || booking.status) === 'checked_out') ? <CheckCircle size={10} /> : <Clock size={10} />}
-                            {(booking.bookingStatus || booking.status) === 'checked_out' ? 'completed' : (booking.bookingStatus || booking.status)}
+                            {(booking.bookingStatus || booking.status) === 'confirmed' ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                            {booking.bookingStatus || booking.status}
                         </span>
                     </div>
                     <p className="text-[10px] font-bold uppercase text-gray-400 tracking-tight">Booked on {new Date(booking.createdAt).toLocaleDateString()} • {new Date(booking.createdAt).toLocaleTimeString()}</p>

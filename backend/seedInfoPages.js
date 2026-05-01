@@ -59,6 +59,12 @@ const docs = [
     slug: 'contact',
     title: 'Contact NowStay Team',
     content: 'For questions about onboarding, payouts or property performance, you can reach our partner support team at partners@nowstay.in.'
+  },
+  {
+    audience: 'user',
+    slug: 'cancellation',
+    title: 'Cancellation Policy',
+    content: 'Our standard cancellation policy allows for a full refund if cancelled at least 24 hours before the scheduled check-in time. For cancellations within 24 hours, the first night stay or a fixed percentage may be charged. Specific property rules may vary, so please check the individual property page before booking.'
   }
 ];
 

@@ -45,7 +45,7 @@ const TermsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-surface text-white p-6 pb-12 rounded-b-[30px] shadow-lg sticky top-0 z-20">
+      <div className="bg-surface text-white p-6 pb-14 rounded-b-[30px] shadow-lg sticky top-0 z-20">
         <div className="flex items-center gap-4 mb-4">
           <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
             <ArrowLeft size={20} />
@@ -56,7 +56,7 @@ const TermsPage = () => {
       </div>
 
       <div className="px-5 -mt-6 relative z-10 pb-24">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 min-h-[400px]">
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 text-surface border-b border-gray-100 pb-3">
             <FileText size={24} />
             <span className="font-bold text-lg">

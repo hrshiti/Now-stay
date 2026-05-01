@@ -758,8 +758,6 @@ const RoomsTab = ({ rooms, isEditing, editData, onChange }) => {
             name: 'NEW ROOM TYPE',
             inventoryType: 'room',
             roomCategory: 'private',
-            baseAdults: 2,
-            baseChildren: 0,
             maxAdults: 2,
             maxChildren: '',
             totalInventory: 1,
@@ -956,27 +954,11 @@ const RoomsTab = ({ rooms, isEditing, editData, onChange }) => {
                                                         <h5 className="text-[10px] font-bold uppercase text-gray-500 mb-3 block">Configuration</h5>
                                                         <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-3">
                                                             <div className="flex justify-between items-center text-xs">
-                                                                <span className="text-gray-500 font-bold uppercase text-[10px]">Base Adults</span>
-                                                                {isEditing ? (
-                                                                    <input type="number" value={room.baseAdults || 0} onChange={(e) => handleRoomChange(room._id, 'baseAdults', e.target.value === '' ? '' : Number(e.target.value))} className="w-16 bg-gray-50 border rounded px-1 py-0.5 font-bold text-right" />
-                                                                ) : (
-                                                                    <span className="font-bold text-gray-900">{room.baseAdults || 0}</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex justify-between items-center text-xs">
                                                                 <span className="text-gray-500 font-bold uppercase text-[10px]">Max Adults</span>
                                                                 {isEditing ? (
                                                                     <input type="number" value={room.maxAdults} onChange={(e) => handleRoomChange(room._id, 'maxAdults', e.target.value === '' ? '' : Number(e.target.value))} className="w-16 bg-gray-50 border rounded px-1 py-0.5 font-bold text-right" />
                                                                 ) : (
                                                                     <span className="font-bold text-gray-900">{room.maxAdults}</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex justify-between items-center text-xs">
-                                                                <span className="text-gray-500 font-bold uppercase text-[10px]">Base Children</span>
-                                                                {isEditing ? (
-                                                                    <input type="number" value={room.baseChildren || 0} onChange={(e) => handleRoomChange(room._id, 'baseChildren', e.target.value === '' ? '' : Number(e.target.value))} className="w-16 bg-gray-50 border rounded px-1 py-0.5 font-bold text-right" />
-                                                                ) : (
-                                                                    <span className="font-bold text-gray-900">{room.baseChildren || 0}</span>
                                                                 )}
                                                             </div>
                                                             <div className="flex justify-between items-center text-xs">

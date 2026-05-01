@@ -17,17 +17,14 @@ const AdminLayout = () => {
     const navigate = useNavigate();
     const logout = useAdminStore(state => state.logout);
 
-    // Notifications & Stats State
+    // Notifications State
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [pendingPartners, setPendingPartners] = useState(0);
-    const [pendingProperties, setPendingProperties] = useState(0);
     const [isNotifOpen, setIsNotifOpen] = useState(false);
     const notifRef = useRef(null);
 
     useEffect(() => {
         loadNotifications();
-        loadStats();
         // Close dropdown when clicking outside
         function handleClickOutside(event) {
             if (notifRef.current && !notifRef.current.contains(event.target)) {
@@ -50,20 +47,11 @@ const AdminLayout = () => {
         }
     };
 
-    const loadStats = async () => {
-        try {
-            const data = await adminService.getDashboardStats();
-            if (data.success) {
-                setPendingPartners(data.stats.pendingPartners || 0);
-                setPendingProperties(data.stats.pendingProperties || 0);
-            }
-        } catch (error) {
-            console.error('Error loading sidebar stats:', error);
-        }
-    };
-
     const handleViewAll = async () => {
         setIsNotifOpen(false);
+        // Mark all as read when going to view all? The user requirement says "click view all -> redirect to received tab -> status change to read".
+        // We can do marking read on the page itself or here. Let's do it here for smoother UX or let the page handle it.
+        // Requirement: "View all notifications option ho uspr click krne pr recieved notification ki tab pr redirect ho jaye admin and all the unread notifications ka status change hoke read ho jaye"
         try {
             await adminService.markAllNotificationsRead();
             setUnreadCount(0); // Optimistic update
@@ -82,9 +70,9 @@ const AdminLayout = () => {
     const MENU_ITEMS = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/admin/dashboard' },
         { icon: Users, label: 'User Management', path: '/admin/users' },
-        { icon: Building2, label: 'Partner Management', path: '/admin/partners', badge: pendingPartners > 0, count: pendingPartners },
+        { icon: Building2, label: 'Partner Management', path: '/admin/partners' },
         { icon: ShieldCheck, label: 'Subscriptions', path: '/admin/subscriptions' },
-        { icon: Home, label: 'Property Management', path: '/admin/properties', badge: pendingProperties > 0, count: pendingProperties },
+        { icon: Home, label: 'Property Management', path: '/admin/properties' },
         { icon: Calendar, label: 'Bookings', path: '/admin/bookings' },
         { icon: Bell, label: 'Notifications', path: '/admin/notifications', badge: unreadCount > 0 },
         { icon: Wallet, label: 'Finance & Payouts', path: '/admin/finance' },
@@ -133,9 +121,7 @@ const AdminLayout = () => {
                                     </motion.span>
                                 )}
                                 {item.badge && isSidebarOpen && (
-                                    <span className={`ml-auto ${item.count ? 'min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold text-white' : 'w-2 h-2'} bg-red-500 rounded-full shrink-0`}>
-                                        {item.count || ''}
-                                    </span>
+                                    <span className="ml-auto w-2 h-2 bg-red-500 rounded-full shrink-0"></span>
                                 )}
                             </Link>
                         );

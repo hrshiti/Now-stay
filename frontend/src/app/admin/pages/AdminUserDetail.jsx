@@ -202,13 +202,10 @@ const UserTransactionsTab = ({ wallet, transactions, onAdjust }) => {
                                         <p className={`text-lg font-black tracking-tight ${!isDebit ? 'text-green-600' : 'text-gray-900'}`}>
                                             {!isDebit ? '+' : '-'}₹{txn.amount?.toLocaleString()}
                                         </p>
-                                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${
-                                            (txn.status === 'completed' || txn.status === 'success') ? 'bg-green-50 text-green-600' :
-                                            (txn.status === 'confirmed' || txn.status === 'checked_in') ? 'bg-blue-50 text-blue-600' :
-                                            (txn.status === 'cancelled' || txn.status === 'failed') ? 'bg-red-50 text-red-600' :
-                                            'bg-amber-50 text-amber-600'
+                                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase mt-1 ${txn.status === 'completed' || txn.status === 'success' ? 'bg-green-50 text-green-600' :
+                                            txn.status === 'cancelled' ? 'bg-gray-100 text-gray-500' : 'bg-amber-50 text-amber-600'
                                             }`}>
-                                            {txn.status === 'checked_out' ? 'completed' : txn.status}
+                                            {txn.status}
                                         </span>
                                     </div>
                                 </div>

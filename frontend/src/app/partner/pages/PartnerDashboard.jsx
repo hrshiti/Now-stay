@@ -99,12 +99,6 @@ const PartnerDashboard = () => {
                                     >
                                         Check KYC Status
                                     </button>
-                                    <button 
-                                        onClick={() => navigate('/hotel/support')}
-                                        className="text-gray-600 bg-gray-50 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition-colors"
-                                    >
-                                        Contact Support
-                                    </button>
                                 </div>
                             </div>
                         </div>

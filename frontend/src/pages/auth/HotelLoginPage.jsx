@@ -54,7 +54,6 @@ const HotelLoginPage = () => {
             await authService.sendOtp(phone, 'login', 'partner');
             setResendTimer(120);
             setCanResend(false);
-            setOtp(['', '', '', '']); // Clear previous OTP
             setStep(2);
 
         } catch (err) {
@@ -77,10 +76,10 @@ const HotelLoginPage = () => {
         setOtp(newOtp);
 
         if (value && index < 3) {
-            document.getElementById(`partner-otp-${index + 1}`)?.focus();
+            document.getElementById(`otp-${index + 1}`)?.focus();
         }
         if (value === '' && index > 0) {
-            document.getElementById(`partner-otp-${index - 1}`)?.focus();
+            document.getElementById(`otp-${index - 1}`)?.focus();
         }
     };
 
@@ -239,16 +238,15 @@ const HotelLoginPage = () => {
                                     {otp.map((digit, index) => (
                                         <input
                                             key={index}
-                                            id={`partner-otp-${index}`}
+                                            id={`otp-${index}`}
                                             type="text"
                                             inputMode="numeric"
-                                            autoComplete="off"
                                             maxLength={1}
                                             value={digit}
                                             onChange={(e) => handleOTPChange(index, e.target.value)}
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Backspace' && !digit && index > 0) {
-                                                    document.getElementById(`partner-otp-${index - 1}`)?.focus();
+                                                    document.getElementById(`otp-${index - 1}`)?.focus();
                                                 }
                                             }}
                                             className="w-10 h-12 bg-white border-2 border-gray-400 rounded-xl text-center text-[#003836] text-xl font-bold focus:border-[#0F172A] focus:ring-2 focus:ring-[#0F172A]/10 outline-none transition-all shadow-sm"
@@ -300,11 +298,7 @@ const HotelLoginPage = () => {
 
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setStep(1);
-                                            setOtp(['', '', '', '']);
-                                            setError('');
-                                        }}
+                                        onClick={() => setStep(1)}
                                         className="w-full text-gray-400 text-xs font-bold hover:text-[#0F172A] transition-colors"
                                     >
                                         Change Mobile Number

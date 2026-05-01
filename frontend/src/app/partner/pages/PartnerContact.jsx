@@ -1,19 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Mail, Phone, Send } from 'lucide-react';
+import { Mail, Phone, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import PartnerHeader from '../components/PartnerHeader';
 import { legalService } from '../../../services/apiService';
 
 const PartnerContact = () => {
   const contentRef = useRef(null);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [subject, setSubject] = useState('');
-  const [message, setMessage] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     gsap.fromTo(
@@ -23,142 +17,62 @@ const PartnerContact = () => {
     );
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    if (!name || !subject || !message) {
-      setError('Please fill all required fields.');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      await legalService.submitContact('partner', {
-        name,
-        email,
-        phone,
-        subject,
-        message
-      });
-      setSuccess('Your message has been sent to the NowStay team.');
-      setName('');
-      setEmail('');
-      setPhone('');
-      setSubject('');
-      setMessage('');
-    } catch (e) {
-      setError(e?.message || 'Failed to send message. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <PartnerHeader title="Contact Partner Support" subtitle="Reach the NowStay team" showMenu={false} />
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Branded Header */}
+      <div className="bg-surface text-white p-6 pb-14 rounded-b-[30px] shadow-lg relative z-20">
+        <div className="flex items-center gap-4 mb-5">
+          <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95">
+            <ArrowLeft size={20} />
+          </button>
+          <h1 className="text-xl font-bold">Contact Us</h1>
+        </div>
+        <div className="space-y-1">
+            <h2 className="text-2xl font-black leading-tight">We're here to help you.</h2>
+            <p className="text-sm text-white/70 font-medium">Reach out to us for any queries or support.</p>
+        </div>
+      </div>
 
-      <main ref={contentRef} className="max-w-3xl mx-auto px-4 pt-6 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#0F172A]/10 flex items-center justify-center text-[#0F172A]">
-              <Mail size={18} />
+      <main ref={contentRef} className="px-5 -mt-8 relative z-10">
+        <div className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-white min-h-[300px]">
+          
+          {/* Section Title */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-surface/5 flex items-center justify-center text-surface">
+              <Phone size={24} />
             </div>
-            <div>
-              <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">Email</p>
-              <a
-                href="mailto:nowstayhub@gmail.com"
-                className="text-xs text-gray-500 hover:text-[#0F172A] transition-colors break-all"
-              >
-                nowstayhub@gmail.com
+            <h3 className="text-xl font-black text-surface tracking-tight">Get in touch with us</h3>
+          </div>
+
+          <div className="h-px bg-gray-100 w-full mb-8" />
+
+          {/* Contact Methods */}
+          <div className="space-y-4">
+            {/* Email Box */}
+            <div className="bg-gray-50/80 border border-gray-100 p-5 rounded-2xl flex items-center gap-4 group hover:bg-gray-100 transition-colors">
+              <div className="text-surface">
+                <Mail size={20} />
+              </div>
+              <a href="mailto:nowstayindia@gmail.com" className="text-sm font-bold text-surface hover:underline decoration-2 underline-offset-4">
+                nowstayindia@gmail.com
+              </a>
+            </div>
+
+            {/* Phone Box */}
+            <div className="bg-gray-50/80 border border-gray-100 p-5 rounded-2xl flex items-center gap-4 group hover:bg-gray-100 transition-colors">
+              <div className="text-surface">
+                <Phone size={20} />
+              </div>
+              <a href="tel:9970907005" className="text-sm font-bold text-surface hover:underline decoration-2 underline-offset-4">
+                +91 9970907005
               </a>
             </div>
           </div>
 
+          <div className="mt-12 text-center">
+            <p className="text-[10px] text-gray-300 font-bold uppercase tracking-[0.2em]">Support Available 24/7</p>
+          </div>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-4 py-2">
-            {error}
-          </div>
-        )}
-        {success && (
-          <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl px-4 py-2">
-            {success}
-          </div>
-        )}
-
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4"
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Full Name *</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#0F172A]/60"
-                placeholder="Your name"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#0F172A]/60"
-                placeholder="you@hotel.com"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Phone</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#0F172A]/60"
-                placeholder="+91"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 mb-1">Subject *</label>
-              <input
-                type="text"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#0F172A]/60"
-                placeholder="Billing, onboarding, payouts..."
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1">Message *</label>
-            <textarea
-              rows={4}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:ring-2 focus:ring-[#0F172A]/60 resize-none"
-              placeholder="Share context so we can assist you faster."
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 mt-2 bg-[#0F172A] text-white py-3 rounded-xl text-sm font-bold active:scale-95 disabled:opacity-60 disabled:active:scale-100 transition-transform"
-          >
-            <Send size={16} />
-            {submitting ? 'Sending...' : 'Send to Support'}
-          </button>
-        </form>
       </main>
     </div>
   );

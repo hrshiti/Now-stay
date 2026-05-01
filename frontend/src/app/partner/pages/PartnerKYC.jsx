@@ -1,11 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Shield, CheckCircle, Clock, XCircle, ChevronRight, FileText, Camera } from 'lucide-react';
 import gsap from 'gsap';
 import PartnerHeader from '../components/PartnerHeader';
 import usePartnerStore from '../store/partnerStore';
-import { authService } from '../../../services/apiService';
-import walletService from '../../../services/walletService';
 
 const DocStatus = ({ status }) => {
     switch (status) {
@@ -22,108 +19,55 @@ const DocStatus = ({ status }) => {
 
 const PartnerKYC = () => {
     const listRef = useRef(null);
-    const navigate = useNavigate();
-    const [user, setUser] = React.useState(null);
-    const [wallet, setWallet] = React.useState(null);
-    const [loading, setLoading] = React.useState(true);
+    const userRaw = localStorage.getItem('user');
+    const user = userRaw ? JSON.parse(userRaw) : null;
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setLoading(true);
-                // Get user from localStorage first for quick load
-                const localUser = JSON.parse(localStorage.getItem('user'));
-                setUser(localUser);
-
-                // Fetch fresh data
-                const [meRes, walletRes] = await Promise.all([
-                    authService.getMe().catch(() => null),
-                    walletService.getWallet({ viewAs: 'partner' }).catch(() => null)
-                ]);
-
-                if (meRes?.user) {
-                    setUser(meRes.user);
-                    localStorage.setItem('user', JSON.stringify(meRes.user));
-                }
-                if (walletRes?.wallet) {
-                    setWallet(walletRes.wallet);
-                }
-            } catch (error) {
-                console.error("KYC Data Fetch Error:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
-    }, []);
-
-    // Map backend status to UI status
-    const getStatus = (backendStatus) => {
-        if (backendStatus === 'approved') return 'verified';
-        if (backendStatus === 'pending') return 'pending';
-        if (backendStatus === 'rejected') return 'rejected';
-        return 'none';
-    };
-
-    // Helper for formatting date
-    const formatDate = (dateString) => {
-        if (!dateString) return 'N/A';
-        return new Date(dateString).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric'
-        });
-    };
-
-    const hasBankDetails = wallet?.bankDetails?.accountNumber;
-
+    // Map real data from user profile
     const kycSteps = [
         { 
             id: 1, 
-            label: "Aadhaar Card Details", 
-            status: getStatus(user?.partnerApprovalStatus), 
-            desc: user?.partnerApprovalStatus === 'approved' 
-                ? `Verified on ${formatDate(user?.updatedAt || user?.createdAt)}` 
-                : `Submitted on ${formatDate(user?.createdAt)}${user?.aadhaar_number ? `: •••• ${user.aadhaar_number.slice(-4)}` : ': Details Reviewing'}` 
+            label: "Identity Proof (Aadhaar Card)", 
+            status: user?.aadhaarFront && user?.aadhaarBack ? (user?.partnerApprovalStatus === 'approved' ? "verified" : "pending") : "none", 
+            desc: user?.aadhaarFront ? "Aadhaar documents submitted." : "Aadhaar documents missing." 
         },
         { 
             id: 2, 
-            label: "Aadhaar Front & Back Images", 
-            status: getStatus(user?.partnerApprovalStatus), 
-            desc: user?.partnerApprovalStatus === 'approved' 
-                ? `Verified on ${formatDate(user?.updatedAt || user?.createdAt)}` 
-                : `Submitted on ${formatDate(user?.createdAt)}. Under review.` 
+            label: "PAN Card Verification", 
+            status: user?.panCardImage ? (user?.partnerApprovalStatus === 'approved' ? "verified" : "pending") : "none", 
+            desc: user?.panCardImage ? "PAN card image submitted." : "PAN card image missing." 
         },
         { 
             id: 3, 
-            label: "PAN Card Verification", 
-            status: getStatus(user?.partnerApprovalStatus), 
+            label: "Partner Approval Status", 
+            status: user?.partnerApprovalStatus || "pending", 
             desc: user?.partnerApprovalStatus === 'approved' 
-                ? `Verified on ${formatDate(user?.updatedAt || user?.createdAt)}` 
-                : `Submitted on ${formatDate(user?.createdAt)}${user?.pan_number ? `: ${user.pan_number.slice(0, 5)}••••${user.pan_number.slice(-1)}` : ': Details Reviewing'}` 
+                ? "Your partner account is fully approved." 
+                : user?.partnerApprovalStatus === 'rejected' 
+                    ? "Approval rejected. Please contact support." 
+                    : "Your documents are currently under review by admin." 
         },
     ];
 
     useEffect(() => {
-        if (!loading && listRef.current) {
+        if (listRef.current) {
             gsap.fromTo(listRef.current.children,
                 { y: 20, opacity: 0 },
                 { y: 0, opacity: 1, stagger: 0.1, duration: 0.5, ease: 'power2.out' }
             );
         }
-    }, [loading]);
+    }, []);
 
-    if (loading) {
+    if (!user) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="w-10 h-10 border-4 border-[#0F172A] border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex items-center justify-center min-h-screen bg-gray-50 p-8 text-center">
+                <p className="text-sm font-bold text-gray-400">Please login to view your KYC status.</p>
             </div>
         );
     }
 
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
-            <PartnerHeader title="KYC Verification" subtitle="Complete your profile" />
+            <PartnerHeader title="KYC Verification" subtitle="Real-time document status" />
 
             <div className="bg-[#0F172A] text-white p-6 pb-12">
                 <div className="max-w-3xl mx-auto">
@@ -133,7 +77,11 @@ const PartnerKYC = () => {
                         </div>
                         <div>
                             <h2 className="text-xl font-bold">Verification Status</h2>
-                            <p className="text-sm text-white/60">Complete all steps to start receiving payouts.</p>
+                            <p className="text-sm text-white/60">
+                                {user.partnerApprovalStatus === 'approved' 
+                                    ? "Your account is verified and active." 
+                                    : "Documents submitted. Pending admin review."}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -142,7 +90,7 @@ const PartnerKYC = () => {
             <main className="max-w-3xl mx-auto px-4 -mt-8">
                 <div ref={listRef} className="bg-white rounded-[2rem] p-2 shadow-xl shadow-gray-200/50 border border-gray-100">
                     {kycSteps.map((step, idx) => (
-                        <div key={idx} className="p-4 rounded-2xl hover:bg-gray-50 transition-colors group cursor-pointer border-b border-gray-50 last:border-0">
+                        <div key={idx} className="p-4 rounded-2xl hover:bg-gray-50 transition-colors group border-b border-gray-50 last:border-0">
                             <div className="flex justify-between items-start mb-2">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#0F172A] group-hover:text-white transition-colors">
@@ -156,25 +104,12 @@ const PartnerKYC = () => {
                                 {step.desc}
                             </p>
                             {step.status === 'rejected' && (
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (step.id === 2) navigate('/hotel/bank-details');
-                                    }}
-                                    className="ml-11 mt-3 text-xs font-bold bg-red-50 text-red-600 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors"
-                                >
-                                    <Camera size={14} /> Re-upload Document
+                                <button className="ml-11 mt-3 text-xs font-bold bg-red-50 text-red-600 px-3 py-1.5 rounded-lg flex items-center gap-2 hover:bg-red-100 transition-colors">
+                                    <Camera size={14} /> Re-submit Documents
                                 </button>
                             )}
                             {step.status === 'none' && (
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (step.id === 2) navigate('/hotel/bank-details');
-                                        if (step.id === 3) navigate('/hotel/join');
-                                    }}
-                                    className="ml-11 mt-3 text-xs font-bold bg-[#0F172A] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg active:scale-95 transition-transform"
-                                >
+                                <button className="ml-11 mt-3 text-xs font-bold bg-[#0F172A] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 shadow-lg active:scale-95 transition-transform">
                                     Upload Now <ChevronRight size={14} />
                                 </button>
                             )}
