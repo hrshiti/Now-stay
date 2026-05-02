@@ -352,10 +352,19 @@ const PartnerProtectedRoute = ({ children }) => {
     // Also allow all "join-" wizard routes
     const isWizard = location.pathname.startsWith('/hotel/join-');
     
-    if (!isWizard && !allowedPending.some(p => location.pathname.startsWith(p))) {
-      console.warn(`[AUTH] Pending partner ${user._id} attempted restricted path: ${location.pathname}. Redirecting to dashboard.`);
+    const isAllowedPath = allowedPending.some(p => {
+      const isExact = location.pathname === p;
+      const isSubPath = location.pathname.startsWith(p + '/');
+      return isExact || isSubPath;
+    });
+
+    if (!isWizard && !isAllowedPath) {
+      console.warn(`[AUTH] Pending partner ${user._id} (${user.partnerApprovalStatus}) attempted restricted path: ${location.pathname}. Redirecting to dashboard.`);
       return <Navigate to="/hotel/dashboard" replace />;
     }
+  } else {
+    // Approved partner - no restrictions
+    console.log(`[AUTH] Approved partner ${user._id} accessing ${location.pathname}`);
   }
 
   return children ? children : <Outlet />;
@@ -536,8 +545,8 @@ function App() {
                 <Route path="join-pg" element={<AddPGWizard />} />
                 <Route path="join-homestay" element={<AddHomestayWizard />} />
                 <Route path="join-tent" element={<AddTentWizard />} />
-                <Route path="partner-dashboard" element={<PartnerDashboard />} />
                 <Route path="dashboard" element={<PartnerDashboard />} />
+                <Route path="partner-dashboard" element={<Navigate to="/hotel/dashboard" replace />} />
 
                 {/* Partner Sub-pages */}
                 <Route path="properties" element={<PartnerProperties />} />

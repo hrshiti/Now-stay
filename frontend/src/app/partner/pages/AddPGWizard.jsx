@@ -553,6 +553,8 @@ const AddPGWizard = () => {
       extraChildPrice: '',
       images: [],
       amenities: [],
+      baseAdults: '',
+      baseChildren: '',
       isActive: true
     });
   };
@@ -582,6 +584,14 @@ const AddPGWizard = () => {
     if (!editingRoomType) return;
     if (!editingRoomType.name || !editingRoomType.pricePerNight) {
       setError('Room type name and price required');
+      return;
+    }
+    if (Number(editingRoomType.baseAdults || 0) > Number(editingRoomType.maxAdults || 0)) {
+      setError('Base Adults cannot be greater than Max Adults');
+      return;
+    }
+    if (Number(editingRoomType.baseChildren || 0) > Number(editingRoomType.maxChildren || 0)) {
+      setError('Base Children cannot be greater than Max Children');
       return;
     }
     const imageCount = (editingRoomType.images || []).filter(Boolean).length;
@@ -756,6 +766,8 @@ const AddPGWizard = () => {
             name: rt.name,
             inventoryType: 'bed',
             roomCategory: rt.roomCategory,
+            baseAdults: Number(rt.baseAdults || 0),
+            baseChildren: Number(rt.baseChildren || 0),
             maxAdults: Number(rt.maxAdults),
             maxChildren: Number(rt.maxChildren || 0),
             bedsPerRoom: Number(rt.bedsPerRoom),
@@ -785,7 +797,7 @@ const AddPGWizard = () => {
           name: rt.name,
           inventoryType: 'bed',
           roomCategory: rt.roomCategory,
-          baseAdults: Number(rt.baseAdults || 1),
+          baseAdults: Number(rt.baseAdults || 0),
           baseChildren: Number(rt.baseChildren || 0),
           maxAdults: Number(rt.maxAdults),
           maxChildren: Number(rt.maxChildren || 0),
@@ -1498,11 +1510,29 @@ const AddPGWizard = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseAdults ?? 1} onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 1" />
+                          <input 
+                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
+                            type="number" 
+                            value={editingRoomType.baseAdults ?? 1} 
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} 
+                            placeholder="e.g. 1" 
+                          />
+                          {Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) && (
+                            <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Adults ({editingRoomType.maxAdults})</p>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
-                          <input className="input w-full bg-white" type="number" value={editingRoomType.baseChildren ?? 0} onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} placeholder="e.g. 0" />
+                          <input 
+                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
+                            type="number" 
+                            value={editingRoomType.baseChildren ?? 0} 
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} 
+                            placeholder="e.g. 0" 
+                          />
+                          {Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) && (
+                            <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Children ({editingRoomType.maxChildren})</p>
+                          )}
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-3">
@@ -1863,10 +1893,10 @@ const AddPGWizard = () => {
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <button
               onClick={handleBack}
-              disabled={step === 1 || loading || isEditingSubItem}
+              disabled={loading || isEditingSubItem}
               className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Back
+              {step === 1 ? 'Exit' : 'Back'}
             </button>
 
             {step < 9 && (

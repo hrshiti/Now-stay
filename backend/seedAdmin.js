@@ -18,7 +18,7 @@ const seedAdmin = async () => {
 
     const adminEmail = 'admin@nowstay.com';
     const adminPassword = 'adminpassword123'; // Change this after first login
-    const adminPhone = '1234567890';
+    const adminPhone = '9970907005';
 
     // Check if admin already exists
     const existingAdmin = await Admin.findOne({ email: adminEmail });

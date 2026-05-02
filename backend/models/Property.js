@@ -139,7 +139,7 @@ const propertySchema = new mongoose.Schema({
   isLive: { type: Boolean, default: false },
 
   // RATINGS
-  avgRating: { type: Number, default: 3 },
+  avgRating: { type: Number, default: 0 },
   totalReviews: { type: Number, default: 0 }
 
 }, { timestamps: true });

@@ -502,6 +502,14 @@ export const hotelService = {
       return null;
     }
   },
+  updateNotificationPreference: async (enabled) => {
+    try {
+      const response = await api.put('/partners/notification-preference', { enabled });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
   deletePartnerAccount: async () => {
     try {
       const response = await api.delete('/partners/profile');
@@ -556,6 +564,14 @@ export const userService = {
     } catch (error) {
       console.warn('FCM Token Update Failed:', error);
       return null;
+    }
+  },
+  updateNotificationPreference: async (enabled) => {
+    try {
+      const response = await api.put('/users/notification-preference', { enabled });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
     }
   },
 

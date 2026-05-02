@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, LogOut, Trash2, UserPlus, AlertCircle, User } from 'lucide-react';
+import { ArrowLeft, LogOut, Trash2, UserPlus, AlertCircle, User, Bell } from 'lucide-react';
 import { userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
 import AuthRequired from '../../components/ui/AuthRequired';
@@ -14,6 +14,28 @@ const SettingsPage = () => {
     const [deletionReason, setDeletionReason] = useState('');
     const [deletionOtp, setDeletionOtp] = useState('');
     const [isDeleting, setIsDeleting] = useState(false);
+    const [pushEnabled, setPushEnabled] = useState(() => {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const u = JSON.parse(userStr);
+            return u.pushNotificationsEnabled !== false;
+        }
+        return true;
+    });
+    const [isUpdatingPush, setIsUpdatingPush] = useState(false);
+
+    // Sync with localStorage if it changes
+    React.useEffect(() => {
+        const handleStorageChange = () => {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const u = JSON.parse(userStr);
+                setPushEnabled(u.pushNotificationsEnabled !== false);
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
 
     if (!token) {
         return <AuthRequired title="Settings" message="Sign in to manage your account preferences, privacy settings, and active sessions." />;
@@ -60,6 +82,26 @@ const SettingsPage = () => {
         }
     };
 
+    const handleTogglePush = async () => {
+        const newValue = !pushEnabled;
+        setPushEnabled(newValue);
+        
+        try {
+            setIsUpdatingPush(true);
+            const res = await userService.updateNotificationPreference(newValue);
+            if (res.success) {
+                const updatedUser = { ...user, pushNotificationsEnabled: newValue };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
+                toast.success(`Notifications ${newValue ? 'enabled' : 'disabled'}`);
+            }
+        } catch (error) {
+            setPushEnabled(!newValue);
+            toast.error('Failed to update preference');
+        } finally {
+            setIsUpdatingPush(false);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
@@ -90,6 +132,28 @@ const SettingsPage = () => {
                                     <p className="text-[10px] text-gray-400">View and update your personal details</p>
                                 </div>
                             </button>
+                        </div>
+
+                        {/* Preferences Section */}
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="flex items-center justify-between p-5 border-b border-gray-50 last:border-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                        <Bell size={20} />
+                                    </div>
+                                    <div className="text-left">
+                                        <p className="text-sm font-bold">Push Notifications</p>
+                                        <p className="text-[10px] text-gray-400">Receive alerts and updates</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={handleTogglePush}
+                                    disabled={isUpdatingPush}
+                                    className={`w-12 h-7 rounded-full p-1 transition-all duration-300 ${pushEnabled ? 'bg-surface shadow-lg shadow-surface/20' : 'bg-gray-200'}`}
+                                >
+                                    <div className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300 ${pushEnabled ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                </button>
+                            </div>
                         </div>
 
                         {/* Logout Section */}

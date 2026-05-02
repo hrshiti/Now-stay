@@ -605,16 +605,28 @@ const PartnerPropertyDetails = () => {
                 {/* Capacity Section */}
                 <div>
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Room Capacity</h3>
+                  <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center gap-1">
+                      <Users size={20} className="text-emerald-600 mb-1" />
+                      <span className="text-lg font-bold text-gray-900">{selectedRoom.baseAdults}</span>
+                      <span className="text-[10px] text-gray-500 font-medium uppercase">Base Adults</span>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center gap-1">
+                      <Users size={20} className="text-emerald-600 mb-1" />
+                      <span className="text-lg font-bold text-gray-900">{selectedRoom.baseChildren}</span>
+                      <span className="text-[10px] text-gray-500 font-medium uppercase">Base Children</span>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center gap-1">
                       <Users size={20} className="text-gray-400 mb-1" />
                       <span className="text-lg font-bold text-gray-900">{selectedRoom.maxAdults}</span>
-                      <span className="text-[10px] text-gray-500 font-medium uppercase">Adults</span>
+                      <span className="text-[10px] text-gray-500 font-medium uppercase">Max Adults</span>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center gap-1">
                       <Users size={20} className="text-gray-400 mb-1" />
                       <span className="text-lg font-bold text-gray-900">{selectedRoom.maxChildren}</span>
-                      <span className="text-[10px] text-gray-500 font-medium uppercase">Children</span>
+                      <span className="text-[10px] text-gray-500 font-medium uppercase">Max Children</span>
                     </div>
                     <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col items-center justify-center text-center gap-1">
                       <BedDouble size={20} className="text-gray-400 mb-1" />
@@ -643,6 +655,14 @@ const PartnerPropertyDetails = () => {
                         <span className="font-medium text-gray-900">₹{selectedRoom.pricePerNight}</span>
                       </div>
                       <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Base Adults</span>
+                        <span className="font-medium text-gray-900">{selectedRoom.baseAdults}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-gray-500">Base Children</span>
+                        <span className="font-medium text-gray-900">{selectedRoom.baseChildren}</span>
+                      </div>
+                      <div className="flex justify-between text-sm border-t border-gray-50 pt-2">
                         <span className="text-gray-500">Extra Adult Price</span>
                         <span className="font-medium text-gray-900">₹{selectedRoom.extraAdultPrice}</span>
                       </div>

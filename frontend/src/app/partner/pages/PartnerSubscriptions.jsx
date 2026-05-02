@@ -33,7 +33,7 @@ const PartnerSubscriptions = () => {
     try {
       // 1. Create Order
       const { order } = await subscriptionService.createSubscriptionOrder(planId);
-      
+
       const user = JSON.parse(localStorage.getItem('user') || '{}');
 
       // 2. Open Razorpay
@@ -139,12 +139,12 @@ const PartnerSubscriptions = () => {
               </div>
               <h3 className="text-xl font-black text-gray-900 mb-1 capitalize">{plan.name}</h3>
               <p className="text-xs text-gray-400 mb-4 leading-tight">{plan.description}</p>
-              
+
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-3xl font-black text-gray-900">₹{plan.price}</span>
                 <span className="text-gray-400 text-xs font-bold font-mono">/{plan.durationInMonths}MO</span>
               </div>
- 
+
               <ul className="space-y-2.5 mb-2">
                 <li className="flex items-center gap-2.5 text-xs font-bold text-gray-600">
                   <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
@@ -160,22 +160,21 @@ const PartnerSubscriptions = () => {
                 </li>
               </ul>
             </div>
-            
+
             <div className="p-6 pt-0 mt-auto">
               <button
                 onClick={() => handleBuyPlan(plan._id, plan.price)}
                 disabled={mySub?.planId?._id === plan._id}
-                className={`w-full py-3.5 rounded-2xl font-black text-sm tracking-wide transition-all shadow-lg ${
-                  mySub?.planId?._id === plan._id 
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none' 
+                className={`w-full py-3.5 rounded-2xl font-black text-sm tracking-wide transition-all shadow-lg ${mySub?.planId?._id === plan._id
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
                     : 'bg-black text-white hover:bg-gray-900 shadow-black/10 active:scale-95'
-                }`}
+                  }`}
               >
-                {mySub?.planId?._id === plan._id 
-                  ? 'Current Plan' 
-                  : mySub 
-                    ? plan.price > mySub.planId.price 
-                      ? 'Upgrade Now' 
+                {mySub?.planId?._id === plan._id
+                  ? 'Current Plan'
+                  : mySub
+                    ? plan.price > mySub.planId.price
+                      ? 'Upgrade Now'
                       : plan.price < mySub.planId.price
                         ? 'Downgrade'
                         : 'Renew / Purchase'

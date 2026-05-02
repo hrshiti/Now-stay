@@ -35,7 +35,7 @@ const ContactPage = () => {
   }, []);
 
   const content = page?.content || '';
-  const paragraphs = typeof content === 'string' ? content.split('\n').filter(Boolean) : [];
+  const paragraphs = typeof content === 'string' ? content.split('\n').map(p => p.trim()).filter(Boolean) : [];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -83,24 +83,25 @@ const ContactPage = () => {
                             const isEmail = p.includes('@') && !p.includes(' ');
                             const isPhone = /^\+?[0-9\s-]{10,}$/.test(p.trim());
                             
+                            const Wrapper = (isEmail || isPhone) ? 'a' : 'div';
+                            const hrefProps = isEmail ? { href: `mailto:${p.trim()}` } : isPhone ? { href: `tel:${p.replace(/[\s-]/g, '')}` } : {};
+
                             return (
-                                <div key={idx} className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 flex items-center justify-between group">
+                                <Wrapper 
+                                    key={idx} 
+                                    {...hrefProps}
+                                    className={`bg-gray-50/50 p-4 rounded-xl border border-gray-100 flex items-center justify-between group transition-colors ${
+                                        (isEmail || isPhone) ? 'cursor-pointer hover:bg-gray-100' : ''
+                                    }`}
+                                >
                                     <div className="flex-1">
-                                        {isEmail ? (
-                                            <a href={`mailto:${p.trim()}`} className="text-surface font-bold hover:underline flex items-center gap-2">
-                                                <Mail size={14} />
-                                                {p.trim()}
-                                            </a>
-                                        ) : isPhone ? (
-                                            <a href={`tel:${p.replace(/[\s-]/g, '')}`} className="text-surface font-bold hover:underline flex items-center gap-2">
-                                                <Phone size={14} />
-                                                {p.trim()}
-                                            </a>
-                                        ) : (
-                                            <p className="font-medium">{p}</p>
-                                        )}
+                                        <span className={`font-bold ${(isEmail || isPhone) ? 'group-hover:underline text-surface decoration-2 underline-offset-4 flex items-center gap-2' : ''}`}>
+                                            {isEmail && <Mail size={14} />}
+                                            {isPhone && <Phone size={14} />}
+                                            {p.trim()}
+                                        </span>
                                     </div>
-                                </div>
+                                </Wrapper>
                             );
                         })
                         : <p className="bg-gray-50/50 p-3 rounded-xl border border-gray-50">{content || 'No contact information available at the moment.'}</p>}

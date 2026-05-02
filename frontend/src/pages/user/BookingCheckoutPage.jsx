@@ -57,7 +57,7 @@ const BookingCheckoutPage = () => {
   const [legalModal, setLegalModal] = useState(null); // 'terms' | 'privacy' | null
   const [legalContent, setLegalContent] = useState(null);
   const [legalLoading, setLegalLoading] = useState(false);
-  
+
   // Guest Details State
   const [guestDetails, setGuestDetails] = useState({
     name: user?.name || '',
@@ -302,410 +302,410 @@ const BookingCheckoutPage = () => {
 
   return (
     <>
-    <div className="min-h-screen bg-emerald-100 pb-20 md:pb-10">
-      <div className="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 shadow-sm shadow-emerald-900/5">
-        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/50 rounded-full transition-colors active:scale-90">
-            <ArrowLeft size={20} className="text-gray-700" />
-          </button>
-          <h1 className="text-lg font-black text-gray-900 tracking-tight">Review & Pay</h1>
-        </div>
-      </div>
-
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-
-        {/* 1. Property Summary */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-4 shadow-xl shadow-emerald-900/5 border border-white flex gap-4">
-          <div className="w-24 h-24 bg-gray-200 rounded-2xl overflow-hidden shrink-0 shadow-inner">
-            <img
-              src={property.images?.cover || property.coverImage || "https://via.placeholder.com/150"}
-              alt={property.name}
-              className="w-full h-full object-cover"
-            />
+      <div className="min-h-screen bg-emerald-100 pb-20 md:pb-10">
+        <div className="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 shadow-sm shadow-emerald-900/5">
+          <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
+            <button onClick={() => navigate(-1)} className="p-2 hover:bg-white/50 rounded-full transition-colors active:scale-90">
+              <ArrowLeft size={20} className="text-gray-700" />
+            </button>
+            <h1 className="text-lg font-black text-gray-900 tracking-tight">Review & Pay</h1>
           </div>
-          <div>
-            <span className="text-[10px] font-black text-surface uppercase tracking-widest leading-none mb-1 block">{property.propertyType || property.propertyTemplate}</span>
-            <h2 className="font-black text-gray-900 leading-tight mb-1">{property.name}</h2>
-            <p className="text-xs text-gray-500 font-medium mb-2">{property.address?.city || property.address}, {property.address?.state}</p>
-            <div className="flex items-center gap-1">
-              <span className="bg-honey/10 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-honey/20">
-                {property.avgRating || 'New'} ★
+        </div>
+
+        <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+
+          {/* 1. Property Summary */}
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-4 shadow-xl shadow-emerald-900/5 border border-white flex gap-4">
+            <div className="w-24 h-24 bg-gray-200 rounded-2xl overflow-hidden shrink-0 shadow-inner">
+              <img
+                src={property.images?.cover || property.coverImage || "https://via.placeholder.com/150"}
+                alt={property.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <span className="text-[10px] font-black text-surface uppercase tracking-widest leading-none mb-1 block">{property.propertyType || property.propertyTemplate}</span>
+              <h2 className="font-black text-gray-900 leading-tight mb-1">{property.name}</h2>
+              <p className="text-xs text-gray-500 font-medium mb-2">{property.address?.city || property.address}, {property.address?.state}</p>
+              <div className="flex items-center gap-1">
+                <span className="bg-honey/10 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-honey/20">
+                  {property.avgRating || 'New'} ★
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Trip Details */}
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+            <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Your Trip</h3>
+            <div className="grid grid-cols-2 gap-y-5">
+              <div>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Dates</p>
+                <p className="text-sm font-black text-gray-800 leading-tight">{priceBreakdown?.nights} Nights</p>
+                <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{dates.checkIn} - {dates.checkOut}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Guests</p>
+                <p className="text-sm font-black text-gray-800 leading-tight">{guests.adults} Adults, {guests.children} Children</p>
+                <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{guests.rooms} Room(s)</p>
+              </div>
+              <div className="col-span-2 pt-2">
+                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Room Type</p>
+                <p className="text-sm font-black text-gray-800 leading-tight">{selectedRoom.type || selectedRoom.name}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* 2.5. Guest Details (NEW) */}
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+            <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Guest Details</h3>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Full Name</label>
+                  <input
+                    type="text"
+                    value={guestDetails.name}
+                    onChange={(e) => {
+                      setGuestDetails({ ...guestDetails, name: e.target.value });
+                      if (errors.name) setErrors({ ...errors, name: null });
+                    }}
+                    placeholder="Enter guest name"
+                    className={`w-full bg-gray-50 border ${errors.name ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
+                    required
+                  />
+                  {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.name}</p>}
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={guestDetails.phone}
+                    onChange={(e) => {
+                      setGuestDetails({ ...guestDetails, phone: e.target.value });
+                      if (errors.phone) setErrors({ ...errors, phone: null });
+                    }}
+                    placeholder="Enter phone number"
+                    className={`w-full bg-gray-50 border ${errors.phone ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
+                    required
+                  />
+                  {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.phone}</p>}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* 3. Price Breakdown */}
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+            <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Price Details</h3>
+            <div className="space-y-3.5">
+              <div className="flex justify-between text-sm text-gray-600 font-medium">
+                <span>Base Price ({priceBreakdown?.nights} nights)</span>
+                <span className="font-bold text-gray-800">₹{priceBreakdown?.totalBasePrice?.toLocaleString()}</span>
+              </div>
+              {(priceBreakdown?.totalExtraAdultCharge > 0) && (
+                <div className="flex justify-between text-sm text-gray-600 font-medium">
+                  <span>Extra Adults Charges</span>
+                  <span className="font-bold text-gray-800">₹{priceBreakdown.totalExtraAdultCharge.toLocaleString()}</span>
+                </div>
+              )}
+              {(priceBreakdown?.totalExtraChildCharge > 0) && (
+                <div className="flex justify-between text-sm text-gray-600 font-medium">
+                  <span>Extra Children Charges</span>
+                  <span className="font-bold text-gray-800">₹{priceBreakdown.totalExtraChildCharge.toLocaleString()}</span>
+                </div>
+              )}
+              {(priceBreakdown?.discountAmount > 0) && (
+                <div className="flex justify-between text-sm text-emerald-700 font-bold">
+                  <span className="flex items-center gap-1.5"><Tag size={14} className="text-emerald-500" /> Coupon Discount</span>
+                  <span>- ₹{priceBreakdown.discountAmount.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm text-gray-600 font-medium">
+                <span>Taxes & Fees ({taxRate || 0}%)</span>
+                <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
+              </div>
+
+              {(useWallet && ['online', 'prepaid'].includes(paymentMethod) && walletDeduction > 0) && (
+                <div className="flex justify-between text-sm text-blue-700 font-bold">
+                  <span className="flex items-center gap-1.5"><Wallet size={14} className="text-blue-500" /> Wallet Balance Used</span>
+                  <span>- ₹{walletDeduction.toLocaleString()}</span>
+                </div>
+              )}
+
+              {paymentMethod === 'prepaid' && (
+                <>
+                  <div className="flex justify-between text-sm text-emerald-700 font-bold border-t border-emerald-50 pt-2.5">
+                    <span className="flex items-center gap-1.5"><Tag size={14} className="text-emerald-500" /> Prepaid Discount (5%)</span>
+                    <span>- ₹{prepaidDiscountAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-gray-800">
+                    <span>New Total</span>
+                    <div>
+                      <span className="line-through text-xs text-gray-400 mr-2">₹{baseTotalAmount.toLocaleString()}</span>
+                      <span className="font-black text-gray-900">₹{discountedTotalAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 font-bold italic">
+                    <span>Advance Payable Now (30%)</span>
+                    <span>₹{advanceAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400 font-medium italic">
+                    <span>Balance Payable at Hotel</span>
+                    <span>₹{hotelAmount.toLocaleString()}</span>
+                  </div>
+                </>
+              )}
+
+              <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
+                <span className="font-black text-gray-900 uppercase tracking-widest text-[11px]">Total Payable Now</span>
+                <span className="text-2xl font-black text-surface text-right">
+                  ₹{remainingPayable.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Wallet Section */}
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-black text-gray-900 text-sm tracking-tight flex items-center gap-2">
+                <Wallet size={20} className="text-blue-500" />
+                Wallet Balance
+              </h3>
+              <span className="text-xs font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
+                ₹{walletBalance.toLocaleString()}
               </span>
             </div>
-          </div>
-        </div>
 
-        {/* 2. Trip Details */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
-          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Your Trip</h3>
-          <div className="grid grid-cols-2 gap-y-5">
-            <div>
-              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Dates</p>
-              <p className="text-sm font-black text-gray-800 leading-tight">{priceBreakdown?.nights} Nights</p>
-              <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{dates.checkIn} - {dates.checkOut}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Guests</p>
-              <p className="text-sm font-black text-gray-800 leading-tight">{guests.adults} Adults, {guests.children} Children</p>
-              <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{guests.rooms} Room(s)</p>
-            </div>
-            <div className="col-span-2 pt-2">
-              <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Room Type</p>
-              <p className="text-sm font-black text-gray-800 leading-tight">{selectedRoom.type || selectedRoom.name}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* 2.5. Guest Details (NEW) */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
-          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Guest Details</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Full Name</label>
+            <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${useWallet && ['online', 'prepaid'].includes(paymentMethod) ? 'border-primary-solid bg-blue-50/30' : 'border-gray-50 bg-white/50'}`}>
+              <div className="relative flex items-center pt-1">
                 <input
-                  type="text"
-                  value={guestDetails.name}
-                  onChange={(e) => {
-                    setGuestDetails({ ...guestDetails, name: e.target.value });
-                    if (errors.name) setErrors({ ...errors, name: null });
-                  }}
-                  placeholder="Enter guest name"
-                  className={`w-full bg-gray-50 border ${errors.name ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
-                  required
+                  type="checkbox"
+                  className="w-5 h-5 text-blue-600 rounded-lg focus:ring-blue-500 border-gray-300 pointer-events-none"
+                  checked={useWallet}
+                  disabled={walletBalance <= 0 || !['online', 'prepaid'].includes(paymentMethod)}
+                  onChange={() => { }}
                 />
-                {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.name}</p>}
-              </div>
-              <div>
-                <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Phone Number</label>
-                <input
-                  type="tel"
-                  value={guestDetails.phone}
-                  onChange={(e) => {
-                    setGuestDetails({ ...guestDetails, phone: e.target.value });
-                    if (errors.phone) setErrors({ ...errors, phone: null });
+                <div
+                  className="absolute inset-0 cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!['online', 'prepaid'].includes(paymentMethod)) {
+                      toast.error("Wallet can only be used with Online or Prepaid Payment");
+                      return;
+                    }
+                    if (walletBalance > 0) setUseWallet(!useWallet);
                   }}
-                  placeholder="Enter phone number"
-                  className={`w-full bg-gray-50 border ${errors.phone ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
-                  required
-                />
-                {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.phone}</p>}
+                ></div>
               </div>
-            </div>
-
+              <div className="flex-1">
+                <p className="text-sm font-black text-gray-800">Pay using Wallet</p>
+                <p className="text-[11px] text-gray-500 font-medium leading-relaxed mt-1">
+                  {!['online', 'prepaid'].includes(paymentMethod)
+                    ? "Available for online/prepaid bookings."
+                    : walletBalance > 0
+                      ? `Save ₹${Math.min(walletBalance, totalAmountForWallet).toLocaleString()} on this trip.`
+                      : "Insufficient wallet balance."}
+                </p>
+              </div>
+            </label>
           </div>
-        </div>
 
-        {/* 3. Price Breakdown */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
-          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Price Details</h3>
-          <div className="space-y-3.5">
-            <div className="flex justify-between text-sm text-gray-600 font-medium">
-              <span>Base Price ({priceBreakdown?.nights} nights)</span>
-              <span className="font-bold text-gray-800">₹{priceBreakdown?.totalBasePrice?.toLocaleString()}</span>
-            </div>
-            {(priceBreakdown?.totalExtraAdultCharge > 0) && (
-              <div className="flex justify-between text-sm text-gray-600 font-medium">
-                <span>Extra Adults Charges</span>
-                <span className="font-bold text-gray-800">₹{priceBreakdown.totalExtraAdultCharge.toLocaleString()}</span>
-              </div>
-            )}
-            {(priceBreakdown?.totalExtraChildCharge > 0) && (
-              <div className="flex justify-between text-sm text-gray-600 font-medium">
-                <span>Extra Children Charges</span>
-                <span className="font-bold text-gray-800">₹{priceBreakdown.totalExtraChildCharge.toLocaleString()}</span>
-              </div>
-            )}
-            {(priceBreakdown?.discountAmount > 0) && (
-              <div className="flex justify-between text-sm text-emerald-700 font-bold">
-                <span className="flex items-center gap-1.5"><Tag size={14} className="text-emerald-500" /> Coupon Discount</span>
-                <span>- ₹{priceBreakdown.discountAmount.toLocaleString()}</span>
-              </div>
-            )}
-            <div className="flex justify-between text-sm text-gray-600 font-medium">
-              <span>Taxes & Fees ({taxRate || 0}%)</span>
-              <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
-            </div>
-
-            {(useWallet && ['online', 'prepaid'].includes(paymentMethod) && walletDeduction > 0) && (
-              <div className="flex justify-between text-sm text-blue-700 font-bold">
-                <span className="flex items-center gap-1.5"><Wallet size={14} className="text-blue-500" /> Wallet Balance Used</span>
-                <span>- ₹{walletDeduction.toLocaleString()}</span>
-              </div>
-            )}
-
-            {paymentMethod === 'prepaid' && (
-              <>
-                <div className="flex justify-between text-sm text-emerald-700 font-bold border-t border-emerald-50 pt-2.5">
-                  <span className="flex items-center gap-1.5"><Tag size={14} className="text-emerald-500" /> Prepaid Discount (5%)</span>
-                  <span>- ₹{prepaidDiscountAmount.toLocaleString()}</span>
+          {/* 4. Payment Options */}
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
+            <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Payment Method</h3>
+            <div className="space-y-4">
+              {/* Option 1: Pay at Hotel */}
+              <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'pay_at_hotel' ? 'border-surface bg-surface/5' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
+                <div className="pt-0.5">
+                  <input
+                    type="radio"
+                    name="payment"
+                    className="w-4 h-4 text-surface"
+                    checked={paymentMethod === 'pay_at_hotel'}
+                    onChange={() => {
+                      setPaymentMethod('pay_at_hotel');
+                      setUseWallet(false);
+                    }}
+                  />
                 </div>
-                <div className="flex justify-between text-sm text-gray-800">
-                  <span>New Total</span>
-                  <div>
-                    <span className="line-through text-xs text-gray-400 mr-2">₹{baseTotalAmount.toLocaleString()}</span>
-                    <span className="font-black text-gray-900">₹{discountedTotalAmount.toLocaleString()}</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-black text-gray-900 text-sm tracking-tight">Pay at Hotel</span>
+                    <Building size={18} className="text-gray-400" />
+                  </div>
+                  <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                    Pay the full amount directly at the property. No booking fees.
+                  </p>
+                </div>
+              </label>
+
+              {/* Option 2: Prepaid */}
+              <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'prepaid' ? 'border-emerald-500 bg-emerald-50/30' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
+                <div className="pt-0.5">
+                  <input
+                    type="radio"
+                    name="payment"
+                    className="w-4 h-4 text-emerald-600"
+                    checked={paymentMethod === 'prepaid'}
+                    onChange={() => setPaymentMethod('prepaid')}
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-black text-gray-900 text-sm tracking-tight">Prepaid Savings</span>
+                    <Tag size={18} className="text-emerald-500" />
+                  </div>
+                  <p className="text-[11px] text-gray-500 font-medium leading-relaxed mb-2.5">
+                    Secure your room with a 30% deposit and enjoy a <span className="font-black text-emerald-600">5% Discount</span>.
+                  </p>
+                  <div className="flex gap-2">
+                    <span className="bg-emerald-100 text-emerald-700 text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-emerald-200">Recommended</span>
                   </div>
                 </div>
-                <div className="flex justify-between text-xs text-gray-500 font-bold italic">
-                  <span>Advance Payable Now (30%)</span>
-                  <span>₹{advanceAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs text-gray-400 font-medium italic">
-                  <span>Balance Payable at Hotel</span>
-                  <span>₹{hotelAmount.toLocaleString()}</span>
-                </div>
-              </>
-            )}
+              </label>
 
-            <div className="border-t border-gray-200 pt-4 flex justify-between items-center">
-              <span className="font-black text-gray-900 uppercase tracking-widest text-[11px]">Total Payable Now</span>
-              <span className="text-2xl font-black text-surface text-right">
-                ₹{remainingPayable.toLocaleString()}
-              </span>
+              {/* Option 3: Pay Now */}
+              <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'online' ? 'border-surface bg-surface/5' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
+                <div className="pt-0.5">
+                  <input
+                    type="radio"
+                    name="payment"
+                    className="w-4 h-4 text-surface"
+                    checked={paymentMethod === 'online'}
+                    onChange={() => setPaymentMethod('online')}
+                  />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-black text-gray-900 text-sm tracking-tight">Full Payment</span>
+                    <CreditCard size={18} className="text-gray-400" />
+                  </div>
+                  <p className="text-[11px] text-gray-500 font-medium leading-relaxed mb-2.5">
+                    Pay securely using UPI, Cards or Netbanking for a hassle-free check-in.
+                  </p>
+                  <div className="flex gap-2">
+                    <span className="bg-blue-100 text-blue-700 text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-blue-200">100% Secure</span>
+                  </div>
+                </div>
+              </label>
             </div>
           </div>
-        </div>
 
-        {/* Wallet Section */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-black text-gray-900 text-sm tracking-tight flex items-center gap-2">
-              <Wallet size={20} className="text-blue-500" />
-              Wallet Balance
-            </h3>
-            <span className="text-xs font-black bg-blue-100 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
-              ₹{walletBalance.toLocaleString()}
-            </span>
-          </div>
-
-          <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${useWallet && ['online', 'prepaid'].includes(paymentMethod) ? 'border-primary-solid bg-blue-50/30' : 'border-gray-50 bg-white/50'}`}>
-            <div className="relative flex items-center pt-1">
+          {/* Terms & Conditions Checkbox */}
+          <label className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${termsAccepted ? 'border-surface bg-surface/5' : 'border-gray-200 bg-white/60'}`}>
+            <div className="relative flex items-center pt-0.5 shrink-0">
               <input
                 type="checkbox"
-                className="w-5 h-5 text-blue-600 rounded-lg focus:ring-blue-500 border-gray-300 pointer-events-none"
-                checked={useWallet}
-                disabled={walletBalance <= 0 || !['online', 'prepaid'].includes(paymentMethod)}
-                onChange={() => { }}
+                className="w-5 h-5 rounded-md accent-surface cursor-pointer"
+                checked={termsAccepted}
+                onChange={e => setTermsAccepted(e.target.checked)}
               />
-              <div
-                className="absolute inset-0 cursor-pointer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  if (!['online', 'prepaid'].includes(paymentMethod)) {
-                    toast.error("Wallet can only be used with Online or Prepaid Payment");
-                    return;
-                  }
-                  if (walletBalance > 0) setUseWallet(!useWallet);
-                }}
-              ></div>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-black text-gray-800">Pay using Wallet</p>
-              <p className="text-[11px] text-gray-500 font-medium leading-relaxed mt-1">
-                {!['online', 'prepaid'].includes(paymentMethod)
-                  ? "Available for online/prepaid bookings."
-                  : walletBalance > 0
-                    ? `Save ₹${Math.min(walletBalance, totalAmountForWallet).toLocaleString()} on this trip.`
-                    : "Insufficient wallet balance."}
-              </p>
-            </div>
+            <p className="text-xs text-gray-600 font-medium leading-relaxed">
+              I have read and agree to the{' '}
+              <button
+                type="button"
+                className="text-surface font-black underline"
+                onClick={e => { e.preventDefault(); openLegalModal('terms'); }}
+              >
+                Terms &amp; Conditions
+              </button>
+              {' '}and{' '}
+              <button
+                type="button"
+                className="text-surface font-black underline"
+                onClick={e => { e.preventDefault(); openLegalModal('privacy'); }}
+              >
+                Privacy Policy
+              </button>
+              {' '}of NowStay.
+            </p>
           </label>
-        </div>
 
-        {/* 4. Payment Options */}
-        <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
-          <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Payment Method</h3>
-          <div className="space-y-4">
-            {/* Option 1: Pay at Hotel */}
-            <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'pay_at_hotel' ? 'border-surface bg-surface/5' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
-              <div className="pt-0.5">
-                <input
-                  type="radio"
-                  name="payment"
-                  className="w-4 h-4 text-surface"
-                  checked={paymentMethod === 'pay_at_hotel'}
-                  onChange={() => {
-                    setPaymentMethod('pay_at_hotel');
-                    setUseWallet(false);
-                  }}
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-black text-gray-900 text-sm tracking-tight">Pay at Hotel</span>
-                  <Building size={18} className="text-gray-400" />
-                </div>
-                <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                  Pay the full amount directly at the property. No booking fees.
-                </p>
-              </div>
-            </label>
-
-            {/* Option 2: Prepaid */}
-            <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'prepaid' ? 'border-emerald-500 bg-emerald-50/30' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
-              <div className="pt-0.5">
-                <input
-                  type="radio"
-                  name="payment"
-                  className="w-4 h-4 text-emerald-600"
-                  checked={paymentMethod === 'prepaid'}
-                  onChange={() => setPaymentMethod('prepaid')}
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-black text-gray-900 text-sm tracking-tight">Prepaid Savings</span>
-                  <Tag size={18} className="text-emerald-500" />
-                </div>
-                <p className="text-[11px] text-gray-500 font-medium leading-relaxed mb-2.5">
-                  Secure your room with a 30% deposit and enjoy a <span className="font-black text-emerald-600">5% Discount</span>.
-                </p>
-                <div className="flex gap-2">
-                  <span className="bg-emerald-100 text-emerald-700 text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-emerald-200">Recommended</span>
-                </div>
-              </div>
-            </label>
-
-            {/* Option 3: Pay Now */}
-            <label className={`flex items-start gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all active:scale-[0.98] ${paymentMethod === 'online' ? 'border-surface bg-surface/5' : 'border-gray-50 bg-white/50 hover:border-gray-200'}`}>
-              <div className="pt-0.5">
-                <input
-                  type="radio"
-                  name="payment"
-                  className="w-4 h-4 text-surface"
-                  checked={paymentMethod === 'online'}
-                  onChange={() => setPaymentMethod('online')}
-                />
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-black text-gray-900 text-sm tracking-tight">Full Payment</span>
-                  <CreditCard size={18} className="text-gray-400" />
-                </div>
-                <p className="text-[11px] text-gray-500 font-medium leading-relaxed mb-2.5">
-                  Pay securely using UPI, Cards or Netbanking for a hassle-free check-in.
-                </p>
-                <div className="flex gap-2">
-                  <span className="bg-blue-100 text-blue-700 text-[9px] uppercase font-black px-2 py-0.5 rounded-full border border-blue-200">100% Secure</span>
-                </div>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        {/* Terms & Conditions Checkbox */}
-        <label className={`flex items-start gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${termsAccepted ? 'border-surface bg-surface/5' : 'border-gray-200 bg-white/60'}`}>
-          <div className="relative flex items-center pt-0.5 shrink-0">
-            <input
-              type="checkbox"
-              className="w-5 h-5 rounded-md accent-surface cursor-pointer"
-              checked={termsAccepted}
-              onChange={e => setTermsAccepted(e.target.checked)}
-            />
-          </div>
-          <p className="text-xs text-gray-600 font-medium leading-relaxed">
-            I have read and agree to the{' '}
+          {/* Confirm Button */}
+          <div className="pt-2">
             <button
-              type="button"
-              className="text-surface font-black underline"
-              onClick={e => { e.preventDefault(); openLegalModal('terms'); }}
+              onClick={handleConfirmBooking}
+              disabled={loading || !termsAccepted}
+              className="w-full bg-surface text-white font-black text-lg py-5 rounded-[2rem] shadow-2xl shadow-emerald-900/40 hover:bg-surface-dark active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             >
-              Terms &amp; Conditions
+              {loading ? (
+                <span className="animate-pulse">Finalizing...</span>
+              ) : (
+                <>
+                  <span>{['online', 'prepaid'].includes(paymentMethod) ? 'Pay & Confirm' : 'Book Stay Now'}</span>
+                  <ChevronRight size={22} className="opacity-70" />
+                </>
+              )}
             </button>
-            {' '}and{' '}
-            <button
-              type="button"
-              className="text-surface font-black underline"
-              onClick={e => { e.preventDefault(); openLegalModal('privacy'); }}
-            >
-              Privacy Policy
-            </button>
-            {' '}of NowStay.
-          </p>
-        </label>
+            <p className="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1">
+              <Lock size={10} />
+              Your data is secure &amp; encrypted.
+            </p>
+          </div>
 
-        {/* Confirm Button */}
-        <div className="pt-2">
-          <button
-            onClick={handleConfirmBooking}
-            disabled={loading || !termsAccepted}
-            className="w-full bg-surface text-white font-black text-lg py-5 rounded-[2rem] shadow-2xl shadow-emerald-900/40 hover:bg-surface-dark active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-          >
-            {loading ? (
-              <span className="animate-pulse">Finalizing...</span>
-            ) : (
-              <>
-                <span>{['online', 'prepaid'].includes(paymentMethod) ? 'Pay & Confirm' : 'Book Stay Now'}</span>
-                <ChevronRight size={22} className="opacity-70" />
-              </>
-            )}
-          </button>
-          <p className="text-center text-[10px] text-gray-400 mt-3 flex items-center justify-center gap-1">
-            <Lock size={10} />
-            Your data is secure &amp; encrypted.
-          </p>
         </div>
-
       </div>
-    </div>
 
-    {/* Legal Content Bottom Sheet Modal */}
-    {legalModal && (
-      <div className="fixed inset-0 z-[200] flex flex-col justify-end">
-        {/* Backdrop */}
-        <div
-          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-          onClick={() => setLegalModal(null)}
-        />
-        {/* Sheet */}
-        <div className="relative bg-white rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-2xl">
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
-            <div className="flex items-center gap-2">
-              <FileText size={18} className="text-surface" />
-              <h2 className="font-black text-gray-900 text-base">
-                {legalModal === 'terms' ? 'Terms & Conditions' : 'Privacy Policy'}
-              </h2>
+      {/* Legal Content Bottom Sheet Modal */}
+      {legalModal && (
+        <div className="fixed inset-0 z-[200] flex flex-col justify-end">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setLegalModal(null)}
+          />
+          {/* Sheet */}
+          <div className="relative bg-white rounded-t-[2rem] max-h-[85vh] flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-2">
+                <FileText size={18} className="text-surface" />
+                <h2 className="font-black text-gray-900 text-base">
+                  {legalModal === 'terms' ? 'Terms & Conditions' : 'Privacy Policy'}
+                </h2>
+              </div>
+              <button
+                onClick={() => setLegalModal(null)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors active:scale-90"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
             </div>
-            <button
-              onClick={() => setLegalModal(null)}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors active:scale-90"
-            >
-              <X size={20} className="text-gray-500" />
-            </button>
-          </div>
 
-          {/* Content */}
-          <div className="overflow-y-auto flex-1 px-6 py-4 text-sm text-gray-600 leading-relaxed space-y-3">
-            {legalLoading ? (
-              <div className="flex flex-col items-center justify-center py-16 gap-3">
-                <div className="w-8 h-8 border-2 border-surface border-t-transparent rounded-full animate-spin" />
-                <p className="text-gray-400 text-sm">Loading...</p>
-              </div>
-            ) : legalContent ? (
-              <div
-                className="prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: parseMarkdown(legalContent.content || legalContent.body || String(legalContent)) }}
-              />
-            ) : (
-              <p className="text-gray-400 text-center py-10">Content not available. Please try again.</p>
-            )}
-          </div>
+            {/* Content */}
+            <div className="overflow-y-auto flex-1 px-6 py-4 text-sm text-gray-600 leading-relaxed space-y-3">
+              {legalLoading ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-3">
+                  <div className="w-8 h-8 border-2 border-surface border-t-transparent rounded-full animate-spin" />
+                  <p className="text-gray-400 text-sm">Loading...</p>
+                </div>
+              ) : legalContent ? (
+                <div
+                  className="prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: parseMarkdown(legalContent.content || legalContent.body || String(legalContent)) }}
+                />
+              ) : (
+                <p className="text-gray-400 text-center py-10">Content not available. Please try again.</p>
+              )}
+            </div>
 
-          {/* Agree Button */}
-          <div className="px-6 py-4 border-t border-gray-100 shrink-0">
-            <button
-              onClick={() => { setTermsAccepted(true); setLegalModal(null); }}
-              className="w-full bg-surface text-white font-black py-4 rounded-[1.5rem] shadow-lg shadow-emerald-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            >
-              <CheckCircle size={18} />
-              I Agree &amp; Continue
-            </button>
+            {/* Agree Button */}
+            <div className="px-6 py-4 border-t border-gray-100 shrink-0">
+              <button
+                onClick={() => { setTermsAccepted(true); setLegalModal(null); }}
+                className="w-full bg-surface text-white font-black py-4 rounded-[1.5rem] shadow-lg shadow-emerald-900/30 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+              >
+                <CheckCircle size={18} />
+                I Agree &amp; Continue
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
     </>
   );
 };

@@ -602,10 +602,18 @@ const PropertyDetailsPage = () => {
     };
   };
 
-  const bookingBarPrice =
-    stayPricing.nights > 0
+  const baseBookingBarPrice = stayPricing.nights > 0
       ? stayPricing.perNight
-      : getRoomPrice(bookingRoom) || property.minPrice || null;
+      : getRoomPrice(bookingRoom) || property.minPrice || 0;
+
+  // Calculate dynamic extra charges for the bottom bar preview (per night)
+  const previewUnits = isWholeUnit ? 1 : guests.rooms;
+  const previewExtraAdults = Math.max(0, guests.adults - (baseAdultsPerUnit * previewUnits));
+  const previewExtraChildren = Math.max(0, guests.children - (baseChildrenPerUnit * previewUnits));
+  const previewExtraAdultPrice = bookingRoom?.pricing?.extraAdultPrice || bookingRoom?.extraAdultPrice || 0;
+  const previewExtraChildPrice = bookingRoom?.pricing?.extraChildPrice || bookingRoom?.extraChildPrice || 0;
+
+  const bookingBarPrice = baseBookingBarPrice + (previewExtraAdults * previewExtraAdultPrice) + (previewExtraChildren * previewExtraChildPrice);
 
   const priceBreakdown = getPriceBreakdown();
 
@@ -803,7 +811,7 @@ const PropertyDetailsPage = () => {
                 </span>
                 {rating !== undefined && rating !== null && (
                   <div className="flex items-center gap-1 bg-honey/10 text-honey-dark px-2 py-0.5 rounded text-[10px] font-bold">
-                    <Star size={10} className="fill-honey text-honey" />
+                    {Number(rating) > 0 && <Star size={10} className="fill-honey text-honey" />}
                     {Number(rating) > 0 ? Number(rating).toFixed(1) : 'New'}
                   </div>
                 )}
@@ -1467,8 +1475,8 @@ const PropertyDetailsPage = () => {
                 <div className="flex items-center text-sm text-gray-500 pt-1">
                   <span>{reviews.length > 0 ? `(${reviews.length})` : ''}</span>
                   <span className="mx-1">•</span>
-                  <span className="font-bold text-black mr-1">{rating ? Number(rating).toFixed(1) : 'New'}</span>
-                  <Star size={14} className="fill-honey text-honey" />
+                  <span className="font-bold text-black mr-1">{rating > 0 ? Number(rating).toFixed(1) : 'New'}</span>
+                  {rating > 0 && <Star size={14} className="fill-honey text-honey" />}
                 </div>
               </div>
               {/* Write a Review - only shown after a completed stay */}

@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Moon, Bell, Lock, Globe, Smartphone, LogOut, ChevronRight, CreditCard } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Bell, LogOut, ChevronRight, CreditCard } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import gsap from 'gsap';
 import PartnerHeader from '../components/PartnerHeader';
+import { authService, hotelService } from '../../../services/apiService';
+import toast from 'react-hot-toast';
 
 const SettingItem = ({ icon: Icon, label, type = "toggle", value, onChange }) => (
     <div className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
@@ -34,11 +36,34 @@ const SettingItem = ({ icon: Icon, label, type = "toggle", value, onChange }) =>
 
 const PartnerSettings = () => {
     const listRef = useRef(null);
-    const [settings, setSettings] = useState({
-        notifications: true,
-        emailAlerts: false,
-        darkMode: false,
+    const navigate = useNavigate();
+    const [settings, setSettings] = useState(() => {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const user = JSON.parse(userStr);
+            return {
+                notifications: user.pushNotificationsEnabled !== false
+            };
+        }
+        return { notifications: true };
     });
+    const [updating, setUpdating] = useState(false);
+
+    // Sync with localStorage if it changes (e.g. background getMe finishes)
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                const user = JSON.parse(userStr);
+                setSettings(prev => ({
+                    ...prev,
+                    notifications: user.pushNotificationsEnabled !== false
+                }));
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
 
     useEffect(() => {
         gsap.fromTo(listRef.current.children,
@@ -47,8 +72,40 @@ const PartnerSettings = () => {
         );
     }, []);
 
-    const toggle = (key) => {
-        setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+    const toggle = async (key) => {
+        if (key === 'notifications') {
+            const newValue = !settings.notifications;
+            setSettings(prev => ({ ...prev, [key]: newValue }));
+            
+            try {
+                setUpdating(true);
+                const res = await hotelService.updateNotificationPreference(newValue);
+                if (res.success) {
+                    // Update local storage user object
+                    const userStr = localStorage.getItem('user');
+                    if (userStr) {
+                        const user = JSON.parse(userStr);
+                        user.pushNotificationsEnabled = newValue;
+                        localStorage.setItem('user', JSON.stringify(user));
+                    }
+                    toast.success(`Notifications ${newValue ? 'enabled' : 'disabled'}`);
+                }
+            } catch (err) {
+                // Revert on error
+                setSettings(prev => ({ ...prev, [key]: !newValue }));
+                toast.error('Failed to update preference');
+            } finally {
+                setUpdating(false);
+            }
+        } else {
+            setSettings(prev => ({ ...prev, [key]: !prev[key] }));
+        }
+    };
+
+    const handleLogout = () => {
+        authService.logout();
+        toast.success('Logged out successfully');
+        navigate('/hotel/login');
     };
 
     return (
@@ -79,48 +136,13 @@ const PartnerSettings = () => {
                         icon={Bell}
                         label="Push Notifications"
                         value={settings.notifications}
-                        onChange={() => toggle('notifications')}
-                    />
-                    <SettingItem
-                        icon={Smartphone}
-                        label="SMS Alerts"
-                        value={settings.emailAlerts}
-                        onChange={() => toggle('emailAlerts')}
-                    />
-                    <SettingItem
-                        icon={Globe}
-                        label="Language"
-                        type="value"
-                        value="English (UK)"
+                        onChange={() => !updating && toggle('notifications')}
                     />
 
-                    {/* Security Section */}
-                    <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 border-t">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Security</span>
-                    </div>
-                    <SettingItem
-                        icon={Lock}
-                        label="Two-Factor Authentication"
-                        type="link"
-                    />
-                    <SettingItem
-                        icon={Lock}
-                        label="Change Password"
-                        type="link"
-                    />
-
-                    {/* App Section */}
-                    <div className="bg-gray-50/50 px-4 py-2 border-b border-gray-100 border-t">
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">system</span>
-                    </div>
-                    <SettingItem
-                        icon={Moon}
-                        label="Dark Mode"
-                        value={settings.darkMode}
-                        onChange={() => toggle('darkMode')}
-                    />
-
-                    <button className="w-full text-left p-4 text-red-500 font-bold text-sm flex items-center gap-3 hover:bg-red-50 transition-colors border-t border-gray-100">
+                    <button 
+                        onClick={handleLogout}
+                        className="w-full text-left p-4 text-red-500 font-bold text-sm flex items-center gap-3 hover:bg-red-50 transition-colors border-t border-gray-100"
+                    >
                         <LogOut size={18} />
                         Sign Out
                     </button>

@@ -49,6 +49,10 @@ const userSchema = new mongoose.Schema({
       default: null
     }
   },
+  pushNotificationsEnabled: {
+    type: Boolean,
+    default: true
+  },
   isVerified: {
     type: Boolean,
     default: false

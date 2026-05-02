@@ -165,6 +165,12 @@ class NotificationService {
         return { success: false, error: `${userType} not found` };
       }
 
+      // Check if user has disabled push notifications
+      if (user.pushNotificationsEnabled === false) {
+        console.log(`[NotificationService] Push notifications disabled for ${userType} ${userId}. Skipping FCM send.`);
+        // We still save to DB (Notification model) so they see it in their inbox/list
+      }
+
       // 1. DEDUPLICATION: Save unique notification to DB
       let savedNotification;
       try {
@@ -203,8 +209,12 @@ class NotificationService {
       const fcmTokens = this.getUserFcmTokens(user);
       console.log(`[NotificationService] Found ${fcmTokens.length} Unique FCM tokens for user.`);
 
-      if (fcmTokens.length === 0) {
-        return { success: false, error: 'No tokens', notificationId: savedNotification?._id };
+      if (fcmTokens.length === 0 || user.pushNotificationsEnabled === false) {
+        return { 
+          success: user.pushNotificationsEnabled === false, 
+          error: user.pushNotificationsEnabled === false ? 'Disabled by user' : 'No tokens', 
+          notificationId: savedNotification?._id 
+        };
       }
 
       // 3. Send to token (getUserFcmTokens returns max 1 token — app preferred over web)
@@ -307,13 +317,13 @@ class NotificationService {
       const Partner = (await import('../models/Partner.js')).default;
 
       if (target === 'all_users' || target === 'all') {
-        const users = await User.find({ isBlocked: { $ne: true } })
+        const users = await User.find({ isBlocked: { $ne: true }, pushNotificationsEnabled: { $ne: false } })
           .select('_id fcmTokens').lean();
         users.forEach(u => recipients.push({ userId: u._id, userType: 'user', fcmTokens: u.fcmTokens }));
       }
 
       if (target === 'all_partners' || target === 'all') {
-        const partners = await Partner.find({ isBlocked: { $ne: true }, partnerApprovalStatus: 'approved' })
+        const partners = await Partner.find({ isBlocked: { $ne: true }, partnerApprovalStatus: 'approved', pushNotificationsEnabled: { $ne: false } })
           .select('_id fcmTokens').lean();
         partners.forEach(p => recipients.push({ userId: p._id, userType: 'partner', fcmTokens: p.fcmTokens }));
       }

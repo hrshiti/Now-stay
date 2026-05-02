@@ -193,3 +193,23 @@ export const deletePartnerAccount = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+/**
+ * @desc    Update Notification Preference
+ * @route   PUT /api/partners/notification-preference
+ * @access  Private
+ */
+export const updateNotificationPreference = async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    const partner = await Partner.findById(req.user._id);
+    if (!partner) return res.status(404).json({ message: 'Partner not found' });
+
+    partner.pushNotificationsEnabled = enabled;
+    await partner.save();
+
+    res.json({ success: true, enabled: partner.pushNotificationsEnabled });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};

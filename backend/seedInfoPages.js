@@ -34,7 +34,7 @@ const docs = [
     audience: 'user',
     slug: 'contact',
     title: 'Contact Us',
-    content: 'For support related to bookings, payments or account access, you can write to support@nowstay.in or call our helpdesk during business hours.'
+    content: 'For support related to bookings, payments or account access, you can write to Nowstayindia@gmail.com or call our helpdesk at 9970907005.'
   },
   {
     audience: 'partner',
@@ -58,7 +58,7 @@ const docs = [
     audience: 'partner',
     slug: 'contact',
     title: 'Contact NowStay Team',
-    content: 'For questions about onboarding, payouts or property performance, you can reach our partner support team at partners@nowstay.in.'
+    content: 'For questions about onboarding, payouts or property performance, you can reach our partner support team at Nowstayindia@gmail.com or call us at 9970907005.'
   },
   {
     audience: 'user',

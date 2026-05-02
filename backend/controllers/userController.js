@@ -101,6 +101,7 @@ export const updateUserProfile = async (req, res) => {
         profileImage: updatedUser.profileImage,
         createdAt: updatedUser.createdAt,
         partnerSince: updatedUser.partnerSince,
+        pushNotificationsEnabled: updatedUser.pushNotificationsEnabled,
         token: req.headers.authorization.split(' ')[1] // Keep existing token
       });
     } else {
@@ -394,6 +395,26 @@ export const deleteUserAccount = async (req, res) => {
     res.json({ success: true, message: 'Account deleted successfully' });
   } catch (error) {
     console.error('Delete User Account Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Update Notification Preference
+ * @route   PUT /api/users/notification-preference
+ * @access  Private
+ */
+export const updateNotificationPreference = async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.pushNotificationsEnabled = enabled;
+    await user.save();
+
+    res.json({ success: true, enabled: user.pushNotificationsEnabled });
+  } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };

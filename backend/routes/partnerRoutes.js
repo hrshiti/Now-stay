@@ -6,7 +6,8 @@ import {
   markAllNotificationsRead,
   deleteNotifications,
   updateFcmToken,
-  deletePartnerAccount
+  deletePartnerAccount,
+  updateNotificationPreference
 } from '../controllers/partnerController.js';
 
 const router = express.Router();
@@ -21,5 +22,6 @@ router.put('/notifications/read-all', markAllNotificationsRead);
 router.put('/notifications/:id/read', markNotificationRead);
 router.delete('/notifications', markNotificationRead); // Should ideally be protected if it's destructive
 router.put('/fcm-token', updateFcmToken);
+router.put('/notification-preference', updateNotificationPreference);
 
 export default router;

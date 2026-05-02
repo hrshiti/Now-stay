@@ -491,7 +491,8 @@ export const verifyOtp = async (req, res) => {
         createdAt: user.createdAt,
         partnerSince: user.partnerSince,
         isBlocked: user.isBlocked,
-        registrationStep: user.registrationStep
+        registrationStep: user.registrationStep,
+        pushNotificationsEnabled: user.pushNotificationsEnabled
       }
     });
 
@@ -584,7 +585,8 @@ export const verifyPartnerOtp = async (req, res) => {
         panNumber: partner.panNumber,
         panCardImage: partner.panCardImage,
         createdAt: partner.createdAt,
-        partnerSince: partner.partnerSince
+        partnerSince: partner.partnerSince,
+        pushNotificationsEnabled: partner.pushNotificationsEnabled
       }
     });
 
@@ -684,7 +686,8 @@ export const getMe = async (req, res) => {
         panNumber: user.panNumber,
         panCardImage: user.panCardImage,
         partnerSince: user.partnerSince,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        pushNotificationsEnabled: user.pushNotificationsEnabled
       }
     });
   } catch (error) {
@@ -786,7 +789,8 @@ export const updateProfile = async (req, res) => {
         address: user.address,
         profileImage: user.profileImage,
         partnerSince: user.partnerSince,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        pushNotificationsEnabled: user.pushNotificationsEnabled
       }
     });
 

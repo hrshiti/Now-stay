@@ -411,6 +411,8 @@ const AddResortWizard = () => {
       extraChildPrice: '',
       images: [],
       amenities: [],
+      baseAdults: '',
+      baseChildren: '',
       isActive: true
     });
   };
@@ -448,6 +450,14 @@ const AddResortWizard = () => {
     if (!editingRoomType) return;
     if (!editingRoomType.name || !editingRoomType.pricePerNight) {
       setError('Room type name and price required');
+      return;
+    }
+    if (Number(editingRoomType.baseAdults || 0) > Number(editingRoomType.maxAdults || 0)) {
+      setError('Base Adults cannot be greater than Max Adults');
+      return;
+    }
+    if (Number(editingRoomType.baseChildren || 0) > Number(editingRoomType.maxChildren || 0)) {
+      setError('Base Children cannot be greater than Max Children');
       return;
     }
     if ((editingRoomType.images || []).filter(Boolean).length < 3) {
@@ -800,6 +810,8 @@ const AddResortWizard = () => {
             name: rt.name,
             inventoryType: 'room',
             roomCategory: rt.roomCategory,
+            baseAdults: Number(rt.baseAdults || 0),
+            baseChildren: Number(rt.baseChildren || 0),
             maxAdults: Number(rt.maxAdults),
             maxChildren: Number(rt.maxChildren || 0),
             totalInventory: Number(rt.totalInventory || 0),
@@ -826,6 +838,8 @@ const AddResortWizard = () => {
           name: rt.name,
           inventoryType: 'room',
           roomCategory: rt.roomCategory,
+          baseAdults: Number(rt.baseAdults || 0),
+          baseChildren: Number(rt.baseChildren || 0),
           maxAdults: Number(rt.maxAdults),
           maxChildren: Number(rt.maxChildren || 0),
           totalInventory: Number(rt.totalInventory || 0),
@@ -1492,19 +1506,44 @@ const AddResortWizard = () => {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
-                        <div className="relative">
-                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value.replace(/^0+(?!$)/, '') })} />
+                    <div className="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100 space-y-3">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Pricing Configuration</span>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
+                          <input 
+                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
+                            type="number" 
+                            value={editingRoomType.baseAdults} 
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} 
+                            placeholder="e.g. 2" 
+                          />
+                          {Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) && (
+                            <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Adults ({editingRoomType.maxAdults})</p>
+                          )}
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
+                          <input 
+                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
+                            type="number" 
+                            value={editingRoomType.baseChildren} 
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} 
+                            placeholder="e.g. 0" 
+                          />
+                          {Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) && (
+                            <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Children ({editingRoomType.maxChildren})</p>
+                          )}
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
-                        <div className="relative">
-                          <span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span>
-                          <input className="input !pl-10 w-full" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value.replace(/^0+(?!$)/, '') })} />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-500">Extra Adult Price (₹)</label>
+                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraAdultPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraAdultPrice: e.target.value.replace(/^0+(?!$)/, '') })} /></div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold text-gray-500">Extra Child Price (₹)</label>
+                          <div className="relative"><span className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 font-bold">₹</span><input className="input !pl-10 w-full bg-white" type="number" value={editingRoomType.extraChildPrice} onChange={e => setEditingRoomType({ ...editingRoomType, extraChildPrice: e.target.value.replace(/^0+(?!$)/, '') })} /></div>
                         </div>
                       </div>
                     </div>
@@ -1859,10 +1898,10 @@ const AddResortWizard = () => {
           <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
             <button
               onClick={handleBack}
-              disabled={step === 1 || loading}
+              disabled={loading}
               className="px-6 py-3 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              Back
+              {step === 1 ? 'Exit' : 'Back'}
             </button>
             {step < 9 && (
               <button

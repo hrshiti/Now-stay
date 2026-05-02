@@ -141,17 +141,27 @@ const PartnerBookingDetail = () => {
               <p className="text-xs text-gray-500">Joined via App</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <a href={`tel:${user.phone}`} className="flex flex-col p-2.5 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-              <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Phone</p>
-              <div className="flex items-center gap-1.5 font-semibold text-gray-900 text-xs">
-                <Phone size={12} className="text-gray-400" /> {user.phone || 'N/A'}
+          <div className="space-y-2">
+            <a href={`tel:${user.phone}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors border border-gray-100/50">
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Phone Number</p>
+                <div className="flex items-center gap-2 font-bold text-gray-900 text-xs">
+                  <Phone size={12} className="text-teal-600" /> 
+                  <span className="truncate">{user.phone || 'N/A'}</span>
+                </div>
+              </div>
+              <div className="bg-white p-1.5 rounded-lg shadow-sm">
+                <ChevronLeft size={14} className="text-gray-300 rotate-180" />
               </div>
             </a>
-            <div className="flex flex-col p-2.5 bg-gray-50 rounded-xl">
-              <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Email</p>
-              <div className="flex items-center gap-1.5 font-semibold text-gray-900 text-xs truncate">
-                <Mail size={12} className="text-gray-400" /> <span className="truncate">{user.email || 'N/A'}</span>
+
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100/50">
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Email Address</p>
+                <div className="flex items-center gap-2 font-bold text-gray-900 text-xs">
+                  <Mail size={12} className="text-teal-600" /> 
+                  <span className="truncate">{user.email || 'N/A'}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -283,46 +293,44 @@ const PartnerBookingDetail = () => {
           </div>
         </div>
 
-        {/* Actions */}
-      </div>
+        {/* Actions Grid */}
+        <div className="grid grid-cols-2 gap-2.5 pt-4 pb-2 border-t border-gray-100">
+          {canCheckIn && (
+            <button
+              onClick={handleCheckIn}
+              className="col-span-2 bg-black text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+            >
+              <LogIn size={18} /> Check In Guest
+            </button>
+          )}
 
-      {/* Actions Grid */}
-      <div className="grid grid-cols-2 gap-3 pt-2">
-        {canCheckIn && (
-          <button
-            onClick={handleCheckIn}
-            className="col-span-2 bg-black text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
-          >
-            <LogIn size={20} /> Check In Guest
-          </button>
-        )}
+          {canCheckOut && (
+            <button
+              onClick={handleCheckOut}
+              className="col-span-2 bg-black text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+            >
+              <LogOut size={18} /> Check Out Guest
+            </button>
+          )}
 
-        {canCheckOut && (
-          <button
-            onClick={handleCheckOut}
-            className="col-span-2 bg-black text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
-          >
-            <LogOut size={20} /> Check Out Guest
-          </button>
-        )}
+          {canMarkPaid && (
+            <button
+              onClick={handleMarkPaid}
+              className={`bg-green-600 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 ${canCheckIn || canCheckOut ? 'col-span-1' : 'col-span-2'}`}
+            >
+              <CheckCircle size={16} /> Mark Payment
+            </button>
+          )}
 
-        {canMarkPaid && (
-          <button
-            onClick={handleMarkPaid}
-            className={`bg-green-600 text-white font-bold py-3 rounded-xl shadow-green-200 active:scale-95 transition-transform flex items-center justify-center gap-2 ${canCheckIn || canCheckOut ? 'col-span-1' : 'col-span-2'}`}
-          >
-            <CheckCircle size={18} /> Mark Payment
-          </button>
-        )}
-
-        {canMarkNoShow && (
-          <button
-            onClick={handleNoShow}
-            className={`bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 active:scale-95 transition-transform flex items-center justify-center gap-2 ${canCheckIn || canCheckOut ? 'col-span-1' : 'col-span-2'}`}
-          >
-            <AlertTriangle size={18} /> No Show
-          </button>
-        )}
+          {canMarkNoShow && (
+            <button
+              onClick={handleNoShow}
+              className={`bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 active:scale-95 transition-transform flex items-center justify-center gap-2 ${canCheckIn || canCheckOut ? 'col-span-1' : 'col-span-2'}`}
+            >
+              <AlertTriangle size={16} /> No Show
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

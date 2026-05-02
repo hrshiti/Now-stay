@@ -16,6 +16,7 @@ const BookingStatusBadge = ({ status }) => {
         pending: 'bg-amber-100 text-amber-700 border-amber-200 font-bold',
         cancelled: 'bg-red-100 text-red-700 border-red-200 font-bold',
         completed: 'bg-blue-100 text-blue-700 border-blue-200 font-bold',
+        checked_out: 'bg-blue-100 text-blue-700 border-blue-200 font-bold',
         refunded: 'bg-gray-100 text-gray-700 border-gray-200 font-bold',
     };
 
@@ -24,6 +25,7 @@ const BookingStatusBadge = ({ status }) => {
         pending: <Clock size={10} className="mr-1" />,
         cancelled: <XCircle size={10} className="mr-1" />,
         completed: <CheckCircle size={10} className="mr-1" />,
+        checked_out: <CheckCircle size={10} className="mr-1" />,
         refunded: <ArrowRight size={10} className="mr-1" />,
     };
 

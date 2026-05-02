@@ -176,10 +176,23 @@ export const getDashboardStats = async (req, res) => {
       { $group: { _id: "$bookingStatus", count: { $sum: 1 } } }
     ]);
 
-    const statusChart = bookingStatusStats.map(item => ({
-      name: item._id.charAt(0).toUpperCase() + item._id.slice(1),
-      value: item.count
-    }));
+    const statusChart = bookingStatusStats.map(item => {
+      let name = item._id;
+      // Bug 227: Treat checked_out as completed for stats
+      if (name === 'checked_out') name = 'completed';
+      return {
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        value: item.count
+      };
+    }).reduce((acc, curr) => {
+      const existing = acc.find(a => a.name === curr.name);
+      if (existing) {
+        existing.value += curr.value;
+      } else {
+        acc.push(curr);
+      }
+      return acc;
+    }, []);
 
     // 3. Lists
     const recentBookings = await Booking.find()
@@ -344,6 +357,9 @@ export const getAllBookings = async (req, res) => {
 
     if (status) {
       query.bookingStatus = status;
+    } else {
+      // Bug 226: 'pending' (awaiting) bookings should not be visible by default in general list
+      query.bookingStatus = { $ne: 'pending' };
     }
 
     if (search) {
@@ -936,13 +952,16 @@ export const getUserDetails = async (req, res) => {
       : [];
 
     const bookingTransactions = bookings
-      .filter(b => ['paid', 'refunded', 'partial'].includes(b.paymentStatus))
+      .filter(b => 
+        ['paid', 'refunded', 'partial'].includes(b.paymentStatus) || 
+        b.paymentMethod === 'pay_at_hotel'
+      )
       .map(b => ({
         _id: b._id,
         bookingId: b.bookingId,
-        type: b.paymentStatus === 'refunded' ? 'credit' : 'debit',
+        type: (b.paymentStatus === 'refunded' || b.bookingStatus === 'cancelled') ? 'credit' : 'debit',
         amount: b.totalAmount,
-        description: `Booking: ${b.propertyId?.propertyName || b.propertyId?.name || 'Hotel Stay'}`,
+        description: `Booking: ${b.propertyId?.propertyName || b.propertyId?.name || 'Hotel Stay'} (${b.paymentMethod.replace(/_/g, ' ')})`,
         status: b.bookingStatus,
         paymentStatus: b.paymentStatus,
         isBooking: true,
@@ -1543,6 +1562,8 @@ export const adminUpdateProperty = async (req, res) => {
             roomCategory: roomData.roomCategory,
             maxAdults: roomData.maxAdults,
             maxChildren: roomData.maxChildren,
+            baseAdults: roomData.baseAdults,
+            baseChildren: roomData.baseChildren,
             totalInventory: roomData.totalInventory,
             pricePerNight: roomData.pricePerNight,
             extraAdultPrice: roomData.extraAdultPrice,

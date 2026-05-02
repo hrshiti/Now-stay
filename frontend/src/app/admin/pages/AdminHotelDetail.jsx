@@ -760,6 +760,8 @@ const RoomsTab = ({ rooms, isEditing, editData, onChange }) => {
             roomCategory: 'private',
             maxAdults: 2,
             maxChildren: '',
+            baseAdults: '',
+            baseChildren: '',
             totalInventory: 1,
             pricePerNight: '',
             extraAdultPrice: '',
@@ -953,6 +955,42 @@ const RoomsTab = ({ rooms, isEditing, editData, onChange }) => {
                                                     <div>
                                                         <h5 className="text-[10px] font-bold uppercase text-gray-500 mb-3 block">Configuration</h5>
                                                         <div className="bg-white p-4 rounded-xl border border-gray-200 space-y-3">
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-gray-500 font-bold uppercase text-[10px]">Base Adults</span>
+                                                                    {isEditing && Number(room.baseAdults) > Number(room.maxAdults) && (
+                                                                        <span className="text-[8px] text-red-500 font-bold animate-pulse uppercase">Exceeds Max</span>
+                                                                    )}
+                                                                </div>
+                                                                {isEditing ? (
+                                                                    <input 
+                                                                        type="number" 
+                                                                        value={room.baseAdults} 
+                                                                        onChange={(e) => handleRoomChange(room._id, 'baseAdults', e.target.value === '' ? '' : Number(e.target.value))} 
+                                                                        className={`w-16 bg-gray-50 border rounded px-1 py-0.5 font-bold text-right ${Number(room.baseAdults) > Number(room.maxAdults) ? 'border-red-500 text-red-600' : ''}`} 
+                                                                    />
+                                                                ) : (
+                                                                    <span className="font-bold text-gray-900">{room.baseAdults || 0}</span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex justify-between items-center text-xs">
+                                                                <div className="flex flex-col">
+                                                                    <span className="text-gray-500 font-bold uppercase text-[10px]">Base Children</span>
+                                                                    {isEditing && Number(room.baseChildren) > Number(room.maxChildren) && (
+                                                                        <span className="text-[8px] text-red-500 font-bold animate-pulse uppercase">Exceeds Max</span>
+                                                                    )}
+                                                                </div>
+                                                                {isEditing ? (
+                                                                    <input 
+                                                                        type="number" 
+                                                                        value={room.baseChildren} 
+                                                                        onChange={(e) => handleRoomChange(room._id, 'baseChildren', e.target.value === '' ? '' : Number(e.target.value))} 
+                                                                        className={`w-16 bg-gray-50 border rounded px-1 py-0.5 font-bold text-right ${Number(room.baseChildren) > Number(room.maxChildren) ? 'border-red-500 text-red-600' : ''}`} 
+                                                                    />
+                                                                ) : (
+                                                                    <span className="font-bold text-gray-900">{room.baseChildren || 0}</span>
+                                                                )}
+                                                            </div>
                                                             <div className="flex justify-between items-center text-xs">
                                                                 <span className="text-gray-500 font-bold uppercase text-[10px]">Max Adults</span>
                                                                 {isEditing ? (
@@ -1245,8 +1283,23 @@ const AdminHotelDetail = () => {
         setEditData(prev => ({ ...prev, [field]: value }));
     };
 
+
     const handleSave = async () => {
         try {
+            // Validation for rooms
+            if (editData.rooms && editData.rooms.length > 0) {
+                for (const room of editData.rooms) {
+                    if (Number(room.baseAdults || 0) > Number(room.maxAdults || 0)) {
+                        toast.error(`Room "${room.name}": Base Adults cannot exceed Max Adults`);
+                        return;
+                    }
+                    if (Number(room.baseChildren || 0) > Number(room.maxChildren || 0)) {
+                        toast.error(`Room "${room.name}": Base Children cannot exceed Max Children`);
+                        return;
+                    }
+                }
+            }
+
             // Clean up arrays before saving
             const cleanedData = {
                 ...editData,

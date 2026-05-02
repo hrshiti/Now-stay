@@ -159,7 +159,7 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
 
         {/* Rating Overlay - Minimalist */}
         <div className="absolute bottom-2 right-2 bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg flex items-center gap-1 text-[10px] font-bold text-surface shadow-sm z-10">
-          <Star size={10} className="fill-honey text-honey" />
+          {displayRating !== 'New' && <Star size={10} className="fill-honey text-honey" />}
           {displayRating}
         </div>
 

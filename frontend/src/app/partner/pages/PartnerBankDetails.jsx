@@ -190,8 +190,12 @@ const PartnerBankDetails = () => {
                   <input
                     type="text"
                     placeholder="Name as per Passbook"
+                    maxLength={50}
                     value={details.accountHolderName}
-                    onChange={e => setDetails({ ...details, accountHolderName: e.target.value })}
+                    onChange={e => {
+                        const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                        setDetails({ ...details, accountHolderName: val });
+                    }}
                     className="flex-1 bg-transparent text-sm font-bold text-[#003836] placeholder:text-gray-300 focus:outline-none"
                   />
                 ) : (
@@ -202,14 +206,19 @@ const PartnerBankDetails = () => {
 
             <div className="group">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Account Number</label>
-              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
+              <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'} ${isEditing && details.accountNumber && !/^[0-9]{9,18}$/.test(details.accountNumber) ? 'border-red-300' : ''}`}>
                 <CreditCard size={18} className="text-gray-400" />
                 {isEditing ? (
                   <input
                     type="text"
+                    inputMode="numeric"
                     placeholder="Enter Account Number"
+                    maxLength={18}
                     value={details.accountNumber}
-                    onChange={e => setDetails({ ...details, accountNumber: e.target.value })}
+                    onChange={e => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setDetails({ ...details, accountNumber: val });
+                    }}
                     className="flex-1 bg-transparent text-sm font-bold text-[#003836] placeholder:text-gray-300 focus:outline-none"
                   />
                 ) : (
@@ -218,25 +227,35 @@ const PartnerBankDetails = () => {
                   </span>
                 )}
               </div>
+              {isEditing && details.accountNumber && details.accountNumber.length < 9 && (
+                <p className="text-[10px] text-red-500 mt-1 font-bold">Min 9 digits required</p>
+              )}
             </div>
 
             <div className="flex gap-4">
               <div className="group flex-1">
                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">IFSC Code</label>
-                <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'}`}>
+                <div className={`flex items-center gap-3 p-3.5 rounded-xl border transition-all ${isEditing ? 'bg-gray-50 border-gray-200 focus-within:border-[#0F172A] focus-within:ring-2 focus-within:ring-[#0F172A]/10' : 'bg-gray-50/50 border-transparent'} ${isEditing && details.ifscCode && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(details.ifscCode) ? 'border-red-300' : ''}`}>
                   <Building2 size={18} className="text-gray-400" />
                   {isEditing ? (
                     <input
                       type="text"
-                      placeholder="IFSC"
+                      placeholder="IFSC (e.g. HDFC0001234)"
+                      maxLength={11}
                       value={details.ifscCode}
-                      onChange={e => setDetails({ ...details, ifscCode: e.target.value.toUpperCase() })}
+                      onChange={e => {
+                        const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                        setDetails({ ...details, ifscCode: val });
+                      }}
                       className="flex-1 bg-transparent text-sm font-bold text-[#003836] placeholder:text-gray-300 focus:outline-none"
                     />
                   ) : (
                     <span className="text-sm font-bold text-[#003836]">{details.ifscCode}</span>
                   )}
                 </div>
+                {isEditing && details.ifscCode && details.ifscCode.length > 0 && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(details.ifscCode) && (
+                   <p className="text-[10px] text-red-500 mt-1 font-bold uppercase">Format: 4 Letters, 0, then 6 Alpha-numeric</p>
+                )}
               </div>
             </div>
 
@@ -248,8 +267,12 @@ const PartnerBankDetails = () => {
                   <input
                     type="text"
                     placeholder="e.g. HDFC Bank"
+                    maxLength={50}
                     value={details.bankName}
-                    onChange={e => setDetails({ ...details, bankName: e.target.value })}
+                    onChange={e => {
+                        const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                        setDetails({ ...details, bankName: val });
+                    }}
                     className="flex-1 bg-transparent text-sm font-bold text-[#003836] placeholder:text-gray-300 focus:outline-none"
                   />
                 ) : (

@@ -39,6 +39,10 @@ const partnerSchema = new mongoose.Schema({
     app: { type: String, default: null },
     web: { type: String, default: null }
   },
+  pushNotificationsEnabled: {
+    type: Boolean,
+    default: true
+  },
   isVerified: {
     type: Boolean,
     default: false
