@@ -64,7 +64,7 @@ export const updateUserProfile = async (req, res) => {
 
     if (user) {
       const nameRegex = /^[A-Za-z\s]+$/;
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
       if (req.body.name) {
         if (!nameRegex.test(req.body.name)) {

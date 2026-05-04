@@ -16,18 +16,7 @@ import referralService from '../services/referralService.js';
 import User from '../models/User.js';
 import whatsappService from '../utils/whatsappService.js';
 
-// Initialize Razorpay instance for refunds
-let razorpayInstance;
-try {
-  if (PaymentConfig.razorpayKeyId && PaymentConfig.razorpayKeySecret) {
-    razorpayInstance = new Razorpay({
-      key_id: PaymentConfig.razorpayKeyId,
-      key_secret: PaymentConfig.razorpayKeySecret
-    });
-  }
-} catch (err) {
-  console.error("Razorpay Init Failed in bookingController:", err.message);
-}
+import { getRazorpayInstance } from '../utils/razorpay.js';
 
 // Helper: Check if cancellation is allowed (24 hours before check-in)
 const isCancellationAllowed = (checkInDate, checkInTime) => {
@@ -439,10 +428,7 @@ export const createBooking = async (req, res) => {
 
         if (amountToPay > 0) {
           try {
-            const instance = new Razorpay({
-              key_id: PaymentConfig.razorpayKeyId,
-              key_secret: PaymentConfig.razorpayKeySecret,
-            });
+            const instance = getRazorpayInstance();
 
             const options = {
               amount: Math.round(amountToPay * 100), // amount in paisa
@@ -751,7 +737,7 @@ export const cancelBooking = async (req, res) => {
 
         // Process full refund through Razorpay
         const refundAmountInPaise = Math.round(booking.totalAmount * 100);
-        const refund = await razorpayInstance.payments.refund(booking.paymentId, {
+        const refund = await getRazorpayInstance().payments.refund(booking.paymentId, {
           amount: refundAmountInPaise,
           notes: {
             reason: booking.cancellationReason || 'User cancelled',
@@ -1496,8 +1482,10 @@ export const downloadReceipt = async (req, res) => {
       contentY += 25;
     };
 
-    drawRow('Total Calculation', `Rs.${booking.totalAmount?.toLocaleString()}`, true);
-    drawRow('Taxes & Fees', 'INCLUDED');
+    drawRow('Base Price', `Rs.${(booking.baseAmount + (booking.extraCharges || 0)).toLocaleString()}`, true);
+    if (booking.taxes > 0) {
+      drawRow('Taxes & Fees', `Rs.${booking.taxes.toLocaleString()}`);
+    }
     drawRow('Payment Method', (booking.paymentMethod?.replace(/_/g, ' ') || 'N/A').toUpperCase());
 
     // Platform Commission (Admin/Partner Only - but User requested "same format" so we include it visually but maybe careful)

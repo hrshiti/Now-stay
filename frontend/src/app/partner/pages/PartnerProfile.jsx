@@ -137,13 +137,13 @@ const PartnerProfile = () => {
     const handleToggleEdit = async () => {
         if (isEditing) {
             const nameRegex = /^[A-Za-z\s]+$/;
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
             if (!profile.name || !nameRegex.test(profile.name)) {
                 return toast.error('Full name should only contain alphabets');
             }
             if (!profile.email || !emailRegex.test(profile.email)) {
-                return toast.error('Please enter a valid email address');
+                return toast.error('Please enter a valid email address (e.g., name@example.com)');
             }
 
             const addressObj = parseAddress(profile.address);

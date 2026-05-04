@@ -4,8 +4,8 @@ import {
     Plus, Clock, Loader2, AlertCircle, RefreshCw, X, CheckCircle2
 } from 'lucide-react';
 import walletService from '../../../services/walletService';
+import paymentService from '../../../services/paymentService';
 import { toast } from 'react-hot-toast';
-import { useRazorpay } from 'react-razorpay';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Transaction Item (Compact) ---
@@ -44,7 +44,6 @@ const TransactionItem = ({ txn }) => {
 };
 
 const PartnerWallet = () => {
-    const { Razorpay } = useRazorpay();
     const [wallet, setWallet] = useState(null);
     const [stats, setStats] = useState(null);
     const [transactions, setTransactions] = useState([]);
@@ -148,77 +147,38 @@ const PartnerWallet = () => {
                 // 1. Create Order
                 const { order } = await walletService.addMoney(amount);
 
-                // 2. Open Razorpay
-                const options = {
-                    key: order.key,
-                    amount: order.amount,
-                    currency: order.currency,
-                    name: "NowStay Partner",
-                    description: "Wallet Top-up",
-                    order_id: order.id,
-                    handler: async (response) => {
-                        try {
-                            // 3. Verify Payment
-                            await walletService.verifyAddMoney({
-                                ...response,
-                                amount, // Pass amount for reference
-                                viewAs: 'partner'
-                            });
-                            toast.success('Money added successfully!');
-                            setActiveModal(null);
-                            setAmountInput('');
-                            fetchWalletData();
-                        } catch (err) {
-                            toast.error('Payment verification failed. Please try again.');
-                            console.error(err);
-                            // Close modal so error message is visible (z-index fixed)
-                            setActiveModal(null);
-                            setAmountInput('');
+                // 2. Open Checkout using centralized utility
+                try {
+                    const response = await paymentService.openCheckout({
+                        key: order.key,
+                        amount: order.amount,
+                        currency: order.currency,
+                        name: "NowStay Partner",
+                        description: "Wallet Top-up",
+                        order_id: order.id,
+                        prefill: {
+                            name: "Partner",
+                            contact: "",
                         }
-                    },
-                    prefill: {
-                        name: "Partner",
-                        contact: "",
-                    },
-                    config: {
-                        display: {
-                            blocks: {
-                                phonepe: {
-                                    name: "PhonePe",
-                                    instruments: [{ method: "upi", apps: ["phonepe"] }]
-                                },
-                                gpay: {
-                                    name: "Google Pay",
-                                    instruments: [{ method: "upi", apps: ["google_pay"] }]
-                                },
-                                paytm: {
-                                    name: "Paytm",
-                                    instruments: [{ method: "upi", apps: ["paytm"] }]
-                                }
-                            },
-                            sequence: ["block.phonepe", "block.gpay", "block.paytm"],
-                            preferences: {
-                                show_default_blocks: true
-                            }
-                        }
-                    },
-                    theme: {
-                        color: "#0F172A",
-                    },
-                };
+                    });
 
-                const razorpayInstance = new Razorpay({
-                    ...options,
-                    modal: {
-                        ondismiss: () => {
-                            // User closed Razorpay modal without payment
-                            // Keep the add money modal open so they can try again
-                            console.log('Razorpay payment cancelled by user');
-                        }
+                    // 3. Verify Payment
+                    await walletService.verifyAddMoney({
+                        ...response,
+                        amount,
+                        viewAs: 'partner'
+                    });
+                    toast.success('Money added successfully!');
+                    setActiveModal(null);
+                    setAmountInput('');
+                    fetchWalletData();
+                } catch (err) {
+                    if (err.message !== 'Payment cancelled by user') {
+                        toast.error('Payment failed. Please try again.');
+                        console.error(err);
                     }
-                });
-                razorpayInstance.open();
-                return; // Don't close modal immediately, let handler do it
+                }
+                return;
             }
 
             setActiveModal(null);

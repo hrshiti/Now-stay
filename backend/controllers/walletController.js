@@ -12,46 +12,7 @@ import Joi from 'joi';
 import notificationService from '../services/notificationService.js';
 import emailService from '../services/emailService.js';
 
-// Initialize Razorpay
-let razorpay;
-try {
-  console.log("Razorpay Keys Debug:", {
-    keyId: PaymentConfig.razorpayKeyId ? "Present" : "Missing",
-    keySecret: PaymentConfig.razorpayKeySecret ? "Present" : "Missing",
-    accNumber: PaymentConfig.razorpayAccountNumber ? "Present" : "Missing"
-  });
-
-  if (PaymentConfig.razorpayKeyId && PaymentConfig.razorpayKeySecret) {
-    razorpay = new Razorpay({
-      key_id: PaymentConfig.razorpayKeyId,
-      key_secret: PaymentConfig.razorpayKeySecret
-    });
-  } else {
-    // For Development without Keys
-    console.warn("⚠️ Razorpay Keys missing. Payment features will fail if used.");
-    razorpay = {
-      orders: {
-        create: () => Promise.reject(new Error("Razorpay Not Initialized (Keys Missing)"))
-      },
-      payments: {
-        fetch: () => Promise.reject(new Error("Razorpay Not Initialized")),
-        refund: () => Promise.reject(new Error("Razorpay Not Initialized"))
-      },
-      contacts: {
-        create: () => Promise.reject(new Error("Razorpay Not Initialized (Keys Missing)"))
-      },
-      fundAccount: {
-        create: () => Promise.reject(new Error("Razorpay Not Initialized (Keys Missing)"))
-      },
-      payouts: {
-        create: () => Promise.reject(new Error("Razorpay Not Initialized (Keys Missing)"))
-      },
-      isMock: true
-    };
-  }
-} catch (err) {
-  console.error("Razorpay Init Failed:", err.message);
-}
+import { getRazorpayInstance } from '../utils/razorpay.js';
 
 /**
  * @desc    Get wallet balance and details
@@ -784,7 +745,7 @@ export const createAddMoneyOrder = async (req, res) => {
       }
     };
 
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpayInstance().orders.create(options);
 
     res.json({
       success: true,

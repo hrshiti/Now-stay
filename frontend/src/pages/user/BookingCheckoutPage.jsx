@@ -5,18 +5,10 @@ import {
   Lock, ChevronRight, Building, CheckCircle, Tag, Wallet, X, FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { bookingService, paymentService, legalService } from '../../services/apiService';
+import { bookingService, legalService } from '../../services/apiService';
+import paymentService from '../../services/paymentService';
 import walletService from '../../services/walletService';
 
-const loadRazorpay = () => {
-  return new Promise((resolve) => {
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-};
 
 // Simple Markdown to HTML converter
 const parseMarkdown = (text) => {
@@ -213,8 +205,8 @@ const BookingCheckoutPage = () => {
         }
 
         // Case B: Razorpay (with or without Wallet)
-        const isLoaded = await loadRazorpay();
-        if (!isLoaded) throw new Error("Razorpay SDK failed to load.");
+        // Ensure any overlays (like legal bottom sheet) are closed before opening Razorpay
+        setLegalModal(null);
 
         // Create Order (Backend will deduct wallet amount from order amount)
         const bookingRes = await bookingService.create(payload);
@@ -224,72 +216,40 @@ const BookingCheckoutPage = () => {
         if (bookingRes.paymentRequired && bookingRes.order) {
           const { order, key } = bookingRes;
 
-          const options = {
+          const paymentResponse = await paymentService.openCheckout({
             key: key,
             amount: order.amount, // Net amount after wallet deduction
             currency: order.currency,
             name: "Now Stay",
             description: `Booking Payment`,
             order_id: order.id,
-            handler: async function (response) {
-              try {
-                const verifyPayload = {
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                  bookingId: bookingRes.booking._id // Booking created in previous step
-                };
-                const verifyRes = await paymentService.verifyPayment(verifyPayload);
-                if (verifyRes.success) {
-                  toast.success("Payment Successful!");
-                  navigate(`/booking/${verifyRes.booking._id}`, { state: { booking: verifyRes.booking, animate: true } });
-                } else {
-                  toast.error("Payment Verification Failed");
-                }
-              } catch (err) {
-                console.error("Payment Verification Error:", err);
-                toast.error("Payment verification failed.");
-              }
-            },
             prefill: {
               name: guestDetails.name || '',
               email: user?.email || '',
               contact: guestDetails.phone || ''
             },
-            theme: { color: "#000000" },
-            // Enhanced Configuration for UPI Intent & App Redirects
-            config: {
-              display: {
-                blocks: {
-                  phonepe: {
-                    name: "PhonePe",
-                    instruments: [{ method: "upi", apps: ["phonepe"] }]
-                  },
-                  gpay: {
-                    name: "Google Pay",
-                    instruments: [{ method: "upi", apps: ["google_pay"] }]
-                  },
-                  paytm: {
-                    name: "Paytm",
-                    instruments: [{ method: "upi", apps: ["paytm"] }]
-                  }
-                },
-                sequence: ["block.phonepe", "block.gpay", "block.paytm"],
-                preferences: {
-                  show_default_blocks: true
-                }
-              }
-            },
-            retry: {
-              enabled: true
-            }
-          };
-
-          const rzp = new window.Razorpay(options);
-          rzp.on('payment.failed', function (response) {
-            toast.error(response.error.description || "Payment Failed");
+            theme: { color: "#0F172A" }
           });
-          rzp.open();
+
+          // Verify payment
+          try {
+            const verifyPayload = {
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature,
+              bookingId: bookingRes.booking._id
+            };
+            const verifyRes = await paymentService.verifyPayment(verifyPayload);
+            if (verifyRes.success) {
+              toast.success("Payment Successful!");
+              navigate(`/booking/${verifyRes.booking._id}`, { state: { booking: verifyRes.booking, animate: true } });
+            } else {
+              toast.error("Payment Verification Failed");
+            }
+          } catch (err) {
+            console.error("Payment Verification Error:", err);
+            toast.error("Payment verification failed.");
+          }
         }
       }
     } catch (error) {
@@ -422,10 +382,12 @@ const BookingCheckoutPage = () => {
                   <span>- ₹{priceBreakdown.discountAmount.toLocaleString()}</span>
                 </div>
               )}
-              <div className="flex justify-between text-sm text-gray-600 font-medium">
-                <span>Taxes & Fees ({taxRate || 0}%)</span>
-                <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
-              </div>
+              {(priceBreakdown?.taxAmount > 0) && (
+                <div className="flex justify-between text-sm text-gray-600 font-medium">
+                  <span>Taxes & Fees ({taxRate || 0}%)</span>
+                  <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
+                </div>
+              )}
 
               {(useWallet && ['online', 'prepaid'].includes(paymentMethod) && walletDeduction > 0) && (
                 <div className="flex justify-between text-sm text-blue-700 font-bold">

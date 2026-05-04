@@ -14,31 +14,7 @@ import smsService from '../utils/smsService.js';
 import whatsappService from '../utils/whatsappService.js';
 import referralService from '../services/referralService.js';
 
-// Initialize Razorpay
-let razorpay;
-try {
-  if (PaymentConfig.razorpayKeyId && PaymentConfig.razorpayKeySecret) {
-    razorpay = new Razorpay({
-      key_id: PaymentConfig.razorpayKeyId,
-      key_secret: PaymentConfig.razorpayKeySecret
-    });
-  } else {
-    // For Development without Keys
-    console.warn("⚠️ Razorpay Keys missing. Payment features will fail if used.");
-    razorpay = {
-      orders: {
-        create: () => Promise.reject(new Error("Razorpay Not Initialized")),
-        fetch: () => Promise.reject(new Error("Razorpay Not Initialized"))
-      },
-      payments: {
-        fetch: () => Promise.reject(new Error("Razorpay Not Initialized")),
-        refund: () => Promise.reject(new Error("Razorpay Not Initialized"))
-      }
-    };
-  }
-} catch (err) {
-  console.error("Razorpay Init Failed:", err.message);
-}
+import { getRazorpayInstance } from '../utils/razorpay.js';
 
 /**
  * @desc    Create Razorpay order for booking payment
@@ -75,7 +51,7 @@ export const createPaymentOrder = async (req, res) => {
         propertyId: booking.propertyId.toString()
       }
     };
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpayInstance().orders.create(options);
     res.json({
       success: true,
       order: {
@@ -143,7 +119,7 @@ export const verifyPayment = async (req, res) => {
     } else {
       // --- NEW FLOW (Deferred Creation) ---
       // Fetch Order to retrieve Notes containing booking details
-      const order = await razorpay.orders.fetch(razorpay_order_id);
+      const order = await getRazorpayInstance().orders.fetch(razorpay_order_id);
       if (!order || !order.notes || order.notes.type !== 'booking_init') {
         // Fallback: If notes missing, we can't create booking properly.
         // But we have payment. This is a critical edge case.
@@ -443,7 +419,7 @@ export const getPaymentDetails = async (req, res) => {
   try {
     const { paymentId } = req.params;
 
-    const payment = await razorpay.payments.fetch(paymentId);
+    const payment = await getRazorpayInstance().payments.fetch(paymentId);
 
     res.json({
       success: true,
@@ -471,7 +447,7 @@ export const processRefund = async (req, res) => {
     const refundAmount = Math.round((amount || booking.totalAmount) * 100);
     const paymentId = booking.paymentId;
     if (!paymentId) return res.status(400).json({ message: 'Payment ID not found on booking' });
-    const refund = await razorpay.payments.refund(paymentId, {
+    const refund = await getRazorpayInstance().payments.refund(paymentId, {
       amount: refundAmount,
       notes: { reason, bookingId: booking._id.toString() }
     });

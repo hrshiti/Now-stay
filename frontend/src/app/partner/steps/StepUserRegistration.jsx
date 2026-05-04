@@ -26,17 +26,17 @@ const StepUserRegistration = () => {
           type="email"
           className={`w-full border rounded-xl px-3 py-2 text-sm focus:outline-none transition-all ${
             formData.email 
-              ? /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email)
+              ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(formData.email)
                 ? 'border-green-500 ring-1 ring-green-500/20'
                 : 'border-red-500 ring-1 ring-red-500/20'
               : 'border-gray-200 focus:ring-2 focus:ring-[#0F172A]'
           }`}
-          placeholder="name@gmail.com"
+          placeholder="name@example.com"
           value={formData.email}
           onChange={e => handleChange('email', e.target.value.toLowerCase().trim())}
         />
-        {formData.email && !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email) && (
-          <p className="text-[10px] text-red-500 mt-1 font-medium italic">Invalid Gmail format: must end with @gmail.com</p>
+        {formData.email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(formData.email) && (
+          <p className="text-[10px] text-red-500 mt-1 font-medium italic">Please enter a valid email address (e.g., name@example.com)</p>
         )}
       </div>
       <div>

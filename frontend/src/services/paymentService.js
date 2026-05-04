@@ -1,4 +1,5 @@
 import apiService from './apiService';
+import { initRazorpayPayment } from '../lib/utils/razorpay';
 
 class PaymentService {
   /**
@@ -37,42 +38,16 @@ class PaymentService {
   }
 
   /**
-   * Load Razorpay script
-   */
-  loadRazorpayScript() {
-    return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  }
-
-  /**
-   * Open Razorpay checkout
+   * Open Razorpay checkout using the centralized utility
    */
   async openCheckout(options) {
-    const loaded = await this.loadRazorpayScript();
-
-    if (!loaded) {
-      throw new Error('Razorpay SDK failed to load');
-    }
-
     return new Promise((resolve, reject) => {
-      const rzp = new window.Razorpay({
+      initRazorpayPayment({
         ...options,
-        handler: function (response) {
-          resolve(response);
-        },
-        modal: {
-          ondismiss: function () {
-            reject(new Error('Payment cancelled by user'));
-          }
-        }
+        handler: (response) => resolve(response),
+        onClose: () => reject(new Error('Payment cancelled by user')),
+        onError: (error) => reject(error)
       });
-
-      rzp.open();
     });
   }
 }

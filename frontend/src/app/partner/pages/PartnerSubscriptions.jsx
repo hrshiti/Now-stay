@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { ShieldCheck, CheckCircle2, Crown, Zap, Star } from 'lucide-react';
 import subscriptionService from '../../../services/subscriptionService';
-import { useRazorpay } from 'react-razorpay';
+import paymentService from '../../../services/paymentService';
 
 const PartnerSubscriptions = () => {
-  const { Razorpay } = useRazorpay();
   const [plans, setPlans] = useState([]);
   const [mySub, setMySub] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,62 +35,35 @@ const PartnerSubscriptions = () => {
 
       const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-      // 2. Open Razorpay
-      const options = {
-        key: order.key,
-        amount: order.amount,
-        currency: order.currency,
-        name: "NowStay Partner",
-        description: `Subscription: ${plans.find(p => p._id === planId)?.name || 'Plan'}`,
-        order_id: order.id,
-        handler: async (response) => {
-          try {
-            // 3. Verify and Finalize
-            await subscriptionService.buySubscription({
-              planId,
-              paymentMethod: 'razorpay',
-              ...response
-            });
-            toast.success('Successfully subscribed! Your commission rates are updated.');
-            fetchData();
-          } catch (err) {
-            toast.error(err.response?.data?.message || 'Payment verification failed');
+      // 2. Open Checkout using centralized utility
+      try {
+        const response = await paymentService.openCheckout({
+          key: order.key,
+          amount: order.amount,
+          currency: order.currency,
+          name: "NowStay Partner",
+          description: `Subscription: ${plans.find(p => p._id === planId)?.name || 'Plan'}`,
+          order_id: order.id,
+          prefill: {
+            name: user.name || '',
+            email: user.email || '',
+            contact: user.phone || ''
           }
-        },
-        prefill: {
-          name: user.name || '',
-          email: user.email || '',
-          contact: user.phone || ''
-        },
-        config: {
-          display: {
-            blocks: {
-              phonepe: {
-                name: "PhonePe",
-                instruments: [{ method: "upi", apps: ["phonepe"] }]
-              },
-              gpay: {
-                name: "Google Pay",
-                instruments: [{ method: "upi", apps: ["google_pay"] }]
-              },
-              paytm: {
-                name: "Paytm",
-                instruments: [{ method: "upi", apps: ["paytm"] }]
-              }
-            },
-            sequence: ["block.phonepe", "block.gpay", "block.paytm"],
-            preferences: {
-              show_default_blocks: true
-            }
-          }
-        },
-        theme: {
-          color: "#000000"
-        }
-      };
+        });
 
-      const rzp = new Razorpay(options);
-      rzp.open();
+        // 3. Verify and Finalize
+        await subscriptionService.buySubscription({
+          planId,
+          paymentMethod: 'razorpay',
+          ...response
+        });
+        toast.success('Successfully subscribed! Your commission rates are updated.');
+        fetchData();
+      } catch (err) {
+        if (err.message !== 'Payment cancelled by user') {
+          toast.error(err.response?.data?.message || 'Payment failed');
+        }
+      }
 
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to initialize payment');

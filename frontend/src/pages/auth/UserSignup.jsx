@@ -68,9 +68,9 @@ const UserSignup = () => {
             setError('Please enter your email address');
             return;
         }
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         if (!emailRegex.test(formData.email)) {
-            setError('Please enter a valid Gmail address (e.g., name@gmail.com)');
+            setError('Please enter a valid email address (e.g., name@example.com)');
             return;
         }
         if (!formData.termsAccepted) {
@@ -258,10 +258,10 @@ const UserSignup = () => {
                                                 type="email"
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
-                                                placeholder="you@gmail.com"
+                                                placeholder="you@example.com"
                                                 className={`w-full pl-11 pr-4 py-3 bg-white/50 border-2 rounded-[1.2rem] outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300 ${
                                                     formData.email 
-                                                        ? /^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email)
+                                                        ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(formData.email)
                                                             ? 'border-emerald-500/50 focus:bg-white focus:ring-4 focus:ring-emerald-500/5'
                                                             : 'border-red-500/50 focus:bg-white focus:ring-4 focus:ring-red-500/5'
                                                         : 'border-transparent focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5'
@@ -269,8 +269,8 @@ const UserSignup = () => {
                                                 required
                                             />
                                         </div>
-                                        {formData.email && !/^[a-zA-Z0-9._%+-]+@gmail\.com$/.test(formData.email) && (
-                                            <p className="text-[10px] text-red-500 mt-1 ml-2 font-medium italic">Invalid Gmail format: must end with @gmail.com</p>
+                                        {formData.email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(formData.email) && (
+                                            <p className="text-[10px] text-red-500 mt-1 ml-2 font-medium italic">Please enter a valid email address (e.g., name@example.com)</p>
                                         )}
                                     </div>
 

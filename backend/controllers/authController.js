@@ -109,7 +109,7 @@ export const sendOtp = async (req, res) => {
       // 2. Check Email (if provided)
       if (email) {
         // Basic email format check
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         if (!emailRegex.test(email)) {
           return res.status(400).json({ message: 'Invalid email format' });
         }
@@ -187,7 +187,7 @@ export const registerPartner = async (req, res) => {
 
     // Validation
     const nameRegex = /^[A-Za-z\s]+$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
     const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
 
     if (!full_name || !nameRegex.test(full_name)) {
@@ -721,7 +721,7 @@ export const updateProfile = async (req, res) => {
 
     // Update fields if provided
     const nameRegex = /^[A-Za-z\s]+$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
     if (name) {
       if (!nameRegex.test(name)) {

@@ -5,18 +5,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import PaymentConfig from '../config/payment.config.js';
 
-// Initialize Razorpay
-let razorpay;
-try {
-  if (PaymentConfig.razorpayKeyId && PaymentConfig.razorpayKeySecret) {
-    razorpay = new Razorpay({
-      key_id: PaymentConfig.razorpayKeyId,
-      key_secret: PaymentConfig.razorpayKeySecret
-    });
-  }
-} catch (err) {
-  console.error("Razorpay Init Failed in Subscriptions:", err.message);
-}
+import { getRazorpayInstance } from '../utils/razorpay.js';
 
 // --- ADMIN ROUTES ---
 
@@ -135,11 +124,7 @@ export const createSubscriptionOrder = async (req, res) => {
       return res.status(404).json({ message: 'Plan not found or inactive' });
     }
 
-    if (!razorpay) {
-      return res.status(500).json({ message: 'Payment gateway not configured' });
-    }
-
-    // Check for existing active subscription to handle Upgrade/Renewal logic
+    // Case: Online Payment
     let finalPrice = plan.price;
     const currentSub = await PartnerSubscription.findOne({
       partnerId: req.user._id,
@@ -180,7 +165,7 @@ export const createSubscriptionOrder = async (req, res) => {
       }
     };
 
-    const order = await razorpay.orders.create(options);
+    const order = await getRazorpayInstance().orders.create(options);
     res.status(200).json({ 
       success: true, 
       order: {
@@ -241,7 +226,7 @@ export const buySubscription = async (req, res) => {
     // Fetch the actual amount paid from Razorpay order to be safe
     if (razorpay_order_id) {
        try {
-         const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
+         const rzpOrder = await getRazorpayInstance().orders.fetch(razorpay_order_id);
          actualPaidAmount = rzpOrder.amount / 100;
        } catch (e) {
          console.warn("Failed to fetch order amount from Razorpay, using plan price");
