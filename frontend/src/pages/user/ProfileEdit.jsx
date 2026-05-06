@@ -401,29 +401,29 @@ const ProfileEdit = () => {
                     <User size={40} />
                   )}
                 </div>
-                <h2 className="text-xl font-black text-gray-900">{formData.name || 'Set Name'}</h2>
-                <p className="text-sm text-gray-400 font-bold">{formData.email || 'No email'}</p>
+                <h2 className="text-xl font-black text-gray-900 text-center break-words px-4 w-full">{formData.name || 'Set Name'}</h2>
+                <p className="text-sm text-gray-400 font-bold break-all text-center px-4 w-full">{formData.email || 'No email'}</p>
               </div>
 
               {/* Info Cards */}
               <div className="space-y-4">
-                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm">
+                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-center gap-4 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
                     <Phone size={18} />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Phone</p>
-                    <p className="text-sm font-bold text-gray-800">{formData.phone || 'N/A'}</p>
+                    <p className="text-sm font-bold text-gray-800 truncate">{formData.phone || 'N/A'}</p>
                   </div>
                 </div>
 
-                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm">
+                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex items-center gap-4 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm shrink-0">
                     <Mail size={18} />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Email</p>
-                    <p className="text-sm font-bold text-gray-800">{formData.email || 'N/A'}</p>
+                    <p className="text-sm font-bold text-gray-800 break-all">{formData.email || 'N/A'}</p>
                   </div>
                 </div>
 
