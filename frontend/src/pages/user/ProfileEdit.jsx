@@ -6,6 +6,7 @@ import { authService, userService } from '../../services/apiService';
 import toast from 'react-hot-toast';
 import AuthRequired from '../../components/ui/AuthRequired';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../utils/flutterBridge';
+import { propertyService } from '../../services/propertyService';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
@@ -82,52 +83,18 @@ const ProfileEdit = () => {
   }
 
   const autoFillAddress = async (lat, lng) => {
-    const apiKey = import.meta.env.VITE_GOOGLE_MAP_API_KEY;
-    if (!apiKey) return;
-
     try {
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      const data = await propertyService.getAddressFromCoords(lat, lng);
 
-      if (data.status === 'OK' && data.results?.[0]) {
-        const result = data.results[0];
-        const addressComponents = result.address_components;
-
-        let streetNumber = '';
-        let route = '';
-        let neighborhood = '';
-        let city = '';
-        let state = '';
-        let pincode = '';
-        let country = '';
-
-        addressComponents.forEach(component => {
-          const types = component.types;
-          if (types.includes('street_number')) streetNumber = component.long_name;
-          if (types.includes('route')) route = component.long_name;
-          if (types.includes('neighborhood') || types.includes('sublocality')) neighborhood = component.long_name;
-          if (types.includes('locality')) city = component.long_name;
-          if (types.includes('administrative_area_level_1')) state = component.long_name;
-          if (types.includes('postal_code')) pincode = component.long_name;
-          if (types.includes('country')) country = component.long_name;
-        });
-
-        if (!city) {
-          const sublocality = addressComponents.find(c => c.types.includes('sublocality_level_1'))?.long_name;
-          city = sublocality || '';
-        }
-
-        const street = [streetNumber, route, neighborhood].filter(Boolean).join(', ') || result.formatted_address.split(',')[0];
-
+      if (data.success) {
         setFormData(prev => ({
           ...prev,
           address: {
-            street: street,
-            city: city,
-            state: state,
-            zipCode: pincode,
-            country: country || 'India',
+            street: data.area || data.fullAddress.split(',')[0],
+            city: data.city || '',
+            state: data.state || '',
+            zipCode: data.pincode || '',
+            country: data.country || 'India',
             coordinates: { lat, lng }
           }
         }));
@@ -136,30 +103,21 @@ const ProfileEdit = () => {
       }
     } catch (error) {
       console.error('Auto-fill error:', error);
-      toast.error('Failed to get address details.');
+      toast.error('Failed to get address details from server.');
     }
   };
 
-  const handleGetCurrentLocation = () => {
-    if (!('geolocation' in navigator)) {
-      toast.error('Geolocation not supported');
-      return;
+  const handleGetCurrentLocation = async () => {
+    try {
+      setFetchingLocation(true);
+      const loc = await propertyService.getCurrentLocation();
+      await autoFillAddress(loc.lat, loc.lng);
+    } catch (error) {
+      console.error('Location error:', error);
+      toast.error(error.message || 'Unable to retrieve location');
+    } finally {
+      setFetchingLocation(false);
     }
-
-    setFetchingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        await autoFillAddress(latitude, longitude);
-        setFetchingLocation(false);
-      },
-      (error) => {
-        console.error('Location error:', error);
-        setFetchingLocation(false);
-        toast.error('Unable to retrieve location');
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
   };
 
   const persistProfileImage = async (url, publicId) => {

@@ -16,9 +16,9 @@ const router = express.Router();
 router.post('/upload', protect, authorizedRoles('partner', 'admin'), upload.array('images', 20), uploadImages);
 router.post('/upload-base64', protect, authorizedRoles('partner', 'admin'), uploadImagesBase64);
 router.post('/delete-image', protect, authorizedRoles('partner', 'admin'), deleteImage);
-router.post('/location/address', protect, authorizedRoles('partner', 'admin'), getAddressFromCoordinates);
-router.get('/location/search', protect, authorizedRoles('partner', 'admin'), searchLocation);
-router.get('/location/distance', protect, authorizedRoles('partner', 'admin'), calculateDistance);
+router.post('/location/address', protect, authorizedRoles('user', 'partner', 'admin'), getAddressFromCoordinates);
+router.get('/location/search', protect, authorizedRoles('user', 'partner', 'admin'), searchLocation);
+router.get('/location/distance', protect, authorizedRoles('user', 'partner', 'admin'), calculateDistance);
 
 // Notification Routes (Reusing userController logic as it handles 'partner' role check)
 import { getNotifications, markNotificationRead, deleteNotifications, markAllNotificationsRead } from '../controllers/userController.js';

@@ -72,5 +72,15 @@ export const propertyService = {
         );
       }
     });
+  },
+
+  // Reverse Geocoding via Backend (More secure & bypasses frontend blocks)
+  getAddressFromCoords: async (lat, lng) => {
+    try {
+      const response = await api.post('/hotels/location/address', { lat, lng });
+      return handleResponse(response);
+    } catch (error) {
+      return handleError(error);
+    }
   }
 };
