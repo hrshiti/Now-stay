@@ -50,6 +50,8 @@ export const getFinancialSettings = async (req, res) => {
     res.status(200).json({
       success: true,
       taxRate: settings.taxRate || 0,
+      platformFee: settings.platformFee || 0,
+      platformFeeType: settings.platformFeeType || 'percentage',
       companyState: settings.companyState || 'Maharashtra'
     });
   } catch (error) {

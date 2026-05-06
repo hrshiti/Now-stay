@@ -134,8 +134,8 @@ const adminService = {
     return response.data;
   },
 
-  updateContactStatus: async (id, status) => {
-    const response = await axiosInstance.put(`/admin/contact-messages/${id}/status`, { status });
+  updateContactStatus: async (id, status, adminReply) => {
+    const response = await axiosInstance.put(`/admin/contact-messages/${id}/status`, { status, adminReply });
     return response.data;
   },
 

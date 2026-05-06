@@ -147,6 +147,8 @@ export const createBooking = async (req, res) => {
     const settings = await PlatformSettings.getSettings();
     const gstRate = (settings.taxRate !== undefined && settings.taxRate !== null) ? settings.taxRate : 12;
     const commissionRate = (settings.defaultCommission !== undefined && settings.defaultCommission !== null) ? settings.defaultCommission : 10;
+    const platformFeeRate = settings.platformFee || 0;
+    const platformFeeType = settings.platformFeeType || 'percentage';
 
     // Calculate Nights
     const checkIn = new Date(checkInDate);
@@ -241,10 +243,15 @@ export const createBooking = async (req, res) => {
     const commissionableAmount = grossAmount;
     const taxes = Math.round((commissionableAmount * gstRate) / 100);
 
+    // Calculate Platform Fee
+    const platformFee = platformFeeType === 'percentage' 
+      ? Math.round((grossAmount * platformFeeRate) / 100) 
+      : platformFeeRate;
+
     // Calculate Total Amount (User Pays)
-    // User Pays = (Gross - Discount) + Tax
+    // User Pays = (Gross - Discount) + Tax + Platform Fee
     const taxableAmount = grossAmount - discountAmount;
-    let totalAmount = taxableAmount + taxes;
+    let totalAmount = taxableAmount + taxes + platformFee;
 
     // Calculate Prepaid Discount
     let prepaidDiscountAmount = 0;
@@ -326,6 +333,7 @@ export const createBooking = async (req, res) => {
       partnerPayout,
       discount: discountAmount,
       couponCode: appliedCoupon,
+      platformFee: platformFee,
       totalAmount,
       prepaidDiscount: prepaidDiscountAmount,
       amountPaid: paymentMethod === 'wallet' ? totalAmount : (paymentMethod === 'prepaid' ? advanceAmount : 0),
@@ -1507,6 +1515,13 @@ export const downloadReceipt = async (req, res) => {
           doc.text('Taxes & Fees (GST)', 65, boxY);
           doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
       }
+    }
+
+    // Row: Platform Fee
+    if (booking.platformFee > 0) {
+      boxY += 20;
+      doc.text('Platform Fees', 65, boxY);
+      doc.text(`Rs. ${booking.platformFee.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
     }
 
     // Divider

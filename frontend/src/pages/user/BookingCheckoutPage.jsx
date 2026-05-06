@@ -403,6 +403,13 @@ const BookingCheckoutPage = () => {
                 )
               )}
 
+              {(priceBreakdown?.platformFeeAmount > 0) && (
+                <div className="flex justify-between text-sm text-gray-600 font-medium">
+                  <span>Platform Fees</span>
+                  <span className="font-bold text-gray-800">₹{priceBreakdown.platformFeeAmount.toLocaleString()}</span>
+                </div>
+              )}
+
               {(useWallet && ['online', 'prepaid'].includes(paymentMethod) && walletDeduction > 0) && (
                 <div className="flex justify-between text-sm text-blue-700 font-bold">
                   <span className="flex items-center gap-1.5"><Wallet size={14} className="text-blue-500" /> Wallet Balance Used</span>

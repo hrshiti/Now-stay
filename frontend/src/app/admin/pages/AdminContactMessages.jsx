@@ -12,6 +12,15 @@ const AdminContactMessages = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [replyText, setReplyText] = useState('');
+
+  useEffect(() => {
+    if (selectedMessage) {
+      setReplyText(selectedMessage.adminReply || '');
+    } else {
+      setReplyText('');
+    }
+  }, [selectedMessage]);
 
   const load = async (pageToLoad = 1) => {
     setLoading(true);
@@ -39,13 +48,16 @@ const AdminContactMessages = () => {
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  const handleStatusChange = async (id, nextStatus) => {
+  const handleStatusChange = async (id, nextStatus, adminReply = '') => {
     try {
-      await adminService.updateContactStatus(id, nextStatus);
+      await adminService.updateContactStatus(id, nextStatus, adminReply);
       setMessages((prev) =>
-        prev.map((m) => (m._id === id ? { ...m, status: nextStatus } : m))
+        prev.map((m) => (m._id === id ? { ...m, status: nextStatus, adminReply } : m))
       );
-    } catch{
+      if (selectedMessage && selectedMessage._id === id) {
+        setSelectedMessage((prev) => ({ ...prev, status: nextStatus, adminReply }));
+      }
+    } catch {
       setError('Failed to update status.');
     }
   };
@@ -157,7 +169,7 @@ const AdminContactMessages = () => {
                   <div className="col-span-2 pr-3 flex items-center">
                     <select
                       value={m.status}
-                      onChange={(e) => handleStatusChange(m._id, e.target.value)}
+                      onChange={(e) => handleStatusChange(m._id, e.target.value, m.adminReply)}
                       className="px-2 py-1 rounded-lg border border-gray-200 text-[11px] font-semibold outline-none focus:ring-2 focus:ring-black/70"
                     >
                       <option value="new">New</option>
@@ -264,26 +276,46 @@ const AdminContactMessages = () => {
                 </p>
               </div>
 
-              <div className="flex items-center justify-between gap-3 pt-1">
+              <div className="mt-4">
+                <p className="text-[10px] font-bold text-gray-500 uppercase mb-1 flex justify-between">
+                  <span>Admin Reply / Note (sent to user)</span>
+                  {selectedMessage.adminReply && <span className="text-emerald-500">Sent</span>}
+                </p>
+                <textarea
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  rows={3}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-black/70 resize-none"
+                  placeholder="Write a solution or note here..."
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-4 border-t border-gray-100 mt-2">
                 <div className="flex items-center gap-2 text-[11px] text-gray-500">
                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
                   <span>
                     Audience: {selectedMessage.audience} • ID: {selectedMessage._id.slice(-6)}
                   </span>
                 </div>
-                <select
-                  value={selectedMessage.status}
-                  onChange={async (e) => {
-                    const next = e.target.value;
-                    await handleStatusChange(selectedMessage._id, next);
-                    setSelectedMessage((prev) => prev ? { ...prev, status: next } : prev);
-                  }}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 text-[11px] font-semibold outline-none focus:ring-2 focus:ring-black/70 bg-white"
-                >
-                  <option value="new">New</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="resolved">Resolved</option>
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedMessage.status}
+                    onChange={(e) => {
+                      setSelectedMessage((prev) => ({ ...prev, status: e.target.value }));
+                    }}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 text-[11px] font-semibold outline-none focus:ring-2 focus:ring-black/70 bg-white"
+                  >
+                    <option value="new">New</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                  <button
+                    onClick={() => handleStatusChange(selectedMessage._id, selectedMessage.status, replyText)}
+                    className="px-3 py-1.5 rounded-lg bg-black text-white text-[11px] font-bold hover:bg-black/90 active:scale-95 transition-transform"
+                  >
+                    Update & Send
+                  </button>
+                </div>
               </div>
             </div>
 

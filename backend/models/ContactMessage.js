@@ -34,6 +34,10 @@ const contactMessageSchema = new mongoose.Schema(
       enum: ['new', 'in_progress', 'resolved'],
       default: 'new'
     },
+    adminReply: {
+      type: String,
+      default: ''
+    },
     meta: {
       type: Object
     },

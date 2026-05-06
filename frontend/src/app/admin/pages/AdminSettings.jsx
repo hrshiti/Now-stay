@@ -48,6 +48,8 @@ const AdminSettings = () => {
     const [commission, setCommission] = useState(10);
     const [taxRate, setTaxRate] = useState(12);
     const [companyState, setCompanyState] = useState('Maharashtra');
+    const [platformFee, setPlatformFee] = useState(0);
+    const [platformFeeType, setPlatformFeeType] = useState('percentage');
 
     const [loadingSettings, setLoadingSettings] = useState(false);
     const [savingProfile, setSavingProfile] = useState(false);
@@ -87,6 +89,8 @@ const AdminSettings = () => {
                     setCommission(res.settings.defaultCommission !== undefined ? res.settings.defaultCommission : 10);
                     setTaxRate(res.settings.taxRate !== undefined ? res.settings.taxRate : 12);
                     setCompanyState(res.settings.companyState || 'Maharashtra');
+                    setPlatformFee(res.settings.platformFee !== undefined ? res.settings.platformFee : 0);
+                    setPlatformFeeType(res.settings.platformFeeType || 'percentage');
                 }
             } catch (error) {
                 toast.error('Failed to load platform settings');
@@ -162,7 +166,9 @@ const AdminSettings = () => {
                 maintenanceMessage,
                 defaultCommission: Number(commission),
                 taxRate: Number(taxRate),
-                companyState
+                companyState,
+                platformFee: Number(platformFee),
+                platformFeeType
             });
             toast.success('Platform settings updated');
         } catch (error) {
@@ -353,6 +359,29 @@ const AdminSettings = () => {
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
                                 placeholder="e.g., Maharashtra"
                             />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Platform Fee</label>
+                            <div className="flex gap-2">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={platformFee}
+                                    onChange={(e) => setPlatformFee(e.target.value)}
+                                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
+                                />
+                                <select
+                                    value={platformFeeType}
+                                    onChange={(e) => setPlatformFeeType(e.target.value)}
+                                    className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
+                                >
+                                    <option value="percentage">Percentage (%)</option>
+                                    <option value="fixed">Fixed (₹)</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -71,6 +71,7 @@ const bookingSchema = new mongoose.Schema({
   taxRate: { type: Number, default: 0 }, // Tax rate (%) at time of booking
   discount: { type: Number, default: 0 },
   couponCode: String,
+  platformFee: { type: Number, default: 0 },
 
   adminCommission: { type: Number, default: 0 },
   partnerPayout: { type: Number, default: 0 },

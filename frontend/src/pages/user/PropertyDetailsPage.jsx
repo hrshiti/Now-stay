@@ -63,6 +63,8 @@ const PropertyDetailsPage = () => {
   const [errors, setErrors] = useState({});
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [taxRate, setTaxRate] = useState(0); // Fetched from backend
+  const [platformFee, setPlatformFee] = useState(0);
+  const [platformFeeType, setPlatformFeeType] = useState('percentage');
   const [companyState, setCompanyState] = useState('');
   const [availability, setAvailability] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -167,6 +169,9 @@ const PropertyDetailsPage = () => {
         if (res.taxRate !== undefined) setTaxRate(res.taxRate);
         else if (res.success && res.taxRate) setTaxRate(res.taxRate);
         
+        if (res.platformFee !== undefined) setPlatformFee(res.platformFee);
+        if (res.platformFeeType) setPlatformFeeType(res.platformFeeType);
+
         if (res.companyState) {
           setCompanyState(res.companyState.toLowerCase().trim());
         }
@@ -584,7 +589,11 @@ const PropertyDetailsPage = () => {
     // Tax Calculation (on Commissionable Amount) matching backend logic
     const taxAmount = Math.round((commissionableAmount * taxRate) / 100);
 
-    const grandTotal = taxableAmount + taxAmount;
+    const platformFeeAmount = platformFeeType === 'percentage' 
+      ? Math.round((grossAmount * platformFee) / 100) 
+      : platformFee;
+
+    const grandTotal = taxableAmount + taxAmount + platformFeeAmount;
 
     return {
       nights,
@@ -604,6 +613,7 @@ const PropertyDetailsPage = () => {
       commissionableAmount,
       taxableAmount,
       taxAmount,
+      platformFeeAmount,
       grandTotal
     };
   };

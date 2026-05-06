@@ -56,7 +56,7 @@ export const getDashboardStats = async (req, res) => {
       // Booking Revenue
       Booking.aggregate([
         { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid' } },
-        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
+        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
       ]),
       Booking.aggregate([
         {
@@ -66,7 +66,7 @@ export const getDashboardStats = async (req, res) => {
             createdAt: { $lt: startOfThisMonth }
           }
         },
-        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
+        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
       ]),
       // Subscription Revenue
       PartnerSubscription.aggregate([
@@ -98,11 +98,11 @@ export const getDashboardStats = async (req, res) => {
     // Monthly Growth Calculations
     const revBookingThisMonthAgg = await Booking.aggregate([
       { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
-      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
+      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
     ]);
     const revBookingLastMonthAgg = await Booking.aggregate([
       { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
-      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes'] } } } }
+      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
     ]);
     const incBookingThisMonth = revBookingThisMonthAgg[0]?.total || 0;
     const incBookingLastMonth = revBookingLastMonthAgg[0]?.total || 0;
@@ -139,7 +139,7 @@ export const getDashboardStats = async (req, res) => {
     const monthlyRevenueData = await Promise.all([
       Booking.aggregate([
         { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: sixMonthsAgo } } },
-        { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, amount: { $sum: { $add: ["$adminCommission", "$taxes"] } } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, amount: { $sum: { $add: ["$adminCommission", "$taxes", { $ifNull: ["$platformFee", 0] }] } } } },
         { $sort: { _id: 1 } }
       ]),
       PartnerSubscription.aggregate([
@@ -1167,15 +1167,20 @@ export const getContactMessages = async (req, res) => {
 export const updateContactStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, adminReply } = req.body;
 
     if (!['new', 'in_progress', 'resolved'].includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
 
+    const updateData = { status };
+    if (adminReply !== undefined) {
+      updateData.adminReply = adminReply;
+    }
+
     const message = await ContactMessage.findByIdAndUpdate(
       id,
-      { status },
+      updateData,
       { new: true }
     );
 
@@ -1188,9 +1193,14 @@ export const updateContactStatus = async (req, res) => {
     // NOTIFICATION: Notify User
     if (message.userId) {
       const ut = message.audience === 'partner' ? 'partner' : 'user';
+      let notifyBody = `Your message "${message.subject}" is now ${status.replace('_', ' ')}.`;
+      if (adminReply) {
+        notifyBody += `\nAdmin Reply: ${adminReply}`;
+      }
+      
       notificationService.sendToUser(message.userId, {
         title: 'Support Update 🛠️',
-        body: `Your message "${message.subject}" is now ${status.replace('_', ' ')}.`
+        body: notifyBody
       }, { type: 'support_update', messageId: message._id, status }, ut).catch(e => console.error(e));
     }
   } catch (error) {
@@ -1236,6 +1246,12 @@ export const updatePlatformSettings = async (req, res) => {
     }
     if (req.body.companyState !== undefined && typeof req.body.companyState === 'string') {
       settings.companyState = req.body.companyState.trim();
+    }
+    if (req.body.platformFee !== undefined) {
+      settings.platformFee = Number(req.body.platformFee);
+    }
+    if (req.body.platformFeeType !== undefined) {
+      settings.platformFeeType = req.body.platformFeeType;
     }
 
     await settings.save();
@@ -1469,6 +1485,7 @@ export const getFinanceStats = async (req, res) => {
           _id: null,
           totalGross: { $sum: '$totalAmount' },
           totalCommission: { $sum: '$adminCommission' },
+          totalPlatformFee: { $sum: { $ifNull: ['$platformFee', 0] } },
           totalTax: { $sum: '$taxes' },
           totalPayout: { $sum: '$partnerPayout' }
         }
@@ -1478,13 +1495,14 @@ export const getFinanceStats = async (req, res) => {
     const financials = financialsOr[0] || {
       totalGross: 0,
       totalCommission: 0,
+      totalPlatformFee: 0,
       totalTax: 0,
       totalPayout: 0
     };
 
     // 3. Fetch Transaction List (Bookings Breakdown)
     const transactions = await Booking.find(matchStage)
-      .select('bookingId createdAt totalAmount adminCommission taxes partnerPayout bookingStatus paymentStatus userId propertyId')
+      .select('bookingId createdAt totalAmount adminCommission platformFee taxes partnerPayout bookingStatus paymentStatus userId propertyId')
       .populate('userId', 'name email')
       .populate({
         path: 'propertyId',
@@ -1494,15 +1512,15 @@ export const getFinanceStats = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(50); // Limit to last 50 for now
 
-    // Correct Admin Balance: Sum of Commission + Taxes from all valid financial transactions
-    const derivedAdminBalance = (financials.totalCommission || 0) + (financials.totalTax || 0);
+    // Correct Admin Balance: Sum of Commission + Taxes + Platform Fees from all valid financial transactions
+    const derivedAdminBalance = (financials.totalCommission || 0) + (financials.totalTax || 0) + (financials.totalPlatformFee || 0);
 
     res.status(200).json({
       success: true,
       stats: {
         adminBalance: derivedAdminBalance, // Derived from transactions
         totalRevenue: financials.totalGross, // Total Booking Value
-        totalEarnings: financials.totalCommission, // Actual Platform Income
+        totalEarnings: (financials.totalCommission || 0) + (financials.totalPlatformFee || 0), // Actual Platform Income
         totalTax: financials.totalTax,
         totalPayouts: financials.totalPayout
       },
@@ -1652,3 +1670,5 @@ export const uploadPropertyImage = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to upload image' });
   }
 };
+
+
