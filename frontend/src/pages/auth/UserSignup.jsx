@@ -245,6 +245,9 @@ const UserSignup = () => {
                                                 required
                                             />
                                         </div>
+                                        <p className="text-[9px] text-emerald-600 font-bold ml-2 flex items-center gap-1">
+                                            <span>•</span> Please enter the phone number linked to your WhatsApp.
+                                        </p>
                                     </div>
 
                                     {/* Email */}

@@ -1234,6 +1234,9 @@ export const updatePlatformSettings = async (req, res) => {
     if (req.body.taxRate !== undefined) {
       settings.taxRate = Number(req.body.taxRate);
     }
+    if (req.body.companyState !== undefined && typeof req.body.companyState === 'string') {
+      settings.companyState = req.body.companyState.trim();
+    }
 
     await settings.save();
 
@@ -1529,7 +1532,8 @@ export const adminUpdateProperty = async (req, res) => {
       'starRating', 'activities', 'shortDescription', 'partnerId', 'address',
       'location', 'nearbyPlaces', 'coverImage', 'propertyImages',
       'checkInTime', 'checkOutTime', 'cancellationPolicy',
-      'status', 'isLive', 'avgRating', 'totalReviews'
+      'status', 'isLive', 'avgRating', 'totalReviews',
+      'gstNumber', 'propertyEmail', 'ownerSignature', 'invoiceTerms'
     ];
 
     updatableFields.forEach(field => {

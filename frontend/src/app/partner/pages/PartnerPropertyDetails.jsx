@@ -103,10 +103,13 @@ const PartnerPropertyDetails = () => {
       desc: 'Policies'
     },
     {
-      id: 'documents',
-      label: 'Docs',
-      icon: FileText,
       desc: `${property?.documents?.length || 0} Files`
+    },
+    {
+      id: 'invoice',
+      label: 'Invoice',
+      icon: FileText,
+      desc: 'Tax & Signature'
     },
   ];
 

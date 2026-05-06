@@ -2,13 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
-import { CheckCircle, FileText, Home, Image, Plus, Trash2, MapPin, Search, BedDouble, Wifi, Snowflake, Coffee, ShowerHead, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, X, Clock, Loader2, Camera, Eye } from 'lucide-react';
+import { CheckCircle, FileText, Mail, Home, Image, Plus, Trash2, MapPin, Search, BedDouble, Wifi, Snowflake, Coffee, ShowerHead, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, X, Clock, Loader2, Camera, Eye } from 'lucide-react';
 
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
 const REQUIRED_DOCS_VILLA = [
   { type: "trade_license", name: "Trade License", required: true },
-  { type: "electricity_bill", name: "Electricity Bill", required: false }
+  { type: "electricity_bill", name: "Electricity Bill", required: true }
 ];
 const VILLA_AMENITIES = ["Private Pool", "Garden", "Parking", "Kitchen", "WiFi"];
 const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in", "Visitors not allowed"];
@@ -54,6 +54,7 @@ const AddVillaWizard = () => {
   const propertyImagesFileInputRef = useRef(null);
   const roomImagesFileInputRef = useRef(null);
   const documentInputRefs = useRef([]);
+  const signatureFileInputRef = useRef(null);
 
   const [propertyForm, setPropertyForm] = useState({
     propertyName: '',
@@ -71,6 +72,10 @@ const AddVillaWizard = () => {
     cancellationPolicy: '',
     suitability: 'none',
     houseRules: [],
+    gstNumber: '',
+    propertyEmail: '',
+    ownerSignature: '',
+    invoiceTerms: '',
     documents: REQUIRED_DOCS_VILLA.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
   });
 
@@ -210,6 +215,10 @@ const AddVillaWizard = () => {
           houseRules: prop.houseRules || [],
           contactNumber: prop.contactNumber || '',
           suitability: prop.suitability || 'none',
+          gstNumber: prop.gstNumber || '',
+          propertyEmail: prop.propertyEmail || '',
+          ownerSignature: prop.ownerSignature || '',
+          invoiceTerms: prop.invoiceTerms || '',
           documents: docs.length
             ? docs.map(d => ({ type: d.type || d.name, name: d.name, fileUrl: d.fileUrl || '', required: REQUIRED_DOCS_VILLA.find(rd => rd.type === (d.type || d.name))?.required || false }))
             : REQUIRED_DOCS_VILLA.map(d => ({ type: d.type, name: d.name, required: d.required, fileUrl: '' }))
@@ -707,6 +716,22 @@ const AddVillaWizard = () => {
     updatePropertyForm('houseRules', [...selectedPredefined, ...customRules]);
   };
 
+  const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[A-Z0-9]{1}[0-9A-Z]{1}$/;
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.(com|co|in|org|net|edu|gov|io|biz|info|co\.in|co\.uk)$/i;
+
+  const getGstError = (val) => {
+    if (!val) return 'GST Number is required';
+    if (val.length !== 15) return 'GST Number must be exactly 15 characters';
+    if (!GST_REGEX.test(val)) return 'Invalid GST format (e.g. 07AAAAA0000A1Z5)';
+    return '';
+  };
+
+  const getEmailError = (val) => {
+    if (!val) return 'Official Property Email is required';
+    if (!EMAIL_REGEX.test(val)) return 'Enter a valid email address';
+    return '';
+  };
+
   const nextFromRules = () => {
     setError('');
     syncHouseRulesFromDraft();
@@ -714,6 +739,10 @@ const AddVillaWizard = () => {
       setError('Check-in and Check-out times are required');
       return;
     }
+    const gstErr = getGstError(propertyForm.gstNumber);
+    const emailErr = getEmailError(propertyForm.propertyEmail);
+    if (gstErr) { setError(gstErr); return; }
+    if (emailErr) { setError(emailErr); return; }
     setStep(8);
   };
 
@@ -761,6 +790,10 @@ const AddVillaWizard = () => {
         cancellationPolicy: propertyForm.cancellationPolicy,
         suitability: propertyForm.suitability,
         houseRules: propertyForm.houseRules,
+        gstNumber: propertyForm.gstNumber,
+        propertyEmail: propertyForm.propertyEmail,
+        ownerSignature: propertyForm.ownerSignature,
+        invoiceTerms: propertyForm.invoiceTerms,
         documents: propertyForm.documents
       };
       let propId = createdProperty?._id;
@@ -1280,40 +1313,42 @@ const AddVillaWizard = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cover Image</label>
-                  <button
-                    onClick={() => !uploading && (isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click())}
-                    className="w-full aspect-video sm:aspect-[21/9] rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-3 overflow-hidden group hover:border-emerald-400 hover:bg-emerald-50/10 transition-all relative"
-                  >
-                    {uploading === 'cover' ? (
-                      <div className="flex flex-col items-center gap-2 text-emerald-600">
-                        <Loader2 className="animate-spin" size={32} />
-                        <span className="text-sm font-bold">Uploading Cover...</span>
+                  <div
+                  onClick={() => !uploading && !propertyForm.coverImage && (isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click())}
+                  className={`w-full aspect-video sm:aspect-[21/9] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 overflow-hidden group transition-all relative ${propertyForm.coverImage ? 'border-transparent' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50/10 cursor-pointer'}`}
+                >
+                  {uploading === 'cover' ? (
+                    <div className="flex flex-col items-center gap-2 text-emerald-600">
+                      <Loader2 className="animate-spin" size={32} />
+                      <span className="text-sm font-bold">Uploading Cover...</span>
+                    </div>
+                  ) : propertyForm.coverImage ? (
+                    <>
+                      <img src={propertyForm.coverImage} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="text-white font-bold bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 cursor-pointer" onClick={(e) => { e.stopPropagation(); isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click(); }}>
+                          Change Cover
+                        </span>
                       </div>
-                    ) : propertyForm.coverImage ? (
-                      <>
-                        <img src={propertyForm.coverImage} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <span className="text-white font-bold bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/50">Change Cover</span>
-                        </div>
-                        <div
-                          onClick={(e) => { e.stopPropagation(); updatePropertyForm('coverImage', ''); }}
-                          className="absolute top-3 right-3 p-2 bg-white text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
-                        >
-                          <X size={16} />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <Plus size={24} />
-                        </div>
-                        <div className="text-center">
-                          <div className="font-bold text-gray-600 group-hover:text-emerald-700">{isFlutter ? 'Take/Upload Cover Photo' : 'Add Cover Photo'}</div>
-                          <div className="text-xs text-gray-400">High quality landscape image</div>
-                        </div>
-                      </>
-                    )}
-                  </button>
+                      <div
+                        onClick={(e) => { e.stopPropagation(); updatePropertyForm('coverImage', ''); }}
+                        className="absolute top-3 right-3 p-2 bg-white text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 cursor-pointer z-10"
+                      >
+                        <X size={16} />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Plus size={24} />
+                      </div>
+                      <div className="text-center">
+                        <div className="font-bold text-gray-600 group-hover:text-emerald-700">{isFlutter ? 'Take/Upload Cover Photo' : 'Add Cover Photo'}</div>
+                        <div className="text-xs text-gray-400">High quality landscape image</div>
+                      </div>
+                    </>
+                  )}
+                </div>
                   <input ref={coverImageFileInputRef} type="file" accept="image/*" className="hidden" onChange={e => uploadImages(e.target.files, 'cover', u => updatePropertyForm('coverImage', u[0]))} />
                 </div>
 
@@ -1644,6 +1679,102 @@ const AddVillaWizard = () => {
                 />
                 <p className="text-xs text-gray-400">Separate custom rules with commas.</p>
               </div>
+
+              {/* INVOICE & TAX DETAILS */}
+              <div className="pt-6 border-t border-gray-200 space-y-4">
+                <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                  <FileText size={18} className="text-emerald-600" />
+                  Invoice & Tax Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      GST Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className={`input ${
+                        propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
+                          ? 'border-red-400 ring-1 ring-red-400'
+                          : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
+                          ? 'border-emerald-400 ring-1 ring-emerald-400'
+                          : ''
+                      }`}
+                      placeholder="e.g. 07AAAAA0000A1Z5"
+                      value={propertyForm.gstNumber}
+                      maxLength={15}
+                      onChange={e => updatePropertyForm('gstNumber', e.target.value.toUpperCase())}
+                    />
+                    {propertyForm.gstNumber && getGstError(propertyForm.gstNumber) && (
+                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getGstError(propertyForm.gstNumber)}</p>
+                    )}
+                    {propertyForm.gstNumber && !getGstError(propertyForm.gstNumber) && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid GSTIN</p>
+                    )}
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      Official Property Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className={`input ${
+                        propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
+                          ? 'border-red-400 ring-1 ring-red-400'
+                          : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
+                          ? 'border-emerald-400 ring-1 ring-emerald-400'
+                          : ''
+                      }`}
+                      type="email"
+                      placeholder="villa@example.com"
+                      value={propertyForm.propertyEmail}
+                      onChange={e => updatePropertyForm('propertyEmail', e.target.value)}
+                    />
+                    {propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail) && (
+                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getEmailError(propertyForm.propertyEmail)}</p>
+                    )}
+                    {propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail) && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid email</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-gray-500">Terms & Conditions (for Invoice)</label>
+                  <textarea className="input min-h-[80px]" placeholder="Specific T&Cs to show on the customer receipt..." value={propertyForm.invoiceTerms} onChange={e => updatePropertyForm('invoiceTerms', e.target.value)} />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Owner Signature (for Invoice)</label>
+                  <div
+                    onClick={() => !uploading && (isFlutter ? handleCameraUpload('signature', u => updatePropertyForm('ownerSignature', u)) : signatureFileInputRef.current?.click())}
+                    className={`w-full h-24 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center gap-2 overflow-hidden group transition-all relative ${!propertyForm.ownerSignature ? 'cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/10' : ''}`}
+                  >
+                    {uploading === 'signature' ? (
+                      <div className="flex flex-col items-center gap-2 text-emerald-600">
+                        <Loader2 className="animate-spin" size={24} />
+                        <span className="text-[10px] font-bold">Uploading...</span>
+                      </div>
+                    ) : propertyForm.ownerSignature ? (
+                      <>
+                        <img src={propertyForm.ownerSignature} className="h-full object-contain p-2" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-white text-[10px] font-bold bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full border border-white/50 cursor-pointer">Change Signature</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Upload size={20} />
+                        </div>
+                        <div className="text-center">
+                          <div className="font-bold text-gray-600 group-hover:text-emerald-700 text-xs">Upload Signature</div>
+                          <div className="text-[10px] text-gray-400">PNG/JPG with clear background</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <input ref={signatureFileInputRef} type="file" accept="image/*" className="hidden" onChange={e => uploadImages(e.target.files, 'signature', u => updatePropertyForm('ownerSignature', u[0]))} />
+                </div>
+              </div>
             </div>
           )}
 
@@ -1819,6 +1950,33 @@ const AddVillaWizard = () => {
                       <div className="text-[10px] text-gray-600"><span className="font-bold">Check-in:</span> {propertyForm.checkInTime || '--:--'}</div>
                       <div className="text-[10px] text-gray-600"><span className="font-bold">Check-out:</span> {propertyForm.checkOutTime || '--:--'}</div>
                       <div className="text-[9px] text-gray-400 line-clamp-1 italic mt-1">{propertyForm.cancellationPolicy || 'No policy'}</div>
+                    </div>
+                  </div>
+                </div>
+                {/* Invoice & Tax Details */}
+                <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">Invoice & Tax</h3>
+                    <button onClick={() => setStep(7)} className="text-emerald-600 text-xs font-bold hover:underline">Edit</button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-50">
+                        <FileText size={14} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">GSTIN Number</div>
+                        <div className="text-xs font-bold text-gray-800">{propertyForm.gstNumber || 'Not provided'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-50">
+                        <Mail size={14} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">Official Email</div>
+                        <div className="text-xs font-bold text-gray-800 break-all">{propertyForm.propertyEmail || 'Not provided'}</div>
+                      </div>
                     </div>
                   </div>
                 </div>

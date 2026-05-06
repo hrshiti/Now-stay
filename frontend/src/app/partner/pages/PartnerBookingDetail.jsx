@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Calendar, User, Phone, Mail, MapPin,
   CreditCard, CheckCircle, XCircle, Clock,
-  ChevronLeft, AlertTriangle, LogIn, LogOut
+  ChevronLeft, AlertTriangle, LogIn, LogOut, FileText
 } from 'lucide-react';
 import { bookingService } from '../../../services/apiService';
 import toast from 'react-hot-toast';
@@ -205,6 +205,29 @@ const PartnerBookingDetail = () => {
               <p className="text-[10px] text-gray-500 font-medium">{booking.totalNights} Night{booking.totalNights > 1 ? 's' : ''}</p>
             </div>
           </div>
+        </div>
+
+        {/* Invoice & Tax Settings Applied */}
+        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+          <h3 className="font-bold text-gray-900 mb-3 text-sm flex items-center gap-2">
+            <FileText size={16} className="text-gray-400" /> Invoice & Tax Information
+          </h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-2.5 bg-gray-50 rounded-xl">
+              <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Property GSTIN</p>
+              <p className="font-bold text-gray-900 text-sm uppercase">{property.gstNumber || 'Not Set'}</p>
+            </div>
+            <div className="p-2.5 bg-gray-50 rounded-xl">
+              <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Billing Email</p>
+              <p className="font-bold text-gray-900 text-sm truncate">{property.propertyEmail || 'Not Set'}</p>
+            </div>
+          </div>
+          {property.ownerSignature && (
+            <div className="mt-3 p-3 bg-gray-50 rounded-xl flex items-center justify-between border border-gray-100/50">
+              <span className="text-[10px] text-gray-500 font-bold uppercase">Digital Signature</span>
+              <img src={property.ownerSignature} alt="Signature" className="h-8 object-contain" />
+            </div>
+          )}
         </div>
 
         {/* Payment & Payout Breakdown */}

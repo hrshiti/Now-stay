@@ -29,6 +29,10 @@ const platformSettingsSchema = new mongoose.Schema(
     taxRate: {
       type: Number,
       default: 12 // Percentage (GST)
+    },
+    companyState: {
+      type: String,
+      default: 'Maharashtra' // Base state for GST rules
     }
   },
   { timestamps: true }

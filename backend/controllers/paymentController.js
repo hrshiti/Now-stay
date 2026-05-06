@@ -274,11 +274,14 @@ export const verifyPayment = async (req, res) => {
       }
     } catch (err) { console.error("Wallet Settlement Logic Failed", err); }
 
-    // Return full populated booking for confirmation page (partnerId.phone for Contact Property)
+    // Return full populated booking for confirmation page
     const populatedBooking = await Booking.findById(booking._id)
-      .populate({ path: 'propertyId', populate: { path: 'partnerId', select: 'phone' } })
+      .populate({ 
+        path: 'propertyId', 
+        populate: { path: 'partnerId', select: 'phone email name' } 
+      })
       .populate('roomTypeId')
-      .populate('userId', 'name email phone');
+      .populate('userId', 'name email phone mobile');
 
     // TRIGGER NOTIFICATIONS (ONLINE PAYMENT SUCCESS)
     try {

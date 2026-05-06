@@ -223,7 +223,9 @@ const UserSignupPage = () => {
                                 {/* Contact Input */}
                                 <div className="mb-8">
                                     <label className="block text-sm font-bold text-gray-700 mb-2">
-                                        {signupMethod === 'phone' ? 'Phone Number' : 'Email Address'}
+                                        {signupMethod === 'phone' ? (
+                                            <>Phone Number <span className="text-[9px] text-teal-600 font-medium normal-case">(use whatsapp number only for registration)</span></>
+                                        ) : 'Email Address'}
                                     </label>
                                     <div className={`flex items-center border rounded-xl px-4 py-3 transition-all bg-white ${
                                         errors.phone || errors.email
@@ -256,6 +258,11 @@ const UserSignupPage = () => {
                                             </>
                                         )}
                                     </div>
+                                    {signupMethod === 'phone' && !errors.phone && (
+                                        <p className="text-[10px] text-teal-600 font-bold mt-2 ml-1 flex items-center gap-1">
+                                            <span>•</span> Please enter the phone number linked to your WhatsApp.
+                                        </p>
+                                    )}
                                     {errors.phone && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase">{errors.phone}</p>}
                                     {errors.email && <p className="text-red-500 text-[10px] mt-1.5 ml-1 font-bold uppercase">{errors.email}</p>}
                                 </div>

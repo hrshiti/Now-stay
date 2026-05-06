@@ -309,6 +309,81 @@ const OverviewTab = ({ hotel, isEditing, editData, onChange }) => {
                 )}
             </div>
 
+            {/* INVOICE & TAX DETAILS */}
+            <div className="bg-gray-50 p-6 rounded-xl border border-gray-200">
+                <h3 className="font-bold text-[10px] uppercase tracking-wider text-gray-500 mb-4 flex items-center gap-2">
+                    <FileText size={14} /> Invoice & Tax Settings
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">GST Number</p>
+                            {isEditing ? (
+                                <input
+                                    type="text"
+                                    value={editData.gstNumber || ''}
+                                    onChange={(e) => onChange('gstNumber', e.target.value.toUpperCase())}
+                                    className="w-full bg-white border rounded px-3 py-1.5 text-sm font-bold outline-none focus:ring-1 focus:ring-black uppercase"
+                                    placeholder="e.g. 07AAAAA0000A1Z5"
+                                />
+                            ) : (
+                                <p className="text-sm font-bold text-gray-700">{hotel.gstNumber || 'Not Provided'}</p>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Official Property Email</p>
+                            {isEditing ? (
+                                <input
+                                    type="email"
+                                    value={editData.propertyEmail || ''}
+                                    onChange={(e) => onChange('propertyEmail', e.target.value.toLowerCase())}
+                                    className="w-full bg-white border rounded px-3 py-1.5 text-sm font-bold outline-none focus:ring-1 focus:ring-black"
+                                    placeholder="hotel@example.com"
+                                />
+                            ) : (
+                                <p className="text-sm font-bold text-gray-700">{hotel.propertyEmail || 'Not Provided'}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Digital Signature</p>
+                        <div className="w-full h-32 bg-white border border-gray-200 rounded-xl flex items-center justify-center overflow-hidden p-4 relative group">
+                            {isEditing ? (
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 z-10">
+                                    <FileUpload onUpload={(url) => onChange('ownerSignature', url)} type="document" label="Update Signature" />
+                                </div>
+                            ) : null}
+                            
+                            {editData.ownerSignature || hotel.ownerSignature ? (
+                                <img src={isEditing ? editData.ownerSignature : hotel.ownerSignature} alt="Signature" className="h-full object-contain" />
+                            ) : (
+                                <div className="text-center">
+                                    <FileText size={24} className="mx-auto text-gray-200 mb-2" />
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">No Signature</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-6">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Custom Invoice Terms & Conditions</p>
+                    {isEditing ? (
+                        <textarea
+                            value={editData.invoiceTerms || ''}
+                            onChange={(e) => onChange('invoiceTerms', e.target.value)}
+                            className="w-full bg-white border rounded px-3 py-2 text-xs font-medium outline-none focus:ring-1 focus:ring-black h-24"
+                            placeholder="Add property-specific terms here..."
+                        />
+                    ) : (
+                        <div className="p-4 bg-white border border-gray-100 rounded-xl text-xs text-gray-600 leading-relaxed italic whitespace-pre-wrap">
+                            {hotel.invoiceTerms || 'Standard property terms will be applied.'}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white border border-gray-200 rounded-xl p-4">
                     <h4 className="text-[10px] font-bold uppercase text-gray-500 mb-2">Check In</h4>
@@ -1264,7 +1339,11 @@ const AdminHotelDetail = () => {
                     propertyImages: data.hotel.propertyImages || [],
                     coverImage: data.hotel.coverImage || '',
                     documents: data.documents?.documents || [],
-                    rooms: data.hotel.rooms || []
+                    rooms: data.hotel.rooms || [],
+                    gstNumber: data.hotel.gstNumber || '',
+                    propertyEmail: data.hotel.propertyEmail || '',
+                    ownerSignature: data.hotel.ownerSignature || '',
+                    invoiceTerms: data.hotel.invoiceTerms || ''
                 });
             }
         } catch (error) {
@@ -1353,7 +1432,11 @@ const AdminHotelDetail = () => {
                 propertyImages: hotel.propertyImages || [],
                 coverImage: hotel.coverImage || '',
                 documents: documents?.documents || [],
-                rooms: hotel.rooms || []
+                rooms: hotel.rooms || [],
+                gstNumber: hotel.gstNumber || '',
+                propertyEmail: hotel.propertyEmail || '',
+                ownerSignature: hotel.ownerSignature || '',
+                invoiceTerms: hotel.invoiceTerms || ''
             });
         }
     };

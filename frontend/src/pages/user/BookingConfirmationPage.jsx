@@ -7,50 +7,48 @@ import {
 import confetti from 'canvas-confetti';
 import toast from 'react-hot-toast';
 import { bookingService } from '../../services/apiService';
+import BookingInvoice from '../../components/BookingInvoice';
+import { X } from 'lucide-react';
 
 const BookingConfirmationPage = () => {
     const { id } = useParams();
     const location = useLocation();
     const navigate = useNavigate();
 
-//rfdhfdh
     // Initialize with state if available, else null
     const [booking, setBooking] = useState(location.state?.booking || null);
     const [loading, setLoading] = useState(!location.state?.booking);
     const [imgError, setImgError] = useState(false);
 
     const animate = location.state?.animate;
+    const [showInvoice, setShowInvoice] = useState(false);
 
     useEffect(() => {
         const loadBooking = async () => {
-            // If already loaded from state, just stop loading
-            if (booking) {
-                setLoading(false);
-                return;
-            }
-
             // If no Booking in state and no ID in URL, redirect
             if (!id && !booking) {
                 navigate('/');
                 return;
             }
 
-            // Fetch if ID is present but booking is missing
+            // Always fetch fresh data to ensure we have all nested fields (like invoiceTerms, ownerSignature)
             try {
-                setLoading(true);
+                if (!booking) setLoading(true);
                 const data = await bookingService.getBookingDetail(id);
                 setBooking(data);
             } catch (error) {
                 console.error("Failed to load booking:", error);
-                toast.error("Could not load booking details");
-                navigate('/');
+                if (!booking) { // Only error out if we don't have fallback state data
+                    toast.error("Could not load booking details");
+                    navigate('/');
+                }
             } finally {
                 setLoading(false);
             }
         };
 
         loadBooking();
-    }, [id, booking, navigate]);
+    }, [id, navigate]);
 
     useEffect(() => {
         // Only show confetti for confirmed bookings (not cancelled)
@@ -107,7 +105,14 @@ const BookingConfirmationPage = () => {
     // Fallback to localStorage for email/phone if not populated in booking response
     const storedUser = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
     const userEmail = user.email || storedUser.email || '';
-    const userPhone = user.phone || storedUser.phone || '';
+    const userPhone = user.phone || user.mobile || storedUser.phone || storedUser.mobile || '';
+
+    // Merged user object for invoice - booking.userId is now fully populated from backend
+    const invoiceUser = {
+        name: user.name || storedUser.name || booking.guestDetails?.name || 'Valued Guest',
+        email: userEmail || booking.guestDetails?.email || '',
+        phone: userPhone || booking.guestDetails?.phone || '',
+    };
 
     // Determine booking status for conditional rendering
     const bookingStatus = (booking.bookingStatus || booking.status || 'pending').toLowerCase();
@@ -176,6 +181,26 @@ const BookingConfirmationPage = () => {
 
     return (
         <div className="min-h-screen bg-emerald-100 pb-12 print:bg-white print:min-h-0 print:pb-0">
+            {/* Global Print Styles for Strict Isolation */}
+            <style>
+                {`
+                @media print {
+                    body * { visibility: hidden !important; }
+                    .print-area, .print-area * { visibility: visible !important; }
+                    .print-area { 
+                        position: absolute !important; 
+                        left: 0 !important; 
+                        top: 0 !important; 
+                        width: 100% !important; 
+                        height: auto !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        overflow: hidden !important;
+                    }
+                    @page { size: auto; margin: 5mm; }
+                }
+                `}
+            </style>
             {/* Header */}
             <div className="bg-white/70 backdrop-blur-xl border-b border-white/50 sticky top-0 z-30 print:hidden shadow-sm shadow-emerald-900/5">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -194,6 +219,9 @@ const BookingConfirmationPage = () => {
                         >
                             <Download size={20} />
                         </button>
+                        <button onClick={() => setShowInvoice(true)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-blue-600" title="View Professional Invoice">
+                            <FileText size={20} />
+                        </button>
                         <button onClick={handlePrint} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600" title="Print Page">
                             <Printer size={20} />
                         </button>
@@ -201,7 +229,7 @@ const BookingConfirmationPage = () => {
                 </div>
             </div>
 
-            <main className="max-w-4xl mx-auto px-4 py-8 space-y-6 print:py-2 print:space-y-4">
+            <main className="max-w-4xl mx-auto px-4 py-8 space-y-6 print:hidden">
 
                 {/* Print-Only Invoice Header */}
                 <div className="hidden print:flex items-end justify-between border-b-2 border-gray-100 pb-4 mb-4">
@@ -216,7 +244,7 @@ const BookingConfirmationPage = () => {
                 </div>
 
                 {/* 1. Status Message */}
-                <div className={`bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-xl shadow-emerald-900/5 border border-white/50 ${isCancelled ? 'border-red-100' : ''} print:p-0 print:shadow-none print:border-none print:bg-transparent`}>
+                <div className={`relative bg-white/80 backdrop-blur-md rounded-3xl p-6 shadow-xl shadow-emerald-900/5 border border-white/50 text-center ${isCancelled ? 'border-red-100' : ''} print:p-0 print:shadow-none print:border-none print:bg-transparent`}>
                     {isCancelled ? (
                         <>
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-400 to-red-600 print:hidden"></div>
@@ -534,10 +562,81 @@ const BookingConfirmationPage = () => {
                                 </>
                             );
                         })()}
-                    </div>
 
+                    </div>
                 </div>
+
+                {/* Property Tax & Invoice Info (Professional Footer) */}
+                {(property.gstNumber || property.propertyEmail) && (
+                    <div className="bg-white/50 border border-gray-100 rounded-3xl p-6 mt-8 print:border-gray-200 print:mt-4 print:p-4">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div className="space-y-1">
+                                <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tax & Billing Information</h4>
+                                <div className="flex flex-wrap gap-x-6 gap-y-2 mt-2">
+                                    {property.gstNumber && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-5 h-5 bg-gray-100 rounded flex items-center justify-center">
+                                                <FileText size={12} className="text-gray-400" />
+                                            </div>
+                                            <p className="text-xs font-bold text-gray-700">GSTIN: <span className="text-gray-900">{property.gstNumber}</span></p>
+                                        </div>
+                                    )}
+                                    {property.propertyEmail && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-5 h-5 bg-gray-100 rounded flex items-center justify-center">
+                                                <Phone size={12} className="text-gray-400" />
+                                            </div>
+                                            <p className="text-xs font-bold text-gray-700">Email: <span className="text-gray-900">{property.propertyEmail}</span></p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="hidden md:block text-right">
+                                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-tighter">Verified by NowStay</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
+
+            {/* Professional Invoice Modal */}
+            {showInvoice && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm print:bg-white print:static print:inset-auto print:z-0">
+                    <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto sm:rounded-3xl relative print:max-h-none print:overflow-visible print:rounded-none print:shadow-none print:w-full print-area">
+                        <button 
+                            onClick={() => setShowInvoice(false)}
+                            className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all z-10 print:hidden"
+                        >
+                            <X size={20} />
+                        </button>
+                        
+                        <div className="p-0 sm:p-2 print:p-0">
+                            <BookingInvoice 
+                                booking={booking}
+                                property={property}
+                                room={room}
+                                user={invoiceUser}
+                                taxRate={booking.taxRate}
+                            />
+                        </div>
+
+                        <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 print:hidden">
+                            <button 
+                                onClick={() => setShowInvoice(false)}
+                                className="px-6 py-2 text-sm font-bold text-gray-500 uppercase"
+                            >
+                                Close
+                            </button>
+                            <button 
+                                onClick={() => window.print()}
+                                className="px-8 py-2 bg-blue-600 text-white rounded-xl text-sm font-black uppercase shadow-lg shadow-blue-900/20 hover:bg-blue-700 transition-all flex items-center gap-2"
+                            >
+                                <Printer size={16} /> Print Invoice
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

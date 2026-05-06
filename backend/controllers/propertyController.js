@@ -35,7 +35,7 @@ const notifySubmission = async (property) => {
 
 export const createProperty = async (req, res) => {
   try {
-    const { propertyName, contactNumber, propertyType, propertyTemplate, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, resortType, activities, hotelCategory, starRating, mealsIncluded, foodType, noticePeriod } = req.body;
+    const { propertyName, contactNumber, propertyType, propertyTemplate, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, resortType, activities, hotelCategory, starRating, mealsIncluded, foodType, noticePeriod, gstNumber, propertyEmail, ownerSignature, invoiceTerms } = req.body;
     if (!propertyName || !propertyType || !coverImage) return res.status(400).json({ message: 'Missing required fields' });
 
     // Validate contact number if provided (Indian mobile: 10 digits, starts with 6-9)
@@ -81,7 +81,11 @@ export const createProperty = async (req, res) => {
       mealsIncluded: (lowerType === 'pg' || lowerType === 'homestay') ? mealsIncluded : undefined,
       foodType: (lowerType === 'pg' || lowerType === 'homestay') ? foodType : undefined,
       noticePeriod: lowerType === 'pg' ? noticePeriod : undefined,
-      suitability: req.body.suitability || 'none'
+      suitability: req.body.suitability || 'none',
+      gstNumber,
+      propertyEmail,
+      ownerSignature,
+      invoiceTerms
     });
     await doc.save();
 
@@ -164,7 +168,7 @@ export const updateProperty = async (req, res) => {
       'amenities', 'coverImage', 'propertyImages', 'checkInTime', 'checkOutTime',
       'cancellationPolicy', 'houseRules', 'pgType', 'hostLivesOnProperty', 'resortType',
       'activities', 'hotelCategory', 'starRating', 'contactNumber', 'suitability', 'isLive',
-      'mealsIncluded', 'foodType', 'noticePeriod'
+      'mealsIncluded', 'foodType', 'noticePeriod', 'gstNumber', 'propertyEmail', 'ownerSignature', 'invoiceTerms'
     ];
 
     updatableFields.forEach(field => {

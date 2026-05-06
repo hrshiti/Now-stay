@@ -254,6 +254,51 @@ const Layout = ({ children }) => {
   );
 };
 
+// Global Guard for Profile Completion
+const ProfileCompletionGuard = ({ children }) => {
+  const location = useLocation();
+  const userRaw = localStorage.getItem('user');
+  const user = userRaw ? JSON.parse(userRaw) : null;
+
+  if (!user || user.role === 'admin' || user.role === 'superadmin') return children;
+
+  // Paths that are ALWAYS allowed (auth, legal, support, profile itself, checkout/payment handled by their own guards)
+  const allowedPaths = [
+    '/login', '/signup', '/hotel/login', '/hotel/register', 
+    '/profile', '/hotel/profile', '/legal', '/terms', '/privacy', '/support', '/hotel/support', '/hotel/contact', '/hotel/about'
+  ];
+
+  const isAllowed = allowedPaths.some(p => location.pathname.startsWith(p));
+
+  // Definition of a "complete" profile
+  // For Partners: they already provide Aadhaar/PAN during reg, but we check name/email/address
+  // For Users: check name/email/address
+  const isComplete = !!(
+    user.name && 
+    user.email && 
+    user.address?.street && 
+    user.address?.city && 
+    user.address?.state
+  );
+
+  React.useEffect(() => {
+    if (!isComplete && !isAllowed) {
+      toast.error("Please complete your profile to access other features", {
+        id: 'profile-incomplete-toast',
+        duration: 4000,
+        icon: '👤'
+      });
+    }
+  }, [isComplete, isAllowed]);
+
+  if (!isComplete && !isAllowed) {
+    const profilePath = user.role === 'partner' ? '/hotel/profile' : '/profile';
+    return <Navigate to={profilePath} replace />;
+  }
+
+  return children;
+};
+
 // Simple Protected Route for Users
 // In WebView (Flutter app): always require login → redirect to /login
 // In Browser: allow access; partner-logged-in users are redirected to partner dashboard
@@ -517,7 +562,8 @@ function App() {
       />
       <Layout>
         <Suspense fallback={<PageLoader />}>
-          <Routes>
+          <ProfileCompletionGuard>
+            <Routes>
             {/* User Auth Routes (Public Only) */}
             <Route path="/login" element={<PublicRoute><UserLogin /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><UserSignup /></PublicRoute>} />
@@ -650,8 +696,9 @@ function App() {
               <Route path="/booking/:id" element={<BookingConfirmationPage />} />
             </Route>
           </Routes>
-        </Suspense>
-      </Layout>
+        </ProfileCompletionGuard>
+      </Suspense>
+    </Layout>
     </Router>
   );
 }

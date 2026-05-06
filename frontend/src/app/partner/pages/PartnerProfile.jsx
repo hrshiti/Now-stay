@@ -410,20 +410,7 @@ const PartnerProfile = () => {
                     />
                 </div>
 
-                {/* Delete Account Button */}
-                <div className="mt-4 px-6 flex flex-col items-center">
-                    <button
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="flex items-center gap-2 text-red-500 font-bold text-xs px-6 py-3 border border-red-50 rounded-2xl hover:bg-red-50 transition-all uppercase tracking-widest"
-                    >
-                        <Trash2 size={14} />
-                        Delete Partner Account
-                    </button>
-                    <p className="mt-3 text-[10px] text-gray-400 text-center uppercase tracking-tighter">
-                        This action is irreversible. All properties and inventory will be deactivated.
-                    </p>
-                </div>
-
+                {/* Member Since Text */}
                 <div className="mt-8 text-center text-xs text-gray-400">
                     <p className="font-bold tracking-widest uppercase text-[10px]">Member since {memberSince ? new Date(memberSince).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : '—'}</p>
                 </div>

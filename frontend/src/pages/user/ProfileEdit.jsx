@@ -472,13 +472,6 @@ const ProfileEdit = () => {
                   <LogOut size={18} className="text-gray-400" />
                   Logout
                 </button>
-
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="w-full text-red-500 font-bold text-xs py-3 rounded-2xl hover:bg-red-50 transition-colors"
-                >
-                  Delete Account
-                </button>
               </div>
             </div>
           ) : (

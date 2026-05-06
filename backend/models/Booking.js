@@ -68,6 +68,7 @@ const bookingSchema = new mongoose.Schema({
   extraCharges: { type: Number, default: 0 }, // extra guests * nights
 
   taxes: { type: Number, default: 0 },
+  taxRate: { type: Number, default: 0 }, // Tax rate (%) at time of booking
   discount: { type: Number, default: 0 },
   couponCode: String,
 

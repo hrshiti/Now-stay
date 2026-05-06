@@ -37,7 +37,8 @@ const BookingCheckoutPage = () => {
     dates,
     guests,
     priceBreakdown,
-    taxRate
+    taxRate,
+    companyState
   } = location.state || {};
 
   const [loading, setLoading] = useState(false);
@@ -383,10 +384,23 @@ const BookingCheckoutPage = () => {
                 </div>
               )}
               {(priceBreakdown?.taxAmount > 0) && (
-                <div className="flex justify-between text-sm text-gray-600 font-medium">
-                  <span>Taxes & Fees ({taxRate || 0}%)</span>
-                  <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
-                </div>
+                (companyState && property?.address?.state && property.address.state.toLowerCase().trim() !== companyState) ? (
+                  <div className="flex justify-between text-sm text-gray-600 font-medium">
+                    <span>IGST ({taxRate || 0}%)</span>
+                    <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex justify-between text-sm text-gray-600 font-medium">
+                      <span>CGST ({(taxRate || 0) / 2}%)</span>
+                      <span className="font-bold text-gray-800">₹{(priceBreakdown.taxAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-gray-600 font-medium">
+                      <span>SGST ({(taxRate || 0) / 2}%)</span>
+                      <span className="font-bold text-gray-800">₹{(priceBreakdown.taxAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </>
+                )
               )}
 
               {(useWallet && ['online', 'prepaid'].includes(paymentMethod) && walletDeduction > 0) && (

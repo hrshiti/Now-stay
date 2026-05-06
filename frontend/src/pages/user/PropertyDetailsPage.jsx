@@ -63,6 +63,7 @@ const PropertyDetailsPage = () => {
   const [errors, setErrors] = useState({});
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [taxRate, setTaxRate] = useState(0); // Fetched from backend
+  const [companyState, setCompanyState] = useState('');
   const [availability, setAvailability] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
@@ -163,7 +164,12 @@ const PropertyDetailsPage = () => {
   useEffect(() => {
     legalService.getFinancialSettings()
       .then(res => {
-        if (res.success) setTaxRate(res.taxRate || 0);
+        if (res.taxRate !== undefined) setTaxRate(res.taxRate);
+        else if (res.success && res.taxRate) setTaxRate(res.taxRate);
+        
+        if (res.companyState) {
+          setCompanyState(res.companyState.toLowerCase().trim());
+        }
       })
       .catch(err => console.error("Failed to fetch tax rate", err));
   }, []);
@@ -669,6 +675,7 @@ const PropertyDetailsPage = () => {
         },
         priceBreakdown,
         taxRate,
+        companyState,
         couponCode: priceBreakdown.couponCode
       }
     });
@@ -1328,10 +1335,23 @@ const PropertyDetailsPage = () => {
                     </div>
                   )}
                   {priceBreakdown.taxAmount > 0 && (
-                    <div className="flex justify-between text-gray-600">
-                      <span>Taxes & Fees ({taxRate}%)</span>
-                      <span>+ ₹{priceBreakdown.taxAmount.toLocaleString()}</span>
-                    </div>
+                    (companyState && property?.address?.state && property.address.state.toLowerCase().trim() !== companyState) ? (
+                      <div className="flex justify-between text-gray-600">
+                        <span>IGST ({taxRate}%)</span>
+                        <span>+ ₹{priceBreakdown.taxAmount.toLocaleString()}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-gray-600">
+                          <span>CGST ({taxRate / 2}%)</span>
+                          <span>+ ₹{(priceBreakdown.taxAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between text-gray-600">
+                          <span>SGST ({taxRate / 2}%)</span>
+                          <span>+ ₹{(priceBreakdown.taxAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </div>
+                      </>
+                    )
                   )}
                   <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-bold text-base text-surface">
                     <span>Total Amount</span>

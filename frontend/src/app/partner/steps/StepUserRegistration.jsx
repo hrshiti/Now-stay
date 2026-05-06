@@ -53,6 +53,9 @@ const StepUserRegistration = () => {
             onChange={e => handleChange('phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
           />
         </div>
+        <p className="text-[10px] text-teal-600 font-bold mt-1.5 ml-1 flex items-center gap-1">
+          <span>•</span> Please enter the phone number linked to your WhatsApp.
+        </p>
       </div>
 
       <div className="flex items-start gap-2 mt-2">

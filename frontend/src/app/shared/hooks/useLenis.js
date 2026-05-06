@@ -52,7 +52,12 @@ export const useLenis = (disabled = false) => {
         activeLenis = lenis;
 
         return () => {
-            window.lenis = activeLenis;
+            if (lenis) {
+                lenis.destroy();
+                gsap.ticker.remove(update);
+            }
+            window.lenis = null;
+            activeLenis = null;
         };
     }, [disabled]);
 };
