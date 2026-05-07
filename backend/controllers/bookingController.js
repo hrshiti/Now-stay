@@ -244,8 +244,8 @@ export const createBooking = async (req, res) => {
     const taxes = Math.round((commissionableAmount * gstRate) / 100);
 
     // Calculate Platform Fee
-    const platformFee = platformFeeType === 'percentage' 
-      ? Math.round((grossAmount * platformFeeRate) / 100) 
+    const platformFee = platformFeeType === 'percentage'
+      ? Math.round((grossAmount * platformFeeRate) / 100)
       : platformFeeRate;
 
     // Calculate Total Amount (User Pays)
@@ -535,9 +535,9 @@ export const createBooking = async (req, res) => {
 
     // Populate booking details for frontend confirmation page (partnerId.phone for Contact Property)
     const populatedBooking = await Booking.findById(booking._id)
-      .populate({ 
-        path: 'propertyId', 
-        populate: { path: 'partnerId', select: 'phone email name' } 
+      .populate({
+        path: 'propertyId',
+        populate: { path: 'partnerId', select: 'phone email name' }
       })
       .populate('roomTypeId')
       .populate('userId', 'name email phone mobile');
@@ -590,10 +590,10 @@ export const getMyBookings = async (req, res) => {
 export const getBookingDetail = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
-      .populate({ 
-        path: 'propertyId', 
+      .populate({
+        path: 'propertyId',
         select: 'propertyName address contactNumber location coverImage avgRating propertyType propertyTemplate gstNumber ownerSignature invoiceTerms propertyEmail checkInTime checkOutTime',
-        populate: { path: 'partnerId', select: 'phone email name' } 
+        populate: { path: 'partnerId', select: 'phone email name' }
       })
       .populate('roomTypeId')
       .populate('userId', 'name email phone mobile');
@@ -1415,7 +1415,7 @@ export const downloadReceipt = async (req, res) => {
       .text(hotelAddress.toUpperCase(), 300, 62, { align: 'right', width: 250 })
       .text(`Email: ${hotelEmail}`, 300, 82, { align: 'right', width: 250 })
       .text(`Phone: ${hotelPhone}`, 300, 92, { align: 'right', width: 250 });
-    
+
     if (hotelGST !== 'N/A') {
       doc.fontSize(8).font('Helvetica-Bold').fillColor(primaryColor).text(`GSTIN: ${hotelGST}`, 300, 105, { align: 'right', width: 250 });
     }
@@ -1426,9 +1426,9 @@ export const downloadReceipt = async (req, res) => {
     // --- 2. BOOKING INFO SECTION ---
     let currentY = 145;
     doc.fontSize(16).font('Helvetica-Bold').fillColor(primaryColor).text(`INVOICE #${booking.bookingId}`, 50, currentY);
-    
+
     const status = (booking.bookingStatus || 'confirmed').toUpperCase();
-    let statusColor = '#059669'; 
+    let statusColor = '#059669';
     if (status === 'CANCELLED') statusColor = '#dc2626';
     doc.fontSize(10).font('Helvetica-Bold').fillColor(statusColor).text(status, 450, currentY + 5, { align: 'right', width: 100 });
 
@@ -1480,7 +1480,7 @@ export const downloadReceipt = async (req, res) => {
     // Row: Base Amount
     doc.fontSize(9).font('Helvetica').fillColor(primaryColor).text('Booking Base Charges', 65, boxY);
     doc.text(`Rs. ${booking.baseAmount.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-    
+
     // Row: Extra Charges
     if (booking.extraCharges > 0) {
       boxY += 20;
@@ -1495,25 +1495,25 @@ export const downloadReceipt = async (req, res) => {
       const isInterState = propState && companyState && propState !== companyState;
 
       if (appliedTaxRate > 0) {
-          if (isInterState) {
-              // IGST
-              doc.text(`IGST @ ${appliedTaxRate}%`, 65, boxY);
-              doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-          } else {
-              // CGST + SGST (Split into two rows)
-              const halfTax = (booking.taxes / 2);
-              const halfRate = (appliedTaxRate / 2).toFixed(1);
-              
-              doc.text(`CGST @ ${halfRate}%`, 65, boxY);
-              doc.text(`Rs. ${halfTax.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 450, boxY, { align: 'right', width: 90 });
-              
-              boxY += 15;
-              doc.text(`SGST @ ${halfRate}%`, 65, boxY);
-              doc.text(`Rs. ${halfTax.toLocaleString(undefined, {minimumFractionDigits: 2})}`, 450, boxY, { align: 'right', width: 90 });
-          }
-      } else {
-          doc.text('Taxes & Fees (GST)', 65, boxY);
+        if (isInterState) {
+          // IGST
+          doc.text(`IGST @ ${appliedTaxRate}%`, 65, boxY);
           doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
+        } else {
+          // CGST + SGST (Split into two rows)
+          const halfTax = (booking.taxes / 2);
+          const halfRate = (appliedTaxRate / 2).toFixed(1);
+
+          doc.text(`CGST @ ${halfRate}%`, 65, boxY);
+          doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
+
+          boxY += 15;
+          doc.text(`SGST @ ${halfRate}%`, 65, boxY);
+          doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
+        }
+      } else {
+        doc.text('Taxes & Fees (GST)', 65, boxY);
+        doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
       }
     }
 
@@ -1534,7 +1534,7 @@ export const downloadReceipt = async (req, res) => {
 
     // --- 5. TERMS & SIGNATURE SECTION ---
     currentY += 150;
-    
+
     // Terms & Conditions (Left)
     doc.fontSize(9).font('Helvetica-Bold').fillColor(primaryColor).text('Terms & Conditions:', 50, currentY);
     const terms = property.invoiceTerms || '1. All bookings are subject to property rules.\n2. Please carry a valid ID proof at the time of check-in.\n3. Standard check-in/out times must be followed.';
@@ -1550,7 +1550,7 @@ export const downloadReceipt = async (req, res) => {
         console.warn("Could not load signature image", e);
       }
     }
-    
+
     doc.fontSize(8).font('Helvetica-Bold').fillColor(primaryColor).text('Authorized Signatory', sigX, currentY + 60, { width: 100, align: 'center' });
     doc.fontSize(7).font('Helvetica').text(hotelName, sigX, currentY + 72, { width: 100, align: 'center' });
 

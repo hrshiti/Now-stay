@@ -22,10 +22,10 @@ const PropertyDetailsPage = () => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(`property_draft_${id}`));
       if (saved && saved.guests) return saved.guests;
-      
+
       const searchSaved = JSON.parse(sessionStorage.getItem('homeSearchData'));
       if (searchSaved && searchSaved.guests) return searchSaved.guests;
-    } catch(e) {}
+    } catch (e) { }
     return { rooms: 1, adults: 2, children: 0 };
   });
 
@@ -36,7 +36,7 @@ const PropertyDetailsPage = () => {
 
       const searchSaved = JSON.parse(sessionStorage.getItem('homeSearchData'));
       if (searchSaved && searchSaved.dates && searchSaved.dates.checkIn && searchSaved.dates.checkOut) return searchSaved.dates;
-    } catch(e) {}
+    } catch (e) { }
     return { checkIn: '', checkOut: '' };
   });
 
@@ -44,7 +44,7 @@ const PropertyDetailsPage = () => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(`property_draft_${id}`));
       if (saved && saved.selectedRoom) return saved.selectedRoom;
-    } catch(e) {}
+    } catch (e) { }
     return null;
   });
 
@@ -168,7 +168,7 @@ const PropertyDetailsPage = () => {
       .then(res => {
         if (res.taxRate !== undefined) setTaxRate(res.taxRate);
         else if (res.success && res.taxRate) setTaxRate(res.taxRate);
-        
+
         if (res.platformFee !== undefined) setPlatformFee(res.platformFee);
         if (res.platformFeeType) setPlatformFeeType(res.platformFeeType);
 
@@ -236,7 +236,7 @@ const PropertyDetailsPage = () => {
         // This prevents ₹0 amount on checkout if the user doesn't explicitly click the card
         const isWholeUnitType = p.propertyTemplate === 'villa' || (['homestay', 'apartment'].includes(p.propertyTemplate) && rts.length <= 1);
         const hasSingleInventory = adapted.inventory && adapted.inventory.length === 1;
-        
+
         if (isWholeUnitType || hasSingleInventory) {
           if (adapted.inventory && adapted.inventory.length > 0) {
             setSelectedRoom(adapted.inventory[0]);
@@ -589,8 +589,8 @@ const PropertyDetailsPage = () => {
     // Tax Calculation (on Commissionable Amount) matching backend logic
     const taxAmount = Math.round((commissionableAmount * taxRate) / 100);
 
-    const platformFeeAmount = platformFeeType === 'percentage' 
-      ? Math.round((grossAmount * platformFee) / 100) 
+    const platformFeeAmount = platformFeeType === 'percentage'
+      ? Math.round((grossAmount * platformFee) / 100)
       : platformFee;
 
     const grandTotal = taxableAmount + taxAmount + platformFeeAmount;
@@ -619,8 +619,8 @@ const PropertyDetailsPage = () => {
   };
 
   const baseBookingBarPrice = stayPricing.nights > 0
-      ? stayPricing.perNight
-      : getRoomPrice(bookingRoom) || property.minPrice || 0;
+    ? stayPricing.perNight
+    : getRoomPrice(bookingRoom) || property.minPrice || 0;
 
   // Calculate dynamic extra charges for the bottom bar preview (per night)
   const previewUnits = isWholeUnit ? 1 : guests.rooms;
@@ -782,7 +782,7 @@ const PropertyDetailsPage = () => {
           </>
         )}
         <div className="absolute top-4 left-4 z-10">
-          <button 
+          <button
             onClick={(e) => {
               e.stopPropagation();
               if (window.history.length > 2) {
@@ -790,7 +790,7 @@ const PropertyDetailsPage = () => {
               } else {
                 navigate('/listings');
               }
-            }} 
+            }}
             className="bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-colors cursor-pointer"
           >
             <ArrowLeft size={20} className="text-surface" />
@@ -863,8 +863,8 @@ const PropertyDetailsPage = () => {
           {/* Amenities - Show both Property and Room amenities */}
           {(() => {
             const validPropertyAmenities = amenities?.filter(item => item && typeof item === 'string' && item.trim().length > 0) || [];
-            const validRoomAmenities = (selectedRoom && selectedRoom.amenities) 
-              ? selectedRoom.amenities.filter(item => item && typeof item === 'string' && item.trim().length > 0) 
+            const validRoomAmenities = (selectedRoom && selectedRoom.amenities)
+              ? selectedRoom.amenities.filter(item => item && typeof item === 'string' && item.trim().length > 0)
               : [];
 
             return (
@@ -884,7 +884,7 @@ const PropertyDetailsPage = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {validRoomAmenities.length > 0 && (
                   <div>
                     <h2 className="text-lg font-bold text-textDark mb-3">Room Amenities</h2>
@@ -944,7 +944,7 @@ const PropertyDetailsPage = () => {
             </div>
           )}
 
-          {/* Have to check these later */  }
+          {/* Have to check these later */}
           {pTemplate === 'villa' && (property.structure || config) && (
             <div className="mb-8 grid md:grid-cols-2 gap-4">
               <div className="p-4 bg-green-50 rounded-xl">
@@ -1437,10 +1437,10 @@ const PropertyDetailsPage = () => {
 
                     if (!displayValue) return null;
 
-                      <div key={idx} className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
-                        <Shield size={16} className="text-surface/50" />
-                        <span className="text-gray-600 font-medium">{rule.label}: <span className="font-bold text-textDark ml-1">{displayValue}</span></span>
-                      </div>
+                    <div key={idx} className="flex items-center gap-3 bg-gray-50 px-4 py-3 rounded-xl border border-gray-100">
+                      <Shield size={16} className="text-surface/50" />
+                      <span className="text-gray-600 font-medium">{rule.label}: <span className="font-bold text-textDark ml-1">{displayValue}</span></span>
+                    </div>
                   })}
                 </div>
 

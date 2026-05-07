@@ -151,7 +151,7 @@ export const getDashboardStats = async (req, res) => {
 
     const bookingMonthly = monthlyRevenueData[0];
     const subMonthly = monthlyRevenueData[1];
-    
+
     // Combine for Chart (By Month)
     const months = [];
     for (let i = 0; i < 6; i++) {
@@ -952,8 +952,8 @@ export const getUserDetails = async (req, res) => {
       : [];
 
     const bookingTransactions = bookings
-      .filter(b => 
-        ['paid', 'refunded', 'partial'].includes(b.paymentStatus) || 
+      .filter(b =>
+        ['paid', 'refunded', 'partial'].includes(b.paymentStatus) ||
         b.paymentMethod === 'pay_at_hotel'
       )
       .map(b => ({
@@ -1197,7 +1197,7 @@ export const updateContactStatus = async (req, res) => {
       if (adminReply) {
         notifyBody += `\nAdmin Reply: ${adminReply}`;
       }
-      
+
       notificationService.sendToUser(message.userId, {
         title: 'Support Update 🛠️',
         body: notifyBody
