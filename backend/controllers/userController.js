@@ -89,6 +89,22 @@ export const updateUserProfile = async (req, res) => {
       if (req.body.profileImage !== undefined) user.profileImage = req.body.profileImage;
       if (req.body.profileImagePublicId !== undefined) user.profileImagePublicId = req.body.profileImagePublicId;
 
+      if (req.body.address) {
+        const { address } = req.body;
+        user.address = {
+          street: address.street !== undefined ? address.street : (user.address?.street || ''),
+          city: address.city !== undefined ? address.city : (user.address?.city || ''),
+          state: address.state !== undefined ? address.state : (user.address?.state || ''),
+          zipCode: address.zipCode !== undefined ? address.zipCode : (user.address?.zipCode || ''),
+          country: address.country !== undefined ? address.country : (user.address?.country || 'India'),
+          coordinates: {
+            lat: address.coordinates?.lat || user.address?.coordinates?.lat,
+            lng: address.coordinates?.lng || user.address?.coordinates?.lng
+          }
+        };
+        user.markModified('address');
+      }
+
       const updatedUser = await user.save();
 
       res.json({
@@ -99,6 +115,7 @@ export const updateUserProfile = async (req, res) => {
         role: updatedUser.role,
         isPartner: isPartner ? updatedUser.isPartner : user.isPartner,
         profileImage: updatedUser.profileImage,
+        address: updatedUser.address,
         createdAt: updatedUser.createdAt,
         partnerSince: updatedUser.partnerSince,
         pushNotificationsEnabled: updatedUser.pushNotificationsEnabled,

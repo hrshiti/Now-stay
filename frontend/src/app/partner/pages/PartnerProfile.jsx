@@ -169,9 +169,13 @@ const PartnerProfile = () => {
                 });
 
                 // Sync with localStorage
-                const user = JSON.parse(localStorage.getItem('user') || '{}');
-                const updatedUser = { ...user, ...updated };
+                const userRaw = localStorage.getItem('user');
+                const existingUser = userRaw ? JSON.parse(userRaw) : {};
+                const updatedUser = { ...existingUser, ...updated };
                 localStorage.setItem('user', JSON.stringify(updatedUser));
+                
+                // Dispatch event to sync state across app
+                window.dispatchEvent(new Event('storage'));
 
                 setIsEditing(false);
             } catch {
