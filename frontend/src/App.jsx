@@ -15,7 +15,7 @@ import ScrollToTop from './components/ui/ScrollToTop';
 
 // Hooks & Services
 import { useLenis } from './app/shared/hooks/useLenis';
-import { legalService, userService, hotelService } from './services/apiService';
+import { legalService, userService, hotelService, authService } from './services/apiService';
 import adminService from './services/adminService';
 import { requestNotificationPermission, onMessageListener } from './utils/firebase';
 import NowStayLogo from './components/ui/NowStayLogo';
@@ -271,27 +271,34 @@ const ProfileCompletionGuard = ({ children }) => {
   const isAllowed = allowedPaths.some(p => location.pathname.startsWith(p));
 
   // Definition of a "complete" profile
-  // Required: name, email, street, city, state
-  const isComplete = !!(
-    user.name && 
-    user.email && 
-    user.address?.street && 
-    user.address?.city && 
-    user.address?.state
-  );
+  // For Partners: Only require name and email (Identity was verified during registration)
+  // For Users: Still require address for booking purposes
+  const isComplete = user.role === 'partner' 
+    ? !!(user.name && user.email)
+    : !!(
+        user.name && 
+        user.email && 
+        user.address?.street && 
+        user.address?.city && 
+        user.address?.state
+      );
 
   React.useEffect(() => {
     if (!isComplete && !isAllowed) {
       const missing = [];
       if (!user.name) missing.push('Name');
       if (!user.email) missing.push('Email');
-      if (!user.address?.street || !user.address?.city || !user.address?.state) missing.push('Full Address');
+      if (user.role !== 'partner' && (!user.address?.street || !user.address?.city || !user.address?.state)) {
+        missing.push('Full Address');
+      }
       
-      toast.error(`Please complete your profile (${missing.join(', ')}) to access dashboard`, {
-        id: 'profile-incomplete-toast',
-        duration: 4000,
-        icon: '👤'
-      });
+      if (missing.length > 0) {
+        toast.error(`Please complete your profile (${missing.join(', ')}) to access dashboard`, {
+          id: 'profile-incomplete-toast',
+          duration: 4000,
+          icon: '👤'
+        });
+      }
     }
   }, [isComplete, isAllowed, user]);
 

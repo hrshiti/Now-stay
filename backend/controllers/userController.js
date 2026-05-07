@@ -66,37 +66,20 @@ export const updateUserProfile = async (req, res) => {
       const nameRegex = /^[A-Za-z\s]+$/;
       const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
 
-      if (req.body.name) {
-        if (!nameRegex.test(req.body.name)) {
-          return res.status(400).json({ message: 'Full name should only contain alphabets and spaces' });
-        }
-        user.name = req.body.name;
-      }
-
-      if (req.body.email) {
-        if (!emailRegex.test(req.body.email)) {
-          return res.status(400).json({ message: 'Please provide a valid email address' });
-        }
-        user.email = req.body.email;
-      }
-
-      if (req.body.phone) user.phone = req.body.phone;
-
-      if (req.body.password) {
-        user.password = await bcrypt.hash(req.body.password, 10);
-      }
-
+      const updateData = {};
+      if (req.body.name) updateData.name = req.body.name;
+      if (req.body.email) updateData.email = req.body.email;
+      if (req.body.phone) updateData.phone = req.body.phone;
       if (req.body.profileImage !== undefined) updateData.profileImage = req.body.profileImage;
       if (req.body.profileImagePublicId !== undefined) updateData.profileImagePublicId = req.body.profileImagePublicId;
 
       if (req.body.address) {
-        updateData.address = {
-          street: req.body.address.street !== undefined ? req.body.address.street : (user.address?.street || ''),
-          city: req.body.address.city !== undefined ? req.body.address.city : (user.address?.city || ''),
-          state: req.body.address.state !== undefined ? req.body.address.state : (user.address?.state || ''),
-          zipCode: req.body.address.zipCode !== undefined ? req.body.address.zipCode : (user.address?.zipCode || ''),
-          country: req.body.address.country !== undefined ? req.body.address.country : (user.address?.country || 'India')
-        };
+        const { address } = req.body;
+        if (address.street !== undefined) updateData['address.street'] = address.street;
+        if (address.city !== undefined) updateData['address.city'] = address.city;
+        if (address.state !== undefined) updateData['address.state'] = address.state;
+        if (address.zipCode !== undefined) updateData['address.zipCode'] = address.zipCode;
+        if (address.country !== undefined) updateData['address.country'] = address.country || 'India';
       }
 
       const updatedUser = await Model.findByIdAndUpdate(
@@ -107,6 +90,7 @@ export const updateUserProfile = async (req, res) => {
 
       res.json({
         _id: updatedUser._id,
+        id: updatedUser._id,
         name: updatedUser.name,
         email: updatedUser.email,
         phone: updatedUser.phone,

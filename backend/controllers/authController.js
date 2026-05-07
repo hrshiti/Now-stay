@@ -322,7 +322,7 @@ export const verifyOtp = async (req, res) => {
 
     // 1. Find User (if any)
     let user = await Model.findOne({ phone }).select('+otp +otpExpires');
-    
+
     // 2. Find registration-flow OTP Record (if any)
     const otpRecord = await Otp.findOne({ phone });
 
@@ -334,31 +334,31 @@ export const verifyOtp = async (req, res) => {
       verified = true;
       user.otp = undefined;
       user.otpExpires = undefined;
-      
+
       // If found but deleted, this is a direct login-based re-activation
       if (user.isDeleted) {
         user.isDeleted = false;
         console.log(`[AUTH] Account ${user._id} re-activated via Login flow.`);
       }
-    } 
+    }
     // Try verifying with Otp Record (Registration Flow / Deleted Account Recovery)
     else if (otpRecord && otpRecord.otp === otp && otpRecord.expiresAt >= Date.now()) {
       if (otpRecord.tempData && otpRecord.tempData.role && otpRecord.tempData.role !== role) {
         return res.status(400).json({ message: 'Invalid role context.' });
       }
       verified = true;
-      
+
       if (user) {
         // Exists but was deleted (handled via registration path)
         if (user.isDeleted) {
-           user.isDeleted = false;
-           console.log(`[AUTH] Account ${user._id} re-activated via Registration flow.`);
+          user.isDeleted = false;
+          console.log(`[AUTH] Account ${user._id} re-activated via Registration flow.`);
         }
       } else {
         // Truly a new user
         isRegistration = true;
       }
-      
+
       await Otp.deleteOne({ phone });
     }
 
@@ -727,17 +727,16 @@ export const updateProfile = async (req, res) => {
     if (profileImagePublicId !== undefined) updateData.profileImagePublicId = profileImagePublicId;
 
     if (address) {
-      updateData.address = {
-        street: address.street !== undefined ? address.street : (user.address?.street || ''),
-        city: address.city !== undefined ? address.city : (user.address?.city || ''),
-        state: address.state !== undefined ? address.state : (user.address?.state || ''),
-        zipCode: address.zipCode !== undefined ? address.zipCode : (user.address?.zipCode || ''),
-        country: address.country !== undefined ? address.country : (user.address?.country || 'India'),
-        coordinates: {
-          lat: address.coordinates?.lat || user.address?.coordinates?.lat,
-          lng: address.coordinates?.lng || user.address?.coordinates?.lng
-        }
-      };
+      if (address.street !== undefined) updateData['address.street'] = address.street;
+      if (address.city !== undefined) updateData['address.city'] = address.city;
+      if (address.state !== undefined) updateData['address.state'] = address.state;
+      if (address.zipCode !== undefined) updateData['address.zipCode'] = address.zipCode;
+      if (address.country !== undefined) updateData['address.country'] = address.country || 'India';
+
+      if (address.coordinates) {
+        if (address.coordinates.lat !== undefined) updateData['address.coordinates.lat'] = address.coordinates.lat;
+        if (address.coordinates.lng !== undefined) updateData['address.coordinates.lng'] = address.coordinates.lng;
+      }
     }
 
     const updatedUser = await Model.findByIdAndUpdate(
@@ -756,6 +755,7 @@ export const updateProfile = async (req, res) => {
       message: 'Profile updated successfully',
       user: {
         id: updatedUser._id,
+        _id: updatedUser._id, // Return both for consistency
         name: updatedUser.name,
         email: updatedUser.email,
         phone: updatedUser.phone,
@@ -770,7 +770,6 @@ export const updateProfile = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Update Profile Error:', error);
     res.status(500).json({ message: 'Server error updating profile' });
   }
 };
@@ -1013,13 +1012,13 @@ export const requestAccountDeletion = async (req, res) => {
     }
 
     // --- PENDING ACTIONS CHECK ---
-    
+
     // 1. Wallet Balance Check
     const wallet = await Wallet.findOne({ partnerId: user._id });
     if (wallet && Math.abs(wallet.balance) > 0) {
       const msg = 'Cannot delete account with a non-zero wallet balance. Please settle your dues or withdraw your balance first.';
       emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: msg,
         pendingBalance: wallet.balance
       });
@@ -1027,49 +1026,49 @@ export const requestAccountDeletion = async (req, res) => {
 
     // 2. Active Bookings Check
     const pendingBookingStatuses = ["pending", "awaiting_payment", "confirmed", "checked_in"];
-    
-    if (user.role === 'partner') {
-        // Partner check: Active bookings in any of their properties
-        const properties = await Property.find({ partnerId: user._id });
-        const propertyIds = properties.map(p => p._id);
-        
-        const activeBookings = await Booking.findOne({ 
-            propertyId: { $in: propertyIds },
-            bookingStatus: { $in: pendingBookingStatuses }
-        });
 
-        if (activeBookings) {
-            const msg = 'You have active bookings in your properties. Please complete or cancel them before deleting your account.';
-            emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
-            return res.status(400).json({ 
-                message: msg
-            });
-        }
+    if (user.role === 'partner') {
+      // Partner check: Active bookings in any of their properties
+      const properties = await Property.find({ partnerId: user._id });
+      const propertyIds = properties.map(p => p._id);
+
+      const activeBookings = await Booking.findOne({
+        propertyId: { $in: propertyIds },
+        bookingStatus: { $in: pendingBookingStatuses }
+      });
+
+      if (activeBookings) {
+        const msg = 'You have active bookings in your properties. Please complete or cancel them before deleting your account.';
+        emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
+        return res.status(400).json({
+          message: msg
+        });
+      }
 
     } else {
-        // User check: Their own active bookings
-        const activeBookings = await Booking.findOne({ 
-            userId: user._id,
-            bookingStatus: { $in: pendingBookingStatuses }
-        });
+      // User check: Their own active bookings
+      const activeBookings = await Booking.findOne({
+        userId: user._id,
+        bookingStatus: { $in: pendingBookingStatuses }
+      });
 
-        if (activeBookings) {
-            const msg = 'You have active bookings. Please complete or cancel them before deleting your account.';
-            emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
-            return res.status(400).json({ 
-                message: msg
-            });
-        }
+      if (activeBookings) {
+        const msg = 'You have active bookings. Please complete or cancel them before deleting your account.';
+        emailService.sendAccountDeletionBlockedEmail(user, msg).catch(console.error);
+        return res.status(400).json({
+          message: msg
+        });
+      }
     }
 
     // --- SEND OTP ---
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     const otpExpires = Date.now() + 10 * 60 * 1000;
 
-    await Model.findByIdAndUpdate(user._id, { 
-        otp, 
-        otpExpires,
-        deletionReason: reason // Temporary field for context
+    await Model.findByIdAndUpdate(user._id, {
+      otp,
+      otpExpires,
+      deletionReason: reason // Temporary field for context
     });
 
     // Send via Email only
@@ -1077,9 +1076,9 @@ export const requestAccountDeletion = async (req, res) => {
       await emailService.sendDeletionOTP(user, otp).catch(console.error);
     }
 
-    res.status(200).json({ 
-        success: true, 
-        message: 'A deletion verification OTP has been sent to your registered email.'
+    res.status(200).json({
+      success: true,
+      message: 'A deletion verification OTP has been sent to your registered email.'
     });
 
   } catch (error) {
@@ -1113,9 +1112,9 @@ export const verifyAccountDeletion = async (req, res) => {
     // --- HARD DELETE ---
 
     if (userRole === 'partner') {
-        // Cleanup Partner Data
-        await Property.deleteMany({ partnerId: user._id });
-        await Wallet.deleteMany({ partnerId: user._id });
+      // Cleanup Partner Data
+      await Property.deleteMany({ partnerId: user._id });
+      await Wallet.deleteMany({ partnerId: user._id });
     }
 
     await Model.findByIdAndDelete(user._id);
@@ -1126,13 +1125,13 @@ export const verifyAccountDeletion = async (req, res) => {
     }
 
     notificationService.sendToAdmins({
-        title: `Account Deleted: ${userName} (${userRole})`,
-        body: `Reason: ${reason}\nPhone: ${userPhone}`
+      title: `Account Deleted: ${userName} (${userRole})`,
+      body: `Reason: ${reason}\nPhone: ${userPhone}`
     }, { type: 'account_deletion', phone: userPhone }).catch(console.error);
 
-    res.status(200).json({ 
-        success: true, 
-        message: 'Your account and associated data have been permanently deleted.'
+    res.status(200).json({
+      success: true,
+      message: 'Your account and associated data have been permanently deleted.'
     });
 
   } catch (error) {

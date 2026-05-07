@@ -42,13 +42,11 @@ const PartnerProfile = () => {
     const getInitialProfile = () => {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const addr = user.address || {};
-        const addrStr = [addr.street, addr.city, addr.state].filter(Boolean).join(', ');
 
         return {
             name: user.name || '',
             email: user.email || '',
             phone: user.phone || '',
-            address: addrStr,
             role: user.role || 'partner',
             aadhaarNumber: user.aadhaarNumber || '',
             panNumber: user.panNumber || '',
@@ -88,7 +86,6 @@ const PartnerProfile = () => {
                     name: data.name || '',
                     email: data.email || '',
                     phone: data.phone || '',
-                    address: addrStr,
                     role: data.role || 'partner',
                     aadhaarNumber: data.aadhaarNumber || '',
                     panNumber: data.panNumber || '',
@@ -390,34 +387,6 @@ const PartnerProfile = () => {
                         onChange={(e) => handleChange('phone', e)}
                     />
                     
-                    <div className="mt-8 mb-4">
-                        <p className="text-[10px] text-[#0F172A] font-black uppercase tracking-[0.2em]">Location Details</p>
-                    </div>
-
-                    <Field
-                        label="Street Address *"
-                        value={profile.street}
-                        icon={MapPin}
-                        isEditing={isEditing}
-                        onChange={(e) => handleChange('street', e)}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                        <Field
-                            label="City *"
-                            value={profile.city}
-                            icon={MapPin}
-                            isEditing={isEditing}
-                            onChange={(e) => handleChange('city', e)}
-                        />
-                        <Field
-                            label="State *"
-                            value={profile.state}
-                            icon={MapPin}
-                            isEditing={isEditing}
-                            onChange={(e) => handleChange('state', e)}
-                        />
-                    </div>
-
                     <div className="mt-8 mb-4">
                         <p className="text-[10px] text-[#0F172A] font-black uppercase tracking-[0.2em]">Identity Details</p>
                     </div>
