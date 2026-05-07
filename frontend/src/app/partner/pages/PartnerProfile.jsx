@@ -365,47 +365,72 @@ const PartnerProfile = () => {
                     </div>
 
                     <Field
-                        label="Full Name"
+                        label="Full Name *"
                         value={profile.name}
                         icon={User}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('name', e)}
                     />
                     <Field
-                        label="Email Address"
+                        label="Email Address *"
                         value={profile.email}
                         icon={Mail}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('email', e)}
                     />
                     <Field
-                        label="Phone Number"
+                        label="Phone Number *"
                         value={profile.phone}
                         icon={Phone}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('phone', e)}
                     />
+                    
+                    <div className="mt-8 mb-4">
+                        <p className="text-[10px] text-[#0F172A] font-black uppercase tracking-[0.2em]">Location Details</p>
+                    </div>
+
                     <Field
-                        label="Address"
-                        value={profile.address}
+                        label="Street Address *"
+                        value={profile.street}
                         icon={MapPin}
                         isEditing={isEditing}
-                        onChange={(e) => handleChange('address', e)}
+                        onChange={(e) => handleChange('street', e)}
                     />
+                    <div className="grid grid-cols-2 gap-4">
+                        <Field
+                            label="City *"
+                            value={profile.city}
+                            icon={MapPin}
+                            isEditing={isEditing}
+                            onChange={(e) => handleChange('city', e)}
+                        />
+                        <Field
+                            label="State *"
+                            value={profile.state}
+                            icon={MapPin}
+                            isEditing={isEditing}
+                            onChange={(e) => handleChange('state', e)}
+                        />
+                    </div>
+
+                    <div className="mt-8 mb-4">
+                        <p className="text-[10px] text-[#0F172A] font-black uppercase tracking-[0.2em]">Identity Details</p>
+                    </div>
 
                     {/* Non-Editable Fields */}
                     <Field
                         label="Aadhaar Number"
                         value={profile.aadhaarNumber}
                         icon={CreditCard}
-                        isEditing={false} // Always read-only
+                        isEditing={false}
                         onChange={() => { }}
                     />
                     <Field
                         label="PAN Number"
                         value={profile.panNumber}
                         icon={CreditCard}
-                        isEditing={false} // Always read-only
+                        isEditing={false}
                         onChange={() => { }}
                     />
                 </div>

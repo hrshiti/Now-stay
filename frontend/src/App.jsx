@@ -265,34 +265,35 @@ const ProfileCompletionGuard = ({ children }) => {
   // Paths that are ALWAYS allowed (auth, legal, support, profile itself, checkout/payment handled by their own guards)
   const allowedPaths = [
     '/login', '/signup', '/hotel/login', '/hotel/register', 
-    '/profile', '/hotel/profile', '/legal', '/terms', '/privacy', '/support', '/hotel/support', '/hotel/contact', '/hotel/about',
-    '/hotel/dashboard', '/hotel/partner-dashboard'
+    '/profile', '/hotel/profile', '/legal', '/terms', '/privacy', '/support', '/hotel/support', '/hotel/contact', '/hotel/about'
   ];
 
   const isAllowed = allowedPaths.some(p => location.pathname.startsWith(p));
 
   // Definition of a "complete" profile
-  // For Partners: they already provide Aadhaar/PAN during reg, so we only check name/email
-  // For Users: check name/email/address
-  const isComplete = user.role === 'partner' 
-    ? !!(user.name && user.email)
-    : !!(
-        user.name && 
-        user.email && 
-        user.address?.street && 
-        user.address?.city && 
-        user.address?.state
-      );
+  // Required: name, email, street, city, state
+  const isComplete = !!(
+    user.name && 
+    user.email && 
+    user.address?.street && 
+    user.address?.city && 
+    user.address?.state
+  );
 
   React.useEffect(() => {
     if (!isComplete && !isAllowed) {
-      toast.error("Please complete your profile to access other features", {
+      const missing = [];
+      if (!user.name) missing.push('Name');
+      if (!user.email) missing.push('Email');
+      if (!user.address?.street || !user.address?.city || !user.address?.state) missing.push('Full Address');
+      
+      toast.error(`Please complete your profile (${missing.join(', ')}) to access dashboard`, {
         id: 'profile-incomplete-toast',
         duration: 4000,
         icon: '👤'
       });
     }
-  }, [isComplete, isAllowed]);
+  }, [isComplete, isAllowed, user]);
 
   if (!isComplete && !isAllowed) {
     const profilePath = user.role === 'partner' ? '/hotel/profile' : '/profile';
