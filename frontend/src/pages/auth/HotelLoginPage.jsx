@@ -21,7 +21,7 @@ const HotelLoginPage = () => {
         const token = localStorage.getItem('token');
         const userRaw = localStorage.getItem('user');
         const user = userRaw ? JSON.parse(userRaw) : null;
-        if (token && user && user.role === 'partner' && user.partnerApprovalStatus === 'approved') {
+        if (token && user && user.role === 'partner') {
             navigate('/hotel/dashboard', { replace: true });
         }
     }, [navigate]);

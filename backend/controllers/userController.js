@@ -86,26 +86,24 @@ export const updateUserProfile = async (req, res) => {
         user.password = await bcrypt.hash(req.body.password, 10);
       }
 
-      if (req.body.profileImage !== undefined) user.profileImage = req.body.profileImage;
-      if (req.body.profileImagePublicId !== undefined) user.profileImagePublicId = req.body.profileImagePublicId;
+      if (req.body.profileImage !== undefined) updateData.profileImage = req.body.profileImage;
+      if (req.body.profileImagePublicId !== undefined) updateData.profileImagePublicId = req.body.profileImagePublicId;
 
       if (req.body.address) {
-        const { address } = req.body;
-        user.address = {
-          street: address.street !== undefined ? address.street : (user.address?.street || ''),
-          city: address.city !== undefined ? address.city : (user.address?.city || ''),
-          state: address.state !== undefined ? address.state : (user.address?.state || ''),
-          zipCode: address.zipCode !== undefined ? address.zipCode : (user.address?.zipCode || ''),
-          country: address.country !== undefined ? address.country : (user.address?.country || 'India'),
-          coordinates: {
-            lat: address.coordinates?.lat || user.address?.coordinates?.lat,
-            lng: address.coordinates?.lng || user.address?.coordinates?.lng
-          }
+        updateData.address = {
+          street: req.body.address.street !== undefined ? req.body.address.street : (user.address?.street || ''),
+          city: req.body.address.city !== undefined ? req.body.address.city : (user.address?.city || ''),
+          state: req.body.address.state !== undefined ? req.body.address.state : (user.address?.state || ''),
+          zipCode: req.body.address.zipCode !== undefined ? req.body.address.zipCode : (user.address?.zipCode || ''),
+          country: req.body.address.country !== undefined ? req.body.address.country : (user.address?.country || 'India')
         };
-        user.markModified('address');
       }
 
-      const updatedUser = await user.save();
+      const updatedUser = await Model.findByIdAndUpdate(
+        req.user._id,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      );
 
       res.json({
         _id: updatedUser._id,
@@ -119,7 +117,7 @@ export const updateUserProfile = async (req, res) => {
         createdAt: updatedUser.createdAt,
         partnerSince: updatedUser.partnerSince,
         pushNotificationsEnabled: updatedUser.pushNotificationsEnabled,
-        token: req.headers.authorization.split(' ')[1] // Keep existing token
+        token: req.headers.authorization.split(' ')[1]
       });
     } else {
       res.status(404).json({ message: 'User not found' });

@@ -719,41 +719,15 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update fields if provided
-    const nameRegex = /^[A-Za-z\s]+$/;
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
-
-    if (name) {
-      if (!nameRegex.test(name)) {
-        return res.status(400).json({ message: 'Full name should only contain alphabets and spaces' });
-      }
-      user.name = name;
-    }
-
-    if (email) {
-      if (!emailRegex.test(email)) {
-        return res.status(400).json({ message: 'Please provide a valid email address' });
-      }
-      if (email !== user.email) {
-        const existingUser = await Model.findOne({ email, _id: { $ne: user._id } });
-        if (existingUser) {
-          return res.status(409).json({ message: 'Email already in use' });
-        }
-        user.email = email;
-      }
-    }
-    if (phone) {
-      if (phone !== user.phone) {
-        const existingUser = await Model.findOne({ phone, _id: { $ne: user._id } });
-        if (existingUser) {
-          return res.status(409).json({ message: 'Phone number already in use' });
-        }
-        user.phone = phone;
-      }
-    }
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (profileImage !== undefined) updateData.profileImage = profileImage;
+    if (profileImagePublicId !== undefined) updateData.profileImagePublicId = profileImagePublicId;
 
     if (address) {
-      user.address = {
+      updateData.address = {
         street: address.street !== undefined ? address.street : (user.address?.street || ''),
         city: address.city !== undefined ? address.city : (user.address?.city || ''),
         state: address.state !== undefined ? address.state : (user.address?.state || ''),
@@ -764,34 +738,34 @@ export const updateProfile = async (req, res) => {
           lng: address.coordinates?.lng || user.address?.coordinates?.lng
         }
       };
-      user.markModified('address');
     }
 
-    if (profileImage !== undefined) user.profileImage = profileImage;
-    if (profileImagePublicId !== undefined) user.profileImagePublicId = profileImagePublicId;
-
-    await user.save();
+    const updatedUser = await Model.findByIdAndUpdate(
+      user._id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
 
     // NOTIFICATION: Security alert for profile update
-    if (user.email) {
-      emailService.sendSecurityAlertEmail(user, 'Profile Details').catch(e => console.error(e));
+    if (updatedUser.email) {
+      emailService.sendSecurityAlertEmail(updatedUser, 'Profile Details').catch(e => console.error(e));
     }
 
     res.status(200).json({
       success: true,
       message: 'Profile updated successfully',
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        isPartner: user.isPartner || false,
-        address: user.address,
-        profileImage: user.profileImage,
-        partnerSince: user.partnerSince,
-        createdAt: user.createdAt,
-        pushNotificationsEnabled: user.pushNotificationsEnabled
+        id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        isPartner: updatedUser.isPartner || false,
+        address: updatedUser.address,
+        profileImage: updatedUser.profileImage,
+        partnerSince: updatedUser.partnerSince,
+        createdAt: updatedUser.createdAt,
+        pushNotificationsEnabled: updatedUser.pushNotificationsEnabled
       }
     });
 
