@@ -83,6 +83,7 @@ const AddHostelWizard = () => {
     suitability: 'none',
     houseRules: [],
     gstNumber: '',
+    gstPercentage: '',
     propertyEmail: '',
     ownerSignature: '',
     invoiceTerms: '',
@@ -226,6 +227,7 @@ const AddHostelWizard = () => {
           contactNumber: prop.contactNumber || '',
           suitability: prop.suitability || 'none',
           gstNumber: prop.gstNumber || '',
+          gstPercentage: prop.gstPercentage || '',
           propertyEmail: prop.propertyEmail || '',
           ownerSignature: prop.ownerSignature || '',
           invoiceTerms: prop.invoiceTerms || '',
@@ -451,7 +453,7 @@ const AddHostelWizard = () => {
 
       console.log('[Camera] Image captured, uploading...');
 
-      const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
+      const isSingle = type === 'cover' || type === 'room' || type === 'signature' || type.startsWith('doc');
 
       const res = await hotelService.uploadImagesBase64(result.images || [result]);
 
@@ -1665,56 +1667,70 @@ const AddHostelWizard = () => {
                   <FileText size={18} className="text-emerald-600" />
                   Invoice & Tax Details
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">
-                      GST Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      className={`input ${
-                        propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
-                          ? 'border-red-400 ring-1 ring-red-400'
-                          : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
-                          ? 'border-emerald-400 ring-1 ring-emerald-400'
-                          : ''
-                      }`}
-                      placeholder="e.g. 07AAAAA0000A1Z5"
-                      value={propertyForm.gstNumber}
-                      maxLength={15}
-                      onChange={e => updatePropertyForm('gstNumber', e.target.value.toUpperCase())}
-                    />
-                    {propertyForm.gstNumber && getGstError(propertyForm.gstNumber) && (
-                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getGstError(propertyForm.gstNumber)}</p>
-                    )}
-                    {propertyForm.gstNumber && !getGstError(propertyForm.gstNumber) && (
-                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid GSTIN</p>
-                    )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-500">
+                        GST Number <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        className={`input ${
+                          propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
+                            ? 'border-red-400 ring-1 ring-red-400'
+                            : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
+                            ? 'border-emerald-400 ring-1 ring-emerald-400'
+                            : ''
+                        }`}
+                        placeholder="e.g. 07AAAAA0000A1Z5"
+                        value={propertyForm.gstNumber}
+                        maxLength={15}
+                        onChange={e => updatePropertyForm('gstNumber', e.target.value.toUpperCase())}
+                      />
+                      {propertyForm.gstNumber && getGstError(propertyForm.gstNumber) && (
+                        <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getGstError(propertyForm.gstNumber)}</p>
+                      )}
+                      {propertyForm.gstNumber && !getGstError(propertyForm.gstNumber) && (
+                        <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid GSTIN</p>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-500">
+                        Requested GST Percentage (%) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        className="input w-full"
+                        placeholder="e.g. 12"
+                        value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
+                        onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-500">
+                        Official Property Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        className={`input ${
+                          propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
+                            ? 'border-red-400 ring-1 ring-red-400'
+                            : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
+                            ? 'border-emerald-400 ring-1 ring-emerald-400'
+                            : ''
+                        }`}
+                        type="email"
+                        placeholder="hostel@example.com"
+                        value={propertyForm.propertyEmail}
+                        onChange={e => updatePropertyForm('propertyEmail', e.target.value)}
+                      />
+                      {propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail) && (
+                        <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getEmailError(propertyForm.propertyEmail)}</p>
+                      )}
+                      {propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail) && (
+                        <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid email</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-gray-500">
-                      Official Property Email <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      className={`input ${
-                        propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
-                          ? 'border-red-400 ring-1 ring-red-400'
-                          : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
-                          ? 'border-emerald-400 ring-1 ring-emerald-400'
-                          : ''
-                      }`}
-                      type="email"
-                      placeholder="hostel@example.com"
-                      value={propertyForm.propertyEmail}
-                      onChange={e => updatePropertyForm('propertyEmail', e.target.value)}
-                    />
-                    {propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail) && (
-                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getEmailError(propertyForm.propertyEmail)}</p>
-                    )}
-                    {propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail) && (
-                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid email</p>
-                    )}
-                  </div>
-                </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Terms & Conditions (for Invoice)</label>
@@ -1955,6 +1971,15 @@ const AddHostelWizard = () => {
                       <div className="flex-1 min-w-0">
                         <div className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">Official Email</div>
                         <div className="text-xs font-bold text-gray-800 break-all">{propertyForm.propertyEmail || 'Not provided'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/50">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-50">
+                        <span className="text-[10px] font-black">%</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[9px] text-emerald-600/70 uppercase font-extrabold tracking-wider">Requested GST Percentage</div>
+                        <div className="text-xs font-bold text-emerald-900">{propertyForm.gstPercentage || 0}%</div>
                       </div>
                     </div>
                   </div>

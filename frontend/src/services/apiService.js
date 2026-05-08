@@ -174,6 +174,14 @@ export const authService = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('adminToken'); // Ensure admin session is also cleared
+    
+    // Clear all booking related drafts from sessionStorage
+    Object.keys(sessionStorage).forEach(key => {
+      if (key.startsWith('property_draft_') || key === 'pendingBooking' || key === 'homeSearchData') {
+        sessionStorage.removeItem(key);
+      }
+    });
   }
 };
 

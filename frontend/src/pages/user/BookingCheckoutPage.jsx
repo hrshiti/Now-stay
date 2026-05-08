@@ -103,6 +103,14 @@ const BookingCheckoutPage = () => {
     phone: user?.phone || '',
     state: user?.address?.state || user?.state || ''
   });
+
+  // Cleanup helper to remove booking data from sessionStorage after success
+  const clearBookingData = () => {
+    sessionStorage.removeItem('pendingBooking');
+    if (property?._id) {
+      sessionStorage.removeItem(`property_draft_${property._id}`);
+    }
+  };
   const [errors, setErrors] = useState({});
 
   const validateFields = () => {
@@ -237,7 +245,7 @@ const BookingCheckoutPage = () => {
         // --- PAY AT HOTEL FLOW ---
         const response = await bookingService.create(payload);
         if (response.success && response.booking) {
-          sessionStorage.removeItem('pendingBooking');
+          clearBookingData();
           toast.success("Booking Confirmed!");
           navigate(`/booking/${response.booking._id || response.booking.bookingId}`, { state: { booking: response.booking, animate: true } });
         } else {
@@ -252,7 +260,7 @@ const BookingCheckoutPage = () => {
           const response = await bookingService.create(payload);
           // If full wallet payment, backend should create booking directly and mark paid
           if (response.success && response.booking) {
-            sessionStorage.removeItem('pendingBooking');
+            clearBookingData();
             toast.success("Paid via Wallet! Booking Confirmed.");
             navigate(`/booking/${response.booking._id}`, { state: { booking: response.booking, animate: true } });
             return;
@@ -298,7 +306,7 @@ const BookingCheckoutPage = () => {
             };
             const verifyRes = await paymentService.verifyPayment(verifyPayload);
             if (verifyRes.success) {
-              sessionStorage.removeItem('pendingBooking');
+              clearBookingData();
               toast.success("Payment Successful!");
               navigate(`/booking/${verifyRes.booking._id}`, { state: { booking: verifyRes.booking, animate: true } });
             } else {

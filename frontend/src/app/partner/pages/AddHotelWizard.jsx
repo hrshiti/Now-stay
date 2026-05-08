@@ -463,7 +463,7 @@ const AddHotelWizard = () => {
       console.log('[Camera] Image captured, uploading...');
 
       // For single image upload (cover image, room, or documents)
-      const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
+      const isSingle = type === 'cover' || type === 'room' || type === 'signature' || type.startsWith('doc');
 
       const res = await hotelService.uploadImagesBase64(result.images || [result]);
       console.log('[Camera] Upload success:', res);
