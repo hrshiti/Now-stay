@@ -31,7 +31,8 @@ export const openFlutterCamera = async () => {
           console.log('[Flutter Picker] Received Result:', result);
           
           if (!result) {
-            reject(new Error('Native app returned no data. Please ensure camera permissions are granted.'));
+            console.warn('[Flutter Picker] Native bridge returned null or empty result. This usually means the user cancelled the picker or permissions were denied.');
+            reject(new Error('Image selection cancelled or camera permissions missing.'));
             return;
           }
 
