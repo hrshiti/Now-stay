@@ -2038,7 +2038,6 @@ const AddResortWizard = () => {
                       </div>
                     </div>
                   </div>
-                  </div>
                 </div>
 
                 {/* 5. Documents Status */}

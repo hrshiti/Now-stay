@@ -104,6 +104,7 @@ const AddTentWizard = () => {
     suitability: 'none',
     houseRules: [],
     gstNumber: '',
+    gstPercentage: '',
     propertyEmail: '',
     ownerSignature: '',
     invoiceTerms: '',
@@ -537,7 +538,7 @@ const AddTentWizard = () => {
 
       console.log('[Camera] Image captured, uploading...');
 
-      const isSingle = type === 'cover' || type === 'room' || type.startsWith('doc');
+      const isSingle = type === 'cover' || type === 'room' || type === 'signature' || type.startsWith('doc');
 
       const res = await hotelService.uploadImagesBase64(result.images || [result]);
       console.log('[Camera] Upload success:', res);
@@ -688,6 +689,7 @@ const AddTentWizard = () => {
           contactNumber: prop.contactNumber || '',
           suitability: prop.suitability || 'none',
           gstNumber: prop.gstNumber || '',
+          gstPercentage: prop.gstPercentage || '',
           propertyEmail: prop.propertyEmail || '',
           ownerSignature: prop.ownerSignature || '',
           invoiceTerms: prop.invoiceTerms || '',
@@ -1842,6 +1844,20 @@ const AddTentWizard = () => {
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-gray-500">
+                        Requested GST Percentage (%) <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        className="input w-full"
+                        placeholder="e.g. 12"
+                        value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
+                        onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-gray-500">
                         Official Property Email <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -2107,6 +2123,15 @@ const AddTentWizard = () => {
                       <div className="flex-1 min-w-0">
                         <div className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">Official Email</div>
                         <div className="text-xs font-bold text-gray-800 break-all">{propertyForm.propertyEmail || 'Not provided'}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/50">
+                      <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-50">
+                        <span className="text-[10px] font-black">%</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[9px] text-emerald-600/70 uppercase font-extrabold tracking-wider">Requested GST Percentage</div>
+                        <div className="text-xs font-bold text-emerald-900">{propertyForm.gstPercentage || 0}%</div>
                       </div>
                     </div>
                   </div>

@@ -2021,7 +2021,8 @@ const AddPGWizard = () => {
                         <div className="text-[9px] text-gray-400 uppercase font-extrabold tracking-wider">Official Email</div>
                         <div className="text-xs font-bold text-gray-800 break-all">{propertyForm.propertyEmail || 'Not provided'}</div>
                       </div>
-                      <div className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/50">
+                    </div>
+                    <div className="flex items-center gap-3 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100/50">
                       <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-emerald-600 shadow-sm border border-emerald-50">
                         <span className="text-[10px] font-black">%</span>
                       </div>
@@ -2030,7 +2031,6 @@ const AddPGWizard = () => {
                         <div className="text-xs font-bold text-emerald-900">{propertyForm.gstPercentage || 0}%</div>
                       </div>
                     </div>
-                  </div>
                   </div>
                 </div>
 
