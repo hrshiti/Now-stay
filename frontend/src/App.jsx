@@ -304,7 +304,7 @@ const ProfileCompletionGuard = ({ children }) => {
 
   if (!isComplete && !isAllowed) {
     const profilePath = user.role === 'partner' ? '/hotel/profile' : '/profile';
-    return <Navigate to={profilePath} replace />;
+    return <Navigate to={profilePath} state={{ from: location }} replace />;
   }
 
   return children;

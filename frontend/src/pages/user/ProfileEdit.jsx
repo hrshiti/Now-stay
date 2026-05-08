@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { User, Phone, Mail, ArrowLeft, Save, Loader2, MapPin, Navigation, Home, Camera, Trash2, AlertTriangle, LogOut } from 'lucide-react';
 import { authService, userService } from '../../services/apiService';
@@ -10,6 +10,9 @@ import { propertyService } from '../../services/propertyService';
 
 const ProfileEdit = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from;
+  const isFromCheckout = from?.pathname === '/checkout';
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
@@ -19,7 +22,7 @@ const ProfileEdit = () => {
   const [deletionReason, setDeletionReason] = useState('');
   const [deletionOtp, setDeletionOtp] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(isFromCheckout);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     name: '',
@@ -259,7 +262,12 @@ const ProfileEdit = () => {
       localStorage.setItem('user', JSON.stringify(response.user));
 
       toast.success('Profile updated successfully!');
-      setIsEditing(false); // Switch back to view mode instead of navigating back immediately
+      
+      if (from) {
+        navigate(from.pathname, { replace: true, state: from.state });
+      } else {
+        setIsEditing(false);
+      }
     } catch (error) {
       toast.error(error.message || 'Failed to update profile');
     } finally {
@@ -339,6 +347,23 @@ const ProfileEdit = () => {
         )}
         {isEditing && <div className="w-10"></div>}
       </div>
+
+      {isFromCheckout && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md px-4 mb-4"
+        >
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shrink-0">
+              <AlertTriangle size={20} />
+            </div>
+            <p className="text-xs font-bold text-amber-800 leading-relaxed">
+              Please complete your profile details to continue with your hotel booking.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
