@@ -695,19 +695,24 @@ const PropertyDetailsPage = () => {
       return;
     }
 
+    const checkoutData = {
+      property,
+      selectedRoom,
+      dates,
+      guests: {
+        ...guests,
+        rooms: guests.rooms
+      },
+      priceBreakdown,
+      taxRate: priceBreakdown.gstRate,
+      couponCode: priceBreakdown.couponCode
+    };
+
+    // Save to sessionStorage to preserve across redirects/login
+    sessionStorage.setItem('pendingBooking', JSON.stringify(checkoutData));
+
     navigate('/checkout', {
-      state: {
-        property,
-        selectedRoom,
-        dates,
-        guests: {
-          ...guests,
-          rooms: guests.rooms
-        },
-        priceBreakdown,
-        taxRate: priceBreakdown.gstRate,
-        couponCode: priceBreakdown.couponCode
-      }
+      state: checkoutData
     });
   };
 
