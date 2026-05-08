@@ -144,6 +144,8 @@ const propertySchema = new mongoose.Schema({
 
   // INVOICE & TAX DETAILS
   gstNumber: { type: String, trim: true },
+  gstPercentage: { type: Number, default: 0 },
+  isGstApproved: { type: Boolean, default: false },
   propertyEmail: { type: String, trim: true, lowercase: true },
   ownerSignature: { type: String }, // URL to uploaded signature image
   invoiceTerms: { type: String, trim: true }

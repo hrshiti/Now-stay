@@ -1219,33 +1219,24 @@ export const getPlatformSettings = async (req, res) => {
 
 export const updatePlatformSettings = async (req, res) => {
   try {
-    const { platformOpen, maintenanceMode, bookingDisabledMessage, maintenanceTitle, maintenanceMessage } = req.body;
+    const { platformOpen, maintenanceMode, bookingDisabledMessage, maintenanceTitle, maintenanceMessage, platformFee, platformFeeType } = req.body;
     const settings = await PlatformSettings.getSettings();
 
-    if (typeof platformOpen === 'boolean') {
-      settings.platformOpen = platformOpen;
-    }
-    if (typeof maintenanceMode === 'boolean') {
-      settings.maintenanceMode = maintenanceMode;
-    }
-    if (typeof bookingDisabledMessage === 'string') {
-      settings.bookingDisabledMessage = bookingDisabledMessage;
-    }
-    if (typeof maintenanceTitle === 'string') {
-      settings.maintenanceTitle = maintenanceTitle;
-    }
-    if (typeof maintenanceMessage === 'string') {
-      settings.maintenanceMessage = maintenanceMessage;
-    }
+    if (platformOpen !== undefined) settings.platformOpen = platformOpen;
+    if (maintenanceMode !== undefined) settings.maintenanceMode = maintenanceMode;
+    if (bookingDisabledMessage !== undefined) settings.bookingDisabledMessage = bookingDisabledMessage;
+    if (maintenanceTitle !== undefined) settings.maintenanceTitle = maintenanceTitle;
+    if (maintenanceMessage !== undefined) settings.maintenanceMessage = maintenanceMessage;
+    
+    // New: Platform Fee
+    if (platformFee !== undefined) settings.platformFee = platformFee;
+    if (platformFeeType !== undefined) settings.platformFeeType = platformFeeType;
 
     if (req.body.defaultCommission !== undefined) {
       settings.defaultCommission = Number(req.body.defaultCommission);
     }
     if (req.body.taxRate !== undefined) {
       settings.taxRate = Number(req.body.taxRate);
-    }
-    if (req.body.companyState !== undefined && typeof req.body.companyState === 'string') {
-      settings.companyState = req.body.companyState.trim();
     }
     if (req.body.platformFee !== undefined) {
       settings.platformFee = Number(req.body.platformFee);
@@ -1551,7 +1542,7 @@ export const adminUpdateProperty = async (req, res) => {
       'location', 'nearbyPlaces', 'coverImage', 'propertyImages',
       'checkInTime', 'checkOutTime', 'cancellationPolicy',
       'status', 'isLive', 'avgRating', 'totalReviews',
-      'gstNumber', 'propertyEmail', 'ownerSignature', 'invoiceTerms'
+      'gstNumber', 'gstPercentage', 'isGstApproved', 'propertyEmail', 'ownerSignature', 'invoiceTerms'
     ];
 
     updatableFields.forEach(field => {

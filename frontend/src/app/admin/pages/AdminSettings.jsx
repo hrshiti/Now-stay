@@ -47,7 +47,6 @@ const AdminSettings = () => {
     const [maintenanceMessage, setMaintenanceMessage] = useState('');
     const [commission, setCommission] = useState(10);
     const [taxRate, setTaxRate] = useState(12);
-    const [companyState, setCompanyState] = useState('Maharashtra');
     const [platformFee, setPlatformFee] = useState(0);
     const [platformFeeType, setPlatformFeeType] = useState('percentage');
 
@@ -88,7 +87,6 @@ const AdminSettings = () => {
                     setMaintenanceMessage(res.settings.maintenanceMessage || '');
                     setCommission(res.settings.defaultCommission !== undefined ? res.settings.defaultCommission : 10);
                     setTaxRate(res.settings.taxRate !== undefined ? res.settings.taxRate : 12);
-                    setCompanyState(res.settings.companyState || 'Maharashtra');
                     setPlatformFee(res.settings.platformFee !== undefined ? res.settings.platformFee : 0);
                     setPlatformFeeType(res.settings.platformFeeType || 'percentage');
                 }
@@ -166,7 +164,6 @@ const AdminSettings = () => {
                 maintenanceMessage,
                 defaultCommission: Number(commission),
                 taxRate: Number(taxRate),
-                companyState,
                 platformFee: Number(platformFee),
                 platformFeeType
             });
@@ -348,16 +345,6 @@ const AdminSettings = () => {
                                 value={taxRate}
                                 onChange={(e) => setTaxRate(e.target.value)}
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Company Base State (For GST)</label>
-                            <input
-                                type="text"
-                                value={companyState}
-                                onChange={(e) => setCompanyState(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
-                                placeholder="e.g., Maharashtra"
                             />
                         </div>
                     </div>

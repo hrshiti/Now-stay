@@ -3,22 +3,6 @@ import { Mail, Phone, MapPin } from 'lucide-react';
 import { legalService } from '../services/apiService';
 
 const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp }) => {
-    const [companyState, setCompanyState] = useState('maharashtra');
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const settings = await legalService.getFinancialSettings();
-                if (settings.companyState) {
-                    setCompanyState(settings.companyState.toLowerCase().trim());
-                }
-            } catch (error) {
-                console.error("Failed to fetch financial settings for invoice", error);
-            }
-        };
-        fetchSettings();
-    }, []);
-
     if (!booking || !property) return null;
 
     const invoiceDate = new Date().toLocaleDateString('en-US', { 
@@ -44,10 +28,7 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
     })();
 
     // GST Bifurcation Logic (CGST/SGST vs IGST)
-    // Assuming platform base state is fetched dynamically as per requirement. 
-    // This aligns with backend PDF logic.
-    const propState = (property.address?.state || '').toLowerCase().trim();
-    const isInterState = propState && propState !== companyState;
+    const isInterState = booking.taxType === 'inter';
     const halfTax = booking.taxes ? booking.taxes / 2 : 0;
     const halfRate = computedTaxRate > 0 ? (computedTaxRate / 2).toFixed(1) : 0;
 
@@ -206,10 +187,6 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                         {isInterState ? (
                             <>
                                 <tr>
-                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>Tax Rate (IGST)</td>
-                                    <td className="border border-gray-300 px-4 py-2 text-right">{computedTaxRate > 0 ? `${parseFloat(computedTaxRate.toFixed(3))}%` : '0%'}</td>
-                                </tr>
-                                <tr>
                                     <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>Tax Amount (IGST)</td>
                                     <td className="border border-gray-300 px-4 py-2 text-right font-bold">₹{booking.taxes?.toLocaleString()}</td>
                                 </tr>
@@ -226,6 +203,10 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                                 </tr>
                             </>
                         )}
+                        <tr>
+                            <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>Platform Fees</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right font-bold">₹{booking.platformFee?.toLocaleString() || 0}</td>
+                        </tr>
                         <tr style={{ backgroundColor: '#eff6ff' }}>
                             <td className="border px-4 py-3 font-black uppercase" style={{ borderColor: '#1e3a8a', color: '#1e3a8a' }}>TOTAL PAID</td>
                             <td className="border px-4 py-3 text-right font-black text-lg sm:text-xl font-mono tracking-tighter" style={{ borderColor: '#1e3a8a', color: '#1e3a8a' }}>₹{booking.totalAmount?.toLocaleString()}</td>

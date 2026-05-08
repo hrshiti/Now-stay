@@ -83,6 +83,8 @@ export const createProperty = async (req, res) => {
       noticePeriod: lowerType === 'pg' ? noticePeriod : undefined,
       suitability: req.body.suitability || 'none',
       gstNumber,
+      gstPercentage: req.body.gstPercentage || 0,
+      isGstApproved: false,
       propertyEmail,
       ownerSignature,
       invoiceTerms
@@ -168,7 +170,7 @@ export const updateProperty = async (req, res) => {
       'amenities', 'coverImage', 'propertyImages', 'checkInTime', 'checkOutTime',
       'cancellationPolicy', 'houseRules', 'pgType', 'hostLivesOnProperty', 'resortType',
       'activities', 'hotelCategory', 'starRating', 'contactNumber', 'suitability', 'isLive',
-      'mealsIncluded', 'foodType', 'noticePeriod', 'gstNumber', 'propertyEmail', 'ownerSignature', 'invoiceTerms'
+      'mealsIncluded', 'foodType', 'noticePeriod', 'gstNumber', 'gstPercentage', 'propertyEmail', 'ownerSignature', 'invoiceTerms'
     ];
 
     updatableFields.forEach(field => {

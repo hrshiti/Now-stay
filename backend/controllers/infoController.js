@@ -51,8 +51,7 @@ export const getFinancialSettings = async (req, res) => {
       success: true,
       taxRate: settings.taxRate || 0,
       platformFee: settings.platformFee || 0,
-      platformFeeType: settings.platformFeeType || 'percentage',
-      companyState: settings.companyState || 'Maharashtra'
+      platformFeeType: settings.platformFeeType || 'percentage'
     });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Server error fetching financial settings' });

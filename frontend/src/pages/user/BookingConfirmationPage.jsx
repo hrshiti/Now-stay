@@ -212,18 +212,8 @@ const BookingConfirmationPage = () => {
                         {isCancelled ? 'Booking Details' : 'Booking Confirmation'}
                     </h1>
                     <div className="flex items-center gap-1">
-                        <button 
-                            onClick={handleDownload} 
-                            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-surface flex items-center justify-center"
-                            title="Download Invoice"
-                        >
-                            <Download size={20} />
-                        </button>
                         <button onClick={() => setShowInvoice(true)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-blue-600" title="View Professional Invoice">
                             <FileText size={20} />
-                        </button>
-                        <button onClick={handlePrint} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600" title="Print Page">
-                            <Printer size={20} />
                         </button>
                     </div>
                 </div>
@@ -420,10 +410,25 @@ const BookingConfirmationPage = () => {
                                     </div>
                                 )}
                                 {booking.taxes > 0 && (
-                                    <div className="flex justify-between text-sm text-gray-600">
-                                        <span>Taxes & Fees</span>
-                                        <span>₹{booking.taxes?.toLocaleString()}</span>
-                                    </div>
+                                    <>
+                                        {booking.taxType === 'inter' ? (
+                                            <div className="flex justify-between text-sm text-gray-600">
+                                                <span>IGST ({((booking.igst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(0)}%)</span>
+                                                <span>₹{booking.igst?.toLocaleString()}</span>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex justify-between text-sm text-gray-600">
+                                                    <span>CGST ({((booking.cgst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(1)}%)</span>
+                                                    <span>₹{booking.cgst?.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm text-gray-600">
+                                                    <span>SGST ({((booking.sgst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(1)}%)</span>
+                                                    <span>₹{booking.sgst?.toLocaleString()}</span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </>
                                 )}
                                 {(booking.discount > 0) && (
                                     <div className="flex justify-between text-sm text-green-600 font-medium">
@@ -431,6 +436,10 @@ const BookingConfirmationPage = () => {
                                         <span>-₹{booking.discount?.toLocaleString()}</span>
                                     </div>
                                 )}
+                                <div className="flex justify-between text-sm text-gray-600">
+                                    <span>Platform Fees</span>
+                                    <span>₹{booking.platformFee?.toLocaleString() || 0}</span>
+                                </div>
                                 <div className="border-t border-gray-100 pt-3 flex justify-between items-center bg-gray-50 -mx-6 px-6 py-4 mt-4">
                                     <span className="font-bold text-gray-900">Total Amount</span>
                                     <span className="text-xl font-black text-gray-900">₹{booking.totalAmount?.toLocaleString()}</span>

@@ -241,7 +241,31 @@ export const createBooking = async (req, res) => {
 
     // Calculate Tax (On Gross Amount as per Frontend logic)
     const commissionableAmount = grossAmount;
-    const taxes = Math.round((commissionableAmount * gstRate) / 100);
+    // Priority: Property-specific GST (if set and > 0) > Admin's global tax rate
+    const finalGstRate = (property.gstPercentage !== undefined && property.gstPercentage > 0) 
+      ? property.gstPercentage 
+      : gstRate;
+
+    // Determine State-based Split
+    // User State is expected in req.body.address.state (from checkout billing)
+    const hotelState = property.address?.state?.trim().toLowerCase() || '';
+    const userState = req.body.address?.state?.trim().toLowerCase() || hotelState; // Default to hotelState if not provided to avoid bifurcation errors
+
+    let cgst = 0, sgst = 0, igst = 0, taxType = 'none';
+    const totalTaxAmount = Math.round((commissionableAmount * finalGstRate) / 100);
+
+    if (finalGstRate > 0) {
+      if (hotelState === userState) {
+        taxType = 'intra';
+        cgst = Math.round(totalTaxAmount / 2);
+        sgst = totalTaxAmount - cgst; // Handle rounding
+      } else {
+        taxType = 'inter';
+        igst = totalTaxAmount;
+      }
+    }
+
+    const taxes = totalTaxAmount;
 
     // Calculate Platform Fee
     const platformFee = platformFeeType === 'percentage'
@@ -328,7 +352,11 @@ export const createBooking = async (req, res) => {
       extraChildPrice,
       extraCharges,
       taxes,
-      taxRate: gstRate, // Save rate at booking time for accurate PDF display
+      taxRate: finalGstRate,
+      taxType,
+      cgst,
+      sgst,
+      igst,
       adminCommission,
       partnerPayout,
       discount: discountAmount,
@@ -377,10 +405,11 @@ export const createBooking = async (req, res) => {
             });
           }
 
-          // A. Credit Partner the Taxable Amount (Booking Price - Discount, excluding Tax)
+          // A. Credit Partner the Taxable Amount + Taxes (GST now stays with Partner)
           // taxableAmount is (grossAmount - discountAmount)
-          await partnerWallet.credit(taxableAmount, `Payment for Booking #${bookingId}`, bookingId, 'booking_payment');
-
+          const partnerCredit = taxableAmount + (taxes || 0);
+          await partnerWallet.credit(partnerCredit, `Payment for Booking #${bookingId} (Incl. GST)`, bookingId, 'booking_payment');
+          
           // B. Debit Partner the Admin Commission only
           if (adminCommission > 0) {
             await partnerWallet.debit(adminCommission, `Platform Commission for Booking #${bookingId}`, bookingId, 'commission_deduction');
@@ -393,8 +422,8 @@ export const createBooking = async (req, res) => {
           }, { type: 'wallet_update', bookingId: booking._id }).catch(e => console.error(e));
         }
 
-        // 2. Credit Admin (Commission + Tax)
-        const totalAdminCredit = (adminCommission || 0) + (taxes || 0);
+        // 2. Credit Admin (Commission + Platform Fee)
+        const totalAdminCredit = (adminCommission || 0) + (platformFee || 0);
         if (totalAdminCredit > 0) {
           let adminWallet = await Wallet.findOne({ role: 'admin' });
           if (!adminWallet) {
@@ -410,7 +439,7 @@ export const createBooking = async (req, res) => {
           }
 
           if (adminWallet) {
-            await adminWallet.credit(totalAdminCredit, `Commission & Tax for Booking #${bookingId}`, bookingId, 'commission_tax');
+            await adminWallet.credit(totalAdminCredit, `Commission & Platform Fee for Booking #${bookingId}`, bookingId, 'commission_tax');
           }
         }
 
@@ -484,7 +513,7 @@ export const createBooking = async (req, res) => {
     // Handle Pay at Hotel (Deduct commission and taxes immediately from App Wallet)
     if (paymentMethod === 'pay_at_hotel') {
       console.log(`[Booking] Pay at Hotel selected for #${bookingId}. Deducting commission upfront.`);
-      const amountToDeduct = (adminCommission || 0) + (taxes || 0);
+      const amountToDeduct = (adminCommission || 0) + (platformFee || 0);
 
       if (amountToDeduct > 0 && property.partnerId) {
         let partnerWallet = await Wallet.findOne({ partnerId: property.partnerId, role: 'partner' });
@@ -1023,12 +1052,11 @@ export const markBookingAsPaid = async (req, res) => {
 
     // --- WALLET SETTLEMENT (Pay at Hotel) ---
     // The partner collected totalAmount (including tax) at the hotel.
-    // However, as per requirements, we hide the tax from their payout view.
-    // They keep the tax which we then deduct along with commission.
+    // They keep the tax. We only deduct the platform's cut (Commission + Platform Fee).
 
     const adminCommission = booking.adminCommission || 0;
-    const taxes = booking.taxes || 0;
-    const totalDeduction = adminCommission + taxes;
+    const platformFee = booking.platformFee || 0;
+    const totalDeduction = adminCommission + platformFee;
 
     if (totalDeduction > 0 && booking.propertyId.partnerId) {
       try {
@@ -1041,17 +1069,15 @@ export const markBookingAsPaid = async (req, res) => {
           });
         }
 
-        // Debit Partner for the Platform's cut (Commission + the Tax they collected but doesn't belong to them)
-        // Description only mentions Commission to keep things simple for partner
-        const amountWithoutTax = booking.totalAmount - booking.taxes;
+        // Debit Partner for the Platform's cut only
         await partnerWallet.debit(
           totalDeduction,
-          `Platform Commission for Booking #${booking.bookingId} (Booking Amount: ₹${amountWithoutTax})`,
+          `Platform Commission & Fee for Booking #${booking.bookingId}`,
           booking.bookingId,
           'commission_deduction'
         );
 
-        // Credit Admin (Both commission and tax collected by partner are now in system)
+        // Credit Admin (Commission + Platform Fee)
         let adminWallet = await Wallet.findOne({ role: 'admin' });
         if (!adminWallet) {
           const AdminUser = mongoose.model('User');
@@ -1066,7 +1092,7 @@ export const markBookingAsPaid = async (req, res) => {
         }
 
         if (adminWallet) {
-          await adminWallet.credit(totalDeduction, `Comm & Tax (PayAtHotel) for Booking #${booking.bookingId}`, booking.bookingId, 'commission_tax');
+          await adminWallet.credit(totalDeduction, `Comm & Fee (PayAtHotel) for Booking #${booking.bookingId}`, booking.bookingId, 'commission_tax');
         }
 
       } catch (err) {
@@ -1491,26 +1517,21 @@ export const downloadReceipt = async (req, res) => {
     // Row: Taxes (Dynamic Rate & Bifurcation)
     if (booking.taxes > 0) {
       boxY += 20;
-      const propState = (property.address?.state || '').toLowerCase().trim();
-      const isInterState = propState && companyState && propState !== companyState;
+      if (booking.taxType === 'inter') {
+        // IGST
+        doc.text(`IGST @ ${appliedTaxRate}%`, 65, boxY);
+        doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
+      } else if (booking.taxType === 'intra') {
+        // CGST + SGST (Split into two rows)
+        const halfTax = (booking.taxes / 2);
+        const halfRate = (appliedTaxRate / 2).toFixed(1);
 
-      if (appliedTaxRate > 0) {
-        if (isInterState) {
-          // IGST
-          doc.text(`IGST @ ${appliedTaxRate}%`, 65, boxY);
-          doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-        } else {
-          // CGST + SGST (Split into two rows)
-          const halfTax = (booking.taxes / 2);
-          const halfRate = (appliedTaxRate / 2).toFixed(1);
+        doc.text(`CGST @ ${halfRate}%`, 65, boxY);
+        doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
 
-          doc.text(`CGST @ ${halfRate}%`, 65, boxY);
-          doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
-
-          boxY += 15;
-          doc.text(`SGST @ ${halfRate}%`, 65, boxY);
-          doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
-        }
+        boxY += 15;
+        doc.text(`SGST @ ${halfRate}%`, 65, boxY);
+        doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
       } else {
         doc.text('Taxes & Fees (GST)', 65, boxY);
         doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
@@ -1518,7 +1539,7 @@ export const downloadReceipt = async (req, res) => {
     }
 
     // Row: Platform Fee
-    if (booking.platformFee > 0) {
+    if (booking.platformFee !== undefined) {
       boxY += 20;
       doc.text('Platform Fees', 65, boxY);
       doc.text(`Rs. ${booking.platformFee.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });

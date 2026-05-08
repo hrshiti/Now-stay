@@ -65,7 +65,7 @@ const PropertyDetailsPage = () => {
   const [taxRate, setTaxRate] = useState(0); // Fetched from backend
   const [platformFee, setPlatformFee] = useState(0);
   const [platformFeeType, setPlatformFeeType] = useState('percentage');
-  const [companyState, setCompanyState] = useState('');
+  const [userState, setUserState] = useState(null);
   const [availability, setAvailability] = useState(null);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
@@ -171,12 +171,21 @@ const PropertyDetailsPage = () => {
 
         if (res.platformFee !== undefined) setPlatformFee(res.platformFee);
         if (res.platformFeeType) setPlatformFeeType(res.platformFeeType);
-
-        if (res.companyState) {
-          setCompanyState(res.companyState.toLowerCase().trim());
-        }
       })
       .catch(err => console.error("Failed to fetch tax rate", err));
+
+    // Get Logged-in User State for GST Calculation
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        if (parsed?.address?.state) {
+          setUserState(parsed.address.state.toLowerCase().trim());
+        }
+      } catch (e) {
+        console.error("Error parsing user state", e);
+      }
+    }
   }, []);
 
   const loadPropertyDetails = async () => {
@@ -587,7 +596,12 @@ const PropertyDetailsPage = () => {
     const taxableAmount = grossAmount - discountAmount;
 
     // Tax Calculation (on Commissionable Amount) matching backend logic
-    const taxAmount = Math.round((commissionableAmount * taxRate) / 100);
+    // Priority: Property-specific GST (if set and > 0) > Admin's global tax rate
+    const finalGstRate = (property.gstPercentage !== undefined && property.gstPercentage > 0)
+      ? property.gstPercentage
+      : taxRate;
+
+    const taxAmount = Math.round((commissionableAmount * finalGstRate) / 100);
 
     const platformFeeAmount = platformFeeType === 'percentage'
       ? Math.round((grossAmount * platformFee) / 100)
@@ -595,7 +609,13 @@ const PropertyDetailsPage = () => {
 
     const grandTotal = taxableAmount + taxAmount + platformFeeAmount;
 
+    // GST Bifurcation Logic: Compare Hotel State with User State
+    const hotelState = property?.address?.state?.toLowerCase().trim();
+    const effectiveUserState = userState || hotelState;
+    const isInterstate = hotelState && userState && hotelState !== userState;
+
     return {
+      isInterstate,
       nights,
       units,
       baseAdultsPerUnit,
@@ -613,6 +633,7 @@ const PropertyDetailsPage = () => {
       commissionableAmount,
       taxableAmount,
       taxAmount,
+      gstRate: finalGstRate,
       platformFeeAmount,
       grandTotal
     };
@@ -684,8 +705,7 @@ const PropertyDetailsPage = () => {
           rooms: guests.rooms
         },
         priceBreakdown,
-        taxRate,
-        companyState,
+        taxRate: priceBreakdown.gstRate,
         couponCode: priceBreakdown.couponCode
       }
     });
@@ -1345,24 +1365,29 @@ const PropertyDetailsPage = () => {
                     </div>
                   )}
                   {priceBreakdown.taxAmount > 0 && (
-                    (companyState && property?.address?.state && property.address.state.toLowerCase().trim() !== companyState) ? (
+                    (priceBreakdown.isInterstate) ? (
                       <div className="flex justify-between text-gray-600">
-                        <span>IGST ({taxRate}%)</span>
+                        <span>IGST ({priceBreakdown.gstRate}%)</span>
                         <span>+ ₹{priceBreakdown.taxAmount.toLocaleString()}</span>
                       </div>
                     ) : (
                       <>
                         <div className="flex justify-between text-gray-600">
-                          <span>CGST ({taxRate / 2}%)</span>
+                          <span>CGST ({priceBreakdown.gstRate / 2}%)</span>
                           <span>+ ₹{(priceBreakdown.taxAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between text-gray-600">
-                          <span>SGST ({taxRate / 2}%)</span>
+                          <span>SGST ({priceBreakdown.gstRate / 2}%)</span>
                           <span>+ ₹{(priceBreakdown.taxAmount / 2).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </div>
                       </>
                     )
                   )}
+
+                  <div className="flex justify-between text-gray-600">
+                    <span>Platform Fee</span>
+                    <span>+ ₹{priceBreakdown.platformFeeAmount.toLocaleString()}</span>
+                  </div>
                   <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between font-bold text-base text-surface">
                     <span>Total Amount</span>
                     <span>₹{priceBreakdown.grandTotal.toLocaleString()}</span>

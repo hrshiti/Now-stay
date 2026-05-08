@@ -201,10 +201,10 @@ export const verifyPayment = async (req, res) => {
       const fullBooking = await Booking.findById(booking._id).populate('propertyId');
       const partnerId = fullBooking.propertyId?.partnerId;
 
-      const payout = paymentMeta.partnerPayout || 0;
       const commission = paymentMeta.adminCommission || 0;
       const taxes = paymentMeta.taxes || 0;
-      const totalAdminCredit = commission + taxes;
+      const platformFee = booking?.platformFee || notes?.platformFee || 0;
+      const totalAdminCredit = commission + platformFee;
 
       if (partnerId) {
         let partnerWallet = await Wallet.findOne({ partnerId: partnerId, role: 'partner' });
@@ -221,28 +221,31 @@ export const verifyPayment = async (req, res) => {
         if (paymentMethodCheck === 'prepaid') {
           // Prepaid Logic: Platform collected only advanceAmount
           const advanceAmount = paymentMeta.advanceAmount || 0;
+          
+          // Partner Share = Advance Collected - Admin Cut (Comm + Platform Fee)
+          // GST stays with Partner, but Admin doesn't collect it upfront.
+          // In Prepaid, the partner will collect the remaining 70% (which includes most of the GST) at the hotel.
           const partnerShareOfAdvance = advanceAmount - totalAdminCredit;
           
           if (partnerShareOfAdvance > 0) {
-            await partnerWallet.credit(partnerShareOfAdvance, `Advance Payment for Booking #${booking.bookingId}`, booking.bookingId, 'booking_payment');
+            await partnerWallet.credit(partnerShareOfAdvance, `Advance Share for Booking #${booking.bookingId}`, booking.bookingId, 'booking_payment');
             console.log(`[Payment] Credited Prepaid Advance Share ₹${partnerShareOfAdvance} to Partner ${partnerId}`);
           } else if (partnerShareOfAdvance < 0) {
-            // Admin commission + taxes is more than the 30% advance, so partner owes platform from the remaining amount they will collect at hotel.
             const shortfall = Math.abs(partnerShareOfAdvance);
             await partnerWallet.debit(shortfall, `Commission Shortfall for Prepaid Booking #${booking.bookingId}`, booking.bookingId, 'commission_deduction');
             console.log(`[Payment] Deducted Commission Shortfall ₹${shortfall} from Partner ${partnerId}`);
           }
         } else {
           // Standard Logic: Platform collected full amount
-          // Amount without tax (Base + Extra - Discount)
-          const taxableAmount = (paymentMeta.partnerPayout || 0) + (paymentMeta.adminCommission || 0);
+          // Partner Payout = Taxable Amount (Base+Extra-Discount) + Taxes
+          const partnerCredit = (booking?.totalAmount || 0) - (platformFee || 0);
           
-          // A. Credit Partner the amount WITHOUT tax
-          if (taxableAmount > 0) {
-            await partnerWallet.credit(taxableAmount, `Payment for Booking #${booking.bookingId}`, booking.bookingId, 'booking_payment');
-            console.log(`[Payment] Credited Taxable Amount ₹${taxableAmount} to Partner ${partnerId}`);
+          // A. Credit Partner the full booking amount (including tax) minus platform fee (already excluded)
+          if (partnerCredit > 0) {
+            await partnerWallet.credit(partnerCredit, `Payment for Booking #${booking.bookingId} (Incl. GST)`, booking.bookingId, 'booking_payment');
+            console.log(`[Payment] Credited Gross Payout ₹${partnerCredit} to Partner ${partnerId}`);
   
-            // B. Debit Partner ONLY the Commission (Tax is already handled by not crediting it)
+            // B. Debit Partner ONLY the Commission
             if (commission > 0) {
               await partnerWallet.debit(commission, `Platform Commission for Booking #${booking.bookingId}`, booking.bookingId, 'commission_deduction');
               console.log(`[Payment] Deducted Commission ₹${commission} from Partner ${partnerId}`);
@@ -251,7 +254,7 @@ export const verifyPayment = async (req, res) => {
         }
       }
 
-      // --- ADMIN WALLET CREDIT ---
+      // --- ADMIN WALLET CREDIT (Commission + Platform Fee Only) ---
       if (totalAdminCredit > 0) {
         const AdminUser = mongoose.model('User');
         const adminUser = await AdminUser.findOne({ role: { $in: ['admin', 'superadmin'] } }).sort({ createdAt: 1 });
@@ -267,9 +270,9 @@ export const verifyPayment = async (req, res) => {
             });
           }
 
-          // Credit the wallet (Commission + Tax)
-          await adminWallet.credit(totalAdminCredit, `Commission (₹${commission}) & Tax (₹${taxes}) for Booking #${booking.bookingId}`, booking.bookingId, 'commission_tax');
-          console.log(`[Payment] Credited ₹${totalAdminCredit} (Comm: ${commission}, Tax: ${taxes}) to Admin Wallet`);
+          // Credit the wallet (Commission + Platform Fee)
+          await adminWallet.credit(totalAdminCredit, `Commission (₹${commission}) & Platform Fee (₹${platformFee}) for Booking #${booking.bookingId}`, booking.bookingId, 'commission_tax');
+          console.log(`[Payment] Credited ₹${totalAdminCredit} (Comm: ${commission}, Fee: ${platformFee}) to Admin Wallet`);
         }
       }
     } catch (err) { console.error("Wallet Settlement Logic Failed", err); }

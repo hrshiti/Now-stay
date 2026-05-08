@@ -38,10 +38,6 @@ const platformSettingsSchema = new mongoose.Schema(
       type: String,
       enum: ['percentage', 'fixed'],
       default: 'percentage'
-    },
-    companyState: {
-      type: String,
-      default: 'Maharashtra' // Base state for GST rules
     }
   },
   { timestamps: true }

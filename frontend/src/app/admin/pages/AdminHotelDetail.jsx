@@ -12,6 +12,15 @@ import toast from 'react-hot-toast';
 
 // --- Helpers ---
 
+const ToggleSwitch = ({ enabled, onChange }) => (
+    <button
+        onClick={() => onChange(!enabled)}
+        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors ${enabled ? 'bg-black' : 'bg-gray-300'}`}
+    >
+        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${enabled ? 'translate-x-5' : 'translate-x-0'}`}></div>
+    </button>
+);
+
 const FileUpload = ({ onUpload, type = 'hotel', className = "", label = "Upload Image", accept = "image/*", icon: Icon = ImageIcon, multiple = false }) => {
     const [uploading, setUploading] = useState(false);
 
@@ -342,6 +351,41 @@ const OverviewTab = ({ hotel, isEditing, editData, onChange }) => {
                                 />
                             ) : (
                                 <p className="text-sm font-bold text-gray-700">{hotel.propertyEmail || 'Not Provided'}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">GST Percentage (%)</p>
+                             {isEditing ? (
+                                <input
+                                    type="number"
+                                    value={editData.gstPercentage === 0 ? '' : (editData.gstPercentage || '')}
+                                    onChange={(e) => onChange('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
+                                    className="w-full bg-white border rounded px-3 py-1.5 text-sm font-bold outline-none focus:ring-1 focus:ring-black"
+                                    placeholder="Enter GST %"
+                                    min="0"
+                                    max="100"
+                                />
+                            ) : (
+                                <p className="text-sm font-bold text-gray-700">{hotel.gstPercentage || 0}%</p>
+                            )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-white border border-gray-100 rounded-xl">
+                            <div>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">GST Approved</p>
+                                <p className="text-[10px] text-gray-400">Enable to apply this tax rate on bookings</p>
+                            </div>
+                            {isEditing ? (
+                                <ToggleSwitch 
+                                    enabled={editData.isGstApproved || false} 
+                                    onChange={(val) => onChange('isGstApproved', val)} 
+                                />
+                            ) : (
+                                <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full ${hotel.isGstApproved ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {hotel.isGstApproved ? 'Approved' : 'Not Approved'}
+                                </span>
                             )}
                         </div>
                     </div>

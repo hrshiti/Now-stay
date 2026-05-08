@@ -5,7 +5,7 @@ import {
   Lock, ChevronRight, Building, CheckCircle, Tag, Wallet, X, FileText
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { bookingService, legalService } from '../../services/apiService';
+import { bookingService, legalService, userService } from '../../services/apiService';
 import paymentService from '../../services/paymentService';
 import walletService from '../../services/walletService';
 
@@ -37,8 +37,7 @@ const BookingCheckoutPage = () => {
     dates,
     guests,
     priceBreakdown,
-    taxRate,
-    companyState
+    taxRate
   } = location.state || {};
 
   const [loading, setLoading] = useState(false);
@@ -51,10 +50,40 @@ const BookingCheckoutPage = () => {
   const [legalContent, setLegalContent] = useState(null);
   const [legalLoading, setLegalLoading] = useState(false);
 
+  useEffect(() => {
+    const fetchLatestProfile = async () => {
+      try {
+        const res = await userService.getProfile();
+        if (res.user) {
+          setUser(res.user);
+          setGuestDetails(prev => ({
+            ...prev,
+            name: res.user.name || prev.name,
+            phone: res.user.phone || prev.phone,
+            state: res.user.address?.state || res.user.state || prev.state
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to fetch latest profile", err);
+      }
+    };
+    fetchLatestProfile();
+  }, []);
+
+  const INDIAN_STATES = [
+    "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
+    "Chandigarh", "Chhattisgarh", "Dadra and Nagar Haveli and Daman and Diu", "Delhi", "Goa",
+    "Gujarat", "Haryana", "Himachal Pradesh", "Jammu and Kashmir", "Jharkhand", "Karnataka",
+    "Kerala", "Ladakh", "Lakshadweep", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
+    "Mizoram", "Nagaland", "Odisha", "Puducherry", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+    "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+  ];
+
   // Guest Details State
   const [guestDetails, setGuestDetails] = useState({
     name: user?.name || '',
-    phone: user?.phone || ''
+    phone: user?.phone || '',
+    state: user?.address?.state || user?.state || ''
   });
   const [errors, setErrors] = useState({});
 
@@ -70,6 +99,10 @@ const BookingCheckoutPage = () => {
       newErrors.phone = "Phone Number is required";
     } else if (!/^\d{10}$/.test(guestDetails.phone.trim())) {
       newErrors.phone = "Enter a valid 10-digit phone number";
+    }
+
+    if (!guestDetails.state?.trim()) {
+      newErrors.state = "Profile state is missing. Please update your profile.";
     }
 
     setErrors(newErrors);
@@ -168,6 +201,9 @@ const BookingCheckoutPage = () => {
         extraChildren: priceBreakdown?.extraChildrenCount || 0
       },
       guestDetails: guestDetails,
+      address: {
+        state: guestDetails.state
+      },
       bookingUnit: selectedRoom.inventoryType || (['hostel', 'pg'].includes((property.propertyTemplate || property.propertyType || '').toLowerCase()) ? 'bed' : 'room'),
       couponCode: priceBreakdown?.couponCode || null,
       paymentMethod: paymentMethod === 'online' ? 'razorpay' : paymentMethod,
@@ -353,7 +389,13 @@ const BookingCheckoutPage = () => {
                   {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.phone}</p>}
                 </div>
               </div>
-
+              {!guestDetails.state && (
+                <div className="pt-2">
+                   <p className="text-[10px] text-red-500 font-bold uppercase p-3 bg-red-50 rounded-xl border border-red-100">
+                    ⚠️ State missing in your profile. GST bifurcation may be incorrect. Please update your profile state.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -384,7 +426,7 @@ const BookingCheckoutPage = () => {
                 </div>
               )}
               {(priceBreakdown?.taxAmount > 0) && (
-                (companyState && property?.address?.state && property.address.state.toLowerCase().trim() !== companyState) ? (
+                (guestDetails.state && property?.address?.state && property.address.state.toLowerCase().trim() !== guestDetails.state.toLowerCase().trim()) ? (
                   <div className="flex justify-between text-sm text-gray-600 font-medium">
                     <span>IGST ({taxRate || 0}%)</span>
                     <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
@@ -403,7 +445,7 @@ const BookingCheckoutPage = () => {
                 )
               )}
 
-              {(priceBreakdown?.platformFeeAmount > 0) && (
+              {(priceBreakdown?.platformFeeAmount !== undefined) && (
                 <div className="flex justify-between text-sm text-gray-600 font-medium">
                   <span>Platform Fees</span>
                   <span className="font-bold text-gray-800">₹{priceBreakdown.platformFeeAmount.toLocaleString()}</span>
