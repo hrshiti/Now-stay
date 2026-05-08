@@ -276,7 +276,7 @@ const UserLogin = () => {
                                 </div>
 
                                 <form onSubmit={handleVerifyOTP} className="space-y-6">
-                                    <div className="flex gap-2 justify-center">
+                                    <div className="flex gap-3 justify-center">
                                         {otp.map((digit, index) => (
                                             <input
                                                 key={index}
@@ -287,7 +287,12 @@ const UserLogin = () => {
                                                 maxLength={1}
                                                 value={digit}
                                                 onChange={(e) => handleOTPChange(index, e.target.value)}
-                                                className="w-10 h-12 text-center text-lg font-black border-2 border-gray-100 rounded-xl focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all bg-white/50"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Backspace' && !digit && index > 0) {
+                                                        document.getElementById(`otp-${index - 1}`)?.focus();
+                                                    }
+                                                }}
+                                                className="w-14 h-14 text-center text-xl font-black border-2 border-gray-300 rounded-2xl focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all bg-white shadow-sm text-gray-900 caret-emerald-500"
                                             />
                                         ))}
                                     </div>
