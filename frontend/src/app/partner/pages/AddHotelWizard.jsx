@@ -90,6 +90,10 @@ const AddHotelWizard = () => {
     if (saved) {
       try {
         const { step: savedStep, propertyForm: savedForm, roomTypes: savedRooms, createdProperty: savedProp } = JSON.parse(saved);
+        // Sanitize ownerSignature: old buggy drafts may have saved it as an array
+        if (savedForm && Array.isArray(savedForm.ownerSignature)) {
+          savedForm.ownerSignature = savedForm.ownerSignature[0] || '';
+        }
         setStep(savedStep);
         setPropertyForm(savedForm);
         setRoomTypes(savedRooms);
@@ -100,13 +104,23 @@ const AddHotelWizard = () => {
     }
   }, []);
 
-  // 2. Save to localStorage whenever state changes
+  // 2. Save to localStorage whenever state changes (debounced)
   useEffect(() => {
     if (isEditMode) return;
     const timeout = setTimeout(() => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, propertyForm, roomTypes, createdProperty }));
     }, 1000);
     return () => clearTimeout(timeout);
+  }, [step, propertyForm, roomTypes, createdProperty]);
+
+  // 3. Save immediately on page refresh/close (fixes production data loss on refresh)
+  useEffect(() => {
+    if (isEditMode) return;
+    const handleBeforeUnload = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, propertyForm, roomTypes, createdProperty }));
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [step, propertyForm, roomTypes, createdProperty]);
 
   // --- WebView History / Back Button Fix ---
@@ -763,7 +777,7 @@ const AddHotelWizard = () => {
         gstNumber: propertyForm.gstNumber,
         gstPercentage: Number(propertyForm.gstPercentage || 0),
         propertyEmail: propertyForm.propertyEmail,
-        ownerSignature: propertyForm.ownerSignature,
+        ownerSignature: Array.isArray(propertyForm.ownerSignature) ? (propertyForm.ownerSignature[0] || '') : (propertyForm.ownerSignature || ''),
         invoiceTerms: propertyForm.invoiceTerms,
         documents: propertyForm.documents
       };
