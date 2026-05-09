@@ -467,9 +467,7 @@ function App() {
     syncUser();
   }, []);
 
-  if (!isAuthSynced) {
-    return <PageLoader />; // Wait for user data to be fresh before routing
-  }
+  }, []);
 
   // ─── WEB PUSH NOTIFICATIONS (Browser only) ──────────────────────────────────
   // Flutter WebView users: FCM tokens are managed ENTIRELY by the Flutter native
@@ -584,6 +582,7 @@ function App() {
       />
       <Layout>
         <Suspense fallback={<PageLoader />}>
+          {!isAuthSynced ? <PageLoader /> : (
           <ProfileCompletionGuard>
             <Routes>
             {/* User Auth Routes (Public Only) */}
@@ -718,9 +717,10 @@ function App() {
               <Route path="/booking/:id" element={<BookingConfirmationPage />} />
             </Route>
           </Routes>
-        </ProfileCompletionGuard>
-      </Suspense>
-    </Layout>
+          </ProfileCompletionGuard>
+          )}
+        </Suspense>
+      </Layout>
     </Router>
   );
 }
