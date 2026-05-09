@@ -450,6 +450,8 @@ function App() {
   }, []);
 
   // Sync user status on load to handle admin approval changes without re-login
+  const [isAuthSynced, setIsAuthSynced] = React.useState(false);
+
   React.useEffect(() => {
     const syncUser = async () => {
       const token = localStorage.getItem('token');
@@ -460,10 +462,14 @@ function App() {
           console.warn("[AUTH] Failed to sync user status:", err);
         }
       }
+      setIsAuthSynced(true);
     };
     syncUser();
   }, []);
 
+  if (!isAuthSynced) {
+    return <PageLoader />; // Wait for user data to be fresh before routing
+  }
 
   // ─── WEB PUSH NOTIFICATIONS (Browser only) ──────────────────────────────────
   // Flutter WebView users: FCM tokens are managed ENTIRELY by the Flutter native
