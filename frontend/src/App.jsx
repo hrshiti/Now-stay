@@ -325,6 +325,7 @@ const UserProtectedRoute = ({ children }) => {
 
   // If partner is logged in but tries to access user routes, redirect to partner dashboard
   if (user?.role === 'partner') {
+    if (location.pathname.startsWith('/hotel/join')) return children ? children : <Outlet />; // FIX: Never redirect wizards
     console.warn(`[AUTH] Partner ${user._id} attempted to access user route: ${location.pathname}. Redirecting to /hotel/dashboard.`);
     return <Navigate to="/hotel/dashboard" replace />;
   }
@@ -342,6 +343,7 @@ const PublicOrProtectedRoute = ({ children }) => {
   // redirect them to the partner dashboard. Otherwise allow access to public pages.
   const authRoutes = ['/login', '/signup', '/register'];
   if (token && user?.role === 'partner' && authRoutes.some(r => location.pathname === r)) {
+    if (location.pathname.startsWith('/hotel/join')) return children ? children : <Outlet />; // FIX: Never redirect wizards
     return <Navigate to="/hotel/dashboard" replace />;
   }
 
@@ -364,6 +366,7 @@ const UserPrivateRoute = ({ children }) => {
   }
 
   if (user?.role === 'partner') {
+    if (location.pathname.startsWith('/hotel/join')) return children ? children : <Outlet />; // FIX: Never redirect wizards
     return <Navigate to="/hotel/dashboard" replace />;
   }
 
@@ -406,7 +409,7 @@ const PartnerProtectedRoute = ({ children }) => {
       '/hotel/notifications'
     ];
     // Also allow all "join-" wizard routes
-    const isWizard = location.pathname.startsWith('/hotel/join-');
+    const isWizard = location.pathname.startsWith('/hotel/join');
     
     const isAllowedPath = allowedPending.some(p => {
       const isExact = location.pathname === p;
@@ -417,12 +420,12 @@ const PartnerProtectedRoute = ({ children }) => {
     if (!isWizard && !isAllowedPath) {
       console.warn(`[AUTH] Pending partner ${user._id} (${user.partnerApprovalStatus}) attempted restricted path: ${location.pathname}. Redirecting to dashboard.`);
       return <Navigate to="/hotel/dashboard" replace />;
-    } else {
-      console.log(`[AUTH] Path allowed. isWizard: ${isWizard}, isAllowedPath: ${isAllowedPath}, path: ${location.pathname}`);
     }
-  } else {
-    // Approved partner - no restrictions
-    console.log(`[AUTH] Approved partner ${user._id} accessing ${location.pathname}`);
+  }
+
+  // Final catch-all for wizard paths to absolutely prevent dashboard redirects on refresh
+  if (location.pathname.startsWith('/hotel/join')) {
+    return children ? children : <Outlet />;
   }
 
   return children ? children : <Outlet />;
