@@ -96,7 +96,15 @@ const ContactPage = () => {
   // ── Form handlers ────────────────────────────────────────────────────────
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    let finalValue = value;
+
+    if (name === 'name') {
+      finalValue = value.replace(/[^a-zA-Z\s]/g, '');
+    } else if (name === 'phone') {
+      finalValue = value.replace(/\D/g, '').slice(0, 10);
+    }
+
+    setForm((prev) => ({ ...prev, [name]: finalValue }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
     if (submitError) setSubmitError('');
   };

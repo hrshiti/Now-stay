@@ -151,17 +151,8 @@ const AdminLayout = () => {
                 {/* Topbar */}
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 shadow-sm z-50 shrink-0">
                     <div className="flex items-center gap-4 flex-1">
-                        <h1 className="text-xl font-bold text-gray-800">
-                            NowStay.in Admin
-                        </h1>
-                        <div className="hidden md:flex items-center relative max-w-md w-full ml-8">
-                            <Search size={16} className="absolute left-3 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Search users, bookings, hotels..."
-                                className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-black focus:bg-white transition-all outline-none"
-                            />
-                        </div>
+
+
                     </div>
 
                     <div className="flex items-center gap-4" ref={notifRef}>
@@ -215,9 +206,9 @@ const AdminLayout = () => {
                             </AnimatePresence>
                         </div>
 
-                        <div className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm">
+                        <Link to="/admin/settings" className="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center font-bold text-sm hover:opacity-80 transition-opacity cursor-pointer">
                             A
-                        </div>
+                        </Link>
                     </div>
                 </header>
 

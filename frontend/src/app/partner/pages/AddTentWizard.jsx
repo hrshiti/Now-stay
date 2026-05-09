@@ -1509,7 +1509,7 @@ const AddTentWizard = () => {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-sm font-bold text-gray-900">Property Gallery</label>
+                    <label className="text-sm font-bold text-gray-900">Property Gallery <span className="text-xs font-normal text-gray-500">(Min 4 Images)</span></label>
                     <span className="text-xs text-gray-500">{propertyForm.propertyImages.length} images</span>
                   </div>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -1767,30 +1767,34 @@ const AddTentWizard = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">
-                      Check-In Time <span className="text-red-500">*</span>
+                      Check-In Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span> <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
-                        type="time"
+                        type={propertyForm.checkInTime ? "time" : "text"}
+                        placeholder="12:00 PM"
                         className={`input w-full !pl-10 ${!propertyForm.checkInTime && error ? 'border-red-400 ring-1 ring-red-400' : ''}`}
                         value={propertyForm.checkInTime}
                         onChange={e => updatePropertyForm('checkInTime', e.target.value)}
-                        onClick={e => e.target.showPicker?.()}
+                        onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
+                        onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
                       <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">
-                      Check-Out Time <span className="text-red-500">*</span>
+                      Check-Out Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span> <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <input
-                        type="time"
+                        type={propertyForm.checkOutTime ? "time" : "text"}
+                        placeholder="10:00 AM"
                         className={`input w-full !pl-10 ${!propertyForm.checkOutTime && error ? 'border-red-400 ring-1 ring-red-400' : ''}`}
                         value={propertyForm.checkOutTime}
                         onChange={e => updatePropertyForm('checkOutTime', e.target.value)}
-                        onClick={e => e.target.showPicker?.()}
+                        onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
+                        onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
                       <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>

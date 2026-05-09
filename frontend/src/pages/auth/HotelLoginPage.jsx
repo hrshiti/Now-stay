@@ -166,7 +166,7 @@ const HotelLoginPage = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="flex-1"
+                            className="w-full"
                         >
                             <form onSubmit={handleSendOTP} className="space-y-5">
 
@@ -221,7 +221,7 @@ const HotelLoginPage = () => {
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
-                            className="flex-1"
+                            className="w-full"
                         >
                             <div className="mb-6 bg-green-50/50 p-4 rounded-2xl border border-green-100 text-center">
                                 <div className="w-10 h-10 bg-[#0F172A]/10 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -308,31 +308,31 @@ const HotelLoginPage = () => {
                         </motion.div>
                     )}
                 </AnimatePresence>
-
-                {/* Footer */}
-                <div className="py-8 text-center mt-auto">
-                    <p className="text-gray-400 text-sm font-medium">
-                    New to NowStay?{' '}
-                        <button
-                            onClick={() => {
-                                clearPropertyDrafts();
-                                navigate('/hotel/register');
-                            }}
-                            className="text-[#0F172A] font-bold hover:underline"
-                        >
-                            Register as a partner
-                        </button>
-                    </p>
-                    <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2">
-                        <button onClick={() => navigate('/hotel/terms')} className="text-xs text-gray-400 font-medium hover:text-[#0F172A] transition-colors">
-                            Terms & Conditions
-                        </button>
-                        <button onClick={() => navigate('/hotel/privacy')} className="text-xs text-gray-400 font-medium hover:text-[#0F172A] transition-colors">
-                            Privacy Policy
-                        </button>
-                    </div>
-                </div>
             </main>
+
+            {/* Footer */}
+            <footer className="py-8 text-center mt-auto">
+                <p className="text-gray-400 text-sm font-medium">
+                New to NowStay?{' '}
+                    <button
+                        onClick={() => {
+                            clearPropertyDrafts();
+                            navigate('/hotel/register');
+                        }}
+                        className="text-[#0F172A] font-bold hover:underline"
+                    >
+                        Register as a partner
+                    </button>
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2">
+                    <button onClick={() => navigate('/hotel/terms')} className="text-xs text-gray-400 font-medium hover:text-[#0F172A] transition-colors">
+                        Terms & Conditions
+                    </button>
+                    <button onClick={() => navigate('/hotel/privacy')} className="text-xs text-gray-400 font-medium hover:text-[#0F172A] transition-colors">
+                        Privacy Policy
+                    </button>
+                </div>
+            </footer>
         </div>
     );
 };

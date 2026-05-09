@@ -136,6 +136,8 @@ const HotelSignup = () => {
     const handleBack = () => {
         if (currentStep > 1) {
             prevStep();
+        } else {
+            navigate('/hotel/login');
         }
     };
 
@@ -153,8 +155,7 @@ const HotelSignup = () => {
             <header className="absolute top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md z-50 px-4 flex items-center justify-between border-b border-gray-100">
                 <button
                     onClick={handleBack}
-                    className={`p-2 rounded-full transition-colors ${currentStep === 1 ? 'opacity-20 cursor-not-allowed' : 'hover:bg-gray-100'}`}
-                    disabled={currentStep === 1}
+                    className={`p-2 rounded-full transition-colors hover:bg-gray-100`}
                 >
                     <ArrowLeft size={20} className="text-[#003836]" />
                 </button>
@@ -211,8 +212,8 @@ const HotelSignup = () => {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleBack}
-                            className={`text-xs font-bold underline px-3 py-2 transition-colors ${currentStep === 1 || loading ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-[#0F172A]'}`}
-                            disabled={currentStep === 1 || loading}
+                            className={`text-xs font-bold underline px-3 py-2 transition-colors ${loading ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-[#0F172A]'}`}
+                            disabled={loading}
                         >
                             Back
                         </button>

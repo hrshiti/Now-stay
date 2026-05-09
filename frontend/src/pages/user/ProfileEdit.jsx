@@ -508,7 +508,8 @@ const ProfileEdit = () => {
                         type="text"
                         value={formData.name}
                         onChange={(e) => {
-                          setFormData({ ...formData, name: e.target.value });
+                          const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                          setFormData({ ...formData, name: val });
                           if (errors.name) setErrors({ ...errors, name: null });
                         }}
                         className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300"

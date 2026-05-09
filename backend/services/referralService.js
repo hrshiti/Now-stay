@@ -38,23 +38,19 @@ class ReferralService {
      */
     async generateCodeForUser(user) {
         try {
-            // Check if user is partner - Partners don't have referral codes now
-            if (user.role === 'partner') {
-                return null;
-            }
-
             // Check if already exists
+            const ownerType = user.role === 'partner' ? 'Partner' : 'User';
             const existing = await ReferralCode.findOne({
                 ownerId: user._id,
-                ownerType: 'User'
+                ownerType: ownerType
             });
             if (existing) return existing;
 
             // Find active program
-            const program = await this.getOrCreateActiveProgram('user');
+            const program = await this.getOrCreateActiveProgram(user.role === 'partner' ? 'partner' : 'user');
 
             // Sanitized name prefix (first 4 chars of name or 'USER')
-            const prefix = (user.name || 'USER').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4);
+            const prefix = (user.name || (user.role === 'partner' ? 'PRTR' : 'USER')).replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 4);
             let uniqueCode;
             let isUnique = false;
 
@@ -78,7 +74,7 @@ class ReferralService {
             const newCode = await ReferralCode.create({
                 code: uniqueCode,
                 ownerId: user._id,
-                ownerType: 'User',
+                ownerType: ownerType,
                 referralProgramId: program?._id
             });
 

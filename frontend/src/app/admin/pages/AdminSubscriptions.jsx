@@ -17,9 +17,9 @@ const AdminSubscriptions = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    price: 0,
-    durationInMonths: 12,
-    commissionRate: 0
+    price: '',
+    durationInMonths: '',
+    commissionRate: ''
   });
   const [editId, setEditId] = useState(null);
 
@@ -68,7 +68,8 @@ const AdminSubscriptions = () => {
   });
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
+    // Keep it as a string in state to allow empty fields, convert to number only if needed for logic or before sending
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -80,12 +81,19 @@ const AdminSubscriptions = () => {
     if (formData.price < 0) {
       return toast.error('Price cannot be negative');
     }
+    const submissionData = {
+      ...formData,
+      price: Number(formData.price || 0),
+      durationInMonths: Number(formData.durationInMonths || 1),
+      commissionRate: Number(formData.commissionRate || 0)
+    };
+
     try {
       if (editId) {
-        await subscriptionService.updateAdminPlan(editId, formData);
+        await subscriptionService.updateAdminPlan(editId, submissionData);
         toast.success('Plan updated successfully');
       } else {
-        await subscriptionService.createAdminPlan(formData);
+        await subscriptionService.createAdminPlan(submissionData);
         toast.success('Plan created successfully');
       }
       setShowModal(false);
@@ -100,9 +108,9 @@ const AdminSubscriptions = () => {
     setFormData({
       name: plan.name,
       description: plan.description,
-      price: plan.price,
-      durationInMonths: plan.durationInMonths,
-      commissionRate: plan.commissionRate
+      price: Number(plan.price) === 0 ? '' : plan.price,
+      durationInMonths: Number(plan.durationInMonths) === 0 ? '' : plan.durationInMonths,
+      commissionRate: Number(plan.commissionRate) === 0 ? '' : plan.commissionRate
     });
     setShowModal(true);
   };
@@ -164,7 +172,7 @@ const AdminSubscriptions = () => {
           <button
             onClick={() => {
               setEditId(null);
-              setFormData({ name: '', description: '', price: 0, durationInMonths: 12, commissionRate: 0 });
+              setFormData({ name: '', description: '', price: '', durationInMonths: '', commissionRate: '' });
               setShowModal(true);
             }}
             className="bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors"
@@ -369,6 +377,7 @@ const AdminSubscriptions = () => {
                     min="0"
                     value={formData.price}
                     onChange={handleInputChange}
+                    onFocus={(e) => e.target.select()}
                     className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all font-bold"
                     required
                   />
@@ -381,6 +390,7 @@ const AdminSubscriptions = () => {
                     min="1"
                     value={formData.durationInMonths}
                     onChange={handleInputChange}
+                    onFocus={(e) => e.target.select()}
                     className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all font-bold"
                     required
                   />
@@ -395,6 +405,7 @@ const AdminSubscriptions = () => {
                   max="100"
                   value={formData.commissionRate}
                   onChange={handleInputChange}
+                  onFocus={(e) => e.target.select()}
                   className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all font-bold"
                   required
                 />

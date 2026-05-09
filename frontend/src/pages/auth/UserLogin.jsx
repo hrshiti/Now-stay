@@ -52,6 +52,21 @@ const UserLogin = () => {
         }
     };
 
+    // Lock Body Scroll when Modal Open
+    useEffect(() => {
+        if (legalModal) {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+        };
+    }, [legalModal]);
+
     // Pre-fill phone if coming from signup
     useEffect(() => {
         if (location.state?.phone) {

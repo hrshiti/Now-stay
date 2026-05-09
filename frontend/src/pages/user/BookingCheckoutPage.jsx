@@ -149,6 +149,21 @@ const BookingCheckoutPage = () => {
     }
   };
 
+  // Lock Body Scroll when Modal Open
+  useEffect(() => {
+    if (legalModal) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
+    };
+  }, [legalModal]);
+
   useEffect(() => {
     if (!property || !dates) {
       toast.error("Invalid booking details");
@@ -393,7 +408,8 @@ const BookingCheckoutPage = () => {
                     type="text"
                     value={guestDetails.name}
                     onChange={(e) => {
-                      setGuestDetails({ ...guestDetails, name: e.target.value });
+                      const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
+                      setGuestDetails({ ...guestDetails, name: val });
                       if (errors.name) setErrors({ ...errors, name: null });
                     }}
                     placeholder="Enter guest name"
@@ -408,7 +424,8 @@ const BookingCheckoutPage = () => {
                     type="tel"
                     value={guestDetails.phone}
                     onChange={(e) => {
-                      setGuestDetails({ ...guestDetails, phone: e.target.value });
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                      setGuestDetails({ ...guestDetails, phone: val });
                       if (errors.phone) setErrors({ ...errors, phone: null });
                     }}
                     placeholder="Enter phone number"

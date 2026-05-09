@@ -106,6 +106,51 @@ const FinanceAndPayoutsPage = () => {
     }
   };
 
+  // Handle Export
+  const handleExportReport = () => {
+    try {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      
+      if (activeTab === 'overview') {
+        csvContent += "Type,Value\n";
+        csvContent += `Wallet Balance,${stats?.adminBalance || 0}\n`;
+        csvContent += `Total Commission,${stats?.totalEarnings || 0}\n`;
+        csvContent += `Gross Booking Value,${stats?.totalRevenue || 0}\n`;
+        csvContent += `Total Payouts,${stats?.totalPayouts || 0}\n\n`;
+        
+        csvContent += "Recent Financial Transactions\n";
+        csvContent += "Transaction/Booking ID,Date,Gross Amount,Commission,Tax,Partner Payout,Status\n";
+        transactions.forEach(t => {
+          const date = new Date(t.createdAt).toLocaleDateString();
+          const property = t.propertyId?.propertyName || 'Unknown';
+          csvContent += `"#${t.bookingId} - ${property}","${date}","${t.totalAmount}","${t.adminCommission}","${t.taxes}","${t.partnerPayout}","${t.paymentStatus}"\n`;
+        });
+      } else {
+        csvContent += "Withdrawal ID,Date,Partner,Amount,Bank,Account,Status,UTR\n";
+        withdrawals.forEach(w => {
+          const date = new Date(w.createdAt).toLocaleDateString();
+          const partner = w.partnerId?.name || 'Unknown';
+          const bank = w.bankDetails?.bankName || '';
+          const account = w.bankDetails?.accountNumber || '';
+          const utr = w.processingDetails?.utrNumber || '';
+          csvContent += `"${w.withdrawalId}","${date}","${partner}","${w.amount}","${bank}","${account}","${w.status}","${utr}"\n`;
+        });
+      }
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Finance_Report_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Report exported successfully');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to export report');
+    }
+  };
+
   const currency = (val) => `₹${(val || 0).toLocaleString()}`;
 
   const StatCard = ({ title, value, icon: Icon, colorClass, subValue }) => (
@@ -224,7 +269,10 @@ const FinanceAndPayoutsPage = () => {
             </button>
           </div>
 
-          <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium shadow-sm transition-colors">
+          <button 
+            onClick={handleExportReport}
+            className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium shadow-sm transition-colors"
+          >
             <Download size={16} />
             <span className="hidden sm:inline">Export Report</span>
           </button>

@@ -199,21 +199,15 @@ const AdminUsers = () => {
                         type="text"
                         placeholder="Search via name, email or phone..."
                         value={filters.search}
-                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                        onChange={(e) => {
+                            const cleanValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                            handleFilterChange('search', cleanValue);
+                        }}
                         className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-transparent rounded-xl text-xs font-bold uppercase focus:bg-white focus:border-black outline-none transition-all tracking-tight"
                     />
                 </div>
                 <div className="flex gap-2 w-full md:w-auto">
-                    <select
-                        value={filters.role}
-                        onChange={(e) => handleFilterChange('role', e.target.value)}
-                        className="px-4 py-2 bg-gray-50 border border-transparent rounded-xl text-[10px] font-bold uppercase outline-none focus:bg-white focus:border-black transition-all"
-                    >
-                        <option value="">All Roles</option>
-                        <option value="user">User</option>
-                        <option value="partner">Partner</option>
-                        <option value="admin">Admin</option>
-                    </select>
+
                     <select
                         value={filters.status}
                         onChange={(e) => handleFilterChange('status', e.target.value)}

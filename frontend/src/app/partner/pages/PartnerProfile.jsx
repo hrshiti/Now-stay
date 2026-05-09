@@ -117,7 +117,11 @@ const PartnerProfile = () => {
     }, []);
 
     const handleChange = (field, e) => {
-        setProfile({ ...profile, [field]: e.target.value });
+        let val = e.target.value;
+        if (field === 'name') {
+            val = val.replace(/[^a-zA-Z\s]/g, '');
+        }
+        setProfile({ ...profile, [field]: val });
     };
 
     const parseAddress = (str) => {

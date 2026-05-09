@@ -1585,27 +1585,31 @@ const AddHomestayWizard = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Check-In Time</label>
+                  <label className="text-xs font-semibold text-gray-500">Check-In Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
                     <input 
-                      type="time"
+                      type={propertyForm.checkInTime ? "time" : "text"}
+                      placeholder="12:00 PM"
                       className="input !pl-10" 
                       value={propertyForm.checkInTime} 
                       onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
-                      onClick={e => e.target.showPicker?.()}
+                      onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
+                      onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
                     <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Check-Out Time</label>
+                  <label className="text-xs font-semibold text-gray-500">Check-Out Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
                     <input 
-                      type="time"
+                      type={propertyForm.checkOutTime ? "time" : "text"}
+                      placeholder="10:00 AM"
                       className="input !pl-10" 
                       value={propertyForm.checkOutTime} 
                       onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
-                      onClick={e => e.target.showPicker?.()}
+                      onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
+                      onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
                     <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                   </div>

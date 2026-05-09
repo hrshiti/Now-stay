@@ -95,6 +95,47 @@ const AdminFinance = () => {
         return requests.filter(s => (statusFilter === 'Active' ? s.status === 'approved' : s.status !== 'approved'));
     }, [requests, statusFilter]);
 
+    // Handle Export
+    const handleExportReport = () => {
+        try {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            if (activeTab === 'overview') {
+                csvContent += "Type,Value/Count\n";
+                csvContent += `Total Revenue,${stats?.totalRevenue || 0}\n`;
+                csvContent += `Commissions,${Math.round((stats?.totalRevenue || 0) * commissionRate)}\n`;
+                
+                csvContent += "\nPending Property Requests\n";
+                csvContent += "Property Name,Owner,City,Status\n";
+                filteredRequests.forEach(req => {
+                    csvContent += `"${req.name}","${req.ownerId?.name || ''}","${req.address?.city || ''}","${req.status}"\n`;
+                });
+            } else {
+                csvContent += "Withdrawal ID,Date,Partner,Amount,Bank,Account,Status,UTR\n";
+                withdrawals.forEach(w => {
+                    const date = new Date(w.createdAt).toLocaleDateString();
+                    const partner = w.partnerId?.name || 'Unknown';
+                    const bank = w.bankDetails?.bankName || '';
+                    const account = w.bankDetails?.accountNumber || '';
+                    const utr = w.processingDetails?.utrNumber || '';
+                    csvContent += `"${w.withdrawalId}","${date}","${partner}","${w.amount}","${bank}","${account}","${w.status}","${utr}"\n`;
+                });
+            }
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Finance_Report_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            toast.success('Report exported successfully');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to export report');
+        }
+    };
+
     return (
         <div className="space-y-6">
             <ConfirmationModal
@@ -175,18 +216,26 @@ const AdminFinance = () => {
                     <h2 className="text-2xl font-bold text-gray-900">Finance & Payouts</h2>
                     <p className="text-gray-500 text-sm">Manage revenue, commissions, and partner withdrawals.</p>
                 </div>
-                <div className="flex bg-gray-100 p-1 rounded-lg">
-                    <button
-                        onClick={() => setActiveTab('overview')}
-                        className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'overview' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                <div className="flex items-center gap-3">
+                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                        <button
+                            onClick={() => setActiveTab('overview')}
+                            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'overview' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Overview
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('withdrawals')}
+                            className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'withdrawals' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Withdrawals
+                        </button>
+                    </div>
+                    <button 
+                        onClick={handleExportReport}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm"
                     >
-                        Overview
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('withdrawals')}
-                        className={`px-4 py-2 rounded-md text-sm font-bold transition-all ${activeTab === 'withdrawals' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                    >
-                        Withdrawals
+                        <Download size={16} /> Export Report
                     </button>
                 </div>
             </div>

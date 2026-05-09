@@ -203,7 +203,10 @@ const AdminProperties = () => {
                         type="text"
                         placeholder="Search properties by name or city..."
                         value={filters.search}
-                        onChange={(e) => handleFilterChange('search', e.target.value)}
+                        onChange={(e) => {
+                            const cleanValue = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                            handleFilterChange('search', cleanValue);
+                        }}
                         className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-transparent rounded-xl text-xs font-bold uppercase focus:bg-white focus:border-black outline-none transition-all tracking-tight"
                     />
                 </div>

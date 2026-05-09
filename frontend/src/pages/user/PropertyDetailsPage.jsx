@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { propertyService, legalService, reviewService, offerService, availabilityService, userService } from '../../services/apiService';
 import {
-  MapPin, Star, Share2, Heart, ArrowLeft,
+  MapPin, Star, Heart, ArrowLeft,
   Users, Calendar, Loader2, ChevronLeft, ChevronRight, MessageSquare, Tag, X, Gift,
   CheckCircle, Shield, Info, Clock, Wifi, Coffee, Car
 } from 'lucide-react';
@@ -337,34 +337,6 @@ const PropertyDetailsPage = () => {
       // Revert on error
       setIsSaved(!isSaved);
       toast.error("Failed to update wishlist");
-    }
-  };
-
-  const handleShare = async () => {
-    const shareData = {
-      title: property?.name || 'NowStay',
-      text: `Check out ${property?.name || 'this amazing place'} on NowStay!`,
-      url: window.location.href
-    };
-
-    if (window.flutter_inappwebview || navigator.userAgent.includes('FlutterWebView')) {
-      // Import dynamically or assume it's loaded to avoid breaking the file import structure
-      import('../../utils/flutterBridge').then(({ shareViaFlutter }) => {
-        shareViaFlutter(shareData).catch(err => {
-          console.error("Flutter share failed:", err);
-          navigator.clipboard.writeText(window.location.href);
-          toast.success("Link copied to clipboard!");
-        });
-      });
-    } else if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        console.error("Share failed:", err);
-      }
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link copied to clipboard!");
     }
   };
 
@@ -822,12 +794,6 @@ const PropertyDetailsPage = () => {
           </button>
         </div>
         <div className="absolute top-4 right-4 flex gap-2 z-10">
-          <button
-            onClick={handleShare}
-            className="bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-colors"
-          >
-            <Share2 size={20} className="text-surface" />
-          </button>
           <button
             onClick={handleToggleSave}
             className="bg-white/90 p-2 rounded-full shadow-md hover:bg-white transition-colors"

@@ -38,36 +38,40 @@ const SearchPage = () => {
 
     const [location, setLocation] = useState(null); // { lat, lng }
 
-    // Read location from URL params on mount
+    // Sync location & filters from URL searchParams
     useEffect(() => {
         const latParam = searchParams.get('lat');
         const lngParam = searchParams.get('lng');
         const radiusParam = searchParams.get('radius');
         const sortParam = searchParams.get('sort');
+        const searchParam = searchParams.get('search');
         
         if (latParam && lngParam) {
-            const urlLocation = {
+            const newLoc = {
                 lat: parseFloat(latParam),
                 lng: parseFloat(lngParam)
             };
-            
-            if (!location || location.lat !== urlLocation.lat || location.lng !== urlLocation.lng) {
-                setLocation(urlLocation);
-            }
-            
-            if (radiusParam) {
-                setFilters(prev => ({ ...prev, radius: Number(radiusParam) }));
-            }
-            
-            if (sortParam) {
-                setFilters(prev => ({ ...prev, sort: sortParam }));
-            }
+            // Only update state if values changed to avoid re-renders
+            setLocation(prev => (prev?.lat === newLoc.lat && prev?.lng === newLoc.lng) ? prev : newLoc);
+        } else if (location) {
+            setLocation(null);
         }
+        
+        setFilters(prev => ({
+            ...prev,
+            search: searchParam || '',
+            radius: radiusParam ? Number(radiusParam) : 50,
+            sort: sortParam || 'newest',
+            type: searchParams.get('type') 
+                ? (searchParams.get('type') === 'all' ? 'all' : searchParams.get('type').split(','))
+                : 'all'
+        }));
     }, [searchParams]);
 
+    // Fetch properties ONLY when searchParams or location change
     useEffect(() => {
         fetchProperties();
-    }, [searchParams, location]);
+    }, [searchParams]); // location is already derived from searchParams in most cases
 
     useEffect(() => {
         const loadCategories = async () => {
@@ -100,23 +104,41 @@ const SearchPage = () => {
         return () => clearTimeout(timer);
     }, [filters.search]);
 
+    // Scroll Lock for Filters Modal
+    useEffect(() => {
+        if (showFilters) {
+            document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+            document.documentElement.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+            document.documentElement.style.overflow = 'unset';
+        };
+    }, [showFilters]);
+
     const fetchProperties = async () => {
         setLoading(true);
         try {
             const params = Object.fromEntries([...searchParams]);
 
-            if (location) {
-                params.lat = location.lat;
-                params.lng = location.lng;
-                params.radius = filters.radius;
+            // Ensure distance sort is only applied if location is present
+            if (!params.lat || !params.lng) {
+                if (params.sort === 'distance') params.sort = 'newest';
             }
 
-            const promises = [propertyService.getPublicProperties(params)];
+            let savedRes = null;
             if (localStorage.getItem('token')) {
-                promises.push(userService.getSavedHotels());
+                try {
+                    savedRes = await userService.getSavedHotels();
+                } catch (savedErr) {
+                    console.warn("Could not fetch saved hotels:", savedErr);
+                }
             }
 
-            const [res, savedRes] = await Promise.all(promises);
+            const res = await propertyService.getPublicProperties(params);
 
             if (savedRes) {
                 const list = savedRes.savedHotels || [];
@@ -131,8 +153,8 @@ const SearchPage = () => {
                 setProperties([]);
             }
         } catch (err) {
-            console.error(err);
-            toast.error('Failed to load properties');
+            console.error("Fetch Error:", err);
+            toast.error('Failed to load properties', { id: 'search-fetch-error' });
         } finally {
             setLoading(false);
         }

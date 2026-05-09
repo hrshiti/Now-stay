@@ -45,9 +45,8 @@ const AdminSettings = () => {
     const [bookingMessage, setBookingMessage] = useState('');
     const [maintenanceTitle, setMaintenanceTitle] = useState('');
     const [maintenanceMessage, setMaintenanceMessage] = useState('');
-    const [commission, setCommission] = useState(10);
-    const [taxRate, setTaxRate] = useState(12);
-    const [platformFee, setPlatformFee] = useState(0);
+    const [commission, setCommission] = useState('');
+    const [platformFee, setPlatformFee] = useState('');
     const [platformFeeType, setPlatformFeeType] = useState('percentage');
 
     const [loadingSettings, setLoadingSettings] = useState(false);
@@ -85,9 +84,8 @@ const AdminSettings = () => {
                     setBookingMessage(res.settings.bookingDisabledMessage || '');
                     setMaintenanceTitle(res.settings.maintenanceTitle || '');
                     setMaintenanceMessage(res.settings.maintenanceMessage || '');
-                    setCommission(res.settings.defaultCommission !== undefined ? res.settings.defaultCommission : 10);
-                    setTaxRate(res.settings.taxRate !== undefined ? res.settings.taxRate : 12);
-                    setPlatformFee(res.settings.platformFee !== undefined ? res.settings.platformFee : 0);
+                    setCommission(Number(res.settings.defaultCommission) === 0 ? '' : res.settings.defaultCommission);
+                    setPlatformFee(Number(res.settings.platformFee) === 0 ? '' : res.settings.platformFee);
                     setPlatformFeeType(res.settings.platformFeeType || 'percentage');
                 }
             } catch (error) {
@@ -163,7 +161,7 @@ const AdminSettings = () => {
                 maintenanceTitle,
                 maintenanceMessage,
                 defaultCommission: Number(commission),
-                taxRate: Number(taxRate),
+
                 platformFee: Number(platformFee),
                 platformFeeType
             });
@@ -333,20 +331,11 @@ const AdminSettings = () => {
                                 max="100"
                                 value={commission}
                                 onChange={(e) => setCommission(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
+                                onFocus={(e) => e.target.select()}
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
                             />
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">GST / Tax Rate (%)</label>
-                            <input
-                                type="number"
-                                min="0"
-                                max="100"
-                                value={taxRate}
-                                onChange={(e) => setTaxRate(e.target.value)}
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
-                            />
-                        </div>
+
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -358,7 +347,8 @@ const AdminSettings = () => {
                                     min="0"
                                     value={platformFee}
                                     onChange={(e) => setPlatformFee(e.target.value)}
-                                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
+                                    onFocus={(e) => e.target.select()}
+                                    className="flex-1 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-2 focus:ring-black focus:outline-none transition-all"
                                 />
                                 <select
                                     value={platformFeeType}
