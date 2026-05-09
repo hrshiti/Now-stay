@@ -103,13 +103,22 @@ const PartnerPropertyDetails = () => {
       desc: 'Policies'
     },
     {
+      id: 'documents',
+      label: 'Documents',
+      icon: Shield,
       desc: `${property?.documents?.length || 0} Files`
     },
     {
-      id: 'invoice',
-      label: 'Invoice',
+      id: 'tax',
+      label: 'Tax & GST',
       icon: FileText,
-      desc: 'Tax & Signature'
+      desc: property?.gstNumber || 'Tax Details'
+    },
+    {
+      id: 'signature',
+      label: 'Signature',
+      icon: Shield,
+      desc: property?.ownerSignature ? 'View Signature' : 'No Signature'
     },
   ];
 
@@ -194,12 +203,12 @@ const PartnerPropertyDetails = () => {
         <div className="grid grid-cols-2 gap-3">
           {sections.map((section) => (
             <button
-              key={section.id}
-              onClick={() => setActiveSection(section.id)}
+              key={section.id || section.label}
+              onClick={() => section.id && setActiveSection(section.id)}
               className="bg-white p-3 rounded-2xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col items-start gap-3 active:scale-[0.98] transition-all hover:border-emerald-100 group relative overflow-hidden"
             >
               <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-500 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
-                <section.icon size={16} />
+                {section.icon && <section.icon size={16} />}
               </div>
               <div className="text-left w-full">
                 <h3 className="font-bold text-gray-900 text-xs mb-0.5">{section.label}</h3>
@@ -476,6 +485,58 @@ const PartnerPropertyDetails = () => {
                       )}
                     </button>
                   ))}
+                  {(!property.documents || property.documents.length === 0) && (
+                    <p className="text-center text-sm text-gray-400 py-4">No documents available.</p>
+                  )}
+                </div>
+              )}
+
+              {activeSection === 'tax' && (
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                    <h4 className="font-bold text-sm text-gray-900">Tax Information</h4>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <p className="text-[10px] text-gray-400 uppercase font-bold">GST Number</p>
+                        <p className="text-sm font-bold text-emerald-700 mt-1">{property.gstNumber || 'Not provided'}</p>
+                      </div>
+                      <div className="p-3 bg-gray-50 rounded-lg">
+                        <p className="text-[10px] text-gray-400 uppercase font-bold">GST Percentage</p>
+                        <p className="text-sm font-bold text-emerald-700 mt-1">{property.gstPercentage ? `${property.gstPercentage}%` : 'Not provided'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                    <h4 className="font-bold text-sm text-gray-900">Invoice Settings</h4>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-[10px] text-gray-400 uppercase font-bold">Property Email</p>
+                      <p className="text-sm font-bold text-gray-800 mt-1">{property.propertyEmail || 'Not provided'}</p>
+                    </div>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-[10px] text-gray-400 uppercase font-bold">Terms & Conditions</p>
+                      <p className="text-sm text-gray-600 leading-relaxed mt-1 italic">{property.invoiceTerms || 'Standard platform terms apply.'}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeSection === 'signature' && (
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-3">
+                    <h4 className="font-bold text-sm text-gray-900">Authorized Signature</h4>
+                    <p className="text-xs text-gray-400">This signature is used for generating customer invoices and receipts.</p>
+                    {property.ownerSignature ? (
+                      <div className="w-full h-48 bg-white rounded-xl border border-gray-100 flex items-center justify-center p-4 shadow-inner">
+                        <img src={property.ownerSignature} alt="Signature" className="h-full object-contain" />
+                      </div>
+                    ) : (
+                      <div className="w-full h-48 bg-gray-50 rounded-xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 gap-2">
+                        <Shield size={32} opacity={0.2} />
+                        <p className="text-sm italic">No signature uploaded.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
