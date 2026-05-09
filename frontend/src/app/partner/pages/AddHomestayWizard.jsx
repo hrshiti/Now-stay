@@ -140,11 +140,19 @@ const AddHomestayWizard = () => {
   // 3. Save immediately on page refresh/close (fixes production data loss on refresh)
   useEffect(() => {
     if (isEditMode) return;
-    const handleBeforeUnload = () => {
+    const handleUnload = () => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, propertyForm, roomTypes, createdProperty }));
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') handleUnload();
+    });
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
+      document.removeEventListener('visibilitychange', handleUnload);
+    };
   }, [step, propertyForm, roomTypes, createdProperty]);
 
   // --- WebView History / Back Button Fix ---
