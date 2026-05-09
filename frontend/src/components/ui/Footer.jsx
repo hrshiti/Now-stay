@@ -7,17 +7,50 @@ const Footer = () => {
             <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-10">
                 
                 {/* Brand & Intro */}
-                <div className="space-y-4 lg:pr-8">
+                <div className="space-y-6 lg:pr-8">
                     <div>
                         <span className="text-[22px] md:text-[24px] font-black tracking-tight leading-none text-white block">
                             NOW<span className="text-[#00d2ad]">STAY</span>
                         </span>
                         <div className="w-8 h-[3px] bg-[#00d2ad] mt-1.5 mb-3" />
+                        
+                        <p className="text-[#94a3b8] text-[12px] md:text-[13px] leading-relaxed font-medium pr-4">
+                            Discover and book the best stays. From cozy homestays to luxury villas, we have it all.
+                        </p>
                     </div>
-                    
-                    <p className="text-[#94a3b8] text-[12px] md:text-[13px] leading-relaxed font-medium pr-4">
-                        Discover and book the best stays. From cozy homestays to luxury villas, we have it all.
-                    </p>
+
+                    {/* App Download Links */}
+                    <div className="space-y-3">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00d2ad]">Download Our App</h3>
+                        <div className="flex flex-col gap-4">
+                            <a href="https://play.google.com/store/apps/details?id=com.nowstay.userapp" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 transition-all group">
+                                <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-110">
+                                    <img 
+                                        src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" 
+                                        alt="Play Store" 
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase leading-none mb-0.5">User App</span>
+                                    <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad]">Get on Play Store</span>
+                                </div>
+                            </a>
+                            <a href="https://play.google.com/store/apps/details?id=com.nowstay.partnerapp" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 transition-all group">
+                                <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-110">
+                                    <img 
+                                        src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" 
+                                        alt="Play Store" 
+                                        className="w-full h-full object-contain"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] text-gray-500 font-bold uppercase leading-none mb-0.5">Partner App</span>
+                                    <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad]">Manage Property</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Company Links */}
@@ -26,7 +59,7 @@ const Footer = () => {
                     <ul className="flex flex-col gap-3 text-[13px] font-medium text-[#cbd5e1]">
                         <li><Link to="/about" className="hover:text-[#00d2ad] transition-colors">About Us</Link></li>
                         <li><Link to="/search" className="hover:text-[#00d2ad] transition-colors">Browse Stays</Link></li>
-                        <li><a href="https://play.google.com/store/apps/details?id=com.nowstay.partnerapp" className="hover:text-[#00d2ad] transition-colors">Become a Partner</a></li>
+                        <li><Link to="/hotel/register" className="hover:text-[#00d2ad] transition-colors">Become a Partner</Link></li>
                         <li><Link to="/contact" className="hover:text-[#00d2ad] transition-colors">Contact Us</Link></li>
                     </ul>
                 </div>
