@@ -467,8 +467,6 @@ function App() {
     syncUser();
   }, []);
 
-  }, []);
-
   // ─── WEB PUSH NOTIFICATIONS (Browser only) ──────────────────────────────────
   // Flutter WebView users: FCM tokens are managed ENTIRELY by the Flutter native
   // code. Flutter hits /api/users/fcm-token or /api/partners/fcm-token directly
