@@ -417,6 +417,8 @@ const PartnerProtectedRoute = ({ children }) => {
     if (!isWizard && !isAllowedPath) {
       console.warn(`[AUTH] Pending partner ${user._id} (${user.partnerApprovalStatus}) attempted restricted path: ${location.pathname}. Redirecting to dashboard.`);
       return <Navigate to="/hotel/dashboard" replace />;
+    } else {
+      console.log(`[AUTH] Path allowed. isWizard: ${isWizard}, isAllowedPath: ${isAllowedPath}, path: ${location.pathname}`);
     }
   } else {
     // Approved partner - no restrictions
