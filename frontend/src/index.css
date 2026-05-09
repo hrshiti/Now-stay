@@ -118,3 +118,10 @@ body:has(#hotel-root) {
     display: none !important;
   }
 }
+
+/* Hide fixed footers on mobile when virtual keyboard is open (input focused) */
+@media screen and (max-width: 768px) {
+  body:has(input:focus, textarea:focus) footer.fixed.bottom-0 {
+    display: none !important;
+  }
+}
