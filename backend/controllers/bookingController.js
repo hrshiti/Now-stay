@@ -321,9 +321,8 @@ export const createBooking = async (req, res) => {
     }
 
     // Calculate Partner Payout
-    // Partner Payout = (Gross - Discount) - Commission
-    // Verification: TotalAmount - Tax - Commission = ((Gross - Discount) + Tax) - Tax - Commission = Gross - Discount - Commission.
-    const partnerPayout = Math.max(0, Math.floor(totalAmount - taxes - adminCommission));
+    // Partner Payout = (Gross - Discount) + Taxes - Commission
+    const partnerPayout = Math.max(0, Math.floor(taxableAmount + taxes - adminCommission));
 
     const bookingId = `BK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
