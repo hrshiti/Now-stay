@@ -388,7 +388,7 @@ const PartnerProtectedRoute = ({ children }) => {
     return <Navigate to="/hotel/login" state={{ from: location }} replace />;
   }
 
-  const isPending = user.partnerApprovalStatus !== 'approved';
+  const isPending = user.partnerApprovalStatus !== 'approved' && user.partnerApprovalStatus !== undefined;
   if (isPending) {
     const allowedPending = [
       '/hotel/dashboard',

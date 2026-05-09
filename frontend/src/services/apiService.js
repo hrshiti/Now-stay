@@ -99,6 +99,10 @@ export const authService = {
   verifyPartnerOtp: async (data) => {
     try {
       const response = await api.post('/auth/partner/verify-otp', data);
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

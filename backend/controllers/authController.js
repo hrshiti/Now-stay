@@ -761,6 +761,7 @@ export const updateProfile = async (req, res) => {
         phone: updatedUser.phone,
         role: updatedUser.role,
         isPartner: updatedUser.isPartner || false,
+        partnerApprovalStatus: updatedUser.partnerApprovalStatus,
         address: updatedUser.address,
         profileImage: updatedUser.profileImage,
         partnerSince: updatedUser.partnerSince,
