@@ -705,7 +705,8 @@ export const getPartnerBookingDetail = async (req, res) => {
       return res.status(403).json({ message: 'Booking data invalid (property link missing)' });
     }
 
-    if (booking.propertyId.partnerId.toString() !== req.user._id.toString()) {
+    const partnerIdStr = booking.propertyId.partnerId._id ? booking.propertyId.partnerId._id.toString() : booking.propertyId.partnerId.toString();
+    if (partnerIdStr !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Not authorized to view this booking' });
     }
 
