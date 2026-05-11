@@ -1683,13 +1683,13 @@ const AddResortWizard = () => {
                       <input 
                         type={propertyForm.checkInTime ? "time" : "text"}
                         placeholder="12:00 PM"
-                        className="input w-full pl-12" 
+                        className="input w-full !pl-16" 
                         value={propertyForm.checkInTime} 
                         onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
                         onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                         onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
-                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                      <div className="absolute left-[18px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1698,13 +1698,13 @@ const AddResortWizard = () => {
                       <input 
                         type={propertyForm.checkOutTime ? "time" : "text"}
                         placeholder="10:00 AM"
-                        className="input w-full pl-12" 
+                        className="input w-full !pl-16" 
                         value={propertyForm.checkOutTime} 
                         onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
                         onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                         onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
-                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                      <div className="absolute left-[18px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>
                   </div>
                 </div>
