@@ -22,33 +22,60 @@ const Footer = () => {
                     {/* App Download Links */}
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00d2ad]">Download Our App</h3>
-                        <div className="flex flex-col gap-4">
-                            <a href="https://play.google.com/store/apps/details?id=com.nowstay.userapp" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 transition-all group">
-                                <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-110">
-                                    <img 
-                                        src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" 
-                                        alt="Play Store" 
-                                        className="w-full h-full object-contain"
-                                    />
+                        <div className="flex flex-col gap-6">
+                            {/* User App Section */}
+                            <div className="space-y-3">
+                                <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest block">User App</span>
+                                <div className="flex flex-wrap gap-4">
+                                    <a href="https://play.google.com/store/apps/details?id=com.nowstay.userapp" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 transition-all group">
+                                        <div className="w-7 h-7 flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <img 
+                                                src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" 
+                                                alt="Play Store" 
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">Play Store</span>
+                                    </a>
+                                    <a href="#" onClick={(e) => e.preventDefault()} className="flex items-center gap-2.5 transition-all group">
+                                        <div className="w-7 h-7 flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <img 
+                                                src="/WhatsApp_Image_2026-05-11_at_12.14.22_PM-removebg-preview.png" 
+                                                alt="App Store" 
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">App Store</span>
+                                    </a>
                                 </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase leading-none mb-0.5">User App</span>
-                                    <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad]">Get on Play Store</span>
+                            </div>
+
+                            {/* Partner App Section */}
+                            <div className="space-y-3">
+                                <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest block">Partner App</span>
+                                <div className="flex flex-wrap gap-4">
+                                    <a href="https://play.google.com/store/apps/details?id=com.nowstay.partnerapp" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2.5 transition-all group">
+                                        <div className="w-7 h-7 flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <img 
+                                                src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" 
+                                                alt="Play Store" 
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">Play Store</span>
+                                    </a>
+                                    <a href="#" onClick={(e) => e.preventDefault()} className="flex items-center gap-2.5 transition-all group">
+                                        <div className="w-7 h-7 flex items-center justify-center transition-transform group-hover:scale-110">
+                                            <img 
+                                                src="/WhatsApp_Image_2026-05-11_at_12.14.22_PM-removebg-preview.png" 
+                                                alt="App Store" 
+                                                className="w-full h-full object-contain"
+                                            />
+                                        </div>
+                                        <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">App Store</span>
+                                    </a>
                                 </div>
-                            </a>
-                            <a href="https://play.google.com/store/apps/details?id=com.nowstay.partnerapp" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 transition-all group">
-                                <div className="w-8 h-8 flex items-center justify-center transition-transform group-hover:scale-110">
-                                    <img 
-                                        src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" 
-                                        alt="Play Store" 
-                                        className="w-full h-full object-contain"
-                                    />
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-[9px] text-gray-500 font-bold uppercase leading-none mb-0.5">Partner App</span>
-                                    <span className="text-[12px] font-bold text-white group-hover:text-[#00d2ad]">Manage Property</span>
-                                </div>
-                            </a>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -17,6 +17,7 @@ const FinanceAndPayoutsPage = () => {
     adminBalance: 0,
     totalRevenue: 0,
     totalEarnings: 0,
+    totalPlatformFee: 0,
     totalTax: 0,
     totalPayouts: 0
   });
@@ -115,15 +116,16 @@ const FinanceAndPayoutsPage = () => {
         csvContent += "Type,Value\n";
         csvContent += `Wallet Balance,${stats?.adminBalance || 0}\n`;
         csvContent += `Total Commission,${stats?.totalEarnings || 0}\n`;
+        csvContent += `Total Platform Fees,${stats?.totalPlatformFee || 0}\n`;
         csvContent += `Gross Booking Value,${stats?.totalRevenue || 0}\n`;
         csvContent += `Total Payouts,${stats?.totalPayouts || 0}\n\n`;
         
         csvContent += "Recent Financial Transactions\n";
-        csvContent += "Transaction/Booking ID,Date,Gross Amount,Commission,Tax,Partner Payout,Status\n";
+        csvContent += "Transaction/Booking ID,Date,Gross Amount,Commission,Platform Fee,Tax,Partner Payout,Status\n";
         transactions.forEach(t => {
           const date = new Date(t.createdAt).toLocaleDateString();
           const property = t.propertyId?.propertyName || 'Unknown';
-          csvContent += `"#${t.bookingId} - ${property}","${date}","${t.totalAmount}","${t.adminCommission}","${t.taxes}","${t.partnerPayout}","${t.paymentStatus}"\n`;
+          csvContent += `"#${t.bookingId} - ${property}","${date}","${t.totalAmount}","${t.adminCommission}","${t.platformFee || 0}","${t.taxes}","${t.partnerPayout}","${t.paymentStatus}"\n`;
         });
       } else {
         csvContent += "Withdrawal ID,Date,Partner,Amount,Bank,Account,Status,UTR\n";
@@ -299,15 +301,22 @@ const FinanceAndPayoutsPage = () => {
                 />
                 <StatCard
                   title="Total Commission"
-                  value={stats.totalEarnings}
+                  value={stats.totalEarnings - (stats.totalPlatformFee || 0)}
                   icon={TrendingUp}
                   colorClass="text-green-600"
                   subValue="Net platform income"
                 />
                 <StatCard
+                  title="Platform Fees"
+                  value={stats.totalPlatformFee}
+                  icon={ArrowUpRight}
+                  colorClass="text-indigo-600"
+                  subValue="Earnings from platform fees"
+                />
+                <StatCard
                   title="Gross Booking Value"
                   value={stats.totalRevenue}
-                  icon={ArrowUpRight}
+                  icon={FileText}
                   colorClass="text-purple-600"
                   subValue="Total transaction volume"
                 />
@@ -337,6 +346,7 @@ const FinanceAndPayoutsPage = () => {
                         <th className="px-6 py-4">Date</th>
                         <th className="px-6 py-4">Gross Amount</th>
                         <th className="px-6 py-4">Commission</th>
+                        <th className="px-6 py-4">Platform Fee</th>
                         <th className="px-6 py-4">Tax</th>
                         <th className="px-6 py-4">Partner Payout</th>
                         <th className="px-6 py-4">Status</th>
@@ -367,8 +377,11 @@ const FinanceAndPayoutsPage = () => {
                             <td className="px-6 py-4 font-medium text-gray-900">
                               {currency(t.totalAmount)}
                             </td>
-                            <td className="px-6 py-4 font-bold text-green-600">
+                             <td className="px-6 py-4 font-bold text-green-600">
                               +{currency(t.adminCommission)}
+                            </td>
+                            <td className="px-6 py-4 font-bold text-indigo-600">
+                              +{currency(t.platformFee || 0)}
                             </td>
                             <td className="px-6 py-4 text-gray-600">
                               {currency(t.taxes)}

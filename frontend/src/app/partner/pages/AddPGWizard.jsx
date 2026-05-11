@@ -885,7 +885,7 @@ const AddPGWizard = () => {
     setError('');
     if (step === 1) {
       localStorage.removeItem(STORAGE_KEY);
-      navigate(-1);
+      navigate('/hotel/join');
     } else {
       if (step === 7) syncHouseRulesFromDraft();
       setStep(prev => prev - 1);
@@ -947,7 +947,7 @@ const AddPGWizard = () => {
 
   const handleExit = () => {
     localStorage.removeItem(STORAGE_KEY);
-    navigate(-1);
+    navigate('/hotel/join');
   };
 
   return (

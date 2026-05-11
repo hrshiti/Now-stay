@@ -961,7 +961,7 @@ const AddTentWizard = () => {
       setStep(step - 1);
     } else {
       localStorage.removeItem(STORAGE_KEY);
-      navigate(-1);
+      navigate('/hotel/join');
     }
   };
 
@@ -1043,7 +1043,7 @@ const AddTentWizard = () => {
 
   const handleExit = () => {
     localStorage.removeItem(STORAGE_KEY);
-    navigate(-1);
+    navigate('/hotel/dashboard');
   };
 
   return (

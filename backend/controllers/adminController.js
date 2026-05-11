@@ -44,7 +44,8 @@ export const getDashboardStats = async (req, res) => {
       currentBookingRevenueAgg, lastMonthBookingRevenueAgg,
       currentSubRevenueAgg, lastMonthSubRevenueAgg,
       activeSubscribersCount,
-      recentSubscriptions
+      recentSubscriptions,
+      currentPlatformFeeAgg
     ] = await Promise.all([
       User.countDocuments({}),
       User.countDocuments({ createdAt: { $lt: startOfThisMonth } }),
@@ -88,33 +89,55 @@ export const getDashboardStats = async (req, res) => {
         .populate('partnerId', 'name email')
         .populate('planId', 'name')
         .sort({ createdAt: -1 })
-        .limit(5)
+        .limit(5),
+      // Platform Fee Revenue
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid' } },
+        { $group: { _id: null, total: { $sum: { $ifNull: ['$platformFee', 0] } } } }
+      ])
     ]);
 
     const totalBookingRevenue = currentBookingRevenueAgg[0]?.total || 0;
     const totalSubRevenue = currentSubRevenueAgg[0]?.total || 0;
     const totalPlatformRevenue = totalBookingRevenue + totalSubRevenue;
 
-    // Monthly Growth Calculations
-    const revBookingThisMonthAgg = await Booking.aggregate([
-      { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
-      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
+    const [
+      revBookingThisMonthAgg,
+      revSubThisMonthAgg,
+      revPlatformFeeThisMonthAgg,
+      revBookingLastMonthAgg,
+      revSubLastMonthAgg
+    ] = await Promise.all([
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
+      ]),
+      PartnerSubscription.aggregate([
+        { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+      ]),
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: { $ifNull: ['$platformFee', 0] } } } }
+      ]),
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
+      ]),
+      PartnerSubscription.aggregate([
+        { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+      ])
     ]);
-    const revBookingLastMonthAgg = await Booking.aggregate([
-      { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
-      { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
-    ]);
+
+    const totalPlatformFeeRevenue = currentPlatformFeeAgg[0]?.total || 0;
+    const platformFeeThisMonth = revPlatformFeeThisMonthAgg[0]?.total || 0;
+    const platformFeeLastMonth = (totalPlatformFeeRevenue - platformFeeThisMonth);
+    
+
     const incBookingThisMonth = revBookingThisMonthAgg[0]?.total || 0;
     const incBookingLastMonth = revBookingLastMonthAgg[0]?.total || 0;
 
-    const revSubThisMonthAgg = await PartnerSubscription.aggregate([
-      { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
-      { $group: { _id: null, total: { $sum: '$amountPaid' } } }
-    ]);
-    const revSubLastMonthAgg = await PartnerSubscription.aggregate([
-      { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
-      { $group: { _id: null, total: { $sum: '$amountPaid' } } }
-    ]);
     const incSubThisMonth = revSubThisMonthAgg[0]?.total || 0;
     const incSubLastMonth = revSubLastMonthAgg[0]?.total || 0;
 
@@ -128,6 +151,7 @@ export const getDashboardStats = async (req, res) => {
       bookings: calculateGrowth(bookingsThisMonth, bookingsLastMonthCount),
       bookingRevenue: calculateGrowth(incBookingThisMonth, incBookingLastMonth),
       subRevenue: calculateGrowth(incSubThisMonth, incSubLastMonth),
+      platformFee: calculateGrowth(platformFeeThisMonth, platformFeeLastMonth),
       totalRevenue: calculateGrowth(incBookingThisMonth + incSubThisMonth, incBookingLastMonth + incSubLastMonth)
     };
 
@@ -217,6 +241,7 @@ export const getDashboardStats = async (req, res) => {
         totalRevenue: totalPlatformRevenue,
         bookingRevenue: totalBookingRevenue,
         subscriptionRevenue: totalSubRevenue,
+        platformFeeRevenue: totalPlatformFeeRevenue,
         activeSubscribers: activeSubscribersCount,
         trends
       },
@@ -1512,6 +1537,7 @@ export const getFinanceStats = async (req, res) => {
         adminBalance: derivedAdminBalance, // Derived from transactions
         totalRevenue: financials.totalGross, // Total Booking Value
         totalEarnings: (financials.totalCommission || 0) + (financials.totalPlatformFee || 0), // Actual Platform Income
+        totalPlatformFee: financials.totalPlatformFee || 0,
         totalTax: financials.totalTax,
         totalPayouts: financials.totalPayout
       },

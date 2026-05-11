@@ -122,7 +122,7 @@ const PartnerJoinPropertyType = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
       <div className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+          <button onClick={() => navigate('/hotel/dashboard')} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
             <ArrowLeft size={20} />
           </button>
           <div className="font-bold text-lg text-gray-800 uppercase tracking-tight">Select Property Type</div>

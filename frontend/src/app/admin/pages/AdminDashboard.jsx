@@ -57,9 +57,13 @@ const AdminDashboard = () => {
     // Data States
     const [stats, setStats] = useState({
         totalRevenue: 0,
+        bookingRevenue: 0,
+        subscriptionRevenue: 0,
+        platformFeeRevenue: 0,
         totalBookings: 0,
         totalUsers: 0,
         pendingHotels: 0,
+        activeSubscribers: 0,
         trends: { revenue: 0, bookings: 0, users: 0 }
     });
     const [charts, setCharts] = useState({ revenue: [], status: [] });
@@ -109,14 +113,32 @@ const AdminDashboard = () => {
                 </div>
             </div>
 
-            {/* Row 1: KPI Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Row 1: KPI Grid - Financials */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <DashboardCard
                     title="Total Platform Revenue"
                     value={formatCurrency(stats.totalRevenue)}
                     trend={stats.trends?.totalRevenue}
                     icon={DollarSign}
                     color="text-emerald-500"
+                    loading={loading}
+                    onClick={() => navigate('/admin/finance')}
+                />
+                <DashboardCard
+                    title="Booking Revenue"
+                    value={formatCurrency(stats.bookingRevenue - (stats.platformFeeRevenue || 0))}
+                    trend={stats.trends?.bookingRevenue}
+                    icon={ShoppingBag}
+                    color="text-blue-500"
+                    loading={loading}
+                    onClick={() => navigate('/admin/finance')}
+                />
+                 <DashboardCard
+                    title="Platform Fee Revenue"
+                    value={formatCurrency(stats.platformFeeRevenue)}
+                    trend={stats.trends?.platformFee}
+                    icon={CreditCard}
+                    color="text-indigo-600"
                     loading={loading}
                     onClick={() => navigate('/admin/finance')}
                 />
@@ -129,26 +151,9 @@ const AdminDashboard = () => {
                     loading={loading}
                     onClick={() => navigate('/admin/subscriptions')}
                 />
-                <DashboardCard
-                    title="Active Subscribers"
-                    value={stats.activeSubscribers}
-                    icon={Users}
-                    color="text-purple-500"
-                    loading={loading}
-                    onClick={() => navigate('/admin/subscriptions')}
-                />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <DashboardCard
-                    title="Booking Revenue"
-                    value={formatCurrency(stats.bookingRevenue)}
-                    trend={stats.trends?.bookingRevenue}
-                    icon={ShoppingBag}
-                    color="text-blue-500"
-                    loading={loading}
-                    onClick={() => navigate('/admin/finance')}
-                />
                 <DashboardCard
                     title="Total Bookings"
                     value={stats.totalBookings}
@@ -158,6 +163,15 @@ const AdminDashboard = () => {
                     loading={loading}
                     onClick={() => navigate('/admin/bookings')}
                 />
+                <DashboardCard
+                    title="Active Subscribers"
+                    value={stats.activeSubscribers}
+                    icon={Users}
+                    color="text-purple-500"
+                    loading={loading}
+                    onClick={() => navigate('/admin/subscriptions')}
+                />
+
                 <DashboardCard
                     title="Active Users"
                     value={stats.totalUsers}
