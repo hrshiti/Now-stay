@@ -25,8 +25,8 @@ export const openFlutterCamera = async () => {
         return;
       }
 
-      window.flutter_inappwebview
-        .callHandler('openCamera')
+      // Using 'pickImage' as per backend_suggestions.md (Flutter app implementation)
+      window.flutter_inappwebview.callHandler('pickImage')
         .then((result) => {
           console.log('[Flutter Picker] Received Result:', result);
           
