@@ -1431,7 +1431,8 @@ export const downloadReceipt = async (req, res) => {
     const hotelGST = property.gstNumber || 'N/A';
 
     // --- 1. HEADER (Letterhead Style) ---
-    // Left: Platform Logo/Name
+    // Left: Platform Logo/Name & Title
+    doc.fontSize(10).font('Helvetica-Bold').fillColor(primaryColor).text('TAX INVOICE', 50, 30);
     doc.fontSize(22).font('Helvetica-Bold').fillColor(accentColor).text('NowStay', 50, 45);
     doc.fontSize(10).font('Helvetica').fillColor(secondaryColor).text('Verified Booking Receipt', 50, 70);
 
@@ -1518,8 +1519,8 @@ export const downloadReceipt = async (req, res) => {
     if (booking.taxes > 0) {
       boxY += 20;
       if (booking.taxType === 'inter') {
-        // IGST
-        doc.text(`IGST @ ${appliedTaxRate}%`, 65, boxY);
+        // GST
+        doc.text(`GST @ ${appliedTaxRate}%`, 65, boxY);
         doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
       } else if (booking.taxType === 'intra') {
         // CGST + SGST (Split into two rows)

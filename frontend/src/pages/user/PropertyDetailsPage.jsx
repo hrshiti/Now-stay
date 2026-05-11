@@ -1338,7 +1338,7 @@ const PropertyDetailsPage = () => {
                   {priceBreakdown.taxAmount > 0 && (
                     (priceBreakdown.isInterstate) ? (
                       <div className="flex justify-between text-gray-600">
-                        <span>IGST ({priceBreakdown.gstRate}%)</span>
+                        <span>GST ({priceBreakdown.gstRate}%)</span>
                         <span>+ ₹{priceBreakdown.taxAmount.toLocaleString()}</span>
                       </div>
                     ) : (

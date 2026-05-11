@@ -413,7 +413,7 @@ const BookingConfirmationPage = () => {
                                     <>
                                         {booking.taxType === 'inter' ? (
                                             <div className="flex justify-between text-sm text-gray-600">
-                                                <span>IGST ({((booking.igst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(0)}%)</span>
+                                                <span>GST ({((booking.igst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(0)}%)</span>
                                                 <span>₹{booking.igst?.toLocaleString()}</span>
                                             </div>
                                         ) : (

@@ -64,6 +64,7 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
             {/* Header / Letterhead */}
             <div className="flex flex-col sm:flex-row justify-between items-start mb-8 gap-6 sm:gap-0">
                 <div className="w-full sm:w-auto">
+                    <h2 className="text-sm font-black text-blue-900 uppercase tracking-widest mb-1">TAX INVOICE</h2>
                     <h1 className="text-3xl font-black text-gray-900 uppercase tracking-tighter mb-2">
                         {property.propertyName || property.name}
                     </h1>
@@ -187,7 +188,7 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                         {isInterState ? (
                             <>
                                 <tr>
-                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>Tax Amount (IGST)</td>
+                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>Tax Amount (GST)</td>
                                     <td className="border border-gray-300 px-4 py-2 text-right font-bold">₹{booking.taxes?.toLocaleString()}</td>
                                 </tr>
                             </>

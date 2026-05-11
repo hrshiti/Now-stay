@@ -474,7 +474,7 @@ const BookingCheckoutPage = () => {
               {(priceBreakdown?.taxAmount > 0) && (
                 (guestDetails.state && property?.address?.state && property.address.state.toLowerCase().trim() !== guestDetails.state.toLowerCase().trim()) ? (
                   <div className="flex justify-between text-sm text-gray-600 font-medium">
-                    <span>IGST ({taxRate || 0}%)</span>
+                    <span>GST ({taxRate || 0}%)</span>
                     <span className="font-bold text-gray-800">₹{priceBreakdown?.taxAmount?.toLocaleString()}</span>
                   </div>
                 ) : (
