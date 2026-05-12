@@ -248,7 +248,7 @@ const Layout = ({ children }) => {
       {showUserBottomNav && <BottomNavbar />}
       {showPartnerBottomNav && <PartnerBottomNavbar />}
       
-      {showPartnerNavs ? <PartnerFooter /> : showUserNavs && <Footer />}
+      {(showPartnerNavs && !isPartnerPublic && !isAuthRoute) ? <PartnerFooter /> : (showUserNavs && !hideUserBottomNavOn.some(r => location.pathname.includes(r))) && <Footer />}
     </>
 
   );

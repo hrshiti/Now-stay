@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2, Shield } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { authService } from '../../services/apiService';
 import NowStayLogo from '../../components/ui/NowStayLogo';
 import toast from 'react-hot-toast';
@@ -9,6 +9,7 @@ import { clearPropertyDrafts } from '../../utils/localStorageUtils';
 
 const HotelLoginPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [step, setStep] = useState(1);
     const [phone, setPhone] = useState('');
     const [otp, setOtp] = useState(['', '', '', '']);
@@ -22,9 +23,13 @@ const HotelLoginPage = () => {
         const userRaw = localStorage.getItem('user');
         const user = userRaw ? JSON.parse(userRaw) : null;
         if (token && user && user.role === 'partner') {
-            navigate('/hotel/dashboard', { replace: true });
+            const from = location.state?.from?.pathname || '/hotel/dashboard';
+            // Preserve hash if exists (for wizard steps)
+            const search = location.state?.from?.search || '';
+            const hash = location.state?.from?.hash || '';
+            navigate(from + search + hash, { replace: true });
         }
-    }, [navigate]);
+    }, [navigate, location]);
 
     // Timer countdown effect
     useEffect(() => {

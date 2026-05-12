@@ -122,18 +122,24 @@ const AddVillaWizard = () => {
   // 3. Save immediately on page refresh/close (fixes production data loss on refresh)
   useEffect(() => {
     if (isEditMode) return;
-    const handleUnload = () => {
+    const handleUnload = (e) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, propertyForm, roomTypes, createdProperty }));
+      if (step > 1 && !isEditMode) {
+        e.preventDefault();
+        e.returnValue = 'Are you sure you want to leave? Your progress is saved as a draft.';
+        return e.returnValue;
+      }
     };
     window.addEventListener('beforeunload', handleUnload);
     window.addEventListener('pagehide', handleUnload);
     document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') handleUnload();
+      if (document.visibilityState === 'hidden') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, propertyForm, roomTypes, createdProperty }));
+      }
     });
     return () => {
       window.removeEventListener('beforeunload', handleUnload);
       window.removeEventListener('pagehide', handleUnload);
-      document.removeEventListener('visibilitychange', handleUnload);
     };
   }, [step, propertyForm, roomTypes, createdProperty]);
 
