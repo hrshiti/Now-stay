@@ -187,7 +187,7 @@ const AddHomestayWizard = () => {
   }, []);
 
   // Helper Functions
-  
+
   // Reset sub-item editing states when switching steps to prevent UI locks
   useEffect(() => {
     setEditingRoomType(null);
@@ -1476,12 +1476,12 @@ const AddHomestayWizard = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
-                          <input 
-                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
-                            type="number" 
-                            value={editingRoomType.baseAdults} 
-                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} 
-                            placeholder="e.g. 2" 
+                          <input
+                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            type="number"
+                            value={editingRoomType.baseAdults}
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))}
+                            placeholder="e.g. 2"
                           />
                           {Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) && (
                             <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Adults ({editingRoomType.maxAdults})</p>
@@ -1489,12 +1489,12 @@ const AddHomestayWizard = () => {
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
-                          <input 
-                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
-                            type="number" 
-                            value={editingRoomType.baseChildren} 
-                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} 
-                            placeholder="e.g. 0" 
+                          <input
+                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            type="number"
+                            value={editingRoomType.baseChildren}
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))}
+                            placeholder="e.g. 0"
                           />
                           {Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) && (
                             <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Children ({editingRoomType.maxChildren})</p>
@@ -1558,8 +1558,8 @@ const AddHomestayWizard = () => {
 
                     <div className="pt-2 flex flex-wrap gap-2">
                       <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           if (window.confirm("Clear all fields for this inventory?")) {
                             if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
@@ -1587,12 +1587,12 @@ const AddHomestayWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-In Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
-                    <input 
+                    <input
                       type={propertyForm.checkInTime ? "time" : "text"}
                       placeholder="12:00 PM"
-                      className="input w-full !pl-16" 
-                      value={propertyForm.checkInTime} 
-                      onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                      className="input w-full !pl-16"
+                      value={propertyForm.checkInTime}
+                      onChange={e => updatePropertyForm('checkInTime', e.target.value)}
                       onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                       onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
@@ -1602,12 +1602,12 @@ const AddHomestayWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-Out Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
-                    <input 
+                    <input
                       type={propertyForm.checkOutTime ? "time" : "text"}
                       placeholder="10:00 AM"
-                      className="input w-full !pl-16" 
-                      value={propertyForm.checkOutTime} 
-                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                      className="input w-full !pl-16"
+                      value={propertyForm.checkOutTime}
+                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)}
                       onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                       onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
@@ -1650,84 +1650,82 @@ const AddHomestayWizard = () => {
                   <FileText size={18} className="text-emerald-600" />
                   Invoice & Tax Details
                 </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">
-                        GST Number <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        className={`input ${
-                          propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
-                            ? 'border-red-400 ring-1 ring-red-400'
-                            : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      GST Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className={`input ${propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
+                          ? 'border-red-400 ring-1 ring-red-400'
+                          : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
                             ? 'border-emerald-400 ring-1 ring-emerald-400'
                             : ''
                         }`}
-                        placeholder="e.g. 07AAAAA0000A1Z5"
-                        value={propertyForm.gstNumber}
-                        maxLength={15}
-                        onChange={e => updatePropertyForm('gstNumber', e.target.value.toUpperCase())}
-                      />
-                      {propertyForm.gstNumber && getGstError(propertyForm.gstNumber) && (
-                        <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getGstError(propertyForm.gstNumber)}</p>
-                      )}
-                      {propertyForm.gstNumber && !getGstError(propertyForm.gstNumber) && (
-                        <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid GSTIN</p>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">
-                        Requested GST Percentage (%) <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        className="input w-full"
-                        placeholder="e.g. 12"
-                        value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
-                        onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">
-                        Requested GST Percentage (%) <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        className="input w-full"
-                        placeholder="e.g. 12"
-                        value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
-                        onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">
-                        Official Property Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        className={`input ${
-                          propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
-                            ? 'border-red-400 ring-1 ring-red-400'
-                            : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
-                            ? 'border-emerald-400 ring-1 ring-emerald-400'
-                            : ''
-                        }`}
-                        type="email"
-                        placeholder="homestay@example.com"
-                        value={propertyForm.propertyEmail}
-                        onChange={e => updatePropertyForm('propertyEmail', e.target.value)}
-                      />
-                      {propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail) && (
-                        <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getEmailError(propertyForm.propertyEmail)}</p>
-                      )}
-                      {propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail) && (
-                        <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid email</p>
-                      )}
-                    </div>
+                      placeholder="e.g. 07AAAAA0000A1Z5"
+                      value={propertyForm.gstNumber}
+                      maxLength={15}
+                      onChange={e => updatePropertyForm('gstNumber', e.target.value.toUpperCase())}
+                    />
+                    {propertyForm.gstNumber && getGstError(propertyForm.gstNumber) && (
+                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getGstError(propertyForm.gstNumber)}</p>
+                    )}
+                    {propertyForm.gstNumber && !getGstError(propertyForm.gstNumber) && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid GSTIN</p>
+                    )}
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      Requested GST Percentage (%) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      className="input w-full"
+                      placeholder="e.g. 12"
+                      value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
+                      onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      Requested GST Percentage (%) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      className="input w-full"
+                      placeholder="e.g. 12"
+                      value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
+                      onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      Official Property Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className={`input ${propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
+                          ? 'border-red-400 ring-1 ring-red-400'
+                          : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
+                            ? 'border-emerald-400 ring-1 ring-emerald-400'
+                            : ''
+                        }`}
+                      type="email"
+                      placeholder="homestay@example.com"
+                      value={propertyForm.propertyEmail}
+                      onChange={e => updatePropertyForm('propertyEmail', e.target.value)}
+                    />
+                    {propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail) && (
+                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getEmailError(propertyForm.propertyEmail)}</p>
+                    )}
+                    {propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail) && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid email</p>
+                    )}
+                  </div>
+                </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Terms & Conditions (for Invoice)</label>

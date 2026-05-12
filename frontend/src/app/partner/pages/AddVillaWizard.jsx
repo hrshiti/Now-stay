@@ -168,7 +168,7 @@ const AddVillaWizard = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  
+
   // Reset sub-item editing states when switching steps to prevent UI locks
   useEffect(() => {
     setEditingRoomType(null);
@@ -1339,41 +1339,41 @@ const AddVillaWizard = () => {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cover Image</label>
                   <div
-                  onClick={() => !uploading && !propertyForm.coverImage && (isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click())}
-                  className={`w-full aspect-video sm:aspect-[21/9] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 overflow-hidden group transition-all relative ${propertyForm.coverImage ? 'border-transparent' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50/10 cursor-pointer'}`}
-                >
-                  {uploading === 'cover' ? (
-                    <div className="flex flex-col items-center gap-2 text-emerald-600">
-                      <Loader2 className="animate-spin" size={32} />
-                      <span className="text-sm font-bold">Uploading Cover...</span>
-                    </div>
-                  ) : propertyForm.coverImage ? (
-                    <>
-                      <img src={propertyForm.coverImage} className="w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="text-white font-bold bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 cursor-pointer" onClick={(e) => { e.stopPropagation(); isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click(); }}>
-                          Change Cover
-                        </span>
+                    onClick={() => !uploading && !propertyForm.coverImage && (isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click())}
+                    className={`w-full aspect-video sm:aspect-[21/9] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 overflow-hidden group transition-all relative ${propertyForm.coverImage ? 'border-transparent' : 'border-gray-300 hover:border-emerald-400 hover:bg-emerald-50/10 cursor-pointer'}`}
+                  >
+                    {uploading === 'cover' ? (
+                      <div className="flex flex-col items-center gap-2 text-emerald-600">
+                        <Loader2 className="animate-spin" size={32} />
+                        <span className="text-sm font-bold">Uploading Cover...</span>
                       </div>
-                      <div
-                        onClick={(e) => { e.stopPropagation(); updatePropertyForm('coverImage', ''); }}
-                        className="absolute top-3 right-3 p-2 bg-white text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 cursor-pointer z-10"
-                      >
-                        <X size={16} />
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                        <Plus size={24} />
-                      </div>
-                      <div className="text-center">
-                        <div className="font-bold text-gray-600 group-hover:text-emerald-700">{isFlutter ? 'Take/Upload Cover Photo' : 'Add Cover Photo'}</div>
-                        <div className="text-xs text-gray-400">High quality landscape image</div>
-                      </div>
-                    </>
-                  )}
-                </div>
+                    ) : propertyForm.coverImage ? (
+                      <>
+                        <img src={propertyForm.coverImage} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <span className="text-white font-bold bg-white/20 backdrop-blur-md px-4 py-2 rounded-full border border-white/50 cursor-pointer" onClick={(e) => { e.stopPropagation(); isFlutter ? handleCameraUpload('cover', u => updatePropertyForm('coverImage', u)) : coverImageFileInputRef.current?.click(); }}>
+                            Change Cover
+                          </span>
+                        </div>
+                        <div
+                          onClick={(e) => { e.stopPropagation(); updatePropertyForm('coverImage', ''); }}
+                          className="absolute top-3 right-3 p-2 bg-white text-red-500 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 cursor-pointer z-10"
+                        >
+                          <X size={16} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Plus size={24} />
+                        </div>
+                        <div className="text-center">
+                          <div className="font-bold text-gray-600 group-hover:text-emerald-700">{isFlutter ? 'Take/Upload Cover Photo' : 'Add Cover Photo'}</div>
+                          <div className="text-xs text-gray-400">High quality landscape image</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                   <input ref={coverImageFileInputRef} type="file" accept="image/*" className="hidden" onChange={e => uploadImages(e.target.files, 'cover', u => updatePropertyForm('coverImage', u[0]))} />
                 </div>
 
@@ -1519,12 +1519,12 @@ const AddVillaWizard = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
-                          <input 
-                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
-                            type="number" 
-                            value={editingRoomType.baseAdults} 
-                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} 
-                            placeholder="e.g. 2" 
+                          <input
+                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            type="number"
+                            value={editingRoomType.baseAdults}
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))}
+                            placeholder="e.g. 2"
                           />
                           {Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) && (
                             <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Adults ({editingRoomType.maxAdults})</p>
@@ -1532,12 +1532,12 @@ const AddVillaWizard = () => {
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
-                          <input 
-                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
-                            type="number" 
-                            value={editingRoomType.baseChildren} 
-                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} 
-                            placeholder="e.g. 0" 
+                          <input
+                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            type="number"
+                            value={editingRoomType.baseChildren}
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))}
+                            placeholder="e.g. 0"
                           />
                           {Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) && (
                             <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Children ({editingRoomType.maxChildren})</p>
@@ -1607,8 +1607,8 @@ const AddVillaWizard = () => {
                     <div className="pt-2 flex flex-wrap gap-2">
                       {/* Bug Fix 1: Changed 'Cancel' to 'Close' to avoid confusion with cancellation */}
                       <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-bold bg-gray-100 rounded-xl hover:bg-gray-200">Close</button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           if (window.confirm("Clear all fields for this detail?")) {
                             if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
@@ -1636,12 +1636,12 @@ const AddVillaWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-In Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
-                    <input 
+                    <input
                       type={propertyForm.checkInTime ? "time" : "text"}
                       placeholder="12:00 PM"
-                      className="input w-full !pl-16" 
-                      value={propertyForm.checkInTime} 
-                      onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                      className="input w-full !pl-16"
+                      value={propertyForm.checkInTime}
+                      onChange={e => updatePropertyForm('checkInTime', e.target.value)}
                       onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                       onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
@@ -1651,12 +1651,12 @@ const AddVillaWizard = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-Out Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
-                    <input 
+                    <input
                       type={propertyForm.checkOutTime ? "time" : "text"}
                       placeholder="10:00 AM"
-                      className="input w-full pl-14" 
-                      value={propertyForm.checkOutTime} 
-                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                      className="input w-full pl-14"
+                      value={propertyForm.checkOutTime}
+                      onChange={e => updatePropertyForm('checkOutTime', e.target.value)}
                       onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                       onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
@@ -1715,70 +1715,68 @@ const AddVillaWizard = () => {
                   <FileText size={18} className="text-emerald-600" />
                   Invoice & Tax Details
                 </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">
-                        GST Number <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        className={`input ${
-                          propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
-                            ? 'border-red-400 ring-1 ring-red-400'
-                            : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      GST Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className={`input ${propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
+                          ? 'border-red-400 ring-1 ring-red-400'
+                          : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
                             ? 'border-emerald-400 ring-1 ring-emerald-400'
                             : ''
                         }`}
-                        placeholder="e.g. 07AAAAA0000A1Z5"
-                        value={propertyForm.gstNumber}
-                        maxLength={15}
-                        onChange={e => updatePropertyForm('gstNumber', e.target.value.toUpperCase())}
-                      />
-                      {propertyForm.gstNumber && getGstError(propertyForm.gstNumber) && (
-                        <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getGstError(propertyForm.gstNumber)}</p>
-                      )}
-                      {propertyForm.gstNumber && !getGstError(propertyForm.gstNumber) && (
-                        <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid GSTIN</p>
-                      )}
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">
-                        Requested GST Percentage (%) <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        className="input w-full"
-                        placeholder="e.g. 12"
-                        value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
-                        onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
-                        min="0"
-                        max="100"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-gray-500">
-                        Official Property Email <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        className={`input ${
-                          propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
-                            ? 'border-red-400 ring-1 ring-red-400'
-                            : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
-                            ? 'border-emerald-400 ring-1 ring-emerald-400'
-                            : ''
-                        }`}
-                        type="email"
-                        placeholder="villa@example.com"
-                        value={propertyForm.propertyEmail}
-                        onChange={e => updatePropertyForm('propertyEmail', e.target.value)}
-                      />
-                      {propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail) && (
-                        <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getEmailError(propertyForm.propertyEmail)}</p>
-                      )}
-                      {propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail) && (
-                        <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid email</p>
-                      )}
-                    </div>
+                      placeholder="e.g. 07AAAAA0000A1Z5"
+                      value={propertyForm.gstNumber}
+                      maxLength={15}
+                      onChange={e => updatePropertyForm('gstNumber', e.target.value.toUpperCase())}
+                    />
+                    {propertyForm.gstNumber && getGstError(propertyForm.gstNumber) && (
+                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getGstError(propertyForm.gstNumber)}</p>
+                    )}
+                    {propertyForm.gstNumber && !getGstError(propertyForm.gstNumber) && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid GSTIN</p>
+                    )}
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      Requested GST Percentage (%) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      className="input w-full"
+                      placeholder="e.g. 12"
+                      value={propertyForm.gstPercentage === 0 ? '' : (propertyForm.gstPercentage || '')}
+                      onChange={e => updatePropertyForm('gstPercentage', e.target.value === '' ? 0 : Number(e.target.value))}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-gray-500">
+                      Official Property Email <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      className={`input ${propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
+                          ? 'border-red-400 ring-1 ring-red-400'
+                          : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
+                            ? 'border-emerald-400 ring-1 ring-emerald-400'
+                            : ''
+                        }`}
+                      type="email"
+                      placeholder="villa@example.com"
+                      value={propertyForm.propertyEmail}
+                      onChange={e => updatePropertyForm('propertyEmail', e.target.value)}
+                    />
+                    {propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail) && (
+                      <p className="text-[10px] text-red-500 font-semibold mt-0.5">{getEmailError(propertyForm.propertyEmail)}</p>
+                    )}
+                    {propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail) && (
+                      <p className="text-[10px] text-emerald-600 font-semibold mt-0.5">✓ Valid email</p>
+                    )}
+                  </div>
+                </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Terms & Conditions (for Invoice)</label>

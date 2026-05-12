@@ -4,5 +4,20 @@
             "source": "/(.*)",
             "destination": "/index.html"
         }
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(self \"https://nowstay.in\" \"https://www.nowstay.in\"), microphone=(self \"https://nowstay.in\" \"https://www.nowstay.in\")"
+                },
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "img-src 'self' data: https: blob:; connect-src 'self' data: https:; frame-src 'self' https:;"
+                }
+            ]
+        }
     ]
 }

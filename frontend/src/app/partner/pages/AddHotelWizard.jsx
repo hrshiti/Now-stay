@@ -162,7 +162,7 @@ const AddHotelWizard = () => {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  
+
   // Reset sub-item editing states when switching steps to prevent UI locks
   useEffect(() => {
     setEditingRoomType(null);
@@ -1502,12 +1502,12 @@ const AddHotelWizard = () => {
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Adults Included</label>
-                          <input 
-                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
-                            type="number" 
-                            value={editingRoomType.baseAdults} 
-                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))} 
-                            placeholder="e.g. 2" 
+                          <input
+                            className={`input w-full bg-white ${Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            type="number"
+                            value={editingRoomType.baseAdults}
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseAdults: e.target.value.replace(/^0+(?!$)/, '') }))}
+                            placeholder="e.g. 2"
                           />
                           {Number(editingRoomType.baseAdults) > Number(editingRoomType.maxAdults) && (
                             <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Adults ({editingRoomType.maxAdults})</p>
@@ -1515,12 +1515,12 @@ const AddHotelWizard = () => {
                         </div>
                         <div className="space-y-1">
                           <label className="text-xs font-semibold text-gray-500">Base Children Included</label>
-                          <input 
-                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`} 
-                            type="number" 
-                            value={editingRoomType.baseChildren} 
-                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))} 
-                            placeholder="e.g. 0" 
+                          <input
+                            className={`input w-full bg-white ${Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) ? 'border-red-500 text-red-600 focus:border-red-500 focus:ring-red-500' : ''}`}
+                            type="number"
+                            value={editingRoomType.baseChildren}
+                            onChange={e => setEditingRoomType(prev => ({ ...prev, baseChildren: e.target.value.replace(/^0+(?!$)/, '') }))}
+                            placeholder="e.g. 0"
                           />
                           {Number(editingRoomType.baseChildren) > Number(editingRoomType.maxChildren) && (
                             <p className="text-[10px] text-red-500 font-bold animate-pulse mt-0.5">Exceeds Max Children ({editingRoomType.maxChildren})</p>
@@ -1588,8 +1588,8 @@ const AddHotelWizard = () => {
 
                     <div className="flex flex-wrap gap-2 pt-4">
                       <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => {
                           if (window.confirm("Clear all fields for this room type?")) {
                             if (editingRoomTypeIndex === -1 || editingRoomTypeIndex == null) {
@@ -1620,12 +1620,12 @@ const AddHotelWizard = () => {
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">Check-in Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                     <div className="relative">
-                      <input 
+                      <input
                         type={propertyForm.checkInTime ? "time" : "text"}
                         placeholder="12:00 PM"
-                        className="input w-full !pl-16" 
-                        value={propertyForm.checkInTime} 
-                        onChange={e => updatePropertyForm('checkInTime', e.target.value)} 
+                        className="input w-full !pl-16"
+                        value={propertyForm.checkInTime}
+                        onChange={e => updatePropertyForm('checkInTime', e.target.value)}
                         onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                         onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
@@ -1635,12 +1635,12 @@ const AddHotelWizard = () => {
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">Check-out Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                     <div className="relative">
-                      <input 
+                      <input
                         type={propertyForm.checkOutTime ? "time" : "text"}
                         placeholder="10:00 AM"
-                        className="input w-full !pl-16" 
-                        value={propertyForm.checkOutTime} 
-                        onChange={e => updatePropertyForm('checkOutTime', e.target.value)} 
+                        className="input w-full !pl-16"
+                        value={propertyForm.checkOutTime}
+                        onChange={e => updatePropertyForm('checkOutTime', e.target.value)}
                         onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                         onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
@@ -1693,13 +1693,12 @@ const AddHotelWizard = () => {
                         GST Number <span className="text-red-500">*</span>
                       </label>
                       <input
-                        className={`input ${
-                          propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
+                        className={`input ${propertyForm.gstNumber && getGstError(propertyForm.gstNumber)
                             ? 'border-red-400 ring-1 ring-red-400'
                             : propertyForm.gstNumber && !getGstError(propertyForm.gstNumber)
-                            ? 'border-emerald-400 ring-1 ring-emerald-400'
-                            : ''
-                        }`}
+                              ? 'border-emerald-400 ring-1 ring-emerald-400'
+                              : ''
+                          }`}
                         placeholder="e.g. 07AAAAA0000A1Z5"
                         value={propertyForm.gstNumber}
                         maxLength={15}
@@ -1731,13 +1730,12 @@ const AddHotelWizard = () => {
                         Official Property Email <span className="text-red-500">*</span>
                       </label>
                       <input
-                        className={`input ${
-                          propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
+                        className={`input ${propertyForm.propertyEmail && getEmailError(propertyForm.propertyEmail)
                             ? 'border-red-400 ring-1 ring-red-400'
                             : propertyForm.propertyEmail && !getEmailError(propertyForm.propertyEmail)
-                            ? 'border-emerald-400 ring-1 ring-emerald-400'
-                            : ''
-                        }`}
+                              ? 'border-emerald-400 ring-1 ring-emerald-400'
+                              : ''
+                          }`}
                         type="email"
                         placeholder="hotel@example.com"
                         value={propertyForm.propertyEmail}
