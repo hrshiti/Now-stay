@@ -60,9 +60,9 @@ io.on('connection', (socket) => {
 
 // Security Headers for Mobile App WebView (Camera & Base64 support)
 app.use((req, res, next) => {
-  res.setHeader('Permissions-Policy', 'camera=(self "https://nowstay.in"), microphone=(self "https://nowstay.in")');
-  // Note: Standard helmet CSP can be strict, setting a permissive one for data: URLs
-  res.setHeader('Content-Security-Policy', "img-src 'self' data: https: blob:; connect-src 'self' data: https:;");
+  res.setHeader('Permissions-Policy', 'camera=(self "https://nowstay.in" "https://www.nowstay.in"), microphone=(self "https://nowstay.in" "https://www.nowstay.in")');
+  // Support base64 images (data:) and blobs
+  res.setHeader('Content-Security-Policy', "img-src 'self' data: https: blob:; connect-src 'self' data: https:; frame-src 'self' https:;");
   next();
 });
 
