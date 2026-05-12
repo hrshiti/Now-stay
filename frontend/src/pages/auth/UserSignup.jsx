@@ -459,7 +459,10 @@ const UserSignup = () => {
 
                                         <button
                                             type="button"
-                                            onClick={() => setStep(1)}
+                                            onClick={() => {
+                                                setStep(1);
+                                                setOtp(['', '', '', '']);
+                                            }}
                                             className="w-full text-gray-400 text-[10px] font-bold hover:text-emerald-600 transition-colors py-1"
                                         >
                                             Change Details

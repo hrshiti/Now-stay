@@ -298,7 +298,10 @@ const HotelLoginPage = () => {
 
                                     <button
                                         type="button"
-                                        onClick={() => setStep(1)}
+                                        onClick={() => {
+                                            setStep(1);
+                                            setOtp(['', '', '', '']);
+                                        }}
                                         className="w-full text-gray-400 text-xs font-bold hover:text-[#0F172A] transition-colors"
                                     >
                                         Change Mobile Number

@@ -353,7 +353,10 @@ const UserLogin = () => {
 
                                         <button
                                             type="button"
-                                            onClick={() => setStep(1)}
+                                            onClick={() => {
+                                                setStep(1);
+                                                setOtp(['', '', '', '']);
+                                            }}
                                             className="w-full text-gray-400 text-[10px] font-bold hover:text-emerald-600 transition-colors pt-1"
                                         >
                                             Change Number
