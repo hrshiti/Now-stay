@@ -1390,6 +1390,7 @@ const AddPGWizard = () => {
 
           {step === 5 && (
             <div className="space-y-6">
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
               <div className="space-y-3">
                 <div className="flex justify-between items-center px-1">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Cover Image</label>
@@ -1679,6 +1680,7 @@ const AddPGWizard = () => {
 
           {step === 7 && (
             <div className="space-y-6">
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-gray-500">Check-In Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
