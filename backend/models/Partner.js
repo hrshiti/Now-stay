@@ -78,6 +78,10 @@ const partnerSchema = new mongoose.Schema({
     type: Date,
     select: false
   },
+  deletionReason: {
+    type: String,
+    select: false
+  },
   profileImage: {
     type: String,
     default: null

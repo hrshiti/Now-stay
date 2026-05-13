@@ -1105,7 +1105,7 @@ export const verifyAccountDeletion = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
 
-    const reason = user.deletionReason || 'No reason provided';
+    const reason = user.deletionReason || 'No reason found';
     const userName = user.name;
     const userPhone = user.phone;
     const userRole = user.role;
