@@ -143,6 +143,25 @@ export const createBooking = async (req, res) => {
     const roomType = await RoomType.findById(roomTypeId);
     if (!roomType) return res.status(404).json({ message: 'Room type not found' });
 
+    // --- PRE-EMPTIVE CLEANUP ---
+    // If this user has any previous 'awaiting_payment' bookings for the same room/dates,
+    // cancel them to release inventory before checking availability for the new attempt.
+    const staleBookings = await Booking.find({
+      userId: req.user._id,
+      roomTypeId: roomTypeId,
+      bookingStatus: 'awaiting_payment',
+      checkInDate: { $eq: new Date(checkInDate) },
+      checkOutDate: { $eq: new Date(checkOutDate) }
+    });
+
+    if (staleBookings.length > 0) {
+      const staleIds = staleBookings.map(b => b._id);
+      await Booking.updateMany({ _id: { $in: staleIds } }, { 
+        $set: { bookingStatus: 'cancelled', cancellationReason: 'New booking attempt initiated' } 
+      });
+      await AvailabilityLedger.deleteMany({ referenceId: { $in: staleIds } });
+    }
+
     // Fetch Settings
     const settings = await PlatformSettings.getSettings();
     const gstRate = (settings.taxRate !== undefined && settings.taxRate !== null) ? settings.taxRate : 12;
@@ -733,9 +752,12 @@ export const cancelBooking = async (req, res) => {
 
     // --- 24-HOUR CANCELLATION POLICY CHECK ---
     // Industry Standard: Cancellation must be at least 24 hours before check-in time
+    // EXCEPTION: Allow immediate cancellation if booking is still pending/awaiting payment
     const property = booking.propertyId;
     const checkInTime = property?.checkInTime || '12:00 PM'; // Default to 12 PM if not set
-    const isAllowed = isCancellationAllowed(booking.checkInDate, checkInTime);
+    
+    const isPending = ['pending', 'awaiting_payment'].includes(booking.bookingStatus);
+    const isAllowed = isPending || isCancellationAllowed(booking.checkInDate, checkInTime);
 
     if (!isAllowed) {
       const checkInDate = new Date(booking.checkInDate);
@@ -770,6 +792,9 @@ export const cancelBooking = async (req, res) => {
     booking.bookingStatus = 'cancelled';
     booking.cancellationReason = req.body.reason || 'User cancelled';
     booking.cancelledAt = new Date();
+
+    // Release Inventory (Remove Ledger Entry)
+    await AvailabilityLedger.deleteMany({ referenceId: booking._id });
 
     // Will update paymentStatus after refund processing if needed
 

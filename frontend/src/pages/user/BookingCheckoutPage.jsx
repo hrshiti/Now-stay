@@ -255,6 +255,7 @@ const BookingCheckoutPage = () => {
       walletDeduction: (useWallet && ['online', 'prepaid'].includes(paymentMethod)) ? walletDeduction : 0
     };
 
+    let pendingBookingId = null;
     try {
       if (paymentMethod === 'pay_at_hotel') {
         // --- PAY AT HOTEL FLOW ---
@@ -292,24 +293,36 @@ const BookingCheckoutPage = () => {
         const bookingRes = await bookingService.create(payload);
 
         if (!bookingRes.success) throw new Error(bookingRes.message || "Failed to initialize booking");
+        
+        pendingBookingId = bookingRes.booking?._id;
 
         if (bookingRes.paymentRequired && bookingRes.order) {
           const { order, key } = bookingRes;
 
-          const paymentResponse = await paymentService.openCheckout({
-            key: key,
-            amount: order.amount, // Net amount after wallet deduction
-            currency: order.currency,
-            name: "Now Stay",
-            description: `Booking Payment`,
-            order_id: order.id,
-            prefill: {
-              name: guestDetails.name || '',
-              email: user?.email || '',
-              contact: guestDetails.phone || ''
-            },
-            theme: { color: "#0F172A" }
-          });
+          let paymentResponse;
+          try {
+            paymentResponse = await paymentService.openCheckout({
+              key: key,
+              amount: order.amount, // Net amount after wallet deduction
+              currency: order.currency,
+              name: "Now Stay",
+              description: `Booking Payment`,
+              order_id: order.id,
+              prefill: {
+                name: guestDetails.name || '',
+                email: user?.email || '',
+                contact: guestDetails.phone || ''
+              },
+              theme: { color: "#0F172A" }
+            });
+          } catch (paymentErr) {
+            // If user closed the payment popup, we should cancel the pending booking to release inventory
+            if (pendingBookingId) {
+              console.log("Cleaning up pending booking after payment cancellation...");
+              await bookingService.cancel(pendingBookingId, "Payment cancelled by user").catch(console.error);
+            }
+            throw paymentErr; // Re-throw to be caught by outer catch
+          }
 
           // Verify payment
           try {
