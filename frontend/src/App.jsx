@@ -414,8 +414,8 @@ const PartnerProtectedRoute = ({ children }) => {
       '/hotel/join-tent'
     ];
 
-    // Also allow all "join-" wizard routes via pattern
-    const isWizard = location.pathname.startsWith('/hotel/join');
+    // Also allow all "join-" wizard routes via pattern (Regex for better accuracy)
+    const isWizard = /^\/hotel\/join(-|$)/.test(location.pathname);
     
     const isAllowedPath = allowedPending.some(p => {
       const isExact = location.pathname === p;
