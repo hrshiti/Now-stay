@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
     Building2, Search, Filter, MoreVertical, MapPin,
     CheckCircle, XCircle, Clock, Star, ShieldAlert, Trash2, Edit, Eye, Loader2,
@@ -43,13 +43,23 @@ const AdminProperties = () => {
     const [totalPages, setTotalPages] = useState(0);
     const [limit] = useState(10);
 
+    const [searchParams] = useSearchParams();
+
     const [filters, setFilters] = useState({
         search: '',
-        status: '',
+        status: searchParams.get('status') || '',
         type: ''
     });
 
     const [activeDropdown, setActiveDropdown] = useState(null);
+
+    useEffect(() => {
+        const status = searchParams.get('status');
+        if (status) {
+            setFilters(prev => ({ ...prev, status }));
+            setCurrentPage(1);
+        }
+    }, [searchParams]);
     const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', type: 'danger', onConfirm: () => { } });
 
     const fetchProperties = useCallback(async (page, currentFilters) => {

@@ -187,7 +187,7 @@ const AdminDashboard = () => {
                     icon={Building2}
                     color="text-amber-500"
                     loading={loading}
-                    onClick={() => navigate('/admin/properties')}
+                    onClick={() => navigate('/admin/properties?status=pending')}
                 />
             </div>
 

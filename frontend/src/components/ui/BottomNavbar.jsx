@@ -8,6 +8,25 @@ import { toast } from 'react-hot-toast';
 const BottomNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const [isVisible, setIsVisible] = React.useState(true);
+
+    React.useEffect(() => {
+        const handleResize = () => {
+            if (window.visualViewport) {
+                // If viewport height is less than 85% of screen height, keyboard is likely open
+                setIsVisible(window.visualViewport.height > window.innerHeight * 0.85);
+            }
+        };
+
+        const viewport = window.visualViewport;
+        if (viewport) {
+            viewport.addEventListener('resize', handleResize);
+            return () => viewport.removeEventListener('resize', handleResize);
+        }
+    }, []);
+
+    // Return null if hidden to avoid blocking keyboard area
+    if (!isVisible) return null;
 
     const navItems = [
         { name: 'Home', icon: Home, route: '/' },
