@@ -348,7 +348,11 @@ const BookingCheckoutPage = () => {
       }
     } catch (error) {
       console.error("Booking Error:", error);
-      toast.error(error.message || "Booking failed.");
+      if (error.message === 'Payment cancelled by user') {
+        toast.error("Payment cancelled. You can try again.");
+      } else {
+        toast.error(error.message || "Booking failed.");
+      }
     } finally {
       setLoading(false);
     }

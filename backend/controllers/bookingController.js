@@ -861,10 +861,11 @@ export const cancelBooking = async (req, res) => {
       }
 
       // Release Inventory
-      await AvailabilityLedger.deleteMany({ referenceId: booking._id });
+
 
       // Trigger Cancellation Notifications
-      if (fullBooking) {
+      // Skip notifications if the user just closed the payment popup (abandoned checkout)
+      if (fullBooking && booking.cancellationReason !== 'Payment cancelled by user' && booking.cancellationReason !== 'New booking attempt initiated') {
         if (fullBooking.userId && fullBooking.userId.email) {
           emailService.sendBookingCancellationEmail(fullBooking.userId, fullBooking, 0)
             .catch(e => console.error('Cancel Email failed', e));
@@ -985,8 +986,9 @@ export const cancelBooking = async (req, res) => {
     }
 
     // Trigger Cancellation Notifications
+    // Skip notifications if the user just closed the payment popup (abandoned checkout)
     const fullBooking = await Booking.findById(booking._id).populate('userId').populate('propertyId');
-    if (fullBooking) {
+    if (fullBooking && booking.cancellationReason !== 'Payment cancelled by user' && booking.cancellationReason !== 'New booking attempt initiated') {
       const ut = fullBooking.userModel ? fullBooking.userModel.toLowerCase() : 'user';
 
       if (fullBooking.userId && fullBooking.userId.email) {
@@ -1024,8 +1026,7 @@ export const cancelBooking = async (req, res) => {
       }, { type: 'booking_cancelled', bookingId: booking._id }).catch(e => console.error('Admin Cancel Push failed', e));
     }
 
-    // Release Inventory
-    await AvailabilityLedger.deleteMany({ referenceId: booking._id });
+
 
     // Prepare response message
     let responseMessage = 'Booking cancelled successfully';
