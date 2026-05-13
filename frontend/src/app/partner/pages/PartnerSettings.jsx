@@ -80,6 +80,18 @@ const PartnerSettings = () => {
         );
     }, []);
 
+    // Prevent background scrolling when modal is open
+    useEffect(() => {
+        if (showDeleteConfirm) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showDeleteConfirm]);
+
     const toggle = async (key) => {
         if (key === 'notifications') {
             const newValue = !settings.notifications;

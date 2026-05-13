@@ -502,56 +502,105 @@ const ProfileEdit = () => {
                   {/* Name */}
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Full Name</label>
-                    <div className={`flex items-center gap-3 border-b pb-2 transition-colors ${errors.name ? 'border-red-500' : 'border-gray-100 focus-within:border-surface'}`}>
-                      <User size={16} className={errors.name ? 'text-red-400' : 'text-gray-300'} />
+                    <div className={`flex items-center gap-3 border-b pb-2 transition-colors ${
+                      formData.name.trim() 
+                        ? formData.name.trim().length >= 3 
+                          ? 'border-emerald-500' 
+                          : 'border-red-500' 
+                        : 'border-gray-100 focus-within:border-surface'
+                    }`}>
+                      <User size={16} className={
+                        formData.name.trim() 
+                          ? formData.name.trim().length >= 3 ? 'text-emerald-500' : 'text-red-400' 
+                          : 'text-gray-300'
+                      } />
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => {
                           const val = e.target.value.replace(/[^a-zA-Z\s]/g, '');
-                          setFormData({ ...formData, name: val });
-                          if (errors.name) setErrors({ ...errors, name: null });
+                          setFormData(prev => ({ ...prev, name: val }));
+                          if (val.trim().length > 0 && val.trim().length < 3) {
+                            setErrors(prev => ({ ...prev, name: 'Name must be at least 3 characters' }));
+                          } else {
+                            setErrors(prev => ({ ...prev, name: null }));
+                          }
                         }}
-                        className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300"
+                        className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300 bg-transparent"
                         placeholder="Your Name"
                       />
                     </div>
-                    {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tight">{errors.name}</p>}
+                    {errors.name && <p className="text-[10px] text-red-500 mt-1 font-medium italic">{errors.name}</p>}
                   </div>
 
                   {/* Email */}
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Email Address</label>
-                    <div className="flex items-center gap-3 border-b border-gray-100 pb-2 focus-within:border-surface transition-colors">
-                      <Mail size={16} className="text-gray-300" />
+                    <div className={`flex items-center gap-3 border-b pb-2 transition-colors ${
+                      formData.email 
+                        ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/.test(formData.email)
+                          ? 'border-emerald-500' 
+                          : 'border-red-500' 
+                        : 'border-gray-100 focus-within:border-surface'
+                    }`}>
+                      <Mail size={16} className={
+                        formData.email 
+                          ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/.test(formData.email) ? 'text-emerald-500' : 'text-red-400' 
+                          : 'text-gray-300'
+                      } />
                       <input
                         type="email"
                         value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300"
+                        onChange={(e) => {
+                          const val = e.target.value.toLowerCase().trim();
+                          setFormData(prev => ({ ...prev, email: val }));
+                          const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
+                          if (val && !emailRegex.test(val)) {
+                            setErrors(prev => ({ ...prev, email: 'Please enter a valid email address' }));
+                          } else {
+                            setErrors(prev => ({ ...prev, email: null }));
+                          }
+                        }}
+                        className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300 bg-transparent"
                         placeholder="email@example.com"
                       />
                     </div>
+                    {errors.email && <p className="text-[10px] text-red-500 mt-1 font-medium italic">{errors.email}</p>}
                   </div>
 
                   {/* Phone */}
                   <div>
                     <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1 block">Phone Number</label>
-                    <div className={`flex items-center gap-3 border-b pb-2 transition-colors ${errors.phone ? 'border-red-500' : 'border-gray-100 focus-within:border-surface'}`}>
-                      <Phone size={16} className={errors.phone ? 'text-red-400' : 'text-gray-300'} />
+                    <div className={`flex items-center gap-3 border-b pb-2 transition-colors ${
+                      formData.phone 
+                        ? formData.phone.length === 10 
+                          ? 'border-emerald-500' 
+                          : 'border-red-500' 
+                        : 'border-gray-100 focus-within:border-surface'
+                    }`}>
+                      <Phone size={16} className={
+                        formData.phone 
+                          ? formData.phone.length === 10 ? 'text-emerald-500' : 'text-red-400' 
+                          : 'text-gray-300'
+                      } />
                       <input
                         type="tel"
                         maxLength={10}
                         value={formData.phone}
                         onChange={(e) => {
-                          setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') });
-                          if (errors.phone) setErrors({ ...errors, phone: null });
+                          const val = e.target.value.replace(/\D/g, '');
+                          setFormData(prev => ({ ...prev, phone: val }));
+                          if (val && val.length !== 10) {
+                            setErrors(prev => ({ ...prev, phone: 'Phone number must be exactly 10 digits' }));
+                          } else {
+                            setErrors(prev => ({ ...prev, phone: null }));
+                          }
                         }}
-                        className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300"
+                        className="flex-1 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300 bg-transparent"
                         placeholder="9876543210"
                       />
                     </div>
-                    {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 uppercase tracking-tight">{errors.phone}</p>}
+                    {errors.phone && <p className="text-[10px] text-red-500 mt-1 font-medium italic">{errors.phone}</p>}
                   </div>
                 </div>
 
@@ -612,8 +661,13 @@ const ProfileEdit = () => {
                             maxLength={6}
                             value={formData.address.zipCode}
                             onChange={(e) => {
-                              handleAddressChange('zipCode', e.target.value.replace(/\D/g, ''));
-                              if (errors.zipCode) setErrors({ ...errors, zipCode: null });
+                              const val = e.target.value.replace(/\D/g, '');
+                              handleAddressChange('zipCode', val);
+                              if (val && val.length !== 6) {
+                                setErrors(prev => ({ ...prev, zipCode: 'Pincode must be 6 digits' }));
+                              } else {
+                                setErrors(prev => ({ ...prev, zipCode: null }));
+                              }
                             }}
                             className="w-full py-2 text-sm font-bold text-gray-800 outline-none placeholder:text-gray-300 bg-transparent"
                             placeholder="000000"
@@ -649,8 +703,8 @@ const ProfileEdit = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={loading || imageUploading}
-                    className="flex-[2] bg-surface text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-surface/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                    disabled={loading || imageUploading || Object.values(errors).some(error => error !== null)}
+                    className="flex-[2] bg-surface text-white py-3.5 rounded-2xl font-bold text-sm shadow-xl shadow-surface/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:grayscale disabled:cursor-not-allowed"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : 'Update Profile'}
                   </button>

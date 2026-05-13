@@ -118,7 +118,7 @@ const UserSignup = () => {
             setError('Please enter your email address');
             return;
         }
-        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
         if (!emailRegex.test(formData.email)) {
             setError('Please enter a valid email address (e.g., name@example.com)');
             return;
@@ -312,17 +312,16 @@ const UserSignup = () => {
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value.toLowerCase().trim() })}
                                                 placeholder="you@example.com"
-                                                className={`w-full pl-11 pr-4 py-3 bg-white/50 border-2 rounded-[1.2rem] outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300 ${
-                                                    formData.email 
-                                                        ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(formData.email)
+                                                className={`w-full pl-11 pr-4 py-3 bg-white/50 border-2 rounded-[1.2rem] outline-none transition-all font-bold text-gray-800 text-sm placeholder:text-gray-300 ${formData.email
+                                                        ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(formData.email)
                                                             ? 'border-emerald-500/50 focus:bg-white focus:ring-4 focus:ring-emerald-500/5'
                                                             : 'border-red-500/50 focus:bg-white focus:ring-4 focus:ring-red-500/5'
                                                         : 'border-transparent focus:bg-white focus:border-emerald-500/30 focus:ring-4 focus:ring-emerald-500/5'
-                                                }`}
+                                                    }`}
                                                 required
                                             />
                                         </div>
-                                        {formData.email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/.test(formData.email) && (
+                                        {formData.email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/.test(formData.email) && (
                                             <p className="text-[10px] text-red-500 mt-1 ml-2 font-medium italic">Please enter a valid email address (e.g., name@example.com)</p>
                                         )}
                                     </div>
@@ -491,7 +490,7 @@ const UserSignup = () => {
             {/* Legal Content Bottom Sheet Modal */}
             <AnimatePresence>
                 {legalModal && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
@@ -503,7 +502,7 @@ const UserSignup = () => {
                             onClick={() => setLegalModal(null)}
                         />
                         {/* Sheet */}
-                        <motion.div 
+                        <motion.div
                             initial={{ y: '100%' }}
                             animate={{ y: 0 }}
                             exit={{ y: '100%' }}
@@ -554,7 +553,7 @@ const UserSignup = () => {
                             {/* Bottom Action */}
                             <div className="px-8 py-6 border-t border-gray-50 shrink-0">
                                 <button
-                                    onClick={() => { setFormData({...formData, termsAccepted: true}); setLegalModal(null); }}
+                                    onClick={() => { setFormData({ ...formData, termsAccepted: true }); setLegalModal(null); }}
                                     className="w-full bg-emerald-600 text-white font-black py-4.5 rounded-[1.5rem] shadow-xl shadow-emerald-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 tracking-wide"
                                 >
                                     <CheckCircle size={20} />

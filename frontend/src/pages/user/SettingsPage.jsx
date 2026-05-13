@@ -37,6 +37,18 @@ const SettingsPage = () => {
         return () => window.removeEventListener('storage', handleStorageChange);
     }, []);
 
+    // Prevent background scrolling when modal is open
+    React.useEffect(() => {
+        if (showDeleteConfirm) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showDeleteConfirm]);
+
     if (!token) {
         return <AuthRequired title="Settings" message="Sign in to manage your account preferences, privacy settings, and active sessions." />;
     }

@@ -8,15 +8,35 @@ import { motion, AnimatePresence } from 'framer-motion';
 import PartnerHeader from '../components/PartnerHeader';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../../utils/flutterBridge';
 
-const Field = ({ label, value, icon: Icon, isEditing, onChange }) => (
-    <div className="mb-6 group">
-        <div className="flex items-center justify-between mb-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{label}</label>
-        </div>
-        <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${isEditing ? 'bg-white border-[#0F172A] ring-4 ring-[#0F172A]/5 shadow-inner' : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'}`}>
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isEditing ? 'bg-[#0F172A] text-white' : 'bg-white text-gray-400 shadow-sm'}`}>
-                <Icon size={18} />
+const Field = ({ label, value, icon: Icon, isEditing, onChange, error }) => {
+    const isValid = value && !error;
+    const isInvalid = value && error;
+
+    return (
+        <div className="mb-6 group">
+            <div className="flex items-center justify-between mb-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{label}</label>
             </div>
+            <div className={`flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${
+                isEditing 
+                    ? isInvalid 
+                        ? 'bg-white border-red-500 ring-4 ring-red-500/5' 
+                        : isValid
+                            ? 'bg-white border-emerald-500 ring-4 ring-emerald-500/5'
+                            : 'bg-white border-[#0F172A] ring-4 ring-[#0F172A]/5 shadow-inner' 
+                    : 'bg-gray-50/50 border-gray-100 hover:border-gray-200'
+            }`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
+                    isEditing 
+                        ? isInvalid 
+                            ? 'bg-red-500 text-white' 
+                            : isValid
+                                ? 'bg-emerald-500 text-white'
+                                : 'bg-[#0F172A] text-white' 
+                        : 'bg-white text-gray-400 shadow-sm'
+                }`}>
+                    <Icon size={18} />
+                </div>
             {isEditing ? (
                 <input
                     type="text"
@@ -29,8 +49,14 @@ const Field = ({ label, value, icon: Icon, isEditing, onChange }) => (
                 <span className="flex-1 text-sm font-bold text-[#003836]">{value || 'Not set'}</span>
             )}
         </div>
+        {isEditing && error && (
+            <p className="mt-1.5 ml-2 text-[10px] font-bold text-red-500 uppercase tracking-tight">
+                {error}
+            </p>
+        )}
     </div>
-);
+    );
+};
 
 const PartnerProfile = () => {
     const { formData } = usePartnerStore();
@@ -68,11 +94,24 @@ const PartnerProfile = () => {
     const [deletionReason, setDeletionReason] = useState('');
     const [deletionOtp, setDeletionOtp] = useState('');
     const [deleteLoading, setDeleteLoading] = useState(false);
+    const [errors, setErrors] = useState({});
     const fileInputRef = useRef(null);
 
     useEffect(() => {
         gsap.fromTo(containerRef.current, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' });
     }, []);
+
+    // Prevent background scrolling when modal is open
+    useEffect(() => {
+        if (showDeleteConfirm) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showDeleteConfirm]);
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -122,6 +161,37 @@ const PartnerProfile = () => {
             val = val.replace(/[^a-zA-Z\s]/g, '');
         }
         setProfile({ ...profile, [field]: val });
+
+        // Live Validation
+        const newErrors = { ...errors };
+        if (field === 'name') {
+            if (val.trim().length > 0 && val.trim().length < 3) {
+                newErrors.name = 'Full name must be at least 3 characters';
+            } else if (val.trim().length === 0) {
+                newErrors.name = 'Full name is required';
+            } else {
+                delete newErrors.name;
+            }
+        } else if (field === 'email') {
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+            if (val && !emailRegex.test(val)) {
+                newErrors.email = 'Invalid email format';
+            } else if (!val) {
+                newErrors.email = 'Email is required';
+            } else {
+                delete newErrors.email;
+            }
+        } else if (field === 'phone') {
+            const phoneVal = val.replace(/\D/g, '');
+            if (phoneVal && phoneVal.length !== 10) {
+                newErrors.phone = 'Phone number must be exactly 10 digits';
+            } else if (!phoneVal) {
+                newErrors.phone = 'Phone number is required';
+            } else {
+                delete newErrors.phone;
+            }
+        }
+        setErrors(newErrors);
     };
 
     const parseAddress = (str) => {
@@ -137,8 +207,11 @@ const PartnerProfile = () => {
 
     const handleToggleEdit = async () => {
         if (isEditing) {
+            if (Object.keys(errors).length > 0) {
+                return toast.error('Please fix the errors before saving');
+            }
             const nameRegex = /^[A-Za-z\s]+$/;
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
 
             if (!profile.name || !nameRegex.test(profile.name)) {
                 return toast.error('Full name should only contain alphabets');
@@ -375,6 +448,7 @@ const PartnerProfile = () => {
                         icon={User}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('name', e)}
+                        error={errors.name}
                     />
                     <Field
                         label="Email Address *"
@@ -382,6 +456,7 @@ const PartnerProfile = () => {
                         icon={Mail}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('email', e)}
+                        error={errors.email}
                     />
                     <Field
                         label="Phone Number *"
@@ -389,6 +464,7 @@ const PartnerProfile = () => {
                         icon={Phone}
                         isEditing={isEditing}
                         onChange={(e) => handleChange('phone', e)}
+                        error={errors.phone}
                     />
                     
                     <div className="mt-8 mb-4">
