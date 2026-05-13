@@ -42,8 +42,8 @@
     */
     @apply bg-emerald-100 text-textDark font-sans min-h-screen selection:bg-teal-100;
 
-    /* Prevent pull-to-refresh and overscroll in some containers if needed */
-    /* overscroll-behavior-y: none; */
+    /* Prevent pull-to-refresh and overscroll to keep app-like experience */
+    overscroll-behavior-y: none;
 
     /* Better touch handling for mobile apps */
     touch-action: manipulation;
