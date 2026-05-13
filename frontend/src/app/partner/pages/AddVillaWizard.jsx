@@ -1389,7 +1389,7 @@ const AddVillaWizard = () => {
 
           {step === 6 && (
             <div className="space-y-6">
-              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+              {error && !editingRoomType && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
               {!isEditingSubItem && (
                 <div className="space-y-4">
@@ -1579,6 +1579,8 @@ const AddVillaWizard = () => {
                         })}
                       </div>
                     </div>
+
+                    {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg animate-shake">{error}</div>}
 
                     <div className="pt-2 flex flex-wrap gap-2">
                       {/* Bug Fix 1: Changed 'Cancel' to 'Close' to avoid confusion with cancellation */}

@@ -11,18 +11,38 @@ const BottomNavbar = () => {
     const [isVisible, setIsVisible] = React.useState(true);
 
     React.useEffect(() => {
-        const handleResize = () => {
+        const handleViewportChange = () => {
             if (window.visualViewport) {
-                // If viewport height is less than 85% of screen height, keyboard is likely open
-                setIsVisible(window.visualViewport.height > window.innerHeight * 0.85);
+                const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.9;
+                setIsVisible(!isKeyboardVisible);
+            }
+        };
+
+        const handleFocusChange = () => {
+            const focusedElement = document.activeElement;
+            const isInputFocused = ['INPUT', 'TEXTAREA'].includes(focusedElement?.tagName) || focusedElement?.isContentEditable;
+            if (isInputFocused) {
+                setIsVisible(false);
+            } else {
+                handleViewportChange();
             }
         };
 
         const viewport = window.visualViewport;
         if (viewport) {
-            viewport.addEventListener('resize', handleResize);
-            return () => viewport.removeEventListener('resize', handleResize);
+            viewport.addEventListener('resize', handleViewportChange);
         }
+        
+        window.addEventListener('focusin', handleFocusChange);
+        window.addEventListener('focusout', handleFocusChange);
+
+        handleFocusChange();
+
+        return () => {
+            if (viewport) viewport.removeEventListener('resize', handleViewportChange);
+            window.removeEventListener('focusin', handleFocusChange);
+            window.removeEventListener('focusout', handleFocusChange);
+        };
     }, []);
 
     // Return null if hidden to avoid blocking keyboard area

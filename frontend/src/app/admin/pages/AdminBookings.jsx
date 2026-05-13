@@ -211,7 +211,7 @@ const AdminBookings = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <MetricCard label="Total Bookings" value={globalStats.total} subLabel="GLOBAL" loading={loading} />
                 <MetricCard label="Confirmed" value={globalStats.confirmed} subLabel="LIVE" loading={loading} />
-                <MetricCard label="Pending Approval" value={globalStats.pending} subLabel="NEEDS ACTION" loading={loading} />
+                <MetricCard label="Pending" value={globalStats.pending} subLabel="NEEDS APPROVAL" loading={loading} />
                 <MetricCard label="Cancelled" value={globalStats.cancelled || 0} subLabel="INACTIVE" loading={loading} />
             </div>
 

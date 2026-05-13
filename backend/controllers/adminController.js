@@ -381,10 +381,15 @@ export const getAllBookings = async (req, res) => {
     const query = {};
 
     if (status) {
-      query.bookingStatus = status;
+      if (status === 'completed') {
+        // Bug 227: When filtering for 'completed', include both stored 'completed' and 'checked_out'
+        query.bookingStatus = { $in: ['completed', 'checked_out'] };
+      } else {
+        query.bookingStatus = status;
+      }
     } else {
-      // Bug 226: 'pending' (awaiting) bookings should not be visible by default in general list
-      query.bookingStatus = { $ne: 'pending' };
+      // Bug 226: Default view hides junk/approval-needed bookings
+      query.bookingStatus = { $nin: ['pending', 'awaiting_payment'] };
     }
 
     if (search) {
@@ -433,16 +438,25 @@ export const getAllBookings = async (req, res) => {
         .skip(skip)
         .limit(limit),
       Booking.countDocuments(query),
-      Booking.countDocuments({}),
+      Booking.countDocuments({ bookingStatus: { $nin: ['awaiting_payment'] } }), // Global total excluding junk
       Booking.countDocuments({ bookingStatus: 'confirmed' }),
       Booking.countDocuments({ bookingStatus: 'pending' }),
       Booking.countDocuments({ bookingStatus: 'cancelled' }),
-      Booking.countDocuments({ bookingStatus: 'completed' })
+      Booking.countDocuments({ bookingStatus: { $in: ['completed', 'checked_out'] } })
     ]);
+
+    // Bug 227: Mark 'checked_out' as 'completed' status for admin consistency
+    const processedBookings = bookings.map(b => {
+        const obj = b.toObject();
+        if (obj.bookingStatus === 'checked_out') {
+            obj.bookingStatus = 'completed';
+        }
+        return obj;
+    });
 
     res.status(200).json({
       success: true,
-      bookings,
+      bookings: processedBookings,
       total,
       page,
       limit,
@@ -987,13 +1001,16 @@ export const getUserDetails = async (req, res) => {
         type: (b.paymentStatus === 'refunded' || b.bookingStatus === 'cancelled') ? 'credit' : 'debit',
         amount: b.totalAmount,
         description: `Booking: ${b.propertyId?.propertyName || b.propertyId?.name || 'Hotel Stay'} (${b.paymentMethod.replace(/_/g, ' ')})`,
-        status: b.bookingStatus,
+        status: b.bookingStatus === 'checked_out' ? 'completed' : b.bookingStatus,
         paymentStatus: b.paymentStatus,
         isBooking: true,
         createdAt: b.createdAt
       }));
 
-    const transactions = [...walletTransactions, ...bookingTransactions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Unified history: Merge wallet transactions with direct booking payments
+    const transactions = [...walletTransactions, ...bookingTransactions]
+      .filter((v, i, a) => a.findIndex(t => t.bookingId === v.bookingId && v.isBooking) === i) // Deduplicate if already in wallet
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.status(200).json({ success: true, user, bookings, wallet, transactions });
   } catch (error) {

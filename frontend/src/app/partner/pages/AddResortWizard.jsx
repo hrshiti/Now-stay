@@ -1437,7 +1437,7 @@ const AddResortWizard = () => {
 
           {step === 6 && (
             <div className="space-y-4">
-              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
+              {error && !editingRoomType && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
               {!editingRoomType && (
                 <div className="space-y-4">
@@ -1624,6 +1624,8 @@ const AddResortWizard = () => {
                         })}
                       </div>
                     </div>
+
+                    {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg animate-shake">{error}</div>}
 
                     <div className="flex flex-wrap gap-2 pt-4">
                       <button type="button" onClick={cancelEditRoomType} className="flex-1 py-3 text-gray-600 font-semibold bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">Cancel</button>

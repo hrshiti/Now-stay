@@ -39,7 +39,7 @@ const UserBookingsTab = ({ bookings }) => (
                                     booking.bookingStatus === 'completed' || booking.bookingStatus === 'checked_out' ? 'bg-blue-100 text-blue-700' :
                                     'bg-gray-100 text-gray-700'
                                 }`}>
-                                    {booking.bookingStatus || 'pending'}
+                                    {booking.bookingStatus === 'checked_out' ? 'completed' : (booking.bookingStatus || 'pending')}
                                 </span>
                             </td>
                             <td className="p-4 text-right font-bold">₹{booking.totalAmount?.toLocaleString()}</td>
@@ -177,11 +177,11 @@ const UserTransactionsTab = ({ wallet, transactions, onAdjust }) => {
                                 <div key={i} className={`flex items-center justify-between p-4 border rounded-2xl hover:bg-gray-50 transition-colors bg-white ${isAdminAdj ? 'border-purple-100 bg-purple-50/10' : 'border-gray-100'}`}>
                                     <div className="flex items-center gap-4">
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 border-2 border-white shadow-sm ${isAdminAdj ? 'bg-purple-100 text-purple-600' :
-                                            isBooking ? 'bg-orange-50 text-orange-500' :
+                                            isBooking ? 'bg-blue-50 text-blue-500' :
                                                 !isDebit ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-500'
                                             }`}>
                                             {isAdminAdj ? <Shield size={20} /> :
-                                                isBooking ? <Calendar size={20} /> :
+                                                isBooking ? <CreditCard size={20} /> :
                                                     !isDebit ? <ArrowDownLeft size={20} /> : <ArrowUpRight size={20} />}
                                         </div>
                                         <div className="min-w-0">

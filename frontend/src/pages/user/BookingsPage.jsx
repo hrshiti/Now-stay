@@ -20,6 +20,18 @@ const BookingsPage = () => {
     const [reviewModalData, setReviewModalData] = useState(null);
     const [reviewData, setReviewData] = useState({ rating: 5, comment: '' });
     const [submitReviewLoading, setSubmitReviewLoading] = useState(false);
+    
+    // Prevent background scrolling when modal is open
+    useEffect(() => {
+        if (reviewModalData) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [reviewModalData]);
 
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
