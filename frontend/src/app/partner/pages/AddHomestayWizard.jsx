@@ -1562,35 +1562,35 @@ const AddHomestayWizard = () => {
 
           {step === 7 && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Check-In Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
+                  <label className="text-xs font-semibold text-gray-500">Check-In <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
                     <input
                       type={propertyForm.checkInTime ? "time" : "text"}
                       placeholder="12:00 PM"
-                      className="input w-full !pl-16"
+                      className="w-full pl-8 pr-2 py-2 rounded-xl border-2 border-gray-300 outline-none text-sm font-medium text-[#003836] bg-white focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 transition-all"
                       value={propertyForm.checkInTime}
                       onChange={e => updatePropertyForm('checkInTime', e.target.value)}
                       onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                       onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
-                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                    <div className="absolute left-[8px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={14} /></div>
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Check-Out Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
+                  <label className="text-xs font-semibold text-gray-500">Check-Out <span className="text-[10px] font-normal opacity-70">(AM/PM)</span></label>
                   <div className="relative">
                     <input
                       type={propertyForm.checkOutTime ? "time" : "text"}
                       placeholder="10:00 AM"
-                      className="input w-full !pl-16"
+                      className="w-full pl-8 pr-2 py-2 rounded-xl border-2 border-gray-300 outline-none text-sm font-medium text-[#003836] bg-white focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 transition-all"
                       value={propertyForm.checkOutTime}
                       onChange={e => updatePropertyForm('checkOutTime', e.target.value)}
                       onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                       onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                     />
-                    <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                    <div className="absolute left-[8px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={14} /></div>
                   </div>
                 </div>
               </div>
