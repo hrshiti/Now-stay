@@ -1743,7 +1743,7 @@ const AddTentWizard = () => {
 
               <div className="space-y-4">
                 {/* Check-in / Check-out — same style as Homestay wizard */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-gray-500">
                       Check-In Time <span className="text-[10px] font-normal opacity-70">(AM/PM)</span> <span className="text-red-500">*</span>
@@ -1758,7 +1758,7 @@ const AddTentWizard = () => {
                         onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                         onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
-                      <div className="absolute left-[18px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>
                   </div>
                   <div className="space-y-1">
@@ -1775,7 +1775,7 @@ const AddTentWizard = () => {
                         onFocus={(e) => { e.target.type = 'time'; e.target.showPicker?.(); }}
                         onBlur={(e) => { if (!e.target.value) e.target.type = 'text'; }}
                       />
-                      <div className="absolute left-[18px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
+                      <div className="absolute left-[14px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={18} /></div>
                     </div>
                   </div>
                 </div>
