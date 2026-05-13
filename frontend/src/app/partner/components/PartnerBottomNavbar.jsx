@@ -20,6 +20,54 @@ const PartnerBottomNavbar = () => {
   const userRaw = localStorage.getItem('user');
   const user = userRaw ? JSON.parse(userRaw) : null;
   const isApproved = user?.partnerApprovalStatus === 'approved';
+  const [isVisible, setIsVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    const checkKeyboard = () => {
+      const focused = document.activeElement;
+      const isInputFocused = focused && (
+        ['INPUT', 'TEXTAREA'].includes(focused.tagName) ||
+        focused.isContentEditable ||
+        focused.getAttribute('role') === 'textbox'
+      );
+
+      const isHeightReduced = window.innerHeight < window.screen.height * 0.75;
+      const isViewportSquashed = window.visualViewport ? (window.visualViewport.height < window.innerHeight * 0.9) : false;
+
+      if (isInputFocused || isHeightReduced || isViewportSquashed) {
+        setIsVisible(false);
+      } else {
+        setIsVisible(true);
+      }
+    };
+
+    const viewport = window.visualViewport;
+    if (viewport) {
+      viewport.addEventListener('resize', checkKeyboard);
+      viewport.addEventListener('scroll', checkKeyboard);
+    }
+
+    window.addEventListener('resize', checkKeyboard);
+    window.addEventListener('focusin', checkKeyboard);
+    window.addEventListener('focusout', checkKeyboard);
+
+    const interval = setInterval(checkKeyboard, 500);
+
+    checkKeyboard();
+
+    return () => {
+      if (viewport) {
+        viewport.removeEventListener('resize', checkKeyboard);
+        viewport.removeEventListener('scroll', checkKeyboard);
+      }
+      window.removeEventListener('resize', checkKeyboard);
+      window.removeEventListener('focusin', checkKeyboard);
+      window.removeEventListener('focusout', checkKeyboard);
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (!isVisible) return null;
 
   const navItems = [
     { name: 'Dashboard', icon: LayoutDashboard, route: '/hotel/dashboard' },

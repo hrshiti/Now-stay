@@ -9,44 +9,57 @@ const BottomNavbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [isVisible, setIsVisible] = React.useState(true);
-
+ 
     React.useEffect(() => {
-        const handleViewportChange = () => {
-            if (window.visualViewport) {
-                const isKeyboardVisible = window.visualViewport.height < window.innerHeight * 0.9;
-                setIsVisible(!isKeyboardVisible);
-            }
-        };
+        const checkKeyboard = () => {
+            const focused = document.activeElement;
+            const isInputFocused = focused && (
+                ['INPUT', 'TEXTAREA'].includes(focused.tagName) || 
+                focused.isContentEditable ||
+                focused.getAttribute('role') === 'textbox'
+            );
+            
+            // Check if height is significantly reduced (keyboard open)
+            // We compare innerHeight with screen height to be more reliable across different WebViews
+            const isHeightReduced = window.innerHeight < window.screen.height * 0.75;
+            
+            // Visual viewport check for browsers that support it
+            const isViewportSquashed = window.visualViewport ? (window.visualViewport.height < window.innerHeight * 0.9) : false;
 
-        const handleFocusChange = () => {
-            const focusedElement = document.activeElement;
-            const isInputFocused = ['INPUT', 'TEXTAREA'].includes(focusedElement?.tagName) || focusedElement?.isContentEditable;
-            if (isInputFocused) {
+            if (isInputFocused || isHeightReduced || isViewportSquashed) {
                 setIsVisible(false);
             } else {
-                handleViewportChange();
+                setIsVisible(true);
             }
         };
 
         const viewport = window.visualViewport;
         if (viewport) {
-            viewport.addEventListener('resize', handleViewportChange);
+            viewport.addEventListener('resize', checkKeyboard);
+            viewport.addEventListener('scroll', checkKeyboard);
         }
         
-        window.addEventListener('focusin', handleFocusChange);
-        window.addEventListener('focusout', handleFocusChange);
+        window.addEventListener('resize', checkKeyboard);
+        window.addEventListener('focusin', checkKeyboard);
+        window.addEventListener('focusout', checkKeyboard);
+        
+        // Polling to handle tricky WebView cases where events might not fire correctly
+        const interval = setInterval(checkKeyboard, 500);
 
-        handleFocusChange();
+        // Initial check
+        checkKeyboard();
 
         return () => {
-            if (viewport) viewport.removeEventListener('resize', handleViewportChange);
-            window.removeEventListener('focusin', handleFocusChange);
-            window.removeEventListener('focusout', handleFocusChange);
+            if (viewport) {
+                viewport.removeEventListener('resize', checkKeyboard);
+                viewport.removeEventListener('scroll', checkKeyboard);
+            }
+            window.removeEventListener('resize', checkKeyboard);
+            window.removeEventListener('focusin', checkKeyboard);
+            window.removeEventListener('focusout', checkKeyboard);
+            clearInterval(interval);
         };
     }, []);
-
-    // Return null if hidden to avoid blocking keyboard area
-    if (!isVisible) return null;
 
     const navItems = [
         { name: 'Home', icon: Home, route: '/' },
@@ -84,6 +97,8 @@ const BottomNavbar = () => {
             navigate(item.route);
         }
     };
+
+    if (!isVisible) return null;
 
     return (
         <div className="md:hidden fixed bottom-4 left-4 right-4 z-50 print:hidden">
