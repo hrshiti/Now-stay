@@ -129,7 +129,7 @@ const HotelLoginPage = () => {
                 console.warn('[FCM] Could not dispatch register event', fcmError);
             }
 
-            navigate('/hotel/dashboard');
+            navigate('/hotel/dashboard', { replace: true });
         } catch (err) {
             if (err.isBlocked || err.response?.data?.isBlocked || err.status === 403) {
                 setError(err.message || 'Your account has been blocked by admin. Please contact support.');
