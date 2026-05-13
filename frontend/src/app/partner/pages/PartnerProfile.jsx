@@ -39,9 +39,10 @@ const Field = ({ label, value, icon: Icon, isEditing, onChange, error }) => {
                 </div>
             {isEditing ? (
                 <input
-                    type="text"
+                    type={label.toLowerCase().includes('phone') ? 'tel' : 'text'}
                     value={value}
                     onChange={onChange}
+                    maxLength={label.toLowerCase().includes('phone') ? 10 : undefined}
                     className="flex-1 bg-transparent text-sm font-bold text-[#003836] focus:outline-none placeholder:text-gray-300"
                     placeholder={`Enter ${label}`}
                 />
@@ -159,6 +160,8 @@ const PartnerProfile = () => {
         let val = e.target.value;
         if (field === 'name') {
             val = val.replace(/[^a-zA-Z\s]/g, '');
+        } else if (field === 'phone') {
+            val = val.replace(/\D/g, '').slice(0, 10);
         }
         setProfile({ ...profile, [field]: val });
 
@@ -173,9 +176,9 @@ const PartnerProfile = () => {
                 delete newErrors.name;
             }
         } else if (field === 'email') {
-            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/;
+            const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
             if (val && !emailRegex.test(val)) {
-                newErrors.email = 'Invalid email format';
+                newErrors.email = 'Please enter a valid email address';
             } else if (!val) {
                 newErrors.email = 'Email is required';
             } else {
@@ -433,8 +436,11 @@ const PartnerProfile = () => {
                         </div>
                         <button
                             onClick={handleToggleEdit}
+                            disabled={isEditing && Object.keys(errors).length > 0}
                             className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-bold text-sm transition-all shadow-lg active:scale-95 ${isEditing
-                                ? 'bg-[#0F172A] text-white shadow-[#0F172A]/20'
+                                ? Object.keys(errors).length > 0 
+                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed grayscale' 
+                                    : 'bg-[#0F172A] text-white shadow-[#0F172A]/20'
                                 : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
                                 }`}
                         >

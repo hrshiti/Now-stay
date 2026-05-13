@@ -15,8 +15,18 @@ const NotificationsPage = () => {
     const [selectedNotif, setSelectedNotif] = useState(null);
 
     useEffect(() => {
+        if (selectedNotif) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
         const event = new CustomEvent('nowstay:slider', { detail: !!selectedNotif });
         window.dispatchEvent(event);
+
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
     }, [selectedNotif]);
 
     useEffect(() => {

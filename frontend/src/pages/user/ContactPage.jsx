@@ -105,7 +105,37 @@ const ContactPage = () => {
     }
 
     setForm((prev) => ({ ...prev, [name]: finalValue }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
+    
+    // Live Validation Logic
+    const newErrors = { ...errors };
+    if (name === 'name') {
+      if (finalValue.trim().length > 0 && finalValue.trim().length < 3) {
+        newErrors.name = 'Name must be at least 3 characters';
+      } else {
+        delete newErrors.name;
+      }
+    } else if (name === 'email') {
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/;
+      if (finalValue && !emailRegex.test(finalValue)) {
+        newErrors.email = 'Please enter a valid email address';
+      } else {
+        delete newErrors.email;
+      }
+    } else if (name === 'phone') {
+      if (finalValue && finalValue.length !== 10) {
+        newErrors.phone = 'Phone number must be 10 digits';
+      } else {
+        delete newErrors.phone;
+      }
+    } else if (name === 'message') {
+        if (finalValue.trim() && finalValue.trim().length < 10) {
+            newErrors.message = 'Message must be at least 10 characters';
+        } else {
+            delete newErrors.message;
+        }
+    }
+    
+    setErrors(newErrors);
     if (submitError) setSubmitError('');
   };
 
@@ -281,7 +311,11 @@ const ContactPage = () => {
                   Full Name <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
-                  <User size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <User size={15} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    form.name.trim() 
+                      ? form.name.trim().length >= 3 ? 'text-emerald-500' : 'text-red-400' 
+                      : 'text-gray-400'
+                  }`} />
                   <input
                     id="contact-name"
                     type="text"
@@ -290,15 +324,17 @@ const ContactPage = () => {
                     onChange={handleChange}
                     placeholder="Enter your full name"
                     className={`w-full pl-9 pr-4 py-3 rounded-xl border text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 transition ${
-                      errors.name
-                        ? 'border-red-300 focus:ring-red-200'
+                      form.name.trim() 
+                        ? form.name.trim().length >= 3 
+                          ? 'border-emerald-500 focus:ring-emerald-200' 
+                          : 'border-red-500 focus:ring-red-200' 
                         : 'border-gray-200 focus:ring-surface/20 focus:border-surface'
                     }`}
                   />
                 </div>
                 {errors.name && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <AlertCircle size={11} /> {errors.name}
+                  <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1 font-bold uppercase tracking-tight">
+                    <AlertCircle size={10} /> {errors.name}
                   </p>
                 )}
               </div>
@@ -309,7 +345,11 @@ const ContactPage = () => {
                   Email Address
                 </label>
                 <div className="relative">
-                  <Mail size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Mail size={15} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    form.email 
+                      ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/.test(form.email) ? 'text-emerald-500' : 'text-red-400' 
+                      : 'text-gray-400'
+                  }`} />
                   <input
                     id="contact-email"
                     type="email"
@@ -318,15 +358,17 @@ const ContactPage = () => {
                     onChange={handleChange}
                     placeholder="your@email.com"
                     className={`w-full pl-9 pr-4 py-3 rounded-xl border text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 transition ${
-                      errors.email
-                        ? 'border-red-300 focus:ring-red-200'
+                      form.email 
+                        ? /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,3}$/.test(form.email)
+                          ? 'border-emerald-500 focus:ring-emerald-200' 
+                          : 'border-red-500 focus:ring-red-200' 
                         : 'border-gray-200 focus:ring-surface/20 focus:border-surface'
                     }`}
                   />
                 </div>
                 {errors.email && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <AlertCircle size={11} /> {errors.email}
+                  <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1 font-bold uppercase tracking-tight">
+                    <AlertCircle size={10} /> {errors.email}
                   </p>
                 )}
               </div>
@@ -337,7 +379,11 @@ const ContactPage = () => {
                   Phone Number
                 </label>
                 <div className="relative">
-                  <Phone size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Phone size={15} className={`absolute left-3 top-1/2 -translate-y-1/2 transition-colors ${
+                    form.phone 
+                      ? form.phone.length === 10 ? 'text-emerald-500' : 'text-red-400' 
+                      : 'text-gray-400'
+                  }`} />
                   <input
                     id="contact-phone"
                     type="tel"
@@ -346,15 +392,17 @@ const ContactPage = () => {
                     onChange={handleChange}
                     placeholder="+91 XXXXXXXXXX"
                     className={`w-full pl-9 pr-4 py-3 rounded-xl border text-sm bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 transition ${
-                      errors.phone
-                        ? 'border-red-300 focus:ring-red-200'
+                      form.phone 
+                        ? form.phone.length === 10 
+                          ? 'border-emerald-500 focus:ring-emerald-200' 
+                          : 'border-red-500 focus:ring-red-200' 
                         : 'border-gray-200 focus:ring-surface/20 focus:border-surface'
                     }`}
                   />
                 </div>
                 {errors.phone && (
-                  <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
-                    <AlertCircle size={11} /> {errors.phone}
+                  <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1 font-bold uppercase tracking-tight">
+                    <AlertCircle size={10} /> {errors.phone}
                   </p>
                 )}
               </div>
@@ -468,8 +516,12 @@ const ContactPage = () => {
               <button
                 id="contact-submit-btn"
                 type="submit"
-                disabled={submitting}
-                className="w-full py-3.5 bg-surface text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:bg-surface/90 transition active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                disabled={submitting || Object.keys(errors).length > 0}
+                className={`w-full py-3.5 text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition active:scale-95 disabled:cursor-not-allowed ${
+                    Object.keys(errors).length > 0 
+                    ? 'bg-gray-300 text-gray-500 grayscale opacity-70' 
+                    : 'bg-surface hover:bg-surface/90 shadow-xl shadow-surface/20'
+                }`}
               >
                 {submitting ? (
                   <>
