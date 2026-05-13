@@ -1128,6 +1128,7 @@ const AddResortWizard = () => {
 
           {step === 2 && (
             <div className="space-y-4">
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Search Address</label>
                 <div className="flex gap-2">
@@ -1199,6 +1200,7 @@ const AddResortWizard = () => {
 
           {step === 3 && (
             <div className="space-y-4">
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {RESORT_AMENITIES.map(am => {
                   const isSelected = propertyForm.amenities.includes(am);
@@ -1373,6 +1375,7 @@ const AddResortWizard = () => {
 
           {step === 5 && (
             <div className="space-y-6">
+              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
               <div className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-gray-900">Cover Image</label>
