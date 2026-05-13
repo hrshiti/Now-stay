@@ -4,7 +4,8 @@ import {
     getMyReferral,
     createReferralProgram,
     getActiveProgram,
-    generateCustomCode
+    generateCustomCode,
+    validateReferralCode
 } from '../controllers/referralController.js';
 
 const router = express.Router();
@@ -12,6 +13,7 @@ const router = express.Router();
 // Public / User Routes
 router.get('/my-stats', protect, getMyReferral);
 router.get('/program/active', getActiveProgram);
+router.get('/validate/:code', validateReferralCode);
 
 // Admin Routes
 router.post('/program', protect, authorizedRoles('admin', 'superadmin'), createReferralProgram);

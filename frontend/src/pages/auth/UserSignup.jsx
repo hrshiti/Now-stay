@@ -22,6 +22,10 @@ const UserSignup = () => {
     const [error, setError] = useState('');
     const [resendTimer, setResendTimer] = useState(120);
     const [canResend, setCanResend] = useState(false);
+    
+    // Referral Validation State
+    const [referralStatus, setReferralStatus] = useState('idle'); // 'idle' | 'validating' | 'valid' | 'invalid'
+    const [referralMsg, setReferralMsg] = useState('');
 
     // Legal Modal State
     const [legalModal, setLegalModal] = useState(null); // 'terms' | 'privacy' | null
@@ -84,8 +88,41 @@ const UserSignup = () => {
         if (storedCode && !formData.referralCode) {
             console.log(`[REFERRAL_DEBUG] Found stored code in localStorage: ${storedCode}`);
             setFormData(prev => ({ ...prev, referralCode: storedCode }));
+            // Trigger validation for stored code
+            validateReferral(storedCode);
         }
     }, [location]);
+
+    const validateReferral = async (code) => {
+        if (!code) {
+            setReferralStatus('idle');
+            setReferralMsg('');
+            return;
+        }
+        
+        setReferralStatus('validating');
+        try {
+            await authService.validateReferral(code);
+            setReferralStatus('valid');
+            setReferralMsg('Referral Code Applied! ✅');
+        } catch (err) {
+            setReferralStatus('invalid');
+            setReferralMsg(err.message || 'Invalid Referral Code ❌');
+        }
+    };
+
+    // Debounced referral validation
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (formData.referralCode) {
+                validateReferral(formData.referralCode);
+            } else {
+                setReferralStatus('idle');
+                setReferralMsg('');
+            }
+        }, 600); // 600ms debounce
+        return () => clearTimeout(timer);
+    }, [formData.referralCode]);
 
     // Timer countdown effect
     useEffect(() => {
@@ -125,6 +162,16 @@ const UserSignup = () => {
         }
         if (!formData.termsAccepted) {
             setError('Please accept Terms & Conditions to continue');
+            return;
+        }
+
+        // STRICT REFERRAL CHECK: If code is entered, it must be valid
+        if (formData.referralCode && referralStatus === 'invalid') {
+            setError('Please enter a valid referral code or clear it to continue');
+            return;
+        }
+        if (formData.referralCode && referralStatus === 'validating') {
+            setError('Validating referral code, please wait...');
             return;
         }
 
@@ -327,20 +374,42 @@ const UserSignup = () => {
                                     </div>
 
                                     {/* Referral Code (Extra Compact) */}
-                                    <div className="bg-emerald-50/50 p-3 rounded-[1.2rem] border border-emerald-100">
-                                        <label className="block text-[9px] font-black text-emerald-800 uppercase tracking-widest mb-1.5 ml-1">
-                                            Referral (Optional)
-                                        </label>
+                                    <div className={`p-3 rounded-[1.2rem] border transition-all ${
+                                        referralStatus === 'valid' ? 'bg-emerald-50 border-emerald-500/30' : 
+                                        referralStatus === 'invalid' ? 'bg-red-50 border-red-500/30' : 
+                                        'bg-gray-50/50 border-gray-100'
+                                    }`}>
+                                        <div className="flex justify-between items-center mb-1.5 ml-1">
+                                            <label className="block text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                                                Referral (Optional)
+                                            </label>
+                                            {referralStatus === 'validating' && <Loader2 size={10} className="animate-spin text-emerald-600" />}
+                                        </div>
                                         <div className="relative">
-                                            <Gift size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-500" />
+                                            <Gift size={14} className={`absolute left-3.5 top-1/2 -translate-y-1/2 ${
+                                                referralStatus === 'valid' ? 'text-emerald-500' : 
+                                                referralStatus === 'invalid' ? 'text-red-500' : 
+                                                'text-gray-400'
+                                            }`} />
                                             <input
                                                 type="text"
                                                 value={formData.referralCode}
-                                                onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
+                                                onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase().replace(/\s/g, '') })}
                                                 placeholder="FRIEND100"
-                                                className="w-full pl-10 pr-4 py-2 bg-white border border-emerald-100 rounded-xl focus:ring-4 focus:ring-emerald-500/5 outline-none transition-all placeholder:text-emerald-200 font-bold tracking-widest text-emerald-900 text-xs"
+                                                className={`w-full pl-10 pr-4 py-2 bg-white border rounded-xl focus:ring-4 outline-none transition-all font-bold tracking-widest text-xs ${
+                                                    referralStatus === 'valid' ? 'border-emerald-100 text-emerald-900 focus:ring-emerald-500/5' : 
+                                                    referralStatus === 'invalid' ? 'border-red-100 text-red-900 focus:ring-red-500/5' : 
+                                                    'border-gray-100 text-gray-900 focus:ring-emerald-500/5 placeholder:text-gray-300'
+                                                }`}
                                             />
                                         </div>
+                                        {referralMsg && (
+                                            <p className={`text-[9px] font-bold mt-1.5 ml-1 animate-in fade-in slide-in-from-top-1 ${
+                                                referralStatus === 'valid' ? 'text-emerald-600' : 'text-red-500'
+                                            }`}>
+                                                {referralMsg}
+                                            </p>
+                                        )}
                                     </div>
 
                                     {/* Terms and Conditions Checkbox */}

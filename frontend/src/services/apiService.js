@@ -95,6 +95,16 @@ export const authService = {
     }
   },
 
+  // Validate Referral Code
+  validateReferral: async (code) => {
+    try {
+      const response = await api.get(`/referral/validate/${code}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
   // Verify Partner OTP & Register
   verifyPartnerOtp: async (data) => {
     try {

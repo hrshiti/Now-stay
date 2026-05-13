@@ -97,7 +97,9 @@ class ReferralService {
             const code = await ReferralCode.findOne({ code: referralCodeString.toUpperCase(), isActive: true });
             if (!code) {
                 console.warn(`[REFERRAL_DEBUG] Invalid referral code used: ${referralCodeString}`);
-                return null;
+                const error = new Error('Invalid or expired referral code');
+                error.statusCode = 400;
+                throw error;
             }
             console.log(`[REFERRAL_DEBUG] Found valid code: ${code.code}, Owner: ${code.ownerId}`);
 
@@ -151,6 +153,16 @@ class ReferralService {
             // Don't block signup if referral fails
             return null;
         }
+    }
+
+    /**
+     * Strict Validation for Frontend/Auth
+     */
+    async validateCode(codeString) {
+        if (!codeString) return { valid: false, message: 'Code is required' };
+        const code = await ReferralCode.findOne({ code: codeString.toUpperCase(), isActive: true });
+        if (!code) return { valid: false, message: 'Invalid or expired referral code' };
+        return { valid: true, code };
     }
 
     /**

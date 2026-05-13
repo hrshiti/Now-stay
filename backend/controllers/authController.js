@@ -454,7 +454,8 @@ export const verifyOtp = async (req, res) => {
       // REFERRAL: Process Signup Referral
       if (referralCode) {
         console.log(`[REFERRAL_DEBUG] User signup with code: ${referralCode}`);
-        referralService.processReferralSignup(user, referralCode).catch(err => console.error('[REFERRAL_DEBUG] Referral Signup Error:', err));
+        // Now calling this strictly. If it throws an error (invalid code), registration will stop here.
+        await referralService.processReferralSignup(user, referralCode);
       }
 
       // REFERRAL: Auto-generate code for new user
@@ -498,7 +499,9 @@ export const verifyOtp = async (req, res) => {
 
   } catch (error) {
     console.error('Verify OTP Error:', error);
-    res.status(500).json({ message: 'Server error verifying OTP' });
+    const status = error.statusCode || 500;
+    const message = error.message || 'Server error verifying OTP';
+    res.status(status).json({ message });
   }
 };
 

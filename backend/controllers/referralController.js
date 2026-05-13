@@ -49,3 +49,15 @@ export const generateCustomCode = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+export const validateReferralCode = async (req, res) => {
+    try {
+        const { code } = req.params;
+        const result = await referralService.validateCode(code);
+        if (!result.valid) {
+            return res.status(400).json({ success: false, message: result.message });
+        }
+        res.json({ success: true, message: 'Referral code is valid' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error validating referral code' });
+    }
+};
