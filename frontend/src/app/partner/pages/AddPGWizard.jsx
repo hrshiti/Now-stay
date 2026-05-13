@@ -136,11 +136,6 @@ const AddPGWizard = () => {
     if (isEditMode) return;
     const handleUnload = (e) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, propertyForm, roomTypes, createdProperty }));
-      if (step > 1 && !isEditMode) {
-        e.preventDefault();
-        e.returnValue = 'Are you sure you want to leave? Your progress is saved as a draft.';
-        return e.returnValue;
-      }
     };
     window.addEventListener('beforeunload', handleUnload);
     window.addEventListener('pagehide', handleUnload);
@@ -898,30 +893,7 @@ const AddPGWizard = () => {
     }
   };
 
-  const clearCurrentStep = () => {
-    if (!window.confirm("Clear all fields in this step?")) return;
-    if (step === 1) {
-      setPropertyForm(prev => ({ ...prev, propertyName: '', description: '', shortDescription: '', pgType: 'boys' }));
-    } else if (step === 2) {
-      updatePropertyForm('address', { country: 'India', state: '', city: '', area: '', fullAddress: '', pincode: '' });
-      updatePropertyForm(['location', 'coordinates'], ['', '']);
-    } else if (step === 3) {
-      updatePropertyForm('amenities', []);
-    } else if (step === 4) {
-      updatePropertyForm('nearbyPlaces', []);
-    } else if (step === 5) {
-      setPropertyForm(prev => ({ ...prev, coverImage: '', propertyImages: [] }));
-    } else if (step === 6) {
-      setRoomTypes([]);
-      setEditingRoomType(null);
-      setEditingRoomTypeIndex(null);
-    } else if (step === 7) {
-      setPropertyForm(prev => ({ ...prev, checkInTime: '12:00 PM', checkOutTime: '10:00 AM', cancellationPolicy: 'No refund after check-in', houseRules: [] }));
-      setHouseRulesDraft('');
-    } else if (step === 8) {
-      updatePropertyForm('documents', REQUIRED_DOCS_PG.map(d => ({ type: d.type, name: d.name, fileUrl: '' })));
-    }
-  };
+
 
   const handleNext = () => {
     if (loading) return;
@@ -1473,7 +1445,7 @@ const AddPGWizard = () => {
                           <Bed size={24} />
                         </div>
                         <p className="text-gray-500 font-medium">No inventory added yet</p>
-                        <p className="text-xs text-gray-400 mt-1">Add beds, dorms or private rooms</p>
+                        <p className="text-xs text-gray-400 mt-1">Add beds, rooms or private rooms</p>
                       </div>
                     ) : (
                       roomTypes.map((rt, index) => (
@@ -1538,13 +1510,13 @@ const AddPGWizard = () => {
 
                   <div className="p-4 space-y-5">
                     <div className="p-1 bg-gray-100 rounded-xl flex">
-                      <button onClick={() => setEditingRoomType({ ...editingRoomType, roomCategory: 'shared' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${editingRoomType.roomCategory === 'shared' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Shared Dorm</button>
+                      <button onClick={() => setEditingRoomType({ ...editingRoomType, roomCategory: 'shared' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${editingRoomType.roomCategory === 'shared' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Shared Room</button>
                       <button onClick={() => setEditingRoomType({ ...editingRoomType, roomCategory: 'private' })} className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${editingRoomType.roomCategory === 'private' ? 'bg-white text-emerald-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>Private Room</button>
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-gray-500">Name</label>
-                      <input className="input" placeholder="e.g. 4 Sharing Air Conditioned Dorm" value={editingRoomType.name} onChange={e => setEditingRoomType({ ...editingRoomType, name: e.target.value })} />
+                      <input className="input" placeholder="e.g. 4 Sharing Air Conditioned Room" value={editingRoomType.name} onChange={e => setEditingRoomType({ ...editingRoomType, name: e.target.value })} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -2112,15 +2084,7 @@ const AddPGWizard = () => {
               {step === 1 ? 'Exit' : 'Back'}
             </button>
 
-            {step < 9 && (
-              <button
-                onClick={clearCurrentStep}
-                disabled={loading}
-                className="px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-sm"
-              >
-                Clear Step
-              </button>
-            )}
+
 
             <button
               onClick={step === 9 ? submitAll : handleNext}

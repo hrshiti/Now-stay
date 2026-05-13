@@ -69,7 +69,7 @@ const PartnerJoinPropertyType = () => {
     {
       key: 'hostel',
       label: 'Hostel',
-      description: 'Beds or dorms for backpackers and students',
+      description: 'Beds or rooms for backpackers and students',
       badge: 'Budget',
       icon: Users,
       route: '/hotel/join-hostel',

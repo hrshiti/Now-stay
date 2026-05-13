@@ -62,7 +62,7 @@ io.on('connection', (socket) => {
 app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 'camera=(self "https://nowstay.in" "https://www.nowstay.in"), microphone=(self "https://nowstay.in" "https://www.nowstay.in")');
   // Support base64 images (data:) and blobs
-  res.setHeader('Content-Security-Policy', "img-src 'self' data: https: blob:; connect-src 'self' data: https:; frame-src 'self' https:;");
+  res.setHeader('Content-Security-Policy', "img-src 'self' data: https: blob:; connect-src 'self' data: https: http:; frame-src 'self' https:;");
   next();
 });
 

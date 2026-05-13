@@ -234,14 +234,7 @@ const JoinRokkooin = () => {
                         >
                             Back
                         </button>
-                        {currentStep < 11 && !isSubmitting && (
-                            <button
-                                onClick={() => { if (window.confirm("Clear all fields in this step?")) { usePartnerStore.getState().clearCurrentStep('join'); } }}
-                                className="text-xs font-bold text-red-500 hover:text-red-700 transition-colors px-3 py-2 ml-1 border border-red-50 hover:bg-red-50 rounded-lg"
-                            >
-                                Clear Step
-                            </button>
-                        )}
+
                     </div>
 
                     <div className="flex-1 flex flex-col items-end">

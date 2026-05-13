@@ -136,11 +136,6 @@ const AddResortWizard = () => {
     if (isEditMode) return;
     const handleUnload = (e) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, propertyForm, roomTypes, createdProperty }));
-      if (step > 1 && !isEditMode) {
-        e.preventDefault();
-        e.returnValue = 'Are you sure you want to leave? Your progress is saved as a draft.';
-        return e.returnValue;
-      }
     };
     window.addEventListener('beforeunload', handleUnload);
     window.addEventListener('pagehide', handleUnload);
@@ -936,29 +931,7 @@ const AddResortWizard = () => {
     }
   };
 
-  const clearCurrentStep = () => {
-    if (!window.confirm("Clear all fields in this step?")) return;
-    if (step === 1) {
-      setPropertyForm(prev => ({ ...prev, propertyName: '', description: '', shortDescription: '', resortType: 'beach', activities: [] }));
-    } else if (step === 2) {
-      updatePropertyForm('address', { country: '', state: '', city: '', area: '', fullAddress: '', pincode: '' });
-      updatePropertyForm(['location', 'coordinates'], ['', '']);
-    } else if (step === 3) {
-      updatePropertyForm('amenities', []);
-    } else if (step === 4) {
-      updatePropertyForm('nearbyPlaces', []);
-    } else if (step === 5) {
-      setPropertyForm(prev => ({ ...prev, coverImage: '', propertyImages: [] }));
-    } else if (step === 6) {
-      setRoomTypes([]);
-      setEditingRoomType(null);
-      setEditingRoomTypeIndex(null);
-    } else if (step === 7) {
-      setPropertyForm(prev => ({ ...prev, checkInTime: '', checkOutTime: '', cancellationPolicy: '', houseRules: [] }));
-    } else if (step === 8) {
-      updatePropertyForm('documents', REQUIRED_DOCS_RESORT.map(d => ({ type: d.type, name: d.name, fileUrl: '' })));
-    }
-  };
+
 
   const handleNext = () => {
     if (loading) return;
@@ -2116,15 +2089,7 @@ const AddResortWizard = () => {
             >
               {step === 1 ? 'Exit' : 'Back'}
             </button>
-            {step < 9 && (
-              <button
-                onClick={clearCurrentStep}
-                disabled={loading}
-                className="px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 disabled:opacity-50 transition-all text-sm"
-              >
-                Clear Step
-              </button>
-            )}
+
             <button
               onClick={handleNext}
               disabled={loading || (step === 6 && roomTypes.length === 0)}
