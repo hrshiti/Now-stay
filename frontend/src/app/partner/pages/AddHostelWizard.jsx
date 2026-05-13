@@ -1614,12 +1614,13 @@ const AddHostelWizard = () => {
                   <div className="relative">
                     <input
                       type="time"
-                      className="w-full pl-8 pr-2 py-2 rounded-xl border-2 border-gray-300 outline-none text-sm font-medium text-[#003836] bg-white focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 transition-all"
+                      className={`w-full pl-8 pr-2 py-2 rounded-xl border-2 border-gray-300 outline-none text-sm font-medium bg-white focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 transition-all ${propertyForm.checkInTime ? 'text-[#003836]' : 'text-transparent'}`}
                       value={propertyForm.checkInTime}
                       onChange={e => updatePropertyForm('checkInTime', e.target.value)}
                       onClick={(e) => e.target.showPicker?.()}
                     />
                     <div className="absolute left-[8px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={14} /></div>
+                    {!propertyForm.checkInTime && <span className="absolute left-8 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">12:00 PM</span>}
                   </div>
                 </div>
                 <div className="space-y-1">
@@ -1627,12 +1628,13 @@ const AddHostelWizard = () => {
                   <div className="relative">
                     <input
                       type="time"
-                      className="w-full pl-8 pr-2 py-2 rounded-xl border-2 border-gray-300 outline-none text-sm font-medium text-[#003836] bg-white focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 transition-all"
+                      className={`w-full pl-8 pr-2 py-2 rounded-xl border-2 border-gray-300 outline-none text-sm font-medium bg-white focus:border-[#004F4D] focus:ring-2 focus:ring-[#004F4D]/10 transition-all ${propertyForm.checkOutTime ? 'text-[#003836]' : 'text-transparent'}`}
                       value={propertyForm.checkOutTime}
                       onChange={e => updatePropertyForm('checkOutTime', e.target.value)}
                       onClick={(e) => e.target.showPicker?.()}
                     />
                     <div className="absolute left-[8px] top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"><Clock size={14} /></div>
+                    {!propertyForm.checkOutTime && <span className="absolute left-8 top-1/2 -translate-y-1/2 text-sm text-gray-400 pointer-events-none">10:00 AM</span>}
                   </div>
                 </div>
               </div>
