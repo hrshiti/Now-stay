@@ -6,14 +6,14 @@ import usePartnerDashboard from '../hooks/usePartnerDashboard';
 import DashboardStatCard from '../components/dashboard/DashboardStatCard';
 import RecentBookingsTable from '../components/dashboard/RecentBookingsTable';
 import ActionRequired from '../components/dashboard/ActionRequired';
-import { Calendar, Wallet, Building2, Star, Plus, Clock, XCircle, CheckCircle2 } from 'lucide-react';
+import { Calendar, Wallet, Building2, Star, Plus, Clock, XCircle, CheckCircle2, RotateCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 
 const PartnerDashboard = () => {
     useLenis();
     const navigate = useNavigate();
-    const { stats, recentBookings, actionItems, loading, user } = usePartnerDashboard();
+    const { stats, recentBookings, actionItems, loading, user, refreshDashboard } = usePartnerDashboard();
 
     // Init Notifications — fire when user data is available (partner is logged in)
     React.useEffect(() => {
@@ -65,6 +65,13 @@ const PartnerDashboard = () => {
 
                     {user?.partnerApprovalStatus === 'approved' && (
                         <div className="flex items-center gap-3">
+                            <button
+                                onClick={refreshDashboard}
+                                className="p-2.5 rounded-xl bg-white border border-gray-200 text-gray-500 hover:text-[#003836] hover:border-[#003836] transition-all shadow-sm active:scale-95"
+                                title="Refresh Dashboard"
+                            >
+                                <RotateCw size={18} className={loading ? 'animate-spin' : ''} />
+                            </button>
                             {/* Add Property - High Visible */}
                             <button
                                 onClick={() => {

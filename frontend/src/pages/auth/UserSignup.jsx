@@ -107,7 +107,8 @@ const UserSignup = () => {
             setReferralMsg('Referral Code Applied! ✅');
         } catch (err) {
             setReferralStatus('invalid');
-            setReferralMsg(err.message || 'Invalid Referral Code ❌');
+            const msg = (typeof err === 'string') ? err : (err?.message || 'Invalid Referral Code ❌');
+            setReferralMsg(msg);
         }
     };
 

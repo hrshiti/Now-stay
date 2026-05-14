@@ -98,7 +98,7 @@ export const authService = {
   // Validate Referral Code
   validateReferral: async (code) => {
     try {
-      const response = await api.get(`/referral/validate/${code}`);
+      const response = await api.get(`/referrals/validate/${code}`);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

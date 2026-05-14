@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, MapPin, Pencil, PlusCircle, Trash2, Eye } from 'lucide-react';
+import { Building2, MapPin, Pencil, PlusCircle, Trash2, Eye, RotateCw } from 'lucide-react';
 import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 import { propertyService } from '../../../services/apiService';
 import PartnerHeader from '../components/PartnerHeader';
@@ -92,6 +92,14 @@ const PartnerProperties = () => {
             <Building2 size={14} /> Your Listings
           </h2>
           <div className="flex gap-2">
+            <button
+              onClick={fetchProperties}
+              disabled={loading}
+              className="inline-flex items-center justify-center p-1.5 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-[#0F172A] hover:border-[#0F172A] transition-all shadow-sm active:scale-95 disabled:opacity-50"
+              title="Refresh Properties"
+            >
+              <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
+            </button>
             <button
               onClick={() => {
                 clearPropertyDrafts();

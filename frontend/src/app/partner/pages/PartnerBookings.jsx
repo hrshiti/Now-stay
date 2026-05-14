@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Calendar, User, Phone,
-    Clock, MapPin, ChevronRight, BedDouble
+    Clock, MapPin, ChevronRight, BedDouble, RotateCw
 } from 'lucide-react';
 import { bookingService } from '../../../services/apiService';
 import PartnerHeader from '../components/PartnerHeader';
@@ -149,19 +149,20 @@ const PartnerBookings = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const fetchBookings = async () => {
+        try {
+            setLoading(true);
+            // Fetch with server-side filtering
+            const data = await bookingService.getPartnerBookings(activeTab);
+            setBookings(data);
+        } catch (error) {
+            console.error('Failed to fetch partner bookings:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchBookings = async () => {
-            try {
-                setLoading(true);
-                // Fetch with server-side filtering
-                const data = await bookingService.getPartnerBookings(activeTab);
-                setBookings(data);
-            } catch (error) {
-                console.error('Failed to fetch partner bookings:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchBookings();
     }, [activeTab]);
 
@@ -181,19 +182,29 @@ const PartnerBookings = () => {
 
             {/* Filter Tabs */}
             <div className="sticky top-14 z-20 bg-gray-50/95 backdrop-blur-sm px-4 py-3 border-b border-gray-100/50 mb-2">
-                <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${activeTab === tab.id
-                                ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
-                                : 'bg-white text-gray-500 border-gray-200'
-                                }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${activeTab === tab.id
+                                    ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm'
+                                    : 'bg-white text-gray-500 border-gray-200'
+                                    }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        onClick={fetchBookings}
+                        disabled={loading}
+                        className="p-1.5 rounded-full bg-white border border-gray-200 text-gray-400 hover:text-[#0F172A] hover:border-[#0F172A] transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                        title="Refresh Bookings"
+                    >
+                        <RotateCw size={14} className={loading ? 'animate-spin' : ''} />
+                    </button>
                 </div>
             </div>
 
