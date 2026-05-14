@@ -21,7 +21,6 @@ const usePartnerDashboard = () => {
   const [error, setError] = useState(null);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
