@@ -142,6 +142,50 @@ class ReferralService {
 
             console.log(`[REFERRAL_DEBUG] Created Tracking Record: ${tracking._id}`);
 
+            // If program is 'signup' type, complete it and credit immediately
+            if (program.triggerType === 'signup') {
+                console.log(`[REFERRAL_DEBUG] Program is 'signup' type. Processing immediate rewards.`);
+                tracking.status = 'completed';
+                tracking.completedAt = new Date();
+                await tracking.save();
+
+                // 1. Credit Referrer
+                const referrerWallet = await this.getOrCreateWallet(code.ownerId, code.ownerType);
+                await referrerWallet.credit(
+                    program.rewardAmount,
+                    `Referral Signup Bonus (Friend: ${newUser.name})`,
+                    tracking._id.toString(),
+                    'referral_bonus'
+                );
+
+                // 2. Credit Referee (New User)
+                const refereeWallet = await this.getOrCreateWallet(newUser._id, 'user');
+                await refereeWallet.credit(
+                    program.rewardAmount,
+                    `Welcome Bonus (Referred by ${code.code})`,
+                    tracking._id.toString(),
+                    'referral_bonus'
+                );
+
+                // Notifications
+                if (code.ownerType === 'Partner') {
+                    await notificationService.sendToPartner(code.ownerId, {
+                        title: 'Referral Reward! 💰',
+                        body: `You earned ₹${program.rewardAmount} because ${newUser.name} joined NowStay!`
+                    }, { type: 'referral_reward' });
+                } else {
+                    await notificationService.sendToUser(code.ownerId, {
+                        title: 'Referral Reward! 🎁',
+                        body: `You earned ₹${program.rewardAmount} because ${newUser.name} joined NowStay!`
+                    }, { type: 'referral_reward' }, 'user');
+                }
+
+                await notificationService.sendToUser(newUser._id, {
+                    title: 'Welcome Bonus! 🎉',
+                    body: `You earned ₹${program.rewardAmount} for joining via referral!`
+                }, { type: 'referral_reward' }, 'user').catch(e => console.error(e));
+            }
+
             // Increment usage count
             code.usageCount += 1;
             await code.save();
@@ -363,7 +407,7 @@ class ReferralService {
 
             return {
                 code: myCode ? myCode.code : '',
-                link: myCode ? `https://play.google.com/store/apps/details?id=com.rukkoin.user&referral=${myCode.code}` : '',
+                link: myCode ? `https://play.google.com/store/apps/details?id=com.nowstay.userapp&referral=${myCode.code}` : '',
                 stats,
                 history: formattedHistory,
                 earningsTotal: wallet ? wallet.totalEarnings : 0,
