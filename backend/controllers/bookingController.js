@@ -904,17 +904,21 @@ export const cancelBooking = async (req, res) => {
       return res.json({ success: true, message: 'Booking cancelled successfully (Pay at Hotel - Commission Refunded)', booking });
     }
 
-    // 1. Refund User (If paid and Razorpay refund NOT processed)
+    // 1. Refund User (If paid, refunded, or partially paid via wallet)
     // If Razorpay refund was successful, skip wallet credit (refund already processed)
     // If Razorpay refund failed or payment method is wallet, credit user wallet
-    if (booking.paymentStatus === 'paid' || booking.paymentStatus === 'refunded') {
+    if (booking.paymentStatus === 'paid' || booking.paymentStatus === 'refunded' || (booking.amountPaid > 0)) {
+      const isAbandoned = booking.cancellationReason === 'Payment cancelled by user' || booking.cancellationReason === 'New booking attempt initiated';
+      
       // Only credit wallet if:
       // - Payment method is wallet (always credit wallet)
       // - OR Razorpay refund failed (fallback)
       // - OR payment method is not Razorpay/online
+      // - OR it was abandoned but wallet was deducted
       const shouldCreditWallet = booking.paymentMethod === 'wallet' ||
         !razorpayRefundProcessed ||
-        !['razorpay', 'online'].includes(booking.paymentMethod);
+        !['razorpay', 'online'].includes(booking.paymentMethod) ||
+        (isAbandoned && booking.amountPaid > 0);
 
       if (shouldCreditWallet) {
         let userWallet = await Wallet.findOne({ partnerId: booking.userId, role: 'user' });
@@ -928,12 +932,17 @@ export const cancelBooking = async (req, res) => {
           });
         }
 
-        await userWallet.credit(
-          booking.totalAmount,
-          `Refund for Booking #${booking.bookingId}${razorpayRefundProcessed ? ' (Razorpay refund failed, wallet credited as fallback)' : ''}`,
-          booking.bookingId,
-          'refund'
-        );
+        // If abandoned or partially paid, refund exactly what was deducted (amountPaid). Otherwise refund totalAmount.
+        const refundAmount = isAbandoned ? (booking.amountPaid || 0) : booking.totalAmount;
+
+        if (refundAmount > 0) {
+          await userWallet.credit(
+            refundAmount,
+            `Refund for Booking #${booking.bookingId}${isAbandoned ? ' (Checkout abandoned)' : (razorpayRefundProcessed ? ' (Razorpay refund failed, wallet credited as fallback)' : '')}`,
+            booking.bookingId,
+            'refund'
+          );
+        }
       }
     }
 
@@ -1038,6 +1047,13 @@ export const cancelBooking = async (req, res) => {
       } else {
         responseMessage += `. Refund of ₹${booking.totalAmount.toLocaleString()} will be processed.`;
       }
+    }
+
+    // HARD DELETE ABANDONED BOOKINGS TO PREVENT UI CLUTTER
+    const isAbandoned = booking.cancellationReason === 'Payment cancelled by user' || booking.cancellationReason === 'New booking attempt initiated';
+    if (isAbandoned) {
+      await Booking.findByIdAndDelete(booking._id);
+      return res.json({ success: true, message: 'Abandoned booking removed completely.' });
     }
 
     res.json({
