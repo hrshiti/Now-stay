@@ -121,13 +121,11 @@ const PropertyDetailsPage = () => {
     }
   };
 
-  // Removed useEffect for automatic availability check as per requirement
-  // to only check on "Book Now" click.
-  /*
+  // Clear previous availability check when inputs change
+  // We don't auto-check availability here to save API calls (checked on Book Now)
   useEffect(() => {
-    checkAvailability();
+    setAvailability(null);
   }, [dates.checkIn, dates.checkOut, selectedRoom?._id, guests.rooms]);
-  */
 
   // Reviews State
   const [reviews, setReviews] = useState([]);

@@ -44,11 +44,13 @@ class EmailService {
           .header h1 { margin: 0; font-size: 24px; font-weight: 600; letter-spacing: 1px; }
           .content { padding: 30px 20px; }
           .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
-          .card h3 { margin-top: 0; color: ${this.brandColor}; font-size: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 10px; }
-          .detail-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; border-bottom: 1px solid #f3f4f6; padding-bottom: 6px; }
-          .detail-row:last-child { border-bottom: none; }
-          .detail-row span.label { color: #666; font-weight: 500; padding-right: 15px; }
-          .detail-row span.value { color: #111; font-weight: 600; text-align: right; flex-shrink: 0; }
+          .card h3 { margin-top: 0; color: ${this.brandColor}; font-size: 16px; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 12px; }
+          .info-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+          .info-table tr { border-bottom: 1px solid #f3f4f6; }
+          .info-table tr:last-child { border-bottom: none; }
+          .info-table td { padding: 7px 4px; vertical-align: top; }
+          .info-table td.lbl { color: #666; font-weight: 500; white-space: nowrap; padding-right: 16px; width: 40%; }
+          .info-table td.val { color: #111; font-weight: 600; text-align: right; }
           .footer { background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #e5e7eb; }
           .btn { display: inline-block; background-color: ${this.brandColor}; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; margin-top: 15px; }
           .footer a { color: ${this.brandColor}; text-decoration: none; }
@@ -154,27 +156,33 @@ class EmailService {
       
       <div class="card">
         <h3>Booking Details (#${booking.bookingId})</h3>
-        <div class="detail-row"><span class="label">Property:</span><span class="value">${property.propertyName || property.name}</span></div>
-        <div class="detail-row"><span class="label">Address:</span><span class="value">${property.address?.city || 'India'}, ${property.address?.state || ''}</span></div>
-        <div class="detail-row"><span class="label">Check-in:</span><span class="value">${checkIn}</span></div>
-        <div class="detail-row"><span class="label">Check-out:</span><span class="value">${checkOut}</span></div>
-        <div class="detail-row"><span class="label">Guests:</span><span class="value">${booking.guests?.adults} Adults, ${booking.guests?.children} Children</span></div>
-        <div class="detail-row"><span class="label">Rooms:</span><span class="value">${booking.guests?.rooms || 1} x ${room.name || booking.bookingUnit || 'Room'}</span></div>
+        <table class="info-table">
+          <tr><td class="lbl">Property</td><td class="val">${property.propertyName || property.name || 'N/A'}</td></tr>
+          <tr><td class="lbl">Address</td><td class="val">${property.address?.city || 'India'}, ${property.address?.state || ''}</td></tr>
+          <tr><td class="lbl">Check-in</td><td class="val">${checkIn}</td></tr>
+          <tr><td class="lbl">Check-out</td><td class="val">${checkOut}</td></tr>
+          <tr><td class="lbl">Guests</td><td class="val">${booking.guests?.adults || 1} Adults, ${booking.guests?.children || 0} Children</td></tr>
+          <tr><td class="lbl">Rooms</td><td class="val">${booking.guests?.rooms || 1} x ${room.name || booking.bookingUnit || 'Room'}</td></tr>
+        </table>
       </div>
 
       <div class="card">
-        <h3>Location & Contact</h3>
-        <div class="detail-row"><span class="label">Hotel Contact:</span><span class="value">${property.contactNumber || 'N/A'}</span></div>
-        <div class="detail-row"><span class="label">Location:</span><span class="value"><a href="${mapLink}" style="color: #0F766E; text-decoration: underline; font-weight: bold;">View on Google Maps</a></span></div>
+        <h3>Location &amp; Contact</h3>
+        <table class="info-table">
+          <tr><td class="lbl">Hotel Contact</td><td class="val">${property.contactNumber || 'N/A'}</td></tr>
+          <tr><td class="lbl">Location</td><td class="val"><a href="${mapLink}" style="color: #0F766E; text-decoration: underline; font-weight: bold;">View on Google Maps</a></td></tr>
+        </table>
       </div>
 
       <div class="card">
         <h3>Payment Information</h3>
-        <div class="detail-row"><span class="label">Total Amount:</span><span class="value">₹${booking.totalAmount}</span></div>
-        <div class="detail-row"><span class="label">Payment Status:</span><span class="value" style="color: ${booking.paymentStatus === 'paid' ? 'green' : 'orange'}">${booking.paymentStatus.toUpperCase()}</span></div>
-        <div class="detail-row"><span class="label">Payment Method:</span><span class="value">${booking.paymentMethod === 'pay_at_hotel' ? 'Pay at Hotel' : 'Online Payment'}</span></div>
+        <table class="info-table">
+          <tr><td class="lbl">Total Amount</td><td class="val">&#8377;${booking.totalAmount?.toLocaleString('en-IN')}</td></tr>
+          <tr><td class="lbl">Payment Status</td><td class="val" style="color: ${booking.paymentStatus === 'paid' ? 'green' : 'orange'}">${(booking.paymentStatus || '').toUpperCase()}</td></tr>
+          <tr><td class="lbl">Payment Method</td><td class="val">${booking.paymentMethod === 'pay_at_hotel' ? 'Pay at Hotel' : 'Online Payment'}</td></tr>
+        </table>
         ${(booking.paymentMethod === 'pay_at_hotel' || booking.paymentStatus !== 'paid') ?
-        `<p style="font-size: 13px; color: #666; font-style: italic; margin-top:10px;">Want to finish your payment online? Securely pay via our payment portal below:</p>
+        `<p style="font-size: 13px; color: #666; font-style: italic; margin-top:10px;">Want to pay online? Securely complete your payment below:</p>
            <div style="text-align: center; margin-top: 15px; margin-bottom: 5px;">
              <a href="https://nowstay.in/payment/${booking._id}" style="background-color: #0F766E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Pay Now Securely</a>
            </div>`

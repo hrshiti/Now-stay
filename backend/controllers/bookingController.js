@@ -575,11 +575,6 @@ export const createBooking = async (req, res) => {
       await Offer.findOneAndUpdate({ code: appliedCoupon }, { $inc: { usageCount: 1 } });
     }
 
-    // Trigger Notifications (only if confirmed)
-    if (booking.bookingStatus === 'confirmed') {
-      triggerBookingNotifications(booking);
-    }
-
     // Populate booking details for frontend confirmation page (partnerId.phone for Contact Property)
     const populatedBooking = await Booking.findById(booking._id)
       .populate({
@@ -588,6 +583,11 @@ export const createBooking = async (req, res) => {
       })
       .populate('roomTypeId')
       .populate('userId', 'name email phone mobile');
+
+    // Trigger Notifications AFTER populate so userId.email is available
+    if (booking.bookingStatus === 'confirmed') {
+      triggerBookingNotifications(populatedBooking);
+    }
 
     res.status(201).json({
       success: true,

@@ -90,34 +90,35 @@ const BookingsPage = () => {
 
     const getStatusBadge = (status, paymentStatus) => {
         const s = (status || '').toLowerCase();
+        const baseClass = "text-[8.5px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex items-center gap-0.5 sm:gap-1 w-fit whitespace-nowrap";
 
         if (s === 'confirmed' || s === 'pending') {
             if (paymentStatus === 'paid') {
-                return <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><CheckCircle size={10} /> Paid</span>;
+                return <span className={`bg-green-100 text-green-700 ${baseClass}`}><CheckCircle size={9} className="shrink-0" /> Paid</span>;
             }
             if (paymentStatus === 'partial') {
-                return <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><CheckCircle size={10} /> Partially Paid</span>;
+                return <span className={`bg-orange-100 text-orange-700 ${baseClass}`}><CheckCircle size={9} className="shrink-0" /> Partially Paid</span>;
             }
-            return <span className="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><AlertCircle size={10} /> Pay at Hotel</span>;
+            return <span className={`bg-yellow-100 text-yellow-700 ${baseClass}`}><AlertCircle size={9} className="shrink-0" /> Pay at Hotel</span>;
         }
         if (s === 'pending_payment') {
-            return <span className="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><Clock size={10} /> Payment Pending</span>;
+            return <span className={`bg-orange-100 text-orange-700 ${baseClass}`}><Clock size={9} className="shrink-0" /> Payment Pending</span>;
         }
         if (s === 'checked_in') {
-            return <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><Clock size={10} /> Ongoing</span>;
+            return <span className={`bg-blue-100 text-blue-700 ${baseClass}`}><Clock size={9} className="shrink-0" /> Ongoing</span>;
         }
         if (s === 'completed' || s === 'checked_out') {
-            return <span className="bg-gray-100 text-gray-700 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><CheckCircle size={10} /> Completed</span>;
+            return <span className={`bg-gray-100 text-gray-700 ${baseClass}`}><CheckCircle size={9} className="shrink-0" /> Completed</span>;
         }
         if (s === 'cancelled' || s === 'no_show' || s === 'rejected') {
-            return <span className="bg-red-100 text-red-600 text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1"><XCircle size={10} /> {s === 'no_show' ? 'No Show' : 'Cancelled'}</span>;
+            return <span className={`bg-red-100 text-red-600 ${baseClass}`}><XCircle size={9} className="shrink-0" /> {s === 'no_show' ? 'No Show' : 'Cancelled'}</span>;
         }
-        return <span className="bg-gray-100 text-gray-500 text-[10px] px-2 py-1 rounded-full">{status}</span>;
+        return <span className={`bg-gray-100 text-gray-500 ${baseClass}`}>{status}</span>;
     };
 
     return (
         <div className="min-h-screen bg-emerald-100">
-            {/* Header with Scrollable Tabs */}
+            {/* Header with Tabs */}
             <div className="sticky top-0 bg-surface text-white px-5 pt-10 pb-6 rounded-b-3xl shadow-lg shadow-surface/20 z-10">
                 <div className="flex justify-between items-center mb-6">
                     <div>
@@ -127,12 +128,12 @@ const BookingsPage = () => {
                 </div>
 
                 {/* Tabs */}
-                <div className="bg-black/20 p-1 rounded-2xl flex items-center justify-between backdrop-blur-sm overflow-x-auto no-scrollbar">
+                <div className="bg-black/20 p-1 rounded-2xl flex items-center justify-between backdrop-blur-sm w-full">
                     {tabs.map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-bold transition-all duration-200 whitespace-nowrap ${activeTab === tab.id
+                            className={`flex-1 flex items-center justify-center py-2.5 px-1 rounded-xl text-[10px] xs:text-[11px] font-bold transition-all duration-200 whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === tab.id
                                 ? 'bg-white text-surface shadow-sm scale-[0.98]'
                                 : 'text-white/70 hover:bg-white/10'
                                 }`}
@@ -210,16 +211,15 @@ const BookingsPage = () => {
                                         }
                                         className="bg-white rounded-xl overflow-hidden shadow-md shadow-gray-200/50 border border-gray-100 cursor-pointer active:scale-[0.98] transition-transform"
                                     >
-                                        <div className="flex h-28">
+                                        <div className="flex items-stretch min-h-[6.5rem]">
                                             {/* IMAGE SAME */}
-                                            <div className="w-24 bg-gray-200 shrink-0 relative">
+                                            <div className="w-[84px] sm:w-24 bg-gray-200 shrink-0 relative">
                                                 <img
                                                     src={propertyImage}
                                                     alt={hotel.propertyName || hotel.name || 'Hotel'}
-                                                    className={`w-full h-full object-cover ${activeTab === 'cancelled' ? 'grayscale' : ''
-                                                        }`}
+                                                    className={`w-full h-full object-cover ${activeTab === 'cancelled' ? 'grayscale' : ''}`}
                                                 />
-                                                <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                                                <div className="absolute bottom-1.5 left-1.5 bg-black/60 backdrop-blur-sm text-white text-[8px] sm:text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5">
                                                     <Star size={8} fill="currentColor" />
                                                     {hotel.avgRating > 0
                                                         ? Number(hotel.avgRating).toFixed(1)
@@ -228,39 +228,42 @@ const BookingsPage = () => {
                                             </div>
 
                                             {/* CONTENT */}
-                                            <div className="flex-1 p-3 flex flex-col justify-start">
-                                                <div className="flex justify-between items-start mb-1">
-                                                    {getStatusBadge(
-                                                        bookingStatus,
-                                                        booking.paymentStatus
-                                                    )}
-                                                    <span className="text-[9px] text-gray-400 font-medium tracking-wide">
+                                            <div className="flex-1 p-2 sm:p-2.5 flex flex-col justify-start overflow-hidden min-w-0">
+                                                <div className="flex flex-col items-start mb-1.5 gap-1 w-full">
+                                                    <div className="shrink-0">
+                                                        {getStatusBadge(
+                                                            bookingStatus,
+                                                            booking.paymentStatus
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[8.5px] sm:text-[9px] text-gray-400 font-semibold tracking-wide break-all">
                                                         #{booking.bookingId || booking._id?.slice(-6)}
                                                     </span>
                                                 </div>
 
                                                 {/* ✅ FIXED PROPERTY NAME */}
-                                                <h3 className="font-bold text-surface text-sm leading-tight line-clamp-2 break-words min-h-[32px]">
+                                                <h3 className="font-bold text-surface text-[13px] sm:text-sm leading-tight line-clamp-2 break-words mb-1">
                                                     {hotel.propertyName ||
                                                         hotel.name ||
                                                         'Unknown Property'}
                                                 </h3>
 
-                                                <p className="text-[10px] text-gray-400 flex items-center gap-0.5 mb-1">
-                                                    <MapPin size={9} />
-                                                    {`${hotel.address?.city || ''}, ${hotel.address?.state || ''
-                                                        }`
-                                                        .replace('undefined', '')
-                                                        .replace(/^, /, '')
-                                                        .replace(/, $/, '') || 'Location'}
+                                                <p className="text-[9px] sm:text-[10px] text-gray-400 flex items-center gap-0.5 mb-1.5 truncate">
+                                                    <MapPin size={9} className="shrink-0" />
+                                                    <span className="truncate">
+                                                        {`${hotel.address?.city || ''}, ${hotel.address?.state || ''}`
+                                                            .replace('undefined', '')
+                                                            .replace(/^, /, '')
+                                                            .replace(/, $/, '') || 'Location'}
+                                                    </span>
                                                 </p>
 
-                                                <div className="flex items-center gap-2 text-[10px]">
-                                                    <div className="bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md font-semibold text-gray-700">
+                                                <div className="flex items-center gap-1.5 text-[8.5px] sm:text-[9px] mt-auto">
+                                                    <div className="bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-semibold truncate max-w-[45%]">
                                                         {checkIn}
                                                     </div>
-                                                    <span className="text-gray-300">→</span>
-                                                    <div className="bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md font-semibold text-gray-700">
+                                                    <span className="text-gray-300 shrink-0">→</span>
+                                                    <div className="bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded text-gray-700 font-semibold truncate max-w-[45%]">
                                                         {checkOut}
                                                     </div>
                                                 </div>

@@ -724,8 +724,16 @@ export const updateProfile = async (req, res) => {
 
     const updateData = {};
     if (name) updateData.name = name;
-    if (email) updateData.email = email;
-    if (phone) updateData.phone = phone;
+    // Only update email if it is actually different from the current email
+    if (email && email !== user.email) {
+      // Check if new email is already taken by another user
+      const emailExists = await Model.findOne({ email, _id: { $ne: user._id } });
+      if (emailExists) {
+        return res.status(409).json({ message: 'This email is already in use by another account.' });
+      }
+      updateData.email = email;
+    }
+    if (phone && phone !== user.phone) updateData.phone = phone;
     if (profileImage !== undefined) updateData.profileImage = profileImage;
     if (profileImagePublicId !== undefined) updateData.profileImagePublicId = profileImagePublicId;
 
@@ -745,7 +753,7 @@ export const updateProfile = async (req, res) => {
     const updatedUser = await Model.findByIdAndUpdate(
       user._id,
       { $set: updateData },
-      { new: true, runValidators: true }
+      { new: true }
     );
 
     // NOTIFICATION: Security alert for profile update
@@ -774,7 +782,11 @@ export const updateProfile = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: 'Server error updating profile' });
+    console.error('Update Profile Error:', error);
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'This email or phone is already in use by another account.' });
+    }
+    res.status(500).json({ message: error.message || 'Server error updating profile' });
   }
 };
 

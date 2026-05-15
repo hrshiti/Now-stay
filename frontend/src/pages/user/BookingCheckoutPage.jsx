@@ -263,7 +263,7 @@ const BookingCheckoutPage = () => {
         if (response.success && response.booking) {
           clearBookingData();
           toast.success("Booking Confirmed!");
-          navigate(`/booking/${response.booking._id || response.booking.bookingId}`, { state: { booking: response.booking, animate: true } });
+          navigate(`/booking/${response.booking._id || response.booking.bookingId}`, { replace: true, state: { booking: response.booking, animate: true } });
         } else {
           throw new Error(response.message || "Booking failed");
         }
@@ -278,7 +278,7 @@ const BookingCheckoutPage = () => {
           if (response.success && response.booking) {
             clearBookingData();
             toast.success("Paid via Wallet! Booking Confirmed.");
-            navigate(`/booking/${response.booking._id}`, { state: { booking: response.booking, animate: true } });
+            navigate(`/booking/${response.booking._id}`, { replace: true, state: { booking: response.booking, animate: true } });
             return;
           } else {
             throw new Error(response.message || "Wallet payment failed");
@@ -336,7 +336,7 @@ const BookingCheckoutPage = () => {
             if (verifyRes.success) {
               clearBookingData();
               toast.success("Payment Successful!");
-              navigate(`/booking/${verifyRes.booking._id}`, { state: { booking: verifyRes.booking, animate: true } });
+              navigate(`/booking/${verifyRes.booking._id}`, { replace: true, state: { booking: verifyRes.booking, animate: true } });
             } else {
               toast.error("Payment Verification Failed");
             }
@@ -394,33 +394,41 @@ const BookingCheckoutPage = () => {
           </div>
 
           {/* 2. Trip Details */}
-          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
-            <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Your Trip</h3>
-            <div className="grid grid-cols-2 gap-y-5">
-              <div>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Dates</p>
-                <p className="text-sm font-black text-gray-800 leading-tight">{priceBreakdown?.nights} Nights</p>
-                <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{dates.checkIn} - {dates.checkOut}</p>
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-5 shadow-xl shadow-emerald-900/5 border border-white">
+            <h3 className="font-black text-gray-900 mb-4 text-base tracking-tight">Your Trip</h3>
+            <div className="flex flex-col gap-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Dates</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">{dates.checkIn} to {dates.checkOut}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md">{priceBreakdown?.nights} Nights</span>
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Guests</p>
-                <p className="text-sm font-black text-gray-800 leading-tight">{guests.adults} Adults, {guests.children} Children</p>
-                <p className="text-xs text-gray-500 font-medium mt-1 uppercase tracking-tight">{guests.rooms} Room(s)</p>
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm font-bold text-gray-900">Guests & Rooms</p>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">{guests.adults} Adults, {guests.children} Children</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md">{guests.rooms} Room(s)</span>
+                </div>
               </div>
-              <div className="col-span-2 pt-2">
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5">Room Type</p>
-                <p className="text-sm font-black text-gray-800 leading-tight">{selectedRoom.type || selectedRoom.name}</p>
+              <div className="pt-3 border-t border-gray-100 mt-1">
+                <p className="text-sm font-bold text-gray-900">Room Type</p>
+                <p className="text-xs text-gray-500 font-medium mt-0.5">{selectedRoom.type || selectedRoom.name}</p>
               </div>
             </div>
           </div>
 
           {/* 2.5. Guest Details (NEW) */}
-          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-6 shadow-xl shadow-emerald-900/5 border border-white">
-            <h3 className="font-black text-gray-900 mb-5 text-sm tracking-tight">Guest Details</h3>
+          <div className="bg-white/80 backdrop-blur-md rounded-[2rem] p-5 shadow-xl shadow-emerald-900/5 border border-white">
+            <h3 className="font-black text-gray-900 mb-4 text-base tracking-tight">Guest Details</h3>
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Full Name</label>
+                  <label className="text-xs text-gray-600 font-bold mb-1.5 block">Full Name</label>
                   <input
                     type="text"
                     value={guestDetails.name}
@@ -430,13 +438,13 @@ const BookingCheckoutPage = () => {
                       if (errors.name) setErrors({ ...errors, name: null });
                     }}
                     placeholder="Enter guest name"
-                    className={`w-full bg-gray-50 border ${errors.name ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.name ? 'border-red-500 bg-red-50/50' : 'border-gray-200'} rounded-xl px-4 py-3 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all shadow-sm`}
                     required
                   />
-                  {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.name}</p>}
+                  {errors.name && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{errors.name}</p>}
                 </div>
                 <div>
-                  <label className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1.5 block">Phone Number</label>
+                  <label className="text-xs text-gray-600 font-bold mb-1.5 block">Phone Number</label>
                   <input
                     type="tel"
                     value={guestDetails.phone}
@@ -446,10 +454,10 @@ const BookingCheckoutPage = () => {
                       if (errors.phone) setErrors({ ...errors, phone: null });
                     }}
                     placeholder="Enter phone number"
-                    className={`w-full bg-gray-50 border ${errors.phone ? 'border-red-500 bg-red-50/50' : 'border-gray-100'} rounded-xl px-4 py-3 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all`}
+                    className={`w-full bg-white border ${errors.phone ? 'border-red-500 bg-red-50/50' : 'border-gray-200'} rounded-xl px-4 py-3 text-sm font-semibold text-gray-800 focus:ring-2 focus:ring-surface outline-none transition-all shadow-sm`}
                     required
                   />
-                  {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1 uppercase">{errors.phone}</p>}
+                  {errors.phone && <p className="text-[10px] text-red-500 font-bold mt-1 ml-1">{errors.phone}</p>}
                 </div>
               </div>
               {!guestDetails.state && (

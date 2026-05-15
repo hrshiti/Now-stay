@@ -50,6 +50,9 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
             {/* Force background colors in print */}
             <style>{`
                 @media print {
+                    #professional-invoice {
+                        page-break-inside: avoid !important;
+                    }
                     #professional-invoice * {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
@@ -58,6 +61,10 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                     .inv-header-bg {
                         background-color: #1e3a8a !important;
                         color: #ffffff !important;
+                    }
+                    @page {
+                        size: A4;
+                        margin: 8mm;
                     }
                 }
             `}</style>
@@ -156,16 +163,7 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                             <td className="border border-gray-300 px-4 py-3 text-right">₹{booking.taxes?.toLocaleString()}</td>
                             <td className="border border-gray-300 px-4 py-3 text-right font-black text-blue-900">₹{booking.totalAmount?.toLocaleString()}</td>
                         </tr>
-                        {/* Fill empty rows to mimic Excel template */}
-                        {[1, 2, 3].map((i) => (
-                            <tr key={i} className="h-8">
-                                <td className="border border-gray-300 px-4 py-2"></td>
-                                <td className="border border-gray-300 px-4 py-2"></td>
-                                <td className="border border-gray-300 px-4 py-2"></td>
-                                <td className="border border-gray-300 px-4 py-2"></td>
-                                <td className="border border-gray-300 px-4 py-2"></td>
-                            </tr>
-                        ))}
+
                     </tbody>
                     <tfoot className="text-[11px]">
                         <tr>
@@ -188,19 +186,19 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                         {isInterState ? (
                             <>
                                 <tr>
-                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>Tax Amount (GST)</td>
-                                    <td className="border border-gray-300 px-4 py-2 text-right font-bold">₹{booking.taxes?.toLocaleString()}</td>
+                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-500" style={{ backgroundColor: '#f9fafb' }}>IGST ({computedTaxRate}%)</td>
+                                    <td className="border border-gray-300 px-4 py-2 text-right font-bold" style={{ backgroundColor: '#f9fafb' }}>&#8377;{booking.taxes?.toLocaleString()}</td>
                                 </tr>
                             </>
                         ) : (
                             <>
                                 <tr>
-                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>CGST ({halfRate}%)</td>
-                                    <td className="border border-gray-300 px-4 py-2 text-right font-bold">₹{halfTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-500" style={{ backgroundColor: '#f8fafc' }}>CGST ({halfRate}%)</td>
+                                    <td className="border border-gray-300 px-4 py-2 text-right font-bold" style={{ backgroundColor: '#f8fafc' }}>&#8377;{halfTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                                 </tr>
                                 <tr>
-                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>SGST ({halfRate}%)</td>
-                                    <td className="border border-gray-300 px-4 py-2 text-right font-bold">₹{halfTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                                    <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-500" style={{ backgroundColor: '#f1f5f9' }}>SGST ({halfRate}%)</td>
+                                    <td className="border border-gray-300 px-4 py-2 text-right font-bold" style={{ backgroundColor: '#f1f5f9' }}>&#8377;{halfTax.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                                 </tr>
                             </>
                         )}
@@ -209,8 +207,8 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                             <td className="border border-gray-300 px-4 py-2 text-right font-bold">₹{booking.platformFee?.toLocaleString() || 0}</td>
                         </tr>
                         <tr style={{ backgroundColor: '#eff6ff' }}>
-                            <td className="border px-4 py-3 font-black uppercase" style={{ borderColor: '#1e3a8a', color: '#1e3a8a' }}>TOTAL PAID</td>
-                            <td className="border px-4 py-3 text-right font-black text-lg sm:text-xl font-mono tracking-tighter" style={{ borderColor: '#1e3a8a', color: '#1e3a8a' }}>₹{booking.totalAmount?.toLocaleString()}</td>
+                            <td colSpan="3" className="border px-4 py-3 font-black uppercase" style={{ borderColor: '#1e3a8a', color: '#1e3a8a' }}>TOTAL PAID</td>
+                            <td colSpan="2" className="border px-4 py-3 text-right font-black text-lg sm:text-xl font-mono tracking-tighter" style={{ borderColor: '#1e3a8a', color: '#1e3a8a' }}>₹{booking.totalAmount?.toLocaleString()}</td>
                         </tr>
                     </tfoot>
                 </table>
