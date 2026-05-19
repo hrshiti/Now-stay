@@ -98,7 +98,7 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
         {
             title: 'Growth & Finance',
             items: [
-                { icon: ShieldCheck, label: 'My Subscription', path: '/hotel/subscriptions' },
+                // { icon: ShieldCheck, label: 'My Subscription', path: '/hotel/subscriptions' },
                 { icon: Wallet, label: 'Wallet', path: '/hotel/wallet' },
                 { icon: History, label: 'Booking History', path: '/hotel/bookings' },
             ]

@@ -2,10 +2,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import { CircleHelp, ChevronDown, Mail, Phone, MessageSquare, Loader2 } from 'lucide-react';
 import gsap from 'gsap';
 import PartnerHeader from '../components/PartnerHeader';
-import { faqService } from '../../../services/apiService';
+import { faqService, legalService } from '../../../services/apiService';
 
 const FaqItem = ({ question, answer }) => {
-    /* ... existing FaqItem code ... */
     const [isOpen, setIsOpen] = useState(false);
     const contentRef = useRef(null);
 
@@ -39,6 +38,10 @@ const FaqItem = ({ question, answer }) => {
 const PartnerSupport = () => {
     const [faqs, setFaqs] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [contactInfo, setContactInfo] = useState({
+        email: 'support@nowstay.in',
+        phone: '9970907005'
+    });
 
     useEffect(() => {
         const fetchFaqs = async () => {
@@ -54,6 +57,40 @@ const PartnerSupport = () => {
         fetchFaqs();
     }, []);
 
+    useEffect(() => {
+        const fetchContactInfo = async () => {
+            try {
+                const res = await legalService.getPage('user', 'contact');
+                const content = res?.page?.content || '';
+                const paragraphs = typeof content === 'string' 
+                    ? content.split('\n').map(p => p.trim()).filter(Boolean) 
+                    : [];
+                
+                let foundEmail = '';
+                let foundPhone = '';
+                
+                paragraphs.forEach(p => {
+                    if (p.includes('@') && !p.includes(' ')) {
+                        foundEmail = p;
+                    } else if (/^\+?[0-9\s-]{10,}$/.test(p)) {
+                        foundPhone = p;
+                    }
+                });
+                
+                setContactInfo({
+                    email: foundEmail || 'support@nowstay.in',
+                    phone: foundPhone || '9970907005'
+                });
+            } catch (error) {
+                console.error('Failed to fetch contact details from admin:', error);
+            }
+        };
+        fetchContactInfo();
+    }, []);
+
+    const cleanPhoneForWa = contactInfo.phone.replace(/\D/g, '');
+    const cleanPhoneForTel = contactInfo.phone.replace(/[\s-]/g, '');
+
     return (
         <div className="min-h-screen bg-gray-50 pb-20">
             <PartnerHeader title="Support Center" subtitle="We are here to help" />
@@ -61,9 +98,9 @@ const PartnerSupport = () => {
             <div className="max-w-3xl mx-auto px-4 pt-6">
 
                 {/* Contact Options */}
-                <div className="grid grid-cols-2 gap-3 mb-8">
+                <div className="grid grid-cols-2 gap-3 mb-5">
                     <button
-                        onClick={() => window.open('https://wa.me/919970907005', '_blank')}
+                        onClick={() => window.open(cleanPhoneForWa ? `https://wa.me/91${cleanPhoneForWa}` : 'https://wa.me/919970907005', '_blank')}
                         className="bg-[#0F172A] text-white p-5 rounded-2xl shadow-lg flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="#25D366">
@@ -72,7 +109,7 @@ const PartnerSupport = () => {
                         <span className="text-sm font-bold">WhatsApp Chat</span>
                     </button>
                     <a
-                        href="tel:9970907005"
+                        href={`tel:${cleanPhoneForTel}`}
                         className="bg-white border border-gray-200 text-[#003836] p-5 rounded-2xl shadow-sm flex flex-col items-center justify-center gap-2 active:scale-95 transition-transform"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="#2563EB">
@@ -80,6 +117,38 @@ const PartnerSupport = () => {
                         </svg>
                         <span className="text-sm font-bold">Call Support</span>
                     </a>
+                </div>
+
+                {/* Direct Contact Details for verification/iOS App Store submission compatibility */}
+                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-200 mb-8 space-y-4">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Direct Support Info</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <a 
+                            href={`tel:${cleanPhoneForTel}`}
+                            className="flex items-center gap-3.5 p-3 rounded-xl hover:bg-gray-50 active:scale-98 transition-all border border-gray-100/50"
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                                <Phone size={18} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Phone Support</span>
+                                <span className="text-xs font-bold text-gray-800">{contactInfo.phone.startsWith('+91') || contactInfo.phone.length < 10 ? contactInfo.phone : `+91 ${contactInfo.phone}`}</span>
+                            </div>
+                        </a>
+
+                        <a 
+                            href={`mailto:${contactInfo.email}`}
+                            className="flex items-center gap-3.5 p-3 rounded-xl hover:bg-gray-50 active:scale-98 transition-all border border-gray-100/50"
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                <Mail size={18} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Email Support</span>
+                                <span className="text-xs font-bold text-gray-800 break-all">{contactInfo.email}</span>
+                            </div>
+                        </a>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">
@@ -103,8 +172,8 @@ const PartnerSupport = () => {
 
                 <div className="mt-8 text-center">
                     <p className="text-xs text-gray-400 mb-2">Still have questions?</p>
-                    <a href="mailto:partners@nowstay.in" className="inline-flex items-center gap-2 text-sm font-bold text-[#0F172A] border-b border-[#0F172A]/20 pb-0.5 hover:border-[#0F172A] transition-colors">
-                        <Mail size={14} /> Email us at partners@nowstay.in
+                    <a href={`mailto:${contactInfo.email}`} className="inline-flex items-center gap-2 text-sm font-bold text-[#0F172A] border-b border-[#0F172A]/20 pb-0.5 hover:border-[#0F172A] transition-colors">
+                        <Mail size={14} /> Email us at {contactInfo.email}
                     </a>
                 </div>
             </div>
