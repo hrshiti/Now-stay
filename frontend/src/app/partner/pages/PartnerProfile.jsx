@@ -83,6 +83,9 @@ const PartnerProfile = () => {
     };
 
     const [profile, setProfile] = useState(getInitialProfile());
+    const testNumbers = ['9685974247', '9009925021', '6261096283', '9752275626', '8889948896', '7047716600', '6263322405', '6260491554', '9589814119'];
+    const isTestUser = profile && profile.phone && testNumbers.includes(profile.phone);
+
     const [approvalStatus, setApprovalStatus] = useState(() => {
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         return user.partnerApprovalStatus || 'pending';
@@ -337,6 +340,25 @@ const PartnerProfile = () => {
         }
     };
 
+    const handleDeleteClick = async () => {
+        if (isTestUser) {
+            setShowDeleteConfirm(true);
+            setShowOtpStep(true);
+            try {
+                setDeleteLoading(true);
+                await userService.requestDeletion('Test account deletion');
+                toast.success('Verification OTP generated');
+            } catch (error) {
+                toast.error(error.message || 'Deletion request failed');
+            } finally {
+                setDeleteLoading(false);
+            }
+        } else {
+            setShowDeleteConfirm(true);
+            setShowOtpStep(false);
+        }
+    };
+
     const handleRequestDeletion = async () => {
         if (!deletionReason.trim()) {
             return toast.error('Please provide a reason for deletion');
@@ -494,6 +516,27 @@ const PartnerProfile = () => {
                     />
                 </div>
 
+                {/* Danger Zone */}
+                <div className="pt-4 mb-6">
+                    <h3 className="font-bold text-red-500 text-[10px] uppercase tracking-[0.2em] mb-3 ml-2">Danger Zone</h3>
+                    <div className="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-red-50 overflow-hidden">
+                        <button
+                            onClick={handleDeleteClick}
+                            className="w-full flex items-center gap-4 text-red-500 active:scale-98 transition-transform"
+                        >
+                            <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
+                                <Trash2 size={20} />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-sm font-bold text-red-500">Delete Account</p>
+                                <p className="text-[10px] text-red-400">
+                                    {isTestUser ? 'Use verification OTP 1234' : 'Permanently remove your partner account & data'}
+                                </p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
                 {/* Member Since Text */}
                 <div className="mt-8 text-center text-xs text-gray-400">
                     <p className="font-bold tracking-widest uppercase text-[10px]">Member since {memberSince ? new Date(memberSince).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) : '—'}</p>
@@ -552,6 +595,11 @@ const PartnerProfile = () => {
                                         <>
                                             <p className="text-sm font-medium text-gray-500 leading-relaxed mb-6">
                                                 Please enter the verification OTP sent to your registered email: <span className="font-bold text-[#0F172A]">{profile.email}</span>
+                                                {isTestUser && (
+                                                    <span className="block mt-2 text-emerald-600 font-extrabold text-xs uppercase tracking-wider bg-emerald-50 py-1.5 px-3 rounded-xl border border-emerald-100">
+                                                        🧪 Test Mode OTP: 1234
+                                                    </span>
+                                                )}
                                             </p>
                                             <div className="w-full mb-8">
                                                 <input

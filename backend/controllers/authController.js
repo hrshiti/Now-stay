@@ -1023,7 +1023,11 @@ export const requestAccountDeletion = async (req, res) => {
     const user = req.user;
     const Model = user.role === 'partner' ? Partner : User;
 
-    if (!reason) {
+    // Test numbers can skip reason requirement
+    const testNumbers = ['9685974247', '9009925021', '6261096283', '9752275626', '8889948896', '7047716600', '6263322405', '6260491554', '9589814119'];
+    const isTestNumber = testNumbers.includes(user.phone);
+
+    if (!reason && !isTestNumber) {
       return res.status(400).json({ message: 'Reason for deletion is required' });
     }
 
@@ -1078,7 +1082,7 @@ export const requestAccountDeletion = async (req, res) => {
     }
 
     // --- SEND OTP ---
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    const otp = isTestNumber ? '1234' : Math.floor(1000 + Math.random() * 9000).toString();
     const otpExpires = Date.now() + 10 * 60 * 1000;
 
     await Model.findByIdAndUpdate(user._id, {

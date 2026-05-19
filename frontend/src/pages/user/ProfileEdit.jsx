@@ -40,6 +40,9 @@ const ProfileEdit = () => {
     }
   });
 
+  const testNumbers = ['9685974247', '9009925021', '6261096283', '9752275626', '8889948896', '7047716600', '6263322405', '6260491554', '9589814119'];
+  const isTestUser = formData && formData.phone && testNumbers.includes(formData.phone);
+
   useEffect(() => {
     if (showDeleteConfirm) {
       document.body.style.overflow = 'hidden';
@@ -275,6 +278,25 @@ const ProfileEdit = () => {
     }
   };
 
+  const handleDeleteClick = async () => {
+    if (isTestUser) {
+      setShowDeleteConfirm(true);
+      setShowOtpStep(true);
+      try {
+        setDeleteLoading(true);
+        await userService.requestDeletion('Test account deletion');
+        toast.success('Verification OTP generated');
+      } catch (error) {
+        toast.error(error.message || 'Deletion request failed');
+      } finally {
+        setDeleteLoading(false);
+      }
+    } else {
+      setShowDeleteConfirm(true);
+      setShowOtpStep(false);
+    }
+  };
+
   const handleRequestDeletion = async () => {
     if (!deletionReason.trim()) {
       return toast.error('Please provide a reason for deletion');
@@ -454,6 +476,18 @@ const ProfileEdit = () => {
                 >
                   <LogOut size={18} className="text-gray-400" />
                   Logout
+                </button>
+
+                <button
+                  onClick={handleDeleteClick}
+                  className="w-full mt-2 border border-red-200 text-red-500 hover:bg-red-50 py-4 rounded-3xl font-black text-sm active:scale-95 transition-all flex flex-col items-center justify-center gap-1"
+                >
+                  <span>Delete Account</span>
+                  {isTestUser && (
+                    <span className="text-[10px] text-red-400 font-bold uppercase tracking-wider">
+                      (Test Mode OTP: 1234)
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -767,6 +801,11 @@ const ProfileEdit = () => {
                 <>
                   <p className="text-sm text-gray-500 leading-relaxed mb-6">
                     Enter the 4-digit code sent to your registered email <span className="font-bold text-gray-900">{formData.email || 'account email'}</span>
+                    {isTestUser && (
+                      <span className="block mt-2 text-emerald-600 font-extrabold text-xs uppercase tracking-wider bg-emerald-50 py-1.5 px-3 rounded-xl border border-emerald-100">
+                        🧪 Test Mode OTP: 1234
+                      </span>
+                    )}
                   </p>
                   <div className="w-full mb-8">
                     <input

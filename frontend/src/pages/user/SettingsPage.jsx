@@ -9,6 +9,10 @@ const SettingsPage = () => {
     const navigate = useNavigate();
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user'));
+
+    const testNumbers = ['9685974247', '9009925021', '6261096283', '9752275626', '8889948896', '7047716600', '6263322405', '6260491554', '9589814119'];
+    const isTestUser = user && testNumbers.includes(user.phone);
+
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [showOtpStep, setShowOtpStep] = useState(false);
     const [deletionReason, setDeletionReason] = useState('');
@@ -57,6 +61,25 @@ const SettingsPage = () => {
         localStorage.clear();
         toast.success("Logged out successfully");
         navigate('/login');
+    };
+
+    const handleDeleteClick = async () => {
+        if (isTestUser) {
+            setShowDeleteConfirm(true);
+            setShowOtpStep(true);
+            try {
+                setIsDeleting(true);
+                await userService.requestDeletion('Test account deletion');
+                toast.success('Verification OTP generated');
+            } catch (error) {
+                toast.error(error.message || 'Deletion request failed');
+            } finally {
+                setIsDeleting(false);
+            }
+        } else {
+            setShowDeleteConfirm(true);
+            setShowOtpStep(false);
+        }
     };
 
     const handleRequestDeletion = async () => {
@@ -189,7 +212,7 @@ const SettingsPage = () => {
                             <h3 className="font-bold text-red-500 text-xs uppercase tracking-wider mb-3 ml-2">Danger Zone</h3>
                             <div className="bg-white rounded-2xl shadow-sm border border-red-50 overflow-hidden">
                                 <button
-                                    onClick={() => setShowDeleteConfirm(true)}
+                                    onClick={handleDeleteClick}
                                     className="w-full flex items-center gap-3 p-5 text-red-500 hover:bg-red-50 transition-colors"
                                 >
                                     <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
@@ -197,7 +220,9 @@ const SettingsPage = () => {
                                     </div>
                                     <div className="text-left">
                                         <p className="text-sm font-bold">Delete Account</p>
-                                        <p className="text-[10px] text-red-400">Permanently remove your account & data</p>
+                                        <p className="text-[10px] text-red-400">
+                                            {isTestUser ? 'Use verification OTP 1234' : 'Permanently remove your account & data'}
+                                        </p>
                                     </div>
                                 </button>
                             </div>
@@ -267,6 +292,11 @@ const SettingsPage = () => {
                             <>
                                 <p className="text-sm text-gray-500 leading-relaxed mb-6">
                                     Enter the code sent to your registered email <span className="font-bold text-gray-900">{user.email || 'account email'}</span>
+                                    {isTestUser && (
+                                        <span className="block mt-2 text-emerald-600 font-extrabold text-xs uppercase tracking-wider bg-emerald-50 py-1.5 px-3 rounded-xl border border-emerald-100">
+                                            🧪 Test Mode OTP: 1234
+                                        </span>
+                                    )}
                                 </p>
                                 <div className="w-full mb-8">
                                     <input
