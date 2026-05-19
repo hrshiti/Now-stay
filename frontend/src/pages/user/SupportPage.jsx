@@ -42,14 +42,14 @@ const SupportPage = () => {
                 {/* Contact Options */}
                 <div className="bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-white">
                     <h3 className="font-bold text-surface text-sm mb-4">Contact Us</h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-3 mb-5">
                          <a
                             href="https://wa.me/919970907005"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-blue-50 border border-blue-100 group active:scale-95 transition-transform"
                         >
-                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm transition-transform group-hover:scale-105">
                                 <MessageSquare size={20} />
                             </div>
                             <span className="text-xs font-bold text-blue-700">Chat with Us</span>
@@ -58,10 +58,41 @@ const SupportPage = () => {
                             href="tel:9970907005"
                             className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-green-50 border border-green-100 group active:scale-95 transition-transform"
                         >
-                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-green-600 shadow-sm transition-transform group-hover:scale-105">
                                 <Phone size={20} />
                             </div>
                             <span className="text-xs font-bold text-green-700">Call Support</span>
+                        </a>
+                    </div>
+
+                    {/* Direct Contact Details for iOS App Store submission compatibility */}
+                    <div className="border-t border-gray-100 pt-4 space-y-3">
+                        <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1.5">Direct Support Info</p>
+                        
+                        <a 
+                            href="tel:9970907005"
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 active:scale-98 transition-all"
+                        >
+                            <div className="w-8 h-8 rounded-lg bg-green-50 text-green-600 flex items-center justify-center shrink-0">
+                                <Phone size={16} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Phone Number</span>
+                                <span className="text-xs font-bold text-gray-800">+91 9970907005</span>
+                            </div>
+                        </a>
+
+                        <a 
+                            href="mailto:Nowstayindia@gmail.com"
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-gray-50 active:scale-98 transition-all"
+                        >
+                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                                <Mail size={16} />
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Email Address</span>
+                                <span className="text-xs font-bold text-gray-800 break-all">Nowstayindia@gmail.com</span>
+                            </div>
                         </a>
                     </div>
                 </div>
