@@ -19,7 +19,8 @@ const Footer = () => {
                         </p>
                     </div>
 
-                    {/* App Download Links */}
+                    {/* App Download Links - Temporarily Hidden */}
+                    {false && (
                     <div className="space-y-3">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-[#00d2ad]">Download Our App</h3>
                         <div className="flex flex-col gap-6">
@@ -78,6 +79,7 @@ const Footer = () => {
                             </div>
                         </div>
                     </div>
+                    )}
                 </div>
 
                 {/* Company Links */}
