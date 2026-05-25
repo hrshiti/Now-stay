@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
 // Compression removed - Cloudinary handles optimization
-import { CheckCircle, FileText, Mail, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, BedDouble, Users, Wifi, Clock, Loader2, Camera, Eye } from 'lucide-react';
+import { CheckCircle, FileText, Mail, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, BedDouble, Users, Wifi, Clock, Loader2, Camera, Eye, Shirt, Sparkles, Video, Shield } from 'lucide-react';
 
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
@@ -657,6 +657,10 @@ const AddHostelWizard = () => {
       setError('Name and short description required');
       return;
     }
+    if (!propertyForm.contactNumber || propertyForm.contactNumber.length !== 10 || !/^[6-9]\d{9}$/.test(propertyForm.contactNumber)) {
+      setError('A valid 10-digit contact number is required');
+      return;
+    }
     setStep(2);
   };
 
@@ -724,7 +728,7 @@ const AddHostelWizard = () => {
     updatePropertyForm('houseRules', parsed);
   };
   const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[A-Z0-9]{1}[0-9A-Z]{1}$/;
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.(com|co|in|org|net|edu|gov|io|biz|info|co\.in|co\.uk)$/i;
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i;
 
   const getGstError = (val) => {
     if (!val) return 'GST Number is required';
@@ -735,7 +739,69 @@ const AddHostelWizard = () => {
 
   const getEmailError = (val) => {
     if (!val) return 'Official Property Email is required';
-    if (!EMAIL_REGEX.test(val)) return 'Enter a valid email address';
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(val)) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (val.includes('..')) {
+      return 'Please enter a valid email address';
+    }
+    
+    const parts = val.split('@');
+    if (parts.length !== 2) return 'Please enter a valid email address';
+    
+    const local = parts[0];
+    const domain = parts[1].toLowerCase();
+    
+    if (local.startsWith('.') || local.endsWith('.')) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (domain.startsWith('-') || domain.endsWith('-')) {
+      return 'Please enter a valid email address';
+    }
+
+    const domainParts = domain.split('.');
+    const tld = domainParts[domainParts.length - 1];
+    
+    const commonValidTLDs = [
+      'com', 'in', 'co', 'org', 'net', 'edu', 'gov', 'io', 'app', 'dev', 'ai', 
+      'me', 'info', 'biz', 'tv', 'uk', 'us', 'ca', 'au', 'nz', 'xyz', 'tech', 
+      'online', 'site', 'website', 'store', 'club', 'pro', 'agency', 'life'
+    ];
+    
+    if (!commonValidTLDs.includes(tld)) {
+      return 'Please enter a valid email address';
+    }
+    
+    const firstPart = domainParts[0]; 
+    const knownTypos = [
+      'gamil', 'gmial', 'gmaill', 'gmil', 'gmai', 'gmal', 'gami', 'gmaiil', 'gemail', 'gmali', 'gmaik', 'ail', 'gail', 'gm', 'gml', 'gmailcom',
+      'yaho', 'yahooo', 'yahou', 'yahoocom', 'yaoo',
+      'hotmal', 'hotmai', 'hotmial', 'hotmali', 'homail',
+      'outlok', 'outloo', 'outlock', 'otlook',
+      'redif', 'rediff', 'redifmail',
+      'iclod', 'icoud', 'icloudcom'
+    ];
+    
+    if (knownTypos.includes(firstPart)) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (firstPart.startsWith('g') && firstPart.endsWith('l') && firstPart !== 'gmail' && firstPart.length > 2 && firstPart.length < 8) {
+       return 'Please enter a valid email address';
+    }
+    
+    if (firstPart.endsWith('mail') && firstPart !== 'gmail' && firstPart !== 'mail' && firstPart !== 'rediffmail' && firstPart !== 'ymail') {
+       return 'Please enter a valid email address';
+    }
+    
+    if (/(.)\1{3,}/.test(domain)) {
+      return 'Please enter a valid email address';
+    }
+    
     return '';
   };
 
@@ -1037,7 +1103,8 @@ const AddHostelWizard = () => {
                     )
                   )}
                   {propertyForm.contactNumber && propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
-                    <p className="text-[10px] text-gray-500 font-medium mt-1">
+                    <p className="text-[10px] text-red-500 font-medium flex items-center gap-1 mt-1">
+                      <span>⚠</span>
                       {10 - propertyForm.contactNumber.length} more digit(s) required
                     </p>
                   )}
@@ -1069,7 +1136,7 @@ const AddHostelWizard = () => {
                     <Search size={18} />
                   </div>
                   <input
-                    className="input pl-10"
+                    className="input !pl-12"
                     placeholder="Search for area, street, or landmark..."
                     value={locationSearchQuery}
                     onChange={e => {
@@ -1162,12 +1229,24 @@ const AddHostelWizard = () => {
                           : [...propertyForm.amenities, item.name];
                         updatePropertyForm('amenities', updated);
                       }}
-                      className={`p-4 rounded-2xl border text-left transition-all ${isSelected ? 'border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500' : 'border-gray-200 hover:border-emerald-200 bg-white'}`}
+                      className={`p-4 rounded-xl border-2 text-left transition-all relative overflow-hidden group ${isSelected ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-1 ring-emerald-500' : 'border-gray-100 bg-white hover:border-emerald-200 hover:bg-gray-50'}`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${isSelected ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
-                        {isSelected ? <CheckCircle size={20} /> : <div className="w-5 h-5 rounded-full border-2 border-gray-300" />}
+                      <div className="flex flex-col items-start gap-3 relative z-10">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isSelected ? 'bg-white text-emerald-600' : 'bg-gray-100 text-gray-500 group-hover:bg-white group-hover:text-emerald-600'}`}>
+                          {item.name === 'WiFi' && <Wifi size={20} />}
+                          {item.name === 'Laundry' && <Shirt size={20} />}
+                          {item.name === 'Housekeeping' && <Sparkles size={20} />}
+                          {item.name === 'CCTV' && <Video size={20} />}
+                          {item.name === 'Security' && <Shield size={20} />}
+                          {!['WiFi', 'Laundry', 'Housekeeping', 'CCTV', 'Security'].includes(item.name) && <CheckCircle size={20} />}
+                        </div>
+                        <span className={`font-bold text-sm ${isSelected ? 'text-emerald-800' : 'text-gray-700'}`}>{item.name}</span>
                       </div>
-                      <div className={`font-bold text-sm ${isSelected ? 'text-emerald-900' : 'text-gray-700'}`}>{item.name}</div>
+                      {isSelected && (
+                        <div className="absolute top-3 right-3 text-emerald-500">
+                          <CheckCircle size={18} className="fill-current" />
+                        </div>
+                      )}
                     </button>
                   );
                 })}

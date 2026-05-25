@@ -45,9 +45,9 @@ const TermsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-surface text-white p-6 pb-14 rounded-b-[30px] shadow-lg sticky top-0 z-20">
+      <div className="bg-surface text-white px-6 pt-12 pb-24 rounded-b-[40px] shadow-lg relative z-20">
         <div className="flex items-center gap-4 mb-4">
-          <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
+          <button onClick={() => window.history.length > 2 ? navigate(-1) : navigate('/')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-xl font-bold">Legal</h1>
@@ -55,7 +55,7 @@ const TermsPage = () => {
         <h2 className="text-2xl font-black">{audience === 'partner' ? 'Partner Agreement' : 'Terms & Conditions'}</h2>
       </div>
 
-      <div className="px-5 -mt-6 relative z-10 pb-24">
+      <div className="px-5 -mt-12 relative z-30 pb-40">
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 min-h-[400px]">
           <div className="flex items-center gap-3 mb-6 text-surface border-b border-gray-100 pb-3">
             <FileText size={24} />

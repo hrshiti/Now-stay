@@ -49,6 +49,8 @@ const PartnerProperties = () => {
       navigate('/hotel/join-resort', { state: { property } });
     } else if (property.propertyType === 'homestay') {
       navigate('/hotel/join-homestay', { state: { property } });
+    } else if (property.propertyType === 'tent') {
+      navigate('/hotel/join-tent', { state: { property } });
     }
   };
 

@@ -203,13 +203,13 @@ const PartnerContact = () => {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-40">
 
       {/* ── Header ── */}
-      <div className="bg-surface text-white p-6 pb-14 rounded-b-[30px] shadow-lg relative z-20">
+      <div className="bg-surface text-white px-6 pt-12 pb-24 rounded-b-[40px] shadow-lg relative z-20">
         <div className="flex items-center gap-4 mb-4">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.length > 2 ? navigate(-1) : navigate('/hotel/dashboard')}
             className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-all active:scale-95"
           >
             <ArrowLeft size={20} />
@@ -222,15 +222,12 @@ const PartnerContact = () => {
         </div>
       </div>
 
-      <main ref={contentRef} className="px-5 -mt-4 relative z-10 space-y-5">
+      <main ref={contentRef} className="px-5 -mt-12 relative z-30 space-y-5">
 
         {/* ── CMS Contact Info ── */}
         {!loadingPage && !pageError && paragraphs.length > 0 && (
           <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-3 mb-4 text-surface border-b border-gray-100 pb-3">
-              <div className="w-9 h-9 rounded-full bg-surface/10 flex items-center justify-center">
-                <PhoneCall size={18} />
-              </div>
               <h2 className="font-bold text-base">Get in touch with us</h2>
             </div>
             <div className="space-y-3">

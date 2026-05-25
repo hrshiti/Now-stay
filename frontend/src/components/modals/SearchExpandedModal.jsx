@@ -40,6 +40,10 @@ const SearchExpandedModal = ({ isOpen, onClose }) => {
     const handleDateClick = (day) => {
         const clickedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
         clickedDate.setHours(0, 0, 0, 0); // Normalize to start of day
+        
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (clickedDate < today) return; // Prevent past dates
 
         if (!dates.checkIn || (dates.checkIn && dates.checkOut)) {
             setDates({ checkIn: clickedDate, checkOut: null });
@@ -212,15 +216,22 @@ const SearchExpandedModal = ({ isOpen, onClose }) => {
                                                 {Array.from({ length: getDaysInMonth(currentMonth) }).map((_, i) => {
                                                     const day = i + 1;
                                                     const status = isDateSelected(day);
+                                                    const dateObj = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                                                    dateObj.setHours(0, 0, 0, 0);
+                                                    const today = new Date();
+                                                    today.setHours(0, 0, 0, 0);
+                                                    const isPast = dateObj < today;
+
                                                     return (
                                                         <button
                                                             key={day}
-                                                            onClick={() => handleDateClick(day)}
+                                                            onClick={() => !isPast && handleDateClick(day)}
                                                             className={`
                                                                 h-10 w-10 flex items-center justify-center rounded-full text-sm font-medium transition-all mx-auto
                                                                 ${status === 'start' || status === 'end' ? 'bg-surface text-white shadow-md' : ''}
                                                                 ${status === 'range' ? 'bg-surface/10 text-surface rounded-none w-full' : ''}
-                                                                ${!status ? 'hover:bg-gray-200 text-gray-700' : ''}
+                                                                ${!status && !isPast ? 'hover:bg-gray-200 text-gray-700' : ''}
+                                                                ${isPast ? 'text-gray-300 cursor-not-allowed opacity-50' : ''}
                                                             `}
                                                         >
                                                             {day}

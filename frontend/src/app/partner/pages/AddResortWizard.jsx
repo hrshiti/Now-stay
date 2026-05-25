@@ -732,6 +732,10 @@ const AddResortWizard = () => {
       setError('Please select a Resort Type');
       return;
     }
+    if (!propertyForm.contactNumber || propertyForm.contactNumber.length !== 10 || !/^[6-9]\d{9}$/.test(propertyForm.contactNumber)) {
+      setError('A valid 10-digit contact number is required');
+      return;
+    }
     setStep(2);
   };
   const nextFromLocation = () => {
@@ -777,7 +781,7 @@ const AddResortWizard = () => {
     setStep(7);
   };
   const GST_REGEX = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}[A-Z0-9]{1}[0-9A-Z]{1}$/;
-  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.(com|co|in|org|net|edu|gov|io|biz|info|co\.in|co\.uk)$/i;
+  const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/i;
 
   const getGstError = (val) => {
     if (!val) return 'GST Number is required';
@@ -788,7 +792,69 @@ const AddResortWizard = () => {
 
   const getEmailError = (val) => {
     if (!val) return 'Official Property Email is required';
-    if (!EMAIL_REGEX.test(val)) return 'Enter a valid email address';
+    
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(val)) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (val.includes('..')) {
+      return 'Please enter a valid email address';
+    }
+    
+    const parts = val.split('@');
+    if (parts.length !== 2) return 'Please enter a valid email address';
+    
+    const local = parts[0];
+    const domain = parts[1].toLowerCase();
+    
+    if (local.startsWith('.') || local.endsWith('.')) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (domain.startsWith('-') || domain.endsWith('-')) {
+      return 'Please enter a valid email address';
+    }
+
+    const domainParts = domain.split('.');
+    const tld = domainParts[domainParts.length - 1];
+    
+    const commonValidTLDs = [
+      'com', 'in', 'co', 'org', 'net', 'edu', 'gov', 'io', 'app', 'dev', 'ai', 
+      'me', 'info', 'biz', 'tv', 'uk', 'us', 'ca', 'au', 'nz', 'xyz', 'tech', 
+      'online', 'site', 'website', 'store', 'club', 'pro', 'agency', 'life'
+    ];
+    
+    if (!commonValidTLDs.includes(tld)) {
+      return 'Please enter a valid email address';
+    }
+    
+    const firstPart = domainParts[0]; 
+    const knownTypos = [
+      'gamil', 'gmial', 'gmaill', 'gmil', 'gmai', 'gmal', 'gami', 'gmaiil', 'gemail', 'gmali', 'gmaik', 'ail', 'gail', 'gm', 'gml', 'gmailcom',
+      'yaho', 'yahooo', 'yahou', 'yahoocom', 'yaoo',
+      'hotmal', 'hotmai', 'hotmial', 'hotmali', 'homail',
+      'outlok', 'outloo', 'outlock', 'otlook',
+      'redif', 'rediff', 'redifmail',
+      'iclod', 'icoud', 'icloudcom'
+    ];
+    
+    if (knownTypos.includes(firstPart)) {
+      return 'Please enter a valid email address';
+    }
+    
+    if (firstPart.startsWith('g') && firstPart.endsWith('l') && firstPart !== 'gmail' && firstPart.length > 2 && firstPart.length < 8) {
+       return 'Please enter a valid email address';
+    }
+    
+    if (firstPart.endsWith('mail') && firstPart !== 'gmail' && firstPart !== 'mail' && firstPart !== 'rediffmail' && firstPart !== 'ymail') {
+       return 'Please enter a valid email address';
+    }
+    
+    if (/(.)\1{3,}/.test(domain)) {
+      return 'Please enter a valid email address';
+    }
+    
     return '';
   };
 
@@ -1103,7 +1169,8 @@ const AddResortWizard = () => {
                     )
                   )}
                   {propertyForm.contactNumber && propertyForm.contactNumber.length > 0 && propertyForm.contactNumber.length < 10 && (
-                    <p className="text-[10px] text-gray-500 font-medium mt-1">
+                    <p className="text-[10px] text-red-500 font-medium flex items-center gap-1 mt-1">
+                      <span>⚠</span>
                       {10 - propertyForm.contactNumber.length} more digit(s) required
                     </p>
                   )}

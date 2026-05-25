@@ -129,9 +129,9 @@ const PartnerBankDetails = () => {
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-20">
       {/* Header */}
-      <div className="bg-[#0F172A] text-white pt-8 pb-12 px-6 rounded-b-[40px] shadow-lg mb-6 relative">
+      <div className="bg-[#0F172A] text-white pt-8 pb-20 px-6 rounded-b-[40px] shadow-lg relative z-20">
         <div className="flex items-center gap-4 mb-6">
-          <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
+          <button onClick={() => window.history.length > 2 ? navigate(-1) : navigate('/hotel/dashboard')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors">
             <ArrowLeft size={20} />
           </button>
           <h1 className="text-xl font-bold">Bank Account</h1>
@@ -144,7 +144,7 @@ const PartnerBankDetails = () => {
         </div>
       </div>
 
-      <main className="max-w-md mx-auto px-4 -mt-10">
+      <main className="max-w-md mx-auto px-4 -mt-12 relative z-30">
         <div className="bg-white rounded-3xl p-6 shadow-xl shadow-gray-200/50 border border-gray-100">
 
           {/* View Mode Header */}

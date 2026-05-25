@@ -11,6 +11,13 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
     const [guests, setGuests] = useState({ rooms: 1, adults: 2, children: 0 });
     const [pets, setPets] = useState(false);
 
+    const getLocalDateString = (dateObj = new Date()) => {
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
@@ -101,7 +108,16 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                                         <input
                                             type="date"
                                             value={dates.checkIn}
-                                            onChange={(e) => setDates({ ...dates, checkIn: e.target.value })}
+                                            min={getLocalDateString()}
+                                            onChange={(e) => {
+                                                const newCheckIn = e.target.value;
+                                                const updatedDates = { ...dates, checkIn: newCheckIn };
+                                                if (dates.checkOut && new Date(dates.checkOut) <= new Date(newCheckIn)) {
+                                                    const nextDay = new Date(new Date(newCheckIn).getTime() + 86400000);
+                                                    updatedDates.checkOut = getLocalDateString(nextDay);
+                                                }
+                                                setDates(updatedDates);
+                                            }}
                                             className="w-full pl-9 pr-3 py-3 bg-white border border-gray-100 outline-none text-gray-800 font-bold rounded-2xl shadow-sm text-sm"
                                         />
                                     </div>
@@ -115,6 +131,7 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                                         <input
                                             type="date"
                                             value={dates.checkOut}
+                                            min={dates.checkIn ? getLocalDateString(new Date(new Date(dates.checkIn).getTime() + 86400000)) : getLocalDateString(new Date(new Date().getTime() + 86400000))}
                                             onChange={(e) => setDates({ ...dates, checkOut: e.target.value })}
                                             className="w-full pl-9 pr-3 py-3 bg-white border border-gray-100 outline-none text-gray-800 font-bold rounded-2xl shadow-sm text-sm"
                                         />

@@ -90,6 +90,27 @@ const PartnerWallet = () => {
         fetchWalletData();
     }, []);
 
+    // Handle back button for transaction modal
+    useEffect(() => {
+        const handlePopState = () => {
+            if (selectedTxn) {
+                setSelectedTxn(null);
+            }
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [selectedTxn]);
+
+    const openTransaction = (txn) => {
+        window.history.pushState({ modal: 'txn' }, '');
+        setSelectedTxn(txn);
+    };
+
+    const closeTransaction = () => {
+        setSelectedTxn(null);
+        window.history.back();
+    };
+
     const handleTransaction = async () => {
         try {
             const amount = parseFloat(amountInput);
@@ -270,7 +291,7 @@ const PartnerWallet = () => {
                             <div className="space-y-1">
                                 {transactions.length > 0 ? (
                                     transactions.map((txn, idx) => (
-                                        <div key={txn._id || idx} onClick={() => setSelectedTxn(txn)} className="cursor-pointer">
+                                        <div key={txn._id || idx} onClick={() => openTransaction(txn)} className="cursor-pointer">
                                             <TransactionItem txn={txn} />
                                         </div>
                                     ))
@@ -471,7 +492,7 @@ const PartnerWallet = () => {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 0.5 }}
                             exit={{ opacity: 0 }}
-                            onClick={() => setSelectedTxn(null)}
+                            onClick={closeTransaction}
                             className="fixed inset-0 bg-black z-[80]"
                         />
                         <motion.div

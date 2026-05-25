@@ -199,10 +199,10 @@ const ContactPage = () => {
     <div className="min-h-screen bg-gray-50">
 
       {/* ── Header ── */}
-      <div className="bg-surface text-white p-6 pb-14 rounded-b-[30px] shadow-lg relative z-20">
+      <div className="bg-surface text-white px-6 pt-12 pb-24 rounded-b-[40px] shadow-lg relative z-20">
         <div className="flex items-center gap-4 mb-3">
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.length > 2 ? navigate(-1) : navigate('/')}
             className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition active:scale-95"
           >
             <ArrowLeft size={20} />
@@ -214,7 +214,7 @@ const ContactPage = () => {
         </p>
       </div>
 
-      <div className="px-5 -mt-4 relative z-10 space-y-5 pb-36">
+      <div className="px-5 -mt-12 relative z-30 space-y-5 pb-40">
 
         {/* ── CMS Contact Info Card ── */}
         {loadingPage ? (

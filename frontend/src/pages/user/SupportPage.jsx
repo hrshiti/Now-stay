@@ -64,7 +64,7 @@ const SupportPage = () => {
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header */}
-            <div className="bg-surface text-white p-6 pb-12 rounded-b-[30px] shadow-lg">
+            <div className="bg-surface text-white px-6 pt-12 pb-24 rounded-b-[40px] shadow-lg relative z-20">
                 <div className="flex items-center gap-4 mb-4">
                     <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20">
                         <ArrowLeft size={20} />
@@ -75,7 +75,7 @@ const SupportPage = () => {
                 <p className="text-sm text-white/70">Find answers or contact our support team.</p>
             </div>
 
-            <div className="px-5 -mt-8 relative z-10 space-y-6 pb-20">
+            <div className="px-5 -mt-12 relative z-30 space-y-6 pb-40">
 
                 {/* Contact Options */}
                 <div className="bg-white rounded-2xl p-5 shadow-lg shadow-gray-200/50 border border-white">

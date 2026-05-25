@@ -127,6 +127,13 @@ const PropertyDetailsPage = () => {
     setAvailability(null);
   }, [dates.checkIn, dates.checkOut, selectedRoom?._id, guests.rooms]);
 
+  const getLocalDateString = (dateObj = new Date()) => {
+    const year = dateObj.getFullYear();
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Reviews State
   const [reviews, setReviews] = useState([]);
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -1134,10 +1141,15 @@ const PropertyDetailsPage = () => {
                   label="Check-in"
                   date={dates.checkIn}
                   onChange={(newDate) => {
-                    setDates({ ...dates, checkIn: newDate });
+                    const updatedDates = { ...dates, checkIn: newDate };
+                    if (dates.checkOut && new Date(dates.checkOut) <= new Date(newDate)) {
+                        const nextDay = new Date(new Date(newDate).getTime() + 86400000);
+                        updatedDates.checkOut = getLocalDateString(nextDay);
+                    }
+                    setDates(updatedDates);
                     if (errors.dates) setErrors(prev => ({ ...prev, dates: false }));
                   }}
-                  minDate={new Date().toISOString().split('T')[0]}
+                  minDate={getLocalDateString()}
                   placeholder="Select Check-in"
                 />
               </div>
@@ -1149,7 +1161,7 @@ const PropertyDetailsPage = () => {
                     setDates({ ...dates, checkOut: newDate });
                     if (errors.dates) setErrors(prev => ({ ...prev, dates: false }));
                   }}
-                  minDate={dates.checkIn ? new Date(new Date(dates.checkIn).getTime() + 86400000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]}
+                  minDate={dates.checkIn ? getLocalDateString(new Date(new Date(dates.checkIn).getTime() + 86400000)) : getLocalDateString(new Date(new Date().getTime() + 86400000))}
                   placeholder="Select Check-out"
                   align="right"
                 />

@@ -85,9 +85,9 @@ const LegalPage = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <div className="bg-surface text-white p-6 pb-12 rounded-b-[30px] shadow-lg sticky top-0 z-20">
+            <div className="bg-surface text-white px-6 pt-12 pb-24 rounded-b-[40px] shadow-lg relative z-20">
                 <div className="flex items-center gap-4 mb-4">
-                    <button onClick={() => navigate(-1)} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
+                    <button onClick={() => window.history.length > 2 ? navigate(-1) : navigate('/')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
                         <ArrowLeft size={20} />
                     </button>
                     <h1 className="text-xl font-bold">Legal</h1>
@@ -95,7 +95,7 @@ const LegalPage = () => {
                 <h2 className="text-2xl font-black capitalize">{audience} Policies</h2>
             </div>
 
-            <div className="px-5 -mt-6 relative z-10 space-y-4 pb-24">
+            <div className="px-5 -mt-12 relative z-30 space-y-4 pb-40">
 
                 {error && (
                     <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl px-4 py-2">
