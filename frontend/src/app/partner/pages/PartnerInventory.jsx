@@ -138,18 +138,18 @@ const PartnerInventory = () => {
                     if (ledgerRes.entries) {
                         ledgerRes.entries.forEach(entry => {
                             if (!entry.startDate || !entry.endDate) return;
-                            
+
                             // Normalize ledger entry dates to local midnight for accurate comparison
                             const start = normalizeToLocalMidnight(entry.startDate);
                             const end = normalizeToLocalMidnight(entry.endDate);
-                            
+
                             if (!start || !end) return;
-                            
+
                             // Use date string comparison for more reliable date-only matching
                             // This avoids any timezone conversion issues
                             const startStr = getDateString(start);
                             const endStr = getDateString(end);
-                            
+
                             // Check overlap: [start, end) - check-in day is blocked, check-out day is free
                             // If booking is 19th to 21st:
                             // - startStr = "2024-02-19", endStr = "2024-02-21"
@@ -443,7 +443,7 @@ const PartnerInventory = () => {
                         <div className="flex p-2 gap-1 bg-gray-50 m-4 rounded-xl">
                             {[
                                 { id: 'walk_in', label: 'Walk-in', icon: Users },
-                                { id: 'external', label: 'Ext. Booking', icon: Globe },
+                                // { id: 'external', label: 'Ext. Booking', icon: Globe }, // Removed as per request
                                 { id: 'block', label: 'Block', icon: Lock }
                             ].map(tab => (
                                 <button
@@ -482,7 +482,7 @@ const PartnerInventory = () => {
                                                         const minEndDate = new Date(startDate);
                                                         minEndDate.setDate(minEndDate.getDate() + 1);
                                                         const minEndStr = `${minEndDate.getFullYear()}-${String(minEndDate.getMonth() + 1).padStart(2, '0')}-${String(minEndDate.getDate()).padStart(2, '0')}`;
-                                                        
+
                                                         if (!newEnd || newEnd <= newStart) {
                                                             newEnd = minEndStr;
                                                         } else {
