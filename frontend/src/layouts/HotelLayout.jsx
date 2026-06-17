@@ -1,10 +1,12 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useLenis } from '../app/shared/hooks/useLenis';
 
 const HotelLayout = () => {
-    // Initialize global smooth scrolling
-    useLenis();
+    const location = useLocation();
+    const isWizard = location.pathname.includes('/hotel/join');
+    // Initialize global smooth scrolling, disable on wizard pages
+    useLenis(isWizard);
 
     return (
         <div id="hotel-root" className="min-h-screen w-full bg-partner-bg text-partner-text-primary font-sans antialiased selection:bg-partner-btn selection:text-white">

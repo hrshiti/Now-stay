@@ -1003,7 +1003,7 @@ const AddVillaWizard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-gray-50 flex flex-col font-sans overflow-x-hidden">
       <div className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-2xl mx-auto px-4 h-16 flex items-center justify-between">
           <button onClick={handleBack} className="p-2 -ml-2 text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
@@ -1024,7 +1024,7 @@ const AddVillaWizard = () => {
         </div>
       </div>
 
-      <main className="flex-1 max-w-2xl mx-auto w-full p-4 md:p-6 pb-32">
+      <main className="flex-1 max-w-2xl mx-auto w-full p-4 md:px-6 md:pt-6 pb-32 md:pb-32">
         <div className="max-w-xl mx-auto">
           {step === 1 && (
             <div className="space-y-6">

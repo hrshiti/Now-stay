@@ -143,9 +143,9 @@ const Layout = ({ children }) => {
     maintenanceMessage: ''
   });
 
-  // Disable Lenis on Admin routes only (as requested)
-  const isCmsRoute = location.pathname.startsWith('/admin');
-  useLenis(isCmsRoute);
+  // Disable Lenis on Admin routes and Wizard forms
+  const shouldDisableLenis = location.pathname.startsWith('/admin') || location.pathname.includes('/hotel/join');
+  useLenis(shouldDisableLenis);
 
   const [hideNavsDueToSlider, setHideNavsDueToSlider] = React.useState(false);
 
