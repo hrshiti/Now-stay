@@ -241,7 +241,7 @@ const AdminBookingDetail = () => {
 
                             {booking.paymentMethod === 'pay_at_hotel' && (
                                 <div className="flex justify-between text-xs font-bold uppercase">
-                                    <span className="text-gray-400">Platform Commission</span>
+                                    <span className="text-gray-400">Booking Commission</span>
                                     <span className="text-amber-600">₹{((booking.adminCommission || 0) + (booking.taxes || 0)).toLocaleString()}</span>
                                 </div>
                             )}

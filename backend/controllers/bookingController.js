@@ -115,6 +115,44 @@ const triggerBookingNotifications = async (booking) => {
   }
 };
 
+// Helper: Generate Sequential Booking ID (BK-YYYYMMDD-XXXXX)
+export const generateBookingId = async () => {
+  try {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateStr = `${year}${month}${day}`;
+    const prefix = `BK-${dateStr}-`;
+
+    let nextSeq = 1;
+    const lastBooking = await Booking.findOne({
+      bookingId: { $regex: `^${prefix}` }
+    }).sort({ bookingId: -1 });
+
+    if (lastBooking) {
+      const parts = lastBooking.bookingId.split('-');
+      const lastSeq = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastSeq)) {
+        nextSeq = lastSeq + 1;
+      }
+    }
+
+    let candidateId = `${prefix}${String(nextSeq).padStart(5, '0')}`;
+    let exists = await Booking.exists({ bookingId: candidateId });
+    while (exists) {
+      nextSeq++;
+      candidateId = `${prefix}${String(nextSeq).padStart(5, '0')}`;
+      exists = await Booking.exists({ bookingId: candidateId });
+    }
+
+    return candidateId;
+  } catch (error) {
+    console.error('Error generating booking ID, falling back:', error);
+    return `BK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  }
+};
+
 export const createBooking = async (req, res) => {
   try {
     const {
@@ -343,7 +381,7 @@ export const createBooking = async (req, res) => {
     // Partner Payout = (Gross - Discount) + Taxes - Commission
     const partnerPayout = Math.max(0, Math.floor(taxableAmount + taxes - adminCommission));
 
-    const bookingId = `BK-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const bookingId = await generateBookingId();
 
     // Determine User Model based on mongoose document model name
     const userModel = req.user.constructor.modelName;
@@ -430,7 +468,7 @@ export const createBooking = async (req, res) => {
           
           // B. Debit Partner the Admin Commission only
           if (adminCommission > 0) {
-            await partnerWallet.debit(adminCommission, `Platform Commission for Booking #${bookingId}`, bookingId, 'commission_deduction');
+            await partnerWallet.debit(adminCommission, `Booking Commission for Booking #${bookingId}`, bookingId, 'commission_deduction');
           }
 
           // NOTIFICATION: Wallet Update
@@ -1114,7 +1152,7 @@ export const markBookingAsPaid = async (req, res) => {
         // Debit Partner for the Platform's cut only
         await partnerWallet.debit(
           totalDeduction,
-          `Platform Commission & Fee for Booking #${booking.bookingId}`,
+          `Booking Commission & Fee for Booking #${booking.bookingId}`,
           booking.bookingId,
           'commission_deduction'
         );
@@ -1451,7 +1489,7 @@ export const downloadReceipt = async (req, res) => {
     }
     const companyState = (settings.companyState || 'Maharashtra').toLowerCase().trim();
 
-    const doc = new PDFDocument({ margin: 50, size: 'A4' });
+    const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=receipt-${booking.bookingId}.pdf`);
@@ -1459,11 +1497,13 @@ export const downloadReceipt = async (req, res) => {
     doc.pipe(res);
 
     // --- COLORS & STYLES ---
-    const primaryColor = '#1f2937'; // slate-800
-    const secondaryColor = '#4b5563'; // gray-600
-    const accentColor = '#10b981'; // emerald-500
-    const boxBgColor = '#f9fafb'; // gray-50
-    const borderColor = '#e5e7eb'; // gray-200
+    const brandColor = '#1e3a8a'; // Dark Blue used in HTML design
+    const textDark = '#1f2937'; // slate-800
+    const textGray = '#4b5563'; // gray-600
+    const borderColor = '#1e3a8a';
+    const gridBorderColor = '#cbd5e1'; // slate-300
+    const lightBg = '#f9fafb';
+    const totalBg = '#eff6ff'; // Light blue highlight for Total Paid
 
     const property = booking.propertyId || {};
     const hotelName = (property.propertyName || 'Hotel').toUpperCase();
@@ -1472,154 +1512,194 @@ export const downloadReceipt = async (req, res) => {
     const hotelAddress = property.address?.fullAddress || 'Address Not Available';
     const hotelGST = property.gstNumber || 'N/A';
 
-    // --- 1. HEADER (Letterhead Style) ---
-    // Left: Platform Logo/Name & Title
-    doc.fontSize(10).font('Helvetica-Bold').fillColor(primaryColor).text('TAX INVOICE', 50, 30);
-    doc.fontSize(22).font('Helvetica-Bold').fillColor(accentColor).text('NowStay', 50, 45);
-    doc.fontSize(10).font('Helvetica').fillColor(secondaryColor).text('Verified Booking Receipt', 50, 70);
-
-    // Right: Hotel Details (Letterhead)
-    doc.fontSize(12).font('Helvetica-Bold').fillColor(primaryColor).text(hotelName, 300, 45, { align: 'right', width: 250 });
-    doc.fontSize(8).font('Helvetica').fillColor(secondaryColor)
-      .text(hotelAddress.toUpperCase(), 300, 62, { align: 'right', width: 250 })
-      .text(`Email: ${hotelEmail}`, 300, 82, { align: 'right', width: 250 })
-      .text(`Phone: ${hotelPhone}`, 300, 92, { align: 'right', width: 250 });
-
+    // --- 1. HEADER & TAX INVOICE INFO ---
+    doc.fontSize(9).font('Helvetica-Bold').fillColor(brandColor).text('TAX INVOICE', 40, 40);
+    doc.fontSize(22).font('Helvetica-Bold').fillColor(textDark).text(hotelName, 40, 52, { width: 320 });
+    
+    let leftInfoY = doc.y + 5;
+    doc.fontSize(8).font('Helvetica').fillColor(textGray)
+      .text(hotelAddress.toUpperCase(), 40, leftInfoY, { width: 320, lineGap: 2 });
+    
+    leftInfoY = doc.y + 4;
+    doc.text(`Phone: ${hotelPhone}`, 40, leftInfoY)
+      .text(`Email: ${hotelEmail}`, 40, doc.y + 2);
+    
     if (hotelGST !== 'N/A') {
-      doc.fontSize(8).font('Helvetica-Bold').fillColor(primaryColor).text(`GSTIN: ${hotelGST}`, 300, 105, { align: 'right', width: 250 });
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(textDark).text(`GSTIN: ${hotelGST}`, 40, doc.y + 4);
     }
 
-    // Horizontal Line
-    doc.moveTo(50, 125).lineTo(550, 125).strokeColor(borderColor).lineWidth(1).stroke();
+    // Right: Info Table (Date, Invoice #, Status)
+    const tableX = 365;
+    const tableY = 40;
+    const colWidth = 95;
+    
+    const drawTableRow = (label, value, y, valColor = textDark, isValBold = false) => {
+      doc.rect(tableX, y, colWidth, 18).fill(lightBg);
+      doc.rect(tableX, y, colWidth, 18).stroke(gridBorderColor);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(textDark).text(label, tableX + 8, y + 5);
 
-    // --- 2. BOOKING INFO SECTION ---
-    let currentY = 145;
-    doc.fontSize(16).font('Helvetica-Bold').fillColor(primaryColor).text(`INVOICE #${booking.bookingId}`, 50, currentY);
+      doc.rect(tableX + colWidth, y, colWidth, 18).stroke(gridBorderColor);
+      doc.fontSize(8).font(isValBold ? 'Helvetica-Bold' : 'Helvetica').fillColor(valColor).text(value, tableX + colWidth + 8, y + 5);
+    };
 
-    const status = (booking.bookingStatus || 'confirmed').toUpperCase();
-    let statusColor = '#059669';
-    if (status === 'CANCELLED') statusColor = '#dc2626';
-    doc.fontSize(10).font('Helvetica-Bold').fillColor(statusColor).text(status, 450, currentY + 5, { align: 'right', width: 100 });
+    const invoiceDateStr = new Date(booking.createdAt).toLocaleDateString('en-US', { 
+      day: 'numeric', month: 'long', year: 'numeric' 
+    });
+    
+    drawTableRow('DATE', invoiceDateStr, tableY);
+    drawTableRow('INVOICE #', booking.bookingId || 'N/A', tableY + 18);
+    
+    const paymentStatusStr = (booking.paymentStatus || 'PENDING').toUpperCase();
+    const statusCol = paymentStatusStr === 'PAID' ? '#059669' : '#d97706';
+    drawTableRow('STATUS', paymentStatusStr, tableY + 36, statusCol, true);
 
-    doc.fontSize(8).font('Helvetica').fillColor(secondaryColor).text(`Dated: ${new Date(booking.createdAt).toLocaleDateString()}`, 50, currentY + 20);
+    // --- 2. CUSTOMER & STAY DETAILS (Side-by-Side Boxes) ---
+    const boxY = Math.max(doc.y + 15, 145);
+    const boxWidth = 250;
+    const boxHeight = 70;
+    
+    // Left Box: Customer Details
+    doc.rect(40, boxY, boxWidth, boxHeight).stroke(borderColor);
+    doc.rect(40, boxY, boxWidth, 15).fillAndStroke(brandColor, borderColor);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff').text('CUSTOMER', 48, boxY + 4);
+    
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(textDark).text((booking.userId?.name || 'Guest').toUpperCase(), 48, boxY + 22);
+    doc.fontSize(8).font('Helvetica').fillColor(textGray)
+      .text(booking.userId?.email || 'N/A', 48, boxY + 35)
+      .text(`+91 ${booking.userId?.phone || 'N/A'}`, 48, boxY + 48);
 
-    // --- 3. GRID LAYOUT: STAY & GUEST DETAILS ---
-    currentY = 200;
-    const col1X = 50;
-    const col2X = 310;
+    // Right Box: Stay Details
+    doc.rect(305, boxY, boxWidth, boxHeight).stroke(borderColor);
+    doc.rect(305, boxY, boxWidth, 15).fillAndStroke(brandColor, borderColor);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff').text('STAY DETAILS', 313, boxY + 4);
+    
+    const checkInStr = new Date(booking.checkInDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const checkOutStr = new Date(booking.checkOutDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 
-    // Left Column: Stay Details
-    doc.rect(col1X, currentY, 250, 22).fill(boxBgColor);
-    doc.fontSize(8).font('Helvetica-Bold').fillColor(secondaryColor).text('STAY DETAILS', col1X + 10, currentY + 7);
-    doc.rect(col1X, currentY, 250, 120).stroke(borderColor);
+    doc.fontSize(8).font('Helvetica').fillColor(textDark)
+      .text('Check-In:', 313, boxY + 22).font('Helvetica-Bold').text(checkInStr, 370, boxY + 22)
+      .font('Helvetica').text('Check-Out:', 313, boxY + 35).font('Helvetica-Bold').text(checkOutStr, 370, boxY + 35)
+      .font('Helvetica').text('Duration:', 313, boxY + 48).font('Helvetica-Bold').text(`${booking.totalNights} Night(s)`, 370, boxY + 48);
 
-    let boxY = currentY + 35;
-    doc.fontSize(8).font('Helvetica-Bold').text('CHECK-IN', col1X + 15, boxY);
-    doc.text('CHECK-OUT', col1X + 130, boxY);
-    boxY += 12;
-    doc.fontSize(10).font('Helvetica-Bold').fillColor(primaryColor)
-      .text(new Date(booking.checkInDate).toLocaleDateString(), col1X + 15, boxY)
-      .text(new Date(booking.checkOutDate).toLocaleDateString(), col1X + 130, boxY);
-    boxY += 25;
-    doc.fontSize(8).font('Helvetica-Bold').fillColor(secondaryColor).text('ACCOMMODATION', col1X + 15, boxY);
-    boxY += 12;
-    doc.fontSize(9).font('Helvetica').fillColor(primaryColor)
-      .text(`${booking.roomTypeId?.name || 'Standard Unit'} (${booking.guests?.adults || 1} Guests)`, col1X + 15, boxY, { width: 220 });
+    // --- 3. DESCRIPTION TABLE ---
+    const gridY = boxY + boxHeight + 15;
+    const gridHeight = 75;
+    
+    // Draw Header
+    doc.rect(40, gridY, 515, 18).fillAndStroke(brandColor, borderColor);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff')
+      .text('DESCRIPTION', 48, gridY + 5)
+      .text('QTY', 260, gridY + 5, { width: 50, align: 'center' })
+      .text('UNIT PRICE', 310, gridY + 5, { width: 85, align: 'right' })
+      .text('TAX', 395, gridY + 5, { width: 85, align: 'right' })
+      .text('TOTAL', 480, gridY + 5, { width: 75, align: 'right' });
 
-    // Right Column: Guest Information
-    doc.rect(col2X, currentY, 240, 22).fill(boxBgColor);
-    doc.fontSize(8).font('Helvetica-Bold').fillColor(secondaryColor).text('BILL TO', col2X + 10, currentY + 7);
-    doc.rect(col2X, currentY, 240, 120).stroke(borderColor);
+    // Draw Grid Outer Border
+    doc.rect(40, gridY + 18, 515, gridHeight).stroke(gridBorderColor);
+    
+    // Draw Columns Vertical Borders
+    doc.moveTo(260, gridY + 18).lineTo(260, gridY + 18 + gridHeight).stroke(gridBorderColor);
+    doc.moveTo(310, gridY + 18).lineTo(310, gridY + 18 + gridHeight).stroke(gridBorderColor);
+    doc.moveTo(395, gridY + 18).lineTo(395, gridY + 18 + gridHeight).stroke(gridBorderColor);
+    doc.moveTo(480, gridY + 18).lineTo(480, gridY + 18 + gridHeight).stroke(gridBorderColor);
 
-    boxY = currentY + 35;
-    doc.fontSize(11).font('Helvetica-Bold').fillColor(primaryColor).text((booking.userId?.name || 'Guest').toUpperCase(), col2X + 15, boxY);
-    boxY += 15;
-    doc.fontSize(8).font('Helvetica').fillColor(secondaryColor)
-      .text(`Phone: ${booking.userId?.phone || 'N/A'}`, col2X + 15, boxY)
-      .text(`Email: ${booking.userId?.email || 'N/A'}`, col2X + 15, boxY + 12);
+    // Draw Row Details
+    const rowY = gridY + 28;
+    const roomName = booking.roomTypeId?.name || 'Standard Unit';
+    doc.fontSize(9).font('Helvetica-Bold').fillColor(textDark).text(roomName.toUpperCase(), 48, rowY);
+    doc.fontSize(7).font('Helvetica').fillColor(textGray).text(`RESERVATION AT ${hotelName}`, 48, rowY + 14, { width: 200 });
 
-    // --- 4. PAYMENT SUMMARY (Table Style) ---
-    currentY += 150;
-    doc.rect(50, currentY, 500, 22).fill(boxBgColor);
-    doc.fontSize(8).font('Helvetica-Bold').fillColor(secondaryColor).text('DESCRIPTION', 60, currentY + 7);
-    doc.text('AMOUNT', 480, currentY + 7, { align: 'right', width: 60 });
-    doc.rect(50, currentY, 500, 120).stroke(borderColor);
+    // Qty (Nights)
+    doc.fontSize(9).font('Helvetica-Bold').fillColor(textDark).text(booking.totalNights.toString(), 260, rowY, { width: 50, align: 'center' });
+    
+    // Unit Price (Base Amount)
+    doc.fontSize(9).font('Helvetica').fillColor(textDark).text(`Rs. ${booking.baseAmount.toLocaleString()}`, 310, rowY, { width: 85, align: 'right' });
 
-    boxY = currentY + 35;
-    // Row: Base Amount
-    doc.fontSize(9).font('Helvetica').fillColor(primaryColor).text('Booking Base Charges', 65, boxY);
-    doc.text(`Rs. ${booking.baseAmount.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-
-    // Row: Extra Charges
-    if (booking.extraCharges > 0) {
-      boxY += 20;
-      doc.text('Additional Person/Service Charges', 65, boxY);
-      doc.text(`Rs. ${booking.extraCharges.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-    }
-
-    // Row: Taxes (Dynamic Rate & Bifurcation)
-    if (booking.taxes > 0) {
-      boxY += 20;
-      if (booking.taxType === 'inter') {
-        // GST
-        doc.text(`GST @ ${appliedTaxRate}%`, 65, boxY);
-        doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-      } else if (booking.taxType === 'intra') {
-        // CGST + SGST (Split into two rows)
-        const halfTax = (booking.taxes / 2);
-        const halfRate = (appliedTaxRate / 2).toFixed(1);
-
-        doc.text(`CGST @ ${halfRate}%`, 65, boxY);
-        doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
-
-        boxY += 15;
-        doc.text(`SGST @ ${halfRate}%`, 65, boxY);
-        doc.text(`Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, boxY, { align: 'right', width: 90 });
-      } else {
-        doc.text('Taxes & Fees (GST)', 65, boxY);
-        doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-      }
-    }
-
-    // Row: Platform Fee
-    if (booking.platformFee !== undefined) {
-      boxY += 20;
-      doc.text('Platform Fees', 65, boxY);
-      doc.text(`Rs. ${booking.platformFee.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
-    }
-
-    // Divider
-    doc.moveTo(400, boxY + 15).lineTo(540, boxY + 15).stroke(borderColor);
+    // Tax
+    doc.text(`Rs. ${booking.taxes.toLocaleString()}`, 395, rowY, { width: 85, align: 'right' });
 
     // Total
-    boxY += 25;
-    doc.fontSize(11).font('Helvetica-Bold').text('TOTAL PAID', 65, boxY);
-    doc.fontSize(12).fillColor(accentColor).text(`Rs. ${booking.totalAmount.toLocaleString()}`, 450, boxY, { align: 'right', width: 90 });
+    doc.fontSize(9).font('Helvetica-Bold').fillColor(brandColor).text(`Rs. ${booking.totalAmount.toLocaleString()}`, 480, rowY, { width: 75, align: 'right' });
 
-    // --- 5. TERMS & SIGNATURE SECTION ---
-    currentY += 150;
+    // --- 4. TERMS & BREAKDOWN SIDE-BY-SIDE (Aligned with grid columns) ---
+    const bottomY = gridY + 18 + gridHeight;
+    const hasGstBifurcation = booking.taxType !== 'inter';
+    const numRows = 3 + (hasGstBifurcation ? 2 : 1) + (booking.platformFee !== undefined ? 1 : 0);
+    const rowHeight = 16;
+    const breakdownHeight = numRows * rowHeight;
 
-    // Terms & Conditions (Left)
-    doc.fontSize(9).font('Helvetica-Bold').fillColor(primaryColor).text('Terms & Conditions:', 50, currentY);
-    const terms = property.invoiceTerms || '1. All bookings are subject to property rules.\n2. Please carry a valid ID proof at the time of check-in.\n3. Standard check-in/out times must be followed.';
-    doc.fontSize(7).font('Helvetica').fillColor(secondaryColor).text(terms, 50, currentY + 15, { width: 300, lineGap: 2 });
+    // Terms and Conditions Box (Spans Columns 1, 2, 3: X = 40 to X = 395, width = 355)
+    doc.rect(40, bottomY, 355, breakdownHeight).stroke(gridBorderColor);
+    doc.rect(40, bottomY, 355, 14).fillAndStroke(brandColor, borderColor);
+    doc.fontSize(7).font('Helvetica-Bold').fillColor('#ffffff').text('TERMS & CONDITIONS', 48, bottomY + 4);
+    
+    const terms = property.invoiceTerms || '1. Present valid ID proof at check-in.\n2. Standard check-in/out times must be followed.\n3. Cancellation subject to property policy.';
+    doc.fontSize(7).font('Helvetica').fillColor(textGray).text(terms, 48, bottomY + 20, { width: 339, lineGap: 2.5 });
 
-    // Signature (Right)
-    const sigX = 400;
+    // Breakdown Table Rows (Labels span Col 4: X = 395, width = 85. Values span Col 5: X = 480, width = 75)
+    let currentDrawY = bottomY;
+    const drawBreakdownRow = (label, valStr, isDiscount = false) => {
+      doc.rect(395, currentDrawY, 85, rowHeight).fill(lightBg);
+      doc.rect(395, currentDrawY, 85, rowHeight).stroke(gridBorderColor);
+      doc.fontSize(7).font('Helvetica-Bold').fillColor(textGray).text(label, 395 + 8, currentDrawY + 5);
+
+      doc.rect(480, currentDrawY, 75, rowHeight).stroke(gridBorderColor);
+      doc.fontSize(8).font('Helvetica-Bold').fillColor(isDiscount ? '#059669' : textDark).text(valStr, 480, currentDrawY + 4, { width: 67, align: 'right' });
+      
+      currentDrawY += rowHeight;
+    };
+
+    const unitPriceTotal = booking.baseAmount + (booking.extraCharges || 0);
+    drawBreakdownRow('SUBTOTAL', `Rs. ${unitPriceTotal.toLocaleString()}`);
+    
+    const totalDiscount = booking.discount + (booking.prepaidDiscount || 0);
+    drawBreakdownRow('DISCOUNT', `Rs. ${totalDiscount.toLocaleString()}`, totalDiscount > 0);
+
+    // GST Bifurcation rows
+    if (booking.taxType === 'inter') {
+      drawBreakdownRow(`IGST (${appliedTaxRate}%)`, `Rs. ${booking.taxes.toLocaleString()}`);
+    } else {
+      const halfTax = (booking.taxes / 2);
+      const halfRate = (appliedTaxRate / 2).toFixed(1);
+      drawBreakdownRow(`CGST (${halfRate}%)`, `Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+      drawBreakdownRow(`SGST (${halfRate}%)`, `Rs. ${halfTax.toLocaleString(undefined, { minimumFractionDigits: 2 })}`);
+    }
+
+    if (booking.platformFee !== undefined) {
+      drawBreakdownRow('PLATFORM FEES', `Rs. ${booking.platformFee.toLocaleString()}`);
+    }
+
+    // Total Paid row (Large blue highlighted, aligned with borders)
+    const totalPaidY = bottomY + breakdownHeight;
+    const totalPaidHeight = 22;
+
+    doc.rect(40, totalPaidY, 355, totalPaidHeight).fill(totalBg);
+    doc.rect(40, totalPaidY, 355, totalPaidHeight).stroke(borderColor);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(brandColor).text('TOTAL PAID', 48, totalPaidY + 7);
+
+    doc.rect(395, totalPaidY, 160, totalPaidHeight).fill(totalBg);
+    doc.rect(395, totalPaidY, 160, totalPaidHeight).stroke(borderColor);
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(brandColor).text(`Rs. ${booking.totalAmount.toLocaleString()}`, 395, totalPaidY + 6, { width: 152, align: 'right' });
+
+    // --- 5. SIGNATURE SECTION ---
+    const sigY = totalPaidY + totalPaidHeight + 15;
+    const sigX = 405;
+    
     if (property.ownerSignature) {
       try {
-        // We attempt to add the image directly. PDFKit handles URLs.
-        doc.image(property.ownerSignature, sigX, currentY, { width: 100 });
+        doc.image(property.ownerSignature, sigX + 15, sigY, { width: 110, height: 40 });
       } catch (e) {
-        console.warn("Could not load signature image", e);
+        console.warn("Could not render signature image on PDF", e);
       }
     }
 
-    doc.fontSize(8).font('Helvetica-Bold').fillColor(primaryColor).text('Authorized Signatory', sigX, currentY + 60, { width: 100, align: 'center' });
-    doc.fontSize(7).font('Helvetica').text(hotelName, sigX, currentY + 72, { width: 100, align: 'center' });
+    const signLabelY = sigY + 45;
+    doc.moveTo(sigX, signLabelY).lineTo(sigX + 140, signLabelY).stroke(gridBorderColor);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(textDark).text('AUTHORIZED SIGNATORY', sigX, signLabelY + 5, { width: 140, align: 'center' });
+    doc.fontSize(7).font('Helvetica').fillColor(textGray).text(hotelName, sigX, signLabelY + 15, { width: 140, align: 'center' });
 
     // Footer Branding
-    doc.fontSize(7).font('Helvetica-Bold').fillColor(borderColor).text('Thank you for booking with NowStay.in', 50, 780, { align: 'center', width: 500 });
+    doc.fontSize(8).font('Helvetica-Bold').fillColor('#9ca3af').text('THANK YOU FOR BOOKING VIA NOWSTAY.IN', 40, 770, { align: 'center', width: 515 });
 
     doc.end();
 

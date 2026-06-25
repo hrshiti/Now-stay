@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { ShieldCheck, CheckCircle2, Crown, Zap, Star } from 'lucide-react';
 import subscriptionService from '../../../services/subscriptionService';
 import paymentService from '../../../services/paymentService';
 
 const PartnerSubscriptions = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
   const [mySub, setMySub] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +61,12 @@ const PartnerSubscriptions = () => {
           ...response
         });
         toast.success('Successfully subscribed! Your commission rates are updated.');
-        fetchData();
+        const redirectBack = searchParams.get('redirectBack');
+        if (redirectBack) {
+          navigate(redirectBack);
+        } else {
+          fetchData();
+        }
       } catch (err) {
         if (err.message !== 'Payment cancelled by user') {
           toast.error(err.response?.data?.message || 'Payment failed');
@@ -92,7 +100,7 @@ const PartnerSubscriptions = () => {
       ) : (
         <div className="bg-gray-100 p-6 rounded-2xl mb-10 border border-gray-200">
           <h3 className="font-bold text-gray-800 mb-2">No Active Subscription</h3>
-          <p className="text-gray-600">You are currently on the free default plan. Platform commission will be automatically deducted from your wallet for every booking.</p>
+          <p className="text-gray-600">You are currently on the free default plan. Booking commission will be automatically deducted from your wallet for every booking.</p>
         </div>
       )}
 

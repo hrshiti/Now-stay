@@ -3,7 +3,7 @@ import 'dotenv/config';
 export const PaymentConfig = {
   // Commission Settings
   adminCommissionRate: 10, // 10% commission on base amount
-  minCommission: 50, // Minimum commission per booking (₹50)
+  minCommission: 0, // No minimum commission floor (always calculates percentage)
   maxCommission: null, // No max limit
 
   // Razorpay Settings

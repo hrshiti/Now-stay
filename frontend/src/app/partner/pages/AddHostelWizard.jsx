@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
+import subscriptionService from '../../../services/subscriptionService';
+import SubscriptionOnboardingModal from '../components/SubscriptionOnboardingModal';
 // Compression removed - Cloudinary handles optimization
 import { CheckCircle, FileText, Mail, Home, Image, Bed, MapPin, Search, Plus, Trash2, ChevronLeft, ChevronRight, Upload, X, ArrowLeft, ArrowRight, BedDouble, Users, Wifi, Clock, Loader2, Camera, Eye, Shirt, Sparkles, Video, Shield } from 'lucide-react';
 
@@ -35,6 +37,32 @@ const AddHostelWizard = () => {
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+
+  const checkSubscriptionAndSubmit = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const statusData = await subscriptionService.getSubscriptionStatus();
+      const hasActive = statusData.hasActiveSubscription;
+
+      if (!hasActive) {
+        setShowOnboardingModal(true);
+      } else {
+        await submitAll();
+      }
+    } catch (err) {
+      console.error("Subscription onboarding check failed, proceeding directly", err);
+      await submitAll();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProceedWithCommission = async () => {
+    setShowOnboardingModal(false);
+    await submitAll();
+  };
   const [createdProperty, setCreatedProperty] = useState(null);
 
   const [nearbySearchQuery, setNearbySearchQuery] = useState('');
@@ -965,7 +993,7 @@ const AddHostelWizard = () => {
     else if (step === 6) nextFromRoomTypes();
     else if (step === 7) nextFromRules();
     else if (step === 8) nextFromDocuments();
-    else if (step === 9) submitAll();
+    else if (step === 9) checkSubscriptionAndSubmit();
   };
 
   const getStepTitle = () => {
@@ -2115,7 +2143,7 @@ const AddHostelWizard = () => {
 
 
             <button
-              onClick={step === 9 ? submitAll : handleNext}
+              onClick={step === 9 ? checkSubscriptionAndSubmit : handleNext}
               disabled={loading || isEditingSubItem || (step === 6 && roomTypes.length === 0)}
               className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-lg shadow-emerald-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
             >
@@ -2133,6 +2161,12 @@ const AddHostelWizard = () => {
         .btn-secondary { background: white; color: #374151; font-weight: 600; padding: 10px 16px; border-radius: 12px; border: 1px solid #e5e7eb; transition: all 0.1s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-secondary:hover { background: #f9fafb; border-color: #d1d5db; }
       `}</style>
+      <SubscriptionOnboardingModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onProceedWithCommission={handleProceedWithCommission}
+        redirectUrl={window.location.pathname}
+      />
     </div>
   );
 };

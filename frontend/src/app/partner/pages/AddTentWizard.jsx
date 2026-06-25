@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
+import subscriptionService from '../../../services/subscriptionService';
+import SubscriptionOnboardingModal from '../components/SubscriptionOnboardingModal';
 // Compression removed - Cloudinary handles optimization
 import {
   CheckCircle, FileText, Mail, Home, Image, Plus, Trash2, MapPin, Search,
@@ -58,6 +60,32 @@ const AddTentWizard = () => {
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+
+  const checkSubscriptionAndSubmit = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const statusData = await subscriptionService.getSubscriptionStatus();
+      const hasActive = statusData.hasActiveSubscription;
+
+      if (!hasActive) {
+        setShowOnboardingModal(true);
+      } else {
+        await submitAll();
+      }
+    } catch (err) {
+      console.error("Subscription onboarding check failed, proceeding directly", err);
+      await submitAll();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProceedWithCommission = async () => {
+    setShowOnboardingModal(false);
+    await submitAll();
+  };
   const [createdProperty, setCreatedProperty] = useState(null);
 
   // Maps / Location State
@@ -1062,7 +1090,7 @@ const AddTentWizard = () => {
         nextFromDocs();
         break;
       case 9:
-        submitAll();
+        checkSubscriptionAndSubmit();
         break;
       default:
         break;
@@ -2270,6 +2298,13 @@ const AddTentWizard = () => {
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
+
+      <SubscriptionOnboardingModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onProceedWithCommission={handleProceedWithCommission}
+        redirectUrl={window.location.pathname}
+      />
     </div>
   );
 };

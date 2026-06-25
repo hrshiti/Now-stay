@@ -167,7 +167,7 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                     </tbody>
                     <tfoot className="text-[11px]">
                         <tr>
-                            <td colSpan="3" rowSpan="5" className="border p-4 align-top" style={{ borderColor: '#1e3a8a' }}>
+                            <td colSpan="3" rowSpan={isInterState ? 4 : 5} className="border p-4 align-top" style={{ borderColor: '#1e3a8a' }}>
                                 <h4
                                     className="px-3 py-0.5 text-[9px] font-bold uppercase tracking-widest mb-3 inline-block"
                                     style={{ backgroundColor: '#1e3a8a', color: '#ffffff' }}

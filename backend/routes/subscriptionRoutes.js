@@ -8,7 +8,8 @@ import {
   getActivePlans,
   getMySubscription,
   buySubscription,
-  createSubscriptionOrder
+  createSubscriptionOrder,
+  getSubscriptionStatus
 } from '../controllers/subscriptionController.js';
 import { protect, authorizedRoles } from '../middlewares/authMiddleware.js';
 
@@ -24,6 +25,7 @@ router.get('/admin/partner-subscriptions', protect, authorizedRoles('admin', 'su
 // --- PARTNER ROUTES ---
 router.get('/plans', protect, authorizedRoles('partner'), getActivePlans);
 router.get('/my-subscription', protect, authorizedRoles('partner'), getMySubscription);
+router.get('/status', protect, authorizedRoles('partner'), getSubscriptionStatus);
 router.post('/create-order', protect, authorizedRoles('partner'), createSubscriptionOrder);
 router.post('/buy-subscription', protect, authorizedRoles('partner'), buySubscription);
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { propertyService, hotelService } from '../../../services/apiService';
+import subscriptionService from '../../../services/subscriptionService';
+import SubscriptionOnboardingModal from '../components/SubscriptionOnboardingModal';
 // Compression removed - Cloudinary handles optimization
 import { CheckCircle, FileText, Mail, Home, Image, Plus, Trash2, MapPin, Search, BedDouble, Wifi, Snowflake, Coffee, ShowerHead, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Upload, X, Clock, Loader2, Camera, Eye } from 'lucide-react';
 
@@ -29,6 +31,32 @@ const AddVillaWizard = () => {
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+
+  const checkSubscriptionAndSubmit = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const statusData = await subscriptionService.getSubscriptionStatus();
+      const hasActive = statusData.hasActiveSubscription;
+
+      if (!hasActive) {
+        setShowOnboardingModal(true);
+      } else {
+        await submitAll();
+      }
+    } catch (err) {
+      console.error("Subscription onboarding check failed, proceeding directly", err);
+      await submitAll();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProceedWithCommission = async () => {
+    setShowOnboardingModal(false);
+    await submitAll();
+  };
   const [createdProperty, setCreatedProperty] = useState(null);
   const [nearbySearchQuery, setNearbySearchQuery] = useState('');
   const [nearbyResults, setNearbyResults] = useState([]);
@@ -979,7 +1007,7 @@ const AddVillaWizard = () => {
     else if (step === 6) nextFromRoomTypes();
     else if (step === 7) nextFromRules();
     else if (step === 8) nextFromDocuments();
-    else if (step === 9) submitAll();
+    else if (step === 9) checkSubscriptionAndSubmit();
   };
 
   const getStepTitle = () => {
@@ -2122,7 +2150,7 @@ const AddVillaWizard = () => {
 
 
             <button
-              onClick={step === 9 ? submitAll : handleNext}
+              onClick={step === 9 ? checkSubscriptionAndSubmit : handleNext}
               disabled={
                 loading ||
                 isEditingSubItem ||
@@ -2144,6 +2172,12 @@ const AddVillaWizard = () => {
       )}
 
 
+      <SubscriptionOnboardingModal
+        isOpen={showOnboardingModal}
+        onClose={() => setShowOnboardingModal(false)}
+        onProceedWithCommission={handleProceedWithCommission}
+        redirectUrl={window.location.pathname}
+      />
     </div>
   );
 };

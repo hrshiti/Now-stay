@@ -287,3 +287,28 @@ export const buySubscription = async (req, res) => {
     res.status(500).json({ message: 'Server error buying subscription' });
   }
 };
+
+export const getSubscriptionStatus = async (req, res) => {
+  try {
+    const activeSub = await PartnerSubscription.findOne({
+      partnerId: req.user._id,
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gt: new Date() }
+    }).populate('planId');
+
+    const totalSubCount = await PartnerSubscription.countDocuments({
+      partnerId: req.user._id
+    });
+
+    res.status(200).json({
+      success: true,
+      hasActiveSubscription: !!activeSub,
+      hasExpiredSubscription: !activeSub && totalSubCount > 0,
+      activeSubscription: activeSub
+    });
+  } catch (error) {
+    console.error('Get Subscription Status Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

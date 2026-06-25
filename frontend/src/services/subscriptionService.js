@@ -32,6 +32,10 @@ const subscriptionService = {
     const response = await apiClient.get('/subscriptions/my-subscription');
     return response.data;
   },
+  getSubscriptionStatus: async () => {
+    const response = await apiClient.get('/subscriptions/status');
+    return response.data;
+  },
   buySubscription: async (data) => {
     // data must have { planId, paymentMethod, paymentId, ...razorpayFields }
     const response = await apiClient.post('/subscriptions/buy-subscription', data);

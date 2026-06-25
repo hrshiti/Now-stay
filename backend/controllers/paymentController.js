@@ -13,6 +13,7 @@ import notificationService from '../services/notificationService.js';
 import smsService from '../utils/smsService.js';
 import whatsappService from '../utils/whatsappService.js';
 import referralService from '../services/referralService.js';
+import { generateBookingId } from './bookingController.js';
 
 import { getRazorpayInstance } from '../utils/razorpay.js';
 
@@ -132,7 +133,7 @@ export const verifyPayment = async (req, res) => {
       const property = await Property.findById(notes.propertyId).select('propertyType');
       const propertyType = property ? property.propertyType : 'Hotel';
 
-      const newBookingId = 'BK' + Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const newBookingId = await generateBookingId();
 
       booking = await Booking.create({
         userId: notes.userId,
@@ -247,7 +248,7 @@ export const verifyPayment = async (req, res) => {
   
             // B. Debit Partner ONLY the Commission
             if (commission > 0) {
-              await partnerWallet.debit(commission, `Platform Commission for Booking #${booking.bookingId}`, booking.bookingId, 'commission_deduction');
+              await partnerWallet.debit(commission, `Booking Commission for Booking #${booking.bookingId}`, booking.bookingId, 'commission_deduction');
               console.log(`[Payment] Deducted Commission ₹${commission} from Partner ${partnerId}`);
             }
           }
