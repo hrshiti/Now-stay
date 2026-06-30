@@ -7,13 +7,16 @@ import {
   deleteNotifications,
   updateFcmToken,
   deletePartnerAccount,
-  updateNotificationPreference
+  updateNotificationPreference,
+  getPartnerReports
 } from '../controllers/partnerController.js';
 
 const router = express.Router();
 
 router.use(protect);
 router.use(authorizedRoles('partner', 'admin'));
+
+router.get('/reports', getPartnerReports);
 router.delete('/profile', deletePartnerAccount);
 
 // Notification Routes

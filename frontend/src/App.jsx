@@ -118,6 +118,7 @@ const PartnerBankDetails = React.lazy(() => import('./app/partner/pages/PartnerB
 const BlogManager = React.lazy(() => import('./pages/manager/BlogManager'));
 const BlogDetail = React.lazy(() => import('./pages/user/BlogDetail'));
 const PartnerSubscriptions = React.lazy(() => import('./app/partner/pages/PartnerSubscriptions'));
+const PartnerReports = React.lazy(() => import('./app/partner/pages/PartnerReports'));
 
 // Lazy Imports - Layouts
 const HotelLayout = React.lazy(() => import('./layouts/HotelLayout'));
@@ -631,6 +632,7 @@ function App() {
                 <Route path="bank-details" element={<PartnerBankDetails />} />
                 <Route path="profile" element={<PartnerProfile />} />
                 <Route path="subscriptions" element={<PartnerSubscriptions />} />
+                <Route path="reports" element={<PartnerReports />} />
               </Route>
 
               {/* Public Partner Pages — accessible without login */}

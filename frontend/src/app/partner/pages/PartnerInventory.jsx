@@ -489,12 +489,13 @@ const PartnerInventory = () => {
                                                             // If current end date is before minimum, update it
                                                             const endDate = new Date(newEnd);
                                                             if (endDate <= startDate) {
-                                                                newEnd = minEndStr;
+                                                                 newEnd = minEndStr;
                                                             }
                                                         }
                                                         setFormData({ ...formData, startDate: newStart, endDate: newEnd });
                                                     }}
-                                                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 font-medium text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                                    onClick={(e) => e.target.showPicker?.()}
+                                                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 font-medium text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
                                                 />
                                             </div>
                                             <div className="relative">
@@ -529,7 +530,8 @@ const PartnerInventory = () => {
                                                         }
                                                         setFormData({ ...formData, endDate: newEnd });
                                                     }}
-                                                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 font-medium text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                                                    onClick={(e) => e.target.showPicker?.()}
+                                                    className="w-full h-12 px-4 rounded-xl border-2 border-gray-200 font-medium text-gray-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all cursor-pointer"
                                                 />
                                             </div>
                                         </div>

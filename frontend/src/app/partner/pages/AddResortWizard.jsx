@@ -1205,7 +1205,7 @@ const AddResortWizard = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-gray-500">Suitability</label>
+                  <label className="text-xs font-semibold text-gray-500">Suitability (Optional)</label>
                   <select
                     className="input w-full appearance-none"
                     value={propertyForm.suitability}

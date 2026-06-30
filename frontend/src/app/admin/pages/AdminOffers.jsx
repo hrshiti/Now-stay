@@ -484,9 +484,10 @@ const AdminOffers = () => {
                         <input
                           required
                           type="date"
-                          className="w-full bg-gray-50 border-2 border-transparent focus:border-accent focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold text-surface transition-all outline-none"
+                          className="w-full bg-gray-50 border-2 border-transparent focus:border-accent focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold text-surface transition-all outline-none cursor-pointer"
                           value={formData.startDate}
                           onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                          onClick={(e) => e.target.showPicker?.()}
                         />
                       </div>
                       <div>
@@ -494,9 +495,10 @@ const AdminOffers = () => {
                         <input
                           required
                           type="date"
-                          className="w-full bg-gray-50 border-2 border-transparent focus:border-accent focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold text-surface transition-all outline-none"
+                          className="w-full bg-gray-50 border-2 border-transparent focus:border-accent focus:bg-white rounded-2xl px-5 py-3 text-sm font-bold text-surface transition-all outline-none cursor-pointer"
                           value={formData.endDate}
                           onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                          onClick={(e) => e.target.showPicker?.()}
                         />
                       </div>
                     </div>

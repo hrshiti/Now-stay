@@ -1105,7 +1105,7 @@ const AddHotelWizard = () => {
                 )}
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 mb-1 block">Suitability</label>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Suitability (Optional)</label>
                 <select
                   className="input w-full appearance-none"
                   value={propertyForm.suitability}

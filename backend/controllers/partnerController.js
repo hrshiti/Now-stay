@@ -1,6 +1,9 @@
 import Notification from '../models/Notification.js';
 import Partner from '../models/Partner.js';
 import Property from '../models/Property.js';
+import AvailabilityLedger from '../models/AvailabilityLedger.js';
+import Booking from '../models/Booking.js';
+import RoomType from '../models/RoomType.js';
 
 /**
  * @desc    Update FCM Token for Partner
@@ -211,5 +214,230 @@ export const updateNotificationPreference = async (req, res) => {
     res.json({ success: true, enabled: partner.pushNotificationsEnabled });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Get Partner Reports & Analytics
+ * @route   GET /api/partners/reports
+ * @access  Private (Partner / Admin)
+ */
+export const getPartnerReports = async (req, res) => {
+  try {
+    const { propertyId, startDate, endDate } = req.query;
+
+    // Parse Date Range (defaults to current month)
+    let start = startDate ? new Date(startDate) : new Date();
+    if (!startDate) {
+      start.setDate(1); // First day of current month
+    }
+    start.setHours(0, 0, 0, 0);
+
+    let end = endDate ? new Date(endDate) : new Date();
+    if (!endDate) {
+      // Last day of current month
+      end = new Date(start.getFullYear(), start.getMonth() + 1, 0);
+    }
+    end.setHours(23, 59, 59, 999);
+
+    if (start > end) {
+      return res.status(400).json({ success: false, message: 'Invalid date range' });
+    }
+
+    // 1. Get properties
+    let propertyQuery = { partnerId: req.user._id };
+    if (propertyId) {
+      propertyQuery._id = propertyId;
+    }
+    const properties = await Property.find(propertyQuery);
+    if (!properties || properties.length === 0) {
+      return res.json({
+        success: true,
+        stats: {
+          platformNights: 0,
+          walkInNights: 0,
+          externalNights: 0,
+          blockedNights: 0,
+          vacantNights: 0,
+          totalCapacity: 0,
+          blankDays: 0,
+          occupiedDays: 0,
+          consecutiveStreak: 0,
+          earnings: 0,
+          revenueBreakdown: { gross: 0, payout: 0, commission: 0, tax: 0, platformFee: 0 }
+        },
+        dailyReport: []
+      });
+    }
+
+    const propertyIds = properties.map(p => p._id);
+
+    // 2. Fetch RoomTypes to compute total inventory per day
+    const roomTypes = await RoomType.find({ propertyId: { $in: propertyIds }, isActive: true });
+
+    // Calculate total inventory capacity per property
+    const propertyInventoryMap = {};
+    properties.forEach(p => {
+      let totalInv = 0;
+      roomTypes.forEach(rt => {
+        if (String(rt.propertyId) === String(p._id)) {
+          let count = Number(rt.totalInventory || 0);
+          if (rt.inventoryType === 'bed') {
+            count = count * Number(rt.bedsPerRoom || 1);
+          }
+          totalInv += count;
+        }
+      });
+      propertyInventoryMap[String(p._id)] = totalInv;
+    });
+
+    const totalPartnerCapacityPerDay = Object.values(propertyInventoryMap).reduce((sum, cap) => sum + cap, 0);
+
+    // 3. Fetch Ledger entries in the range
+    const ledgerEntries = await AvailabilityLedger.find({
+      propertyId: { $in: propertyIds },
+      startDate: { $lt: end },
+      endDate: { $gt: start }
+    });
+
+    // 4. Generate daily calendar and stats
+    const dailyReport = [];
+    const daysCount = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+
+    let totalPlatformNights = 0;
+    let totalWalkInNights = 0;
+    let totalExternalNights = 0;
+    let totalBlockedNights = 0;
+    let totalVacantNights = 0;
+    let uniqueBlankDays = 0;
+    let uniqueOccupiedDays = 0;
+
+    // Day-by-day loop
+    const occupancyStreakList = []; // Boolean array of whether a day was occupied
+
+    for (let i = 0; i < daysCount; i++) {
+      const currentDayStart = new Date(start.getTime() + i * 24 * 60 * 60 * 1000);
+      currentDayStart.setHours(0, 0, 0, 0);
+      const currentDayEnd = new Date(currentDayStart.getTime() + 24 * 60 * 60 * 1000);
+
+      const dayStr = currentDayStart.toISOString().split('T')[0];
+
+      let dayPlatformUnits = 0;
+      let dayWalkInUnits = 0;
+      let dayExternalUnits = 0;
+      let dayManualBlockUnits = 0;
+
+      // Find matching ledger entries for this day
+      ledgerEntries.forEach(entry => {
+        const entryStart = new Date(entry.startDate);
+        const entryEnd = new Date(entry.endDate);
+
+        if (entryStart < currentDayEnd && entryEnd > currentDayStart) {
+          const units = entry.units || 0;
+          if (entry.source === 'platform') {
+            dayPlatformUnits += units;
+          } else if (entry.source === 'walk_in') {
+            dayWalkInUnits += units;
+          } else if (entry.source === 'external') {
+            dayExternalUnits += units;
+          } else if (entry.source === 'manual_block') {
+            dayManualBlockUnits += units;
+          }
+        }
+      });
+
+      const totalBlockedOnDay = dayPlatformUnits + dayWalkInUnits + dayExternalUnits + dayManualBlockUnits;
+      const totalCapacityOnDay = totalPartnerCapacityPerDay;
+      const vacantUnitsOnDay = Math.max(0, totalCapacityOnDay - totalBlockedOnDay);
+
+      const isBlank = totalBlockedOnDay === 0;
+      const isOccupied = totalBlockedOnDay > 0;
+
+      if (isBlank) uniqueBlankDays++;
+      if (isOccupied) uniqueOccupiedDays++;
+      occupancyStreakList.push(isOccupied);
+
+      totalPlatformNights += dayPlatformUnits;
+      totalWalkInNights += dayWalkInUnits;
+      totalExternalNights += dayExternalUnits;
+      totalBlockedNights += dayManualBlockUnits;
+      totalVacantNights += vacantUnitsOnDay;
+
+      dailyReport.push({
+        date: dayStr,
+        platformUnits: dayPlatformUnits,
+        walkInUnits: dayWalkInUnits,
+        externalUnits: dayExternalUnits,
+        manualBlockUnits: dayManualBlockUnits,
+        vacantUnits: vacantUnitsOnDay,
+        totalCapacity: totalCapacityOnDay,
+        isBlank,
+        isOccupied
+      });
+    }
+
+    // Calculate maximum consecutive streak
+    let maxStreak = 0;
+    let currentStreak = 0;
+    occupancyStreakList.forEach(occupied => {
+      if (occupied) {
+        currentStreak++;
+        if (currentStreak > maxStreak) {
+          maxStreak = currentStreak;
+        }
+      } else {
+        currentStreak = 0;
+      }
+    });
+
+    // 5. Fetch Bookings and calculate earnings
+    const bookings = await Booking.find({
+      propertyId: { $in: propertyIds },
+      bookingStatus: { $in: ['confirmed', 'checked_in', 'checked_out', 'completed'] },
+      checkInDate: { $lt: end },
+      checkOutDate: { $gt: start }
+    });
+
+    let totalRevenue = 0;
+    let totalPayout = 0;
+    let totalCommission = 0;
+    let totalTax = 0;
+    let totalPlatformFee = 0;
+
+    bookings.forEach(b => {
+      totalRevenue += b.totalAmount || 0;
+      totalPayout += b.partnerPayout || 0;
+      totalCommission += b.adminCommission || 0;
+      totalTax += b.taxes || 0;
+      totalPlatformFee += b.platformFee || 0;
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        platformNights: totalPlatformNights,
+        walkInNights: totalWalkInNights,
+        externalNights: totalExternalNights,
+        blockedNights: totalBlockedNights,
+        vacantNights: totalVacantNights,
+        totalCapacity: totalPartnerCapacityPerDay * daysCount,
+        blankDays: uniqueBlankDays,
+        occupiedDays: uniqueOccupiedDays,
+        consecutiveStreak: maxStreak,
+        earnings: totalPayout,
+        revenueBreakdown: {
+          gross: totalRevenue,
+          payout: totalPayout,
+          commission: totalCommission,
+          tax: totalTax,
+          platformFee: totalPlatformFee
+        }
+      },
+      dailyReport
+    });
+
+  } catch (error) {
+    console.error('Get Partner Reports Error:', error);
+    res.status(500).json({ success: false, message: 'Server error generating reports' });
   }
 };

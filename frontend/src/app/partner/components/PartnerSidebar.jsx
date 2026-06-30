@@ -6,7 +6,7 @@ import {
     CreditCard, History, Shield,
     FileText, HelpCircle, LogOut,
     LayoutDashboard,
-    ChevronRight, Wallet, Bell, Settings, Edit3, Info, Phone, Calendar, ShieldCheck
+    ChevronRight, Wallet, Bell, Settings, Edit3, Info, Phone, Calendar, ShieldCheck, TrendingUp
 } from 'lucide-react';
 import usePartnerStore from '../store/partnerStore';
 import NowStayLogo from '../../../components/ui/NowStayLogo';
@@ -66,7 +66,8 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
             'Booking History', 
             'My Properties', 
             'Manage Inventory', 
-            'Reviews & Ratings'
+            'Reviews & Ratings',
+            'Reports & Analytics'
         ].includes(label);
 
         return (
@@ -100,6 +101,7 @@ const PartnerSidebar = ({ isOpen, onClose }) => {
             items: [
                 { icon: ShieldCheck, label: 'My Subscription', path: '/hotel/subscriptions' },
                 { icon: Wallet, label: 'Wallet', path: '/hotel/wallet' },
+                { icon: TrendingUp, label: 'Reports & Analytics', path: '/hotel/reports' },
                 { icon: History, label: 'Booking History', path: '/hotel/bookings' },
             ]
         },

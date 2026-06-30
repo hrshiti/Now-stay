@@ -539,6 +539,14 @@ export const hotelService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+  getPartnerReports: async (params = {}) => {
+    try {
+      const response = await api.get('/partners/reports', { params });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
 

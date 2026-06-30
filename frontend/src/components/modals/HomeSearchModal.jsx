@@ -39,6 +39,21 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
         };
     }, [isOpen]);
 
+    const formatDisplayDate = (dateStr, placeholder) => {
+        if (!dateStr) return placeholder;
+        try {
+            const dateObj = new Date(dateStr);
+            if (isNaN(dateObj.getTime())) return placeholder;
+            return dateObj.toLocaleDateString('en-US', {
+                weekday: 'short',
+                day: 'numeric',
+                month: 'short',
+            });
+        } catch (e) {
+            return placeholder;
+        }
+    };
+
     const handleSearch = () => {
         // Save to sessionStorage
         sessionStorage.setItem('homeSearchData', JSON.stringify({
@@ -101,10 +116,11 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1 block pl-1">Check-in</label>
-                                    <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#10B981]">
-                                            <Calendar size={18} />
-                                        </div>
+                                    <div className="relative w-full px-3 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm cursor-pointer flex items-center gap-2.5 hover:border-gray-200 transition-colors">
+                                        <Calendar size={18} className="text-[#10B981] shrink-0" />
+                                        <span className={`text-sm ${dates.checkIn ? 'text-gray-800 font-bold' : 'text-gray-400 font-medium'}`}>
+                                            {formatDisplayDate(dates.checkIn, "Select date")}
+                                        </span>
                                         <input
                                             type="date"
                                             value={dates.checkIn}
@@ -118,22 +134,25 @@ const HomeSearchModal = ({ isOpen, onClose }) => {
                                                 }
                                                 setDates(updatedDates);
                                             }}
-                                            className="w-full pl-9 pr-3 py-3 bg-white border border-gray-100 outline-none text-gray-800 font-bold rounded-2xl shadow-sm text-sm"
+                                            onClick={(e) => e.target.showPicker?.()}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                         />
                                     </div>
                                 </div>
                                 <div>
                                     <label className="text-[10px] uppercase font-bold text-gray-500 tracking-wider mb-1 block pl-1">Check-out</label>
-                                    <div className="relative">
-                                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#10B981]">
-                                            <Calendar size={18} />
-                                        </div>
+                                    <div className="relative w-full px-3 py-3 bg-white border border-gray-100 rounded-2xl shadow-sm cursor-pointer flex items-center gap-2.5 hover:border-gray-200 transition-colors">
+                                        <Calendar size={18} className="text-[#10B981] shrink-0" />
+                                        <span className={`text-sm ${dates.checkOut ? 'text-gray-800 font-bold' : 'text-gray-400 font-medium'}`}>
+                                            {formatDisplayDate(dates.checkOut, "Select date")}
+                                        </span>
                                         <input
                                             type="date"
                                             value={dates.checkOut}
                                             min={dates.checkIn ? getLocalDateString(new Date(new Date(dates.checkIn).getTime() + 86400000)) : getLocalDateString(new Date(new Date().getTime() + 86400000))}
                                             onChange={(e) => setDates({ ...dates, checkOut: e.target.value })}
-                                            className="w-full pl-9 pr-3 py-3 bg-white border border-gray-100 outline-none text-gray-800 font-bold rounded-2xl shadow-sm text-sm"
+                                            onClick={(e) => e.target.showPicker?.()}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                                         />
                                     </div>
                                 </div>
