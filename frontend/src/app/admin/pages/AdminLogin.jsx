@@ -27,7 +27,8 @@ const AdminLogin = () => {
     useEffect(() => {
         const checkExistingAuth = async () => {
             await checkAuth();
-            if (localStorage.getItem('adminToken')) {
+            // Check actual authentication status instead of just token presence
+            if (useAdminStore.getState().isAuthenticated) {
                 navigate('/admin/dashboard');
             }
         };

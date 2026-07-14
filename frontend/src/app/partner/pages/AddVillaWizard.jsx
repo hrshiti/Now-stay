@@ -32,12 +32,13 @@ const AddVillaWizard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const activePropertyType = new URLSearchParams(location.search).get('type') || 'villa';
 
   const checkSubscriptionAndSubmit = async () => {
     setLoading(true);
     setError('');
     try {
-      const statusData = await subscriptionService.getSubscriptionStatus();
+      const statusData = await subscriptionService.getSubscriptionStatus(activePropertyType);
       const hasActive = statusData.hasActiveSubscription;
 
       if (!hasActive) {
@@ -2177,6 +2178,7 @@ const AddVillaWizard = () => {
         onClose={() => setShowOnboardingModal(false)}
         onProceedWithCommission={handleProceedWithCommission}
         redirectUrl={window.location.pathname}
+        propertyType={activePropertyType}
       />
     </div>
   );

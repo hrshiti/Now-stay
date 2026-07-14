@@ -26,24 +26,8 @@ const HeroSection = () => {
         const fetchWallet = async () => {
             try {
                 const user = JSON.parse(localStorage.getItem('user'));
-                if (user) {
-                    const walletData = await walletService.getWallet();
-                    if (walletData.success && walletData.wallet) {
-                        setWalletBalance(walletData.wallet.balance);
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to fetch wallet', error);
-            }
-        };
-        fetchWallet();
-    }, []);
-
-    useEffect(() => {
-        const fetchWallet = async () => {
-            try {
-                const user = JSON.parse(localStorage.getItem('user'));
-                if (user) {
+                const token = localStorage.getItem('token');
+                if (user && token) {
                     const walletData = await walletService.getWallet();
                     if (walletData.success && walletData.wallet) {
                         setWalletBalance(walletData.wallet.balance);

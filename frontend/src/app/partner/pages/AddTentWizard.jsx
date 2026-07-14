@@ -61,12 +61,13 @@ const AddTentWizard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const activePropertyType = new URLSearchParams(location.search).get('type') || 'tent';
 
   const checkSubscriptionAndSubmit = async () => {
     setLoading(true);
     setError('');
     try {
-      const statusData = await subscriptionService.getSubscriptionStatus();
+      const statusData = await subscriptionService.getSubscriptionStatus(activePropertyType);
       const hasActive = statusData.hasActiveSubscription;
 
       if (!hasActive) {
@@ -2304,6 +2305,7 @@ const AddTentWizard = () => {
         onClose={() => setShowOnboardingModal(false)}
         onProceedWithCommission={handleProceedWithCommission}
         redirectUrl={window.location.pathname}
+        propertyType={activePropertyType}
       />
     </div>
   );
