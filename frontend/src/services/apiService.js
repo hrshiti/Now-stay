@@ -1,7 +1,16 @@
 import axios from 'axios';
 
 // Base URL configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const getApiUrl = () => {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (isLocal) {
+    return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  }
+  // Production URL (HTTPS) to prevent Mixed Content security block
+  return 'https://nowstay.in/api';
+};
+
+const API_URL = getApiUrl();
 
 export const api = axios.create({
   baseURL: API_URL,
