@@ -365,10 +365,10 @@ export const createBooking = async (req, res) => {
       console.warn("Could not check subscription:", err.message);
     }
 
-    if (activeSub && activeSub.planId) {
-      // Subscribed Partner -> use Plan's commission (typically 0%)
-      appliedCommissionRate = activeSub.planId.commissionRate;
-      adminCommission = Math.round((taxableAmount * appliedCommissionRate) / 100);
+    if (activeSub) {
+      // Subscribed Partner -> 0% commission
+      appliedCommissionRate = 0;
+      adminCommission = 0;
     } else {
       // Non-Subscribed Partner -> Standard deduction
       adminCommission = Math.round((taxableAmount * commissionRate) / 100);

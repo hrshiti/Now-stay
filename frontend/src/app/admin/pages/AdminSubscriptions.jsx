@@ -18,8 +18,7 @@ const AdminSubscriptions = () => {
     name: '',
     description: '',
     price: '',
-    durationInMonths: '',
-    commissionRate: ''
+    durationInMonths: ''
   });
   const [editId, setEditId] = useState(null);
 
@@ -75,9 +74,6 @@ const AdminSubscriptions = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.commissionRate < 0 || formData.commissionRate > 100) {
-      return toast.error('Commission rate must be between 0 and 100');
-    }
     if (formData.price < 0) {
       return toast.error('Price cannot be negative');
     }
@@ -85,7 +81,7 @@ const AdminSubscriptions = () => {
       ...formData,
       price: Number(formData.price || 0),
       durationInMonths: Number(formData.durationInMonths || 1),
-      commissionRate: Number(formData.commissionRate || 0)
+      commissionRate: 0
     };
 
     try {
@@ -109,8 +105,7 @@ const AdminSubscriptions = () => {
       name: plan.name,
       description: plan.description,
       price: Number(plan.price) === 0 ? '' : plan.price,
-      durationInMonths: Number(plan.durationInMonths) === 0 ? '' : plan.durationInMonths,
-      commissionRate: Number(plan.commissionRate) === 0 ? '' : plan.commissionRate
+      durationInMonths: Number(plan.durationInMonths) === 0 ? '' : plan.durationInMonths
     });
     setShowModal(true);
   };
@@ -172,7 +167,7 @@ const AdminSubscriptions = () => {
           <button
             onClick={() => {
               setEditId(null);
-              setFormData({ name: '', description: '', price: '', durationInMonths: '', commissionRate: '' });
+              setFormData({ name: '', description: '', price: '', durationInMonths: '' });
               setShowModal(true);
             }}
             className="bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors"
@@ -210,10 +205,6 @@ const AdminSubscriptions = () => {
               </div>
 
               <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <CheckCircle size={16} className="text-green-500" />
-                  <span>{plan.commissionRate}% Commission Rate</span>
-                </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Clock size={16} className="text-blue-500" />
                   <span>{plan.durationInMonths} Months Validity</span>
@@ -315,7 +306,7 @@ const AdminSubscriptions = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="font-medium text-gray-900">{sub.planId?.name || 'Deleted Plan'}</div>
-                          <div className="text-xs text-gray-500">Rate: {sub.commissionRate}%</div>
+                          <div className="text-xs text-gray-500">Rate: 0%</div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
                           <div className="flex items-center gap-1.5">
@@ -396,21 +387,7 @@ const AdminSubscriptions = () => {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Commission Rate (%)</label>
-                <input
-                  type="number"
-                  name="commissionRate"
-                  min="0"
-                  max="100"
-                  value={formData.commissionRate}
-                  onChange={handleInputChange}
-                  onFocus={(e) => e.target.select()}
-                  className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all font-bold"
-                  required
-                />
-                <p className="text-[10px] text-gray-400 font-medium mt-2 px-1">Percentage deducted from booking amount (0-100%)</p>
-              </div>
+
               
               <div className="flex gap-3 pt-6">
                 <button

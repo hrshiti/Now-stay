@@ -93,7 +93,6 @@ const PartnerSubscriptions = () => {
           <h2 className="text-lg font-medium opacity-90 mb-1">Active Plan</h2>
           <div className="text-4xl font-black mb-4">{mySub.planId.name}</div>
           <div className="space-y-2">
-            <p>Commission on Bookings: <strong>{mySub.planId.commissionRate}%</strong></p>
             <p>Valid Until: <strong>{new Date(mySub.endDate).toLocaleDateString()}</strong></p>
           </div>
         </div>
@@ -108,9 +107,7 @@ const PartnerSubscriptions = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan, index) => (
           <div key={plan._id} className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden relative flex flex-col hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            {plan.commissionRate === 0 && (
-              <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-black px-3 py-1 absolute top-0 right-0 rounded-bl-xl shadow-sm tracking-wider uppercase">PREMIUM</div>
-            )}
+             <div className="bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[9px] font-black px-3 py-1 absolute top-0 right-0 rounded-bl-xl shadow-sm tracking-wider uppercase">PREMIUM</div>
             <div className="p-6 pb-4 flex-1">
               <div className="mb-4 flex items-center justify-between">
                 <div className={`p-2.5 rounded-xl ${index === 0 ? 'bg-blue-50 text-blue-600' : index === 1 ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}>
@@ -126,10 +123,6 @@ const PartnerSubscriptions = () => {
               </div>
 
               <ul className="space-y-2.5 mb-2">
-                <li className="flex items-center gap-2.5 text-xs font-bold text-gray-600">
-                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
-                  <span>{plan.commissionRate}% Commission</span>
-                </li>
                 <li className="flex items-center gap-2.5 text-xs font-bold text-gray-600">
                   <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
                   <span>Verified Partner Badge</span>
