@@ -65,7 +65,7 @@ export const sendOtp = async (req, res) => {
 
     // FOR LOGIN: Check if user exists & is not blocked BEFORE sending OTP
     if (type === 'login') {
-      user = await Model.findOne({ phone });
+      user = await Model.findOne({ phone }).maxTimeMS(8000);
       if (!user) {
         if (role === 'partner') {
           return res.status(404).json({ message: 'Partner account not found. Please register first.' });
@@ -315,16 +315,17 @@ export const verifyOtp = async (req, res) => {
   try {
     // ... (existing verification logic)
     const { phone, otp, name, email, role = 'user', referralCode } = req.body;
+    console.log(`[verifyOtp] Called - phone: ${phone}, role: ${role}`);
 
     // ... (logic to verify OTP)
     // Select Model based on Role
     let Model = role === 'partner' ? Partner : User;
 
     // 1. Find User (if any)
-    let user = await Model.findOne({ phone }).select('+otp +otpExpires');
+    let user = await Model.findOne({ phone }).select('+otp +otpExpires').maxTimeMS(8000);
 
     // 2. Find registration-flow OTP Record (if any)
-    const otpRecord = await Otp.findOne({ phone });
+    const otpRecord = await Otp.findOne({ phone }).maxTimeMS(8000);
 
     let isRegistration = false;
     let verified = false;
