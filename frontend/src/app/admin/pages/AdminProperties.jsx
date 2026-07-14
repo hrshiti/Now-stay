@@ -256,6 +256,7 @@ const AdminProperties = () => {
                             <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider text-gray-500 font-bold">
                                 <th className="p-4">Property Name</th>
                                 <th className="p-4">Type</th>
+                                <th className="p-4">Pricing Model</th>
                                 <th className="p-4">Owner</th>
                                 <th className="p-4">Status</th>
                                 <th className="p-4">Suitability</th>
@@ -266,7 +267,7 @@ const AdminProperties = () => {
                             {loading ? (
                                 [1, 2, 3, 4, 5].map(i => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan="6" className="p-4"><div className="h-10 bg-gray-50 rounded-lg"></div></td>
+                                        <td colSpan="7" className="p-4"><div className="h-10 bg-gray-50 rounded-lg"></div></td>
                                     </tr>
                                 ))
                             ) : (
@@ -305,6 +306,15 @@ const AdminProperties = () => {
                                                 </td>
                                                 <td className="p-4">
                                                     <p className="text-[10px] text-gray-700 font-bold uppercase">{property.propertyType || 'N/A'}</p>
+                                                </td>
+                                                <td className="p-4">
+                                                    <span className={`px-2 py-0.5 border text-[10px] font-bold rounded-full uppercase ${
+                                                        property.pricingType === 'Subscription' 
+                                                            ? 'bg-indigo-100 text-indigo-700 border-indigo-200' 
+                                                            : 'bg-orange-100 text-orange-700 border-orange-200'
+                                                    }`}>
+                                                        {property.pricingType === 'Subscription' ? 'Subscription' : 'Commission'}
+                                                    </span>
                                                 </td>
                                                 <td className="p-4">
                                                     <p className="text-[10px] text-gray-700 font-bold uppercase mb-0.5">{property.partnerId?.name || 'Unknown Partner'}</p>
@@ -350,7 +360,7 @@ const AdminProperties = () => {
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="6" className="p-8 text-center text-gray-500">
+                                            <td colSpan="7" className="p-8 text-center text-gray-500">
                                                 <div className="flex flex-col items-center gap-2">
                                                     <Building2 size={32} className="text-gray-300" />
                                                     <p className="text-xs font-bold uppercase">No properties found</p>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
     TrendingUp, Users, ShoppingBag, DollarSign, Building2,
-    ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCircle, CreditCard
+    ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCircle, CreditCard, Percent
 } from 'lucide-react';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -60,11 +60,12 @@ const AdminDashboard = () => {
         bookingRevenue: 0,
         subscriptionRevenue: 0,
         platformFeeRevenue: 0,
+        commissionRevenue: 0,
         totalBookings: 0,
         totalUsers: 0,
         pendingHotels: 0,
         activeSubscribers: 0,
-        trends: { revenue: 0, bookings: 0, users: 0 }
+        trends: { revenue: 0, bookings: 0, users: 0, commissionRevenue: 0 }
     });
     const [charts, setCharts] = useState({ revenue: [], status: [] });
     const [recentBookings, setRecentBookings] = useState([]);
@@ -114,7 +115,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Row 1: KPI Grid - Financials */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                 <DashboardCard
                     title="Total Platform Revenue"
                     value={formatCurrency(stats.totalRevenue)}
@@ -130,6 +131,15 @@ const AdminDashboard = () => {
                     trend={stats.trends?.bookingRevenue}
                     icon={ShoppingBag}
                     color="text-blue-500"
+                    loading={loading}
+                    onClick={() => navigate('/admin/finance')}
+                />
+                <DashboardCard
+                    title="Commission Revenue"
+                    value={formatCurrency(stats.commissionRevenue || 0)}
+                    trend={stats.trends?.commissionRevenue}
+                    icon={Percent}
+                    color="text-amber-600"
                     loading={loading}
                     onClick={() => navigate('/admin/finance')}
                 />

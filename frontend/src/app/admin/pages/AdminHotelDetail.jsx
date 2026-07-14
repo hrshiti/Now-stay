@@ -1296,6 +1296,7 @@ const BookingsTab = ({ bookings }) => {
                             <th className="p-4 font-bold text-gray-600">Guest</th>
                             <th className="p-4 font-bold text-gray-600">Check-In</th>
                             <th className="p-4 font-bold text-gray-600">Status</th>
+                            <th className="p-4 font-bold text-gray-600">Pricing Model</th>
                             <th className="p-4 font-bold text-gray-600 text-right">Amount</th>
                         </tr>
                     </thead>
@@ -1318,12 +1319,21 @@ const BookingsTab = ({ bookings }) => {
                                             {b.bookingStatus || 'N/A'}
                                         </span>
                                     </td>
+                                    <td className="p-4">
+                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                            (b.adminCommission === 0 || b.adminCommission === undefined)
+                                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-100'
+                                                : 'bg-orange-50 text-orange-700 border border-orange-100'
+                                        }`}>
+                                            {(b.adminCommission === 0 || b.adminCommission === undefined) ? 'Subscription' : 'Commission'}
+                                        </span>
+                                    </td>
                                     <td className="p-4 text-right font-bold">₹{b.totalAmount?.toLocaleString()}</td>
                                 </tr>
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="5" className="p-8 text-center text-gray-400 font-bold uppercase text-xs">No bookings found</td>
+                                <td colSpan="6" className="p-8 text-center text-gray-400 font-bold uppercase text-xs">No bookings found</td>
                             </tr>
                         )}
                     </tbody>
@@ -1600,6 +1610,9 @@ const AdminHotelDetail = () => {
                                     {hotel.status}
                                 </span>
                             )}
+                            <span className={`px-2.5 py-0.5 border text-[10px] font-bold rounded-full flex items-center uppercase ${hotel.pricingType === 'Subscription' ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-orange-100 text-orange-700 border-orange-200'}`}>
+                                {hotel.pricingType === 'Subscription' ? 'Subscription-Based (0% Comm.)' : 'Commission-Based'}
+                            </span>
                         </div>
                         <p className="text-gray-500 text-[10px] font-bold uppercase mt-1 flex items-center">
                             <MapPin size={12} className="mr-1 text-gray-400" /> {hotel.address?.city}, {hotel.address?.state}

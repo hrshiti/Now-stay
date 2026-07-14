@@ -45,7 +45,8 @@ export const getDashboardStats = async (req, res) => {
       currentSubRevenueAgg, lastMonthSubRevenueAgg,
       activeSubscribersCount,
       recentSubscriptions,
-      currentPlatformFeeAgg
+      currentPlatformFeeAgg,
+      currentCommissionRevenueAgg
     ] = await Promise.all([
       User.countDocuments({}),
       User.countDocuments({ createdAt: { $lt: startOfThisMonth } }),
@@ -94,19 +95,27 @@ export const getDashboardStats = async (req, res) => {
       Booking.aggregate([
         { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid' } },
         { $group: { _id: null, total: { $sum: { $ifNull: ['$platformFee', 0] } } } }
+      ]),
+      // Commission Revenue
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid' } },
+        { $group: { _id: null, total: { $sum: '$adminCommission' } } }
       ])
     ]);
 
     const totalBookingRevenue = currentBookingRevenueAgg[0]?.total || 0;
     const totalSubRevenue = currentSubRevenueAgg[0]?.total || 0;
     const totalPlatformRevenue = totalBookingRevenue + totalSubRevenue;
+    const totalCommissionRevenue = currentCommissionRevenueAgg[0]?.total || 0;
 
     const [
       revBookingThisMonthAgg,
       revSubThisMonthAgg,
       revPlatformFeeThisMonthAgg,
       revBookingLastMonthAgg,
-      revSubLastMonthAgg
+      revSubLastMonthAgg,
+      revCommissionThisMonthAgg,
+      revCommissionLastMonthAgg
     ] = await Promise.all([
       Booking.aggregate([
         { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
@@ -127,19 +136,29 @@ export const getDashboardStats = async (req, res) => {
       PartnerSubscription.aggregate([
         { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
         { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+      ]),
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: '$adminCommission' } } }
+      ]),
+      Booking.aggregate([
+        { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $group: { _id: null, total: { $sum: '$adminCommission' } } }
       ])
     ]);
 
     const totalPlatformFeeRevenue = currentPlatformFeeAgg[0]?.total || 0;
     const platformFeeThisMonth = revPlatformFeeThisMonthAgg[0]?.total || 0;
     const platformFeeLastMonth = (totalPlatformFeeRevenue - platformFeeThisMonth);
-    
 
     const incBookingThisMonth = revBookingThisMonthAgg[0]?.total || 0;
     const incBookingLastMonth = revBookingLastMonthAgg[0]?.total || 0;
 
     const incSubThisMonth = revSubThisMonthAgg[0]?.total || 0;
     const incSubLastMonth = revSubLastMonthAgg[0]?.total || 0;
+
+    const commissionThisMonth = revCommissionThisMonthAgg[0]?.total || 0;
+    const commissionLastMonth = revCommissionLastMonthAgg[0]?.total || 0;
 
     const usersNewThisMonth = await User.countDocuments({ createdAt: { $gte: startOfThisMonth } });
     const usersNewLastMonth = await User.countDocuments({ createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } });
@@ -152,6 +171,7 @@ export const getDashboardStats = async (req, res) => {
       bookingRevenue: calculateGrowth(incBookingThisMonth, incBookingLastMonth),
       subRevenue: calculateGrowth(incSubThisMonth, incSubLastMonth),
       platformFee: calculateGrowth(platformFeeThisMonth, platformFeeLastMonth),
+      commissionRevenue: calculateGrowth(commissionThisMonth, commissionLastMonth),
       totalRevenue: calculateGrowth(incBookingThisMonth + incSubThisMonth, incBookingLastMonth + incSubLastMonth)
     };
 
@@ -242,6 +262,7 @@ export const getDashboardStats = async (req, res) => {
         bookingRevenue: totalBookingRevenue,
         subscriptionRevenue: totalSubRevenue,
         platformFeeRevenue: totalPlatformFeeRevenue,
+        commissionRevenue: totalCommissionRevenue,
         activeSubscribers: activeSubscribersCount,
         trends
       },
@@ -365,8 +386,27 @@ export const getAllHotels = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
-    res.status(200).json({ success: true, hotels, total, page, limit });
+    const partnerIds = hotels.map(h => h.partnerId?._id).filter(id => id);
+    const activeSubscriptions = await PartnerSubscription.find({
+      partnerId: { $in: partnerIds },
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gt: new Date() }
+    });
+    
+    const subscribedPartners = new Set(activeSubscriptions.map(s => s.partnerId.toString()));
+    
+    const hotelsWithPricingType = hotels.map(h => {
+      const isSubscribed = h.partnerId && subscribedPartners.has(h.partnerId._id.toString());
+      return {
+        ...h.toObject(),
+        pricingType: isSubscribed ? 'Subscription' : 'Commission'
+      };
+    });
+
+    res.status(200).json({ success: true, hotels: hotelsWithPricingType, total, page, limit });
   } catch (e) {
+    console.error('Error fetching hotels:', e);
     res.status(500).json({ success: false, message: 'Server error fetching hotels' });
   }
 };
@@ -1045,16 +1085,25 @@ export const getHotelDetails = async (req, res) => {
       .populate('roomTypeId', 'name')
       .sort({ createdAt: -1 });
 
+    const activeSub = await PartnerSubscription.findOne({
+      partnerId: property.partnerId?._id,
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gt: new Date() }
+    });
+
     res.status(200).json({
       success: true,
       hotel: {
         ...property.toObject(),
-        rooms: roomTypes
+        rooms: roomTypes,
+        pricingType: activeSub ? 'Subscription' : 'Commission'
       },
       bookings,
       documents
     });
   } catch (e) {
+    console.error('Error fetching hotel details:', e);
     res.status(500).json({ success: false, message: 'Server error fetching hotel details' });
   }
 };
