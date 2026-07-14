@@ -7,7 +7,7 @@ const getApiUrl = () => {
     return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
   }
   // Production URL (HTTPS) to prevent Mixed Content security block
-  return 'https://nowstay.in/api';
+  return 'https://api.nowstay.in/api';
 };
 
 const API_URL = getApiUrl();
