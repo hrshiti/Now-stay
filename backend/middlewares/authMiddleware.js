@@ -18,25 +18,17 @@ export const protect = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('🛡️ Auth Middleware - Decoded Payload:', decoded);
 
-    let user = null;
-    const role = decoded.role?.toLowerCase();
+    // 1. Check User Collection
+    let user = await User.findById(decoded.id);
 
-    // Query only the correct collection based on JWT role (1 DB hit instead of 3)
-    if (role === 'admin' || role === 'superadmin') {
-      user = await Admin.findById(decoded.id);
-    } else if (role === 'partner') {
-      user = await Partner.findById(decoded.id);
-    } else {
-      // Default: user role or unknown
-      user = await User.findById(decoded.id);
-    }
-
-    // Fallback: if not found in expected collection, check others
-    if (!user && role !== 'admin' && role !== 'superadmin') {
-      user = await Partner.findById(decoded.id);
-    }
+    // 2. Check Partner Collection
     if (!user) {
-      console.log('🛡️ Auth Middleware - Checking Admin collection as fallback for ID:', decoded.id);
+      user = await Partner.findById(decoded.id);
+    }
+
+    // 3. Check Admin Collection
+    if (!user) {
+      console.log('🛡️ Auth Middleware - User/Partner not found, checking Admin collection for ID:', decoded.id);
       user = await Admin.findById(decoded.id);
     }
 

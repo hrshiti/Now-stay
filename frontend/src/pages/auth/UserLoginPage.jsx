@@ -63,8 +63,8 @@ const UserLoginPage = () => {
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
         const otpValue = otp.join('');
-        if (otpValue.length !== 4) {
-            setError('Please enter complete 4-digit OTP');
+        if (otpValue.length !== 6) {
+            setError('Please enter complete OTP');
             return;
         }
         setError('');
@@ -81,11 +81,7 @@ const UserLoginPage = () => {
             
             navigate(redirectTo, { replace: true, state: redirectState });
         } catch (err) {
-            if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-                setError('Request timed out. Please check your connection and try again.');
-            } else {
-                setError(err.message || 'Invalid OTP');
-            }
+            setError(err.message || 'Invalid OTP');
         } finally {
             setLoading(false);
         }

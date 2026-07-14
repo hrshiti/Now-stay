@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 const subscriptionPlanSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: String,
-  propertyType: { type: String, required: true },
   price: { type: Number, required: true },
   durationInMonths: { type: Number, default: 12 },
   commissionRate: { type: Number, default: 0 },

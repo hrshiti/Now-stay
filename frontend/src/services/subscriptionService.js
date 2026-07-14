@@ -24,19 +24,16 @@ const subscriptionService = {
   },
 
   // --- PARTNER ---
-  getPartnerPlans: async (propertyType = '') => {
-    const url = propertyType ? `/subscriptions/plans?propertyType=${propertyType}` : '/subscriptions/plans';
-    const response = await apiClient.get(url);
+  getPartnerPlans: async () => {
+    const response = await apiClient.get('/subscriptions/plans');
     return response.data;
   },
-  getMySubscription: async (propertyType = '') => {
-    const url = propertyType ? `/subscriptions/my-subscription?propertyType=${propertyType}` : '/subscriptions/my-subscription';
-    const response = await apiClient.get(url);
+  getMySubscription: async () => {
+    const response = await apiClient.get('/subscriptions/my-subscription');
     return response.data;
   },
-  getSubscriptionStatus: async (propertyType = '') => {
-    const url = propertyType ? `/subscriptions/status?propertyType=${propertyType}` : '/subscriptions/status';
-    const response = await apiClient.get(url);
+  getSubscriptionStatus: async () => {
+    const response = await apiClient.get('/subscriptions/status');
     return response.data;
   },
   buySubscription: async (data) => {

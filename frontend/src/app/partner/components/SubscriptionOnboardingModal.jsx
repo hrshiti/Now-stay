@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Percent, Sparkles, Crown, ArrowRight, X } from 'lucide-react';
 
-const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission, redirectUrl, propertyType = '' }) => {
+const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission, redirectUrl }) => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState('subscription');
 
@@ -28,7 +28,7 @@ const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission,
   const handleSubscribeClick = () => {
     onClose();
     const encodedRedirect = encodeURIComponent(redirectUrl || window.location.pathname);
-    navigate(`/hotel/subscriptions?redirectBack=${encodedRedirect}&propertyType=${propertyType}`);
+    navigate(`/hotel/subscriptions?redirectBack=${encodedRedirect}`);
   };
 
   return (
@@ -58,7 +58,7 @@ const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission,
                 <div>
                   <h3 className="text-lg md:text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
                     <Sparkles className="text-amber-500 fill-amber-100 animate-pulse" size={20} />
-                    Choose Your {propertyType ? propertyType.charAt(0).toUpperCase() + propertyType.slice(1) : 'Partner'} Plan
+                    Choose Your Partner Plan
                   </h3>
                   <p className="text-xs text-gray-500 mt-1 font-medium">Select the business model that fits your goals before submitting.</p>
                 </div>

@@ -11,15 +11,14 @@ import { getRazorpayInstance } from '../utils/razorpay.js';
 
 export const createPlan = async (req, res) => {
   try {
-    const { name, description, propertyType, price, durationInMonths, commissionRate } = req.body;
-    if (!name || !propertyType || price === undefined) {
-      return res.status(400).json({ message: 'Name, Property Type and Price are required' });
+    const { name, description, price, durationInMonths, commissionRate } = req.body;
+    if (!name || price === undefined) {
+      return res.status(400).json({ message: 'Name and Price are required' });
     }
 
     const plan = new SubscriptionPlan({
       name,
       description,
-      propertyType,
       price,
       durationInMonths: durationInMonths || 12,
       commissionRate: commissionRate || 0
@@ -46,11 +45,11 @@ export const getPlans = async (req, res) => {
 export const updatePlan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, propertyType, price, durationInMonths, commissionRate, isActive } = req.body;
+    const { name, description, price, durationInMonths, commissionRate, isActive } = req.body;
 
     const plan = await SubscriptionPlan.findByIdAndUpdate(
       id,
-      { name, description, propertyType, price, durationInMonths, commissionRate, isActive },
+      { name, description, price, durationInMonths, commissionRate, isActive },
       { new: true }
     );
 
@@ -92,11 +91,7 @@ export const getPartnerSubscriptions = async (req, res) => {
 
 export const getActivePlans = async (req, res) => {
   try {
-    const { propertyType } = req.query;
-    const query = { isActive: true };
-    if (propertyType) query.propertyType = propertyType;
-
-    const plans = await SubscriptionPlan.find(query);
+    const plans = await SubscriptionPlan.find({ isActive: true });
     res.status(200).json({ success: true, plans });
   } catch (error) {
     console.error('Get Active Plans Error:', error);
@@ -106,18 +101,12 @@ export const getActivePlans = async (req, res) => {
 
 export const getMySubscription = async (req, res) => {
   try {
-    const { propertyType } = req.query;
-    const subscriptions = await PartnerSubscription.find({
+    const subscription = await PartnerSubscription.findOne({
       partnerId: req.user._id,
       isActive: true,
       startDate: { $lte: new Date() },
       endDate: { $gt: new Date() }
     }).populate('planId');
-
-    let subscription = subscriptions.length > 0 ? subscriptions[0] : null;
-    if (propertyType) {
-      subscription = subscriptions.find(sub => sub.planId && sub.planId.propertyType === propertyType) || null;
-    }
 
     res.status(200).json({ success: true, subscription });
   } catch (error) {
@@ -137,14 +126,12 @@ export const createSubscriptionOrder = async (req, res) => {
 
     // Case: Online Payment
     let finalPrice = plan.price;
-    const activeSubs = await PartnerSubscription.find({
+    const currentSub = await PartnerSubscription.findOne({
       partnerId: req.user._id,
       isActive: true,
       startDate: { $lte: new Date() },
       endDate: { $gt: new Date() }
     }).populate('planId');
-    
-    const currentSub = activeSubs.find(sub => sub.planId && sub.planId.propertyType === plan.propertyType);
 
     if (currentSub && currentSub.planId) {
       // UPGRADE CASE: New price is higher than current plan price
@@ -224,14 +211,12 @@ export const buySubscription = async (req, res) => {
     }
 
     // --- Handle Subscription Logic (Upgrade/Downgrade/Renewal) ---
-    const activeSubs = await PartnerSubscription.find({
+    const activeSub = await PartnerSubscription.findOne({
       partnerId: req.user._id,
       isActive: true,
       startDate: { $lte: new Date() },
       endDate: { $gt: new Date() }
     }).populate('planId');
-    
-    const activeSub = activeSubs.find(sub => sub.planId && sub.planId.propertyType === plan.propertyType);
 
     let finalStartDate = new Date();
     const finalEndDate = new Date();
@@ -305,21 +290,12 @@ export const buySubscription = async (req, res) => {
 
 export const getSubscriptionStatus = async (req, res) => {
   try {
-    const { propertyType } = req.query;
-    
-    const activeSubs = await PartnerSubscription.find({
+    const activeSub = await PartnerSubscription.findOne({
       partnerId: req.user._id,
       isActive: true,
       startDate: { $lte: new Date() },
       endDate: { $gt: new Date() }
     }).populate('planId');
-    
-    let activeSub = null;
-    if (propertyType) {
-      activeSub = activeSubs.find(sub => sub.planId && sub.planId.propertyType === propertyType) || null;
-    } else {
-      activeSub = activeSubs.length > 0 ? activeSubs[0] : null;
-    }
 
     const totalSubCount = await PartnerSubscription.countDocuments({
       partnerId: req.user._id

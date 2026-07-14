@@ -11,7 +11,6 @@ const PartnerSubscriptions = () => {
   const [plans, setPlans] = useState([]);
   const [mySub, setMySub] = useState(null);
   const [loading, setLoading] = useState(true);
-  const propertyType = searchParams.get('propertyType') || 'hotel';
 
   useEffect(() => {
     fetchData();
@@ -20,8 +19,8 @@ const PartnerSubscriptions = () => {
   const fetchData = async () => {
     try {
       const [plansData, subData] = await Promise.all([
-        subscriptionService.getPartnerPlans(propertyType),
-        subscriptionService.getMySubscription(propertyType)
+        subscriptionService.getPartnerPlans(),
+        subscriptionService.getMySubscription()
       ]);
       setPlans(plansData.plans);
       setMySub(subData.subscription);
@@ -84,8 +83,8 @@ const PartnerSubscriptions = () => {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 capitalize">{propertyType} Subscriptions</h1>
-        <p className="text-gray-500">Upgrade your plan to zero-commission for your {propertyType} properties.</p>
+        <h1 className="text-3xl font-bold mb-2">My Subscription</h1>
+        <p className="text-gray-500">Upgrade your plan to zero-commission and increase your earnings.</p>
       </div>
 
       {mySub ? (

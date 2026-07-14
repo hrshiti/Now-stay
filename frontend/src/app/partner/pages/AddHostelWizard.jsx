@@ -38,13 +38,12 @@ const AddHostelWizard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const activePropertyType = new URLSearchParams(location.search).get('type') || 'hostel';
 
   const checkSubscriptionAndSubmit = async () => {
     setLoading(true);
     setError('');
     try {
-      const statusData = await subscriptionService.getSubscriptionStatus(activePropertyType);
+      const statusData = await subscriptionService.getSubscriptionStatus();
       const hasActive = statusData.hasActiveSubscription;
 
       if (!hasActive) {
@@ -2167,7 +2166,6 @@ const AddHostelWizard = () => {
         onClose={() => setShowOnboardingModal(false)}
         onProceedWithCommission={handleProceedWithCommission}
         redirectUrl={window.location.pathname}
-        propertyType={activePropertyType}
       />
     </div>
   );
