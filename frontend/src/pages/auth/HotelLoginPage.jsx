@@ -56,7 +56,11 @@ const HotelLoginPage = () => {
 
         setLoading(true);
         try {
-            await authService.sendOtp(phone, 'login', 'partner');
+            const res = await authService.sendOtp(phone, 'login', 'partner');
+            if (res?.devOtp) {
+                console.log('DEV OTP:', res.devOtp);
+                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
+            }
             setResendTimer(120);
             setCanResend(false);
             setStep(2);
@@ -91,13 +95,19 @@ const HotelLoginPage = () => {
     const handleResendOTP = async () => {
         if (!canResend) return;
 
-        try {
             setLoading(true);
             setError('');
-            await authService.sendOtp(phone, 'login', 'partner');
+            const res = await authService.sendOtp(phone, 'login', 'partner');
             setResendTimer(120);
             setCanResend(false);
             setOtp(['', '', '', '']); // Clear OTP
+            
+            if (res?.devOtp) {
+                console.log('DEV OTP:', res.devOtp);
+                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
+            } else {
+                toast.success('OTP sent successfully!');
+            }
             toast.success('OTP sent successfully!');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP');

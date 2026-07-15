@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Phone, Mail, ArrowRight, Shield } from 'lucide-react';
 import { authService } from '../../services/apiService';
 import NowStayLogo from '../../components/ui/NowStayLogo';
+import toast from 'react-hot-toast';
 
 const UserLoginPage = () => {
     const navigate = useNavigate();
@@ -40,7 +41,11 @@ const UserLoginPage = () => {
             }
 
             console.log("Calling authService.sendOtp...");
-            await authService.sendOtp(phone);
+            const res = await authService.sendOtp(phone);
+            if (res?.devOtp) {
+                console.log('DEV OTP:', res.devOtp);
+                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
+            }
             setStep('otp');
         } catch (err) {
             console.error("Login Error:", err);

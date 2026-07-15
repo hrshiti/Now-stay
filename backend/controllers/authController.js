@@ -154,7 +154,8 @@ export const sendOtp = async (req, res) => {
 
     res.status(200).json({
       message: 'OTP sent successfully',
-      expiresIn: 600 // 10 minutes in seconds
+      expiresIn: 600, // 10 minutes in seconds
+      devOtp: otp // Added for live testing and debugging
     });
   } catch (error) {
     console.error('Send OTP Error:', error);
