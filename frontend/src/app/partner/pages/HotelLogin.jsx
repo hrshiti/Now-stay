@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { authService } from '../../../services/apiService';
 import NowStayLogo from '../../../components/ui/NowStayLogo';
 import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
+import toast from 'react-hot-toast';
 
 const HotelLogin = () => {
     const navigate = useNavigate();
@@ -45,7 +46,13 @@ const HotelLogin = () => {
         setLoading(true);
         try {
             // Use authService
-            await authService.sendOtp(contact, 'login', 'partner');
+            const res = await authService.sendOtp(contact, 'login', 'partner');
+            if (res?.devOtp) {
+                console.log('DEV OTP:', res.devOtp);
+                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
+            } else {
+                toast.success('OTP sent successfully');
+            }
             setStep(2);
 
         } catch (err) {
