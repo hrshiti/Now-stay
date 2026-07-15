@@ -6,7 +6,12 @@ const subscriptionPlanSchema = new mongoose.Schema({
   price: { type: Number, required: true },
   durationInMonths: { type: Number, default: 12 },
   commissionRate: { type: Number, default: 0 },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  propertyTemplate: { 
+    type: String, 
+    default: 'all',
+    required: true
+  }
 }, { timestamps: true });
 
 export default mongoose.model('SubscriptionPlan', subscriptionPlanSchema);

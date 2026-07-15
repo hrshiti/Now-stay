@@ -32,8 +32,10 @@ const subscriptionService = {
     const response = await apiClient.get('/subscriptions/my-subscription');
     return response.data;
   },
-  getSubscriptionStatus: async () => {
-    const response = await apiClient.get('/subscriptions/status');
+  getSubscriptionStatus: async (propertyTemplate) => {
+    const response = await apiClient.get('/subscriptions/status', {
+      params: { propertyTemplate }
+    });
     return response.data;
   },
   buySubscription: async (data) => {

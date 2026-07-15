@@ -37,7 +37,7 @@ const AddVillaWizard = () => {
     setLoading(true);
     setError('');
     try {
-      const statusData = await subscriptionService.getSubscriptionStatus();
+      const statusData = await subscriptionService.getSubscriptionStatus(new URLSearchParams(location.search).get('type') || 'villa');
       const hasActive = statusData.hasActiveSubscription;
 
       if (!hasActive) {

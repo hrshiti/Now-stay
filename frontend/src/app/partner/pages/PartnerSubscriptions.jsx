@@ -9,7 +9,7 @@ const PartnerSubscriptions = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
-  const [mySub, setMySub] = useState(null);
+  const [mySubs, setMySubs] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,7 +23,7 @@ const PartnerSubscriptions = () => {
         subscriptionService.getMySubscription()
       ]);
       setPlans(plansData.plans);
-      setMySub(subData.subscription);
+      setMySubs(subData.subscriptions || []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -83,18 +83,27 @@ const PartnerSubscriptions = () => {
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">My Subscription</h1>
-        <p className="text-gray-500">Upgrade your plan to zero-commission and increase your earnings.</p>
+        <h1 className="text-3xl font-bold mb-2">My Subscriptions</h1>
+        <p className="text-gray-500">Manage your property-specific subscription plans to increase your earnings.</p>
       </div>
 
-      {mySub ? (
-        <div className="bg-gradient-to-r from-teal-500 to-emerald-600 p-8 rounded-2xl text-white mb-10 shadow-xl relative overflow-hidden">
-          <ShieldCheck size={120} className="absolute -right-4 -bottom-4 opacity-10" />
-          <h2 className="text-lg font-medium opacity-90 mb-1">Active Plan</h2>
-          <div className="text-4xl font-black mb-4">{mySub.planId.name}</div>
-          <div className="space-y-2">
-            <p>Valid Until: <strong>{new Date(mySub.endDate).toLocaleDateString()}</strong></p>
-          </div>
+      {mySubs.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+          {mySubs.map((sub) => (
+            <div key={sub._id} className="bg-gradient-to-r from-teal-500 to-emerald-600 p-8 rounded-2xl text-white shadow-xl relative overflow-hidden">
+              <ShieldCheck size={120} className="absolute -right-4 -bottom-4 opacity-10" />
+              <div className="flex justify-between items-center mb-1">
+                <h2 className="text-lg font-medium opacity-90">Active Plan</h2>
+                <span className="bg-white/20 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+                  {sub.planId.propertyTemplate}
+                </span>
+              </div>
+              <div className="text-3xl font-black mb-4 truncate">{sub.planId.name}</div>
+              <div className="space-y-2">
+                <p>Valid Until: <strong>{new Date(sub.endDate).toLocaleDateString()}</strong></p>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="bg-gray-100 p-6 rounded-2xl mb-10 border border-gray-200">
@@ -113,6 +122,9 @@ const PartnerSubscriptions = () => {
                 <div className={`p-2.5 rounded-xl ${index === 0 ? 'bg-blue-50 text-blue-600' : index === 1 ? 'bg-purple-50 text-purple-600' : 'bg-amber-50 text-amber-600'}`}>
                   {index === 0 ? <Zap size={20} /> : index === 1 ? <Star size={20} /> : <Crown size={20} />}
                 </div>
+                <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                  {plan.propertyTemplate}
+                </span>
               </div>
               <h3 className="text-xl font-black text-gray-900 mb-1 capitalize">{plan.name}</h3>
               <p className="text-xs text-gray-400 mb-4 leading-tight">{plan.description}</p>
@@ -135,24 +147,30 @@ const PartnerSubscriptions = () => {
             </div>
 
             <div className="p-6 pt-0 mt-auto">
-              <button
-                onClick={() => handleBuyPlan(plan._id, plan.price)}
-                disabled={mySub?.planId?._id === plan._id}
-                className={`w-full py-3.5 rounded-2xl font-black text-sm tracking-wide transition-all shadow-lg ${mySub?.planId?._id === plan._id
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
-                    : 'bg-black text-white hover:bg-gray-900 shadow-black/10 active:scale-95'
-                  }`}
-              >
-                {mySub?.planId?._id === plan._id
-                  ? 'Current Plan'
-                  : mySub
-                    ? plan.price > mySub.planId.price
-                      ? 'Upgrade Now'
-                      : plan.price < mySub.planId.price
-                        ? 'Downgrade'
-                        : 'Renew / Purchase'
-                    : 'Subscribe Now'}
-              </button>
+              {(() => {
+                const activePlanForTemplate = mySubs.find(s => s.planId.propertyTemplate === plan.propertyTemplate || s.planId.propertyTemplate === 'all');
+                const isCurrentPlan = activePlanForTemplate?.planId?._id === plan._id;
+                
+                let buttonText = 'Subscribe Now';
+                if (isCurrentPlan) {
+                  buttonText = 'Current Plan';
+                } else if (activePlanForTemplate) {
+                  buttonText = plan.price > activePlanForTemplate.planId.price ? 'Upgrade Now' : (plan.price < activePlanForTemplate.planId.price ? 'Downgrade' : 'Renew / Purchase');
+                }
+
+                return (
+                  <button
+                    onClick={() => handleBuyPlan(plan._id, plan.price)}
+                    disabled={isCurrentPlan}
+                    className={`w-full py-3.5 rounded-2xl font-black text-sm tracking-wide transition-all shadow-lg ${isCurrentPlan
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed shadow-none'
+                        : 'bg-black text-white hover:bg-gray-900 shadow-black/10 active:scale-95'
+                      }`}
+                  >
+                    {buttonText}
+                  </button>
+                );
+              })()}
             </div>
           </div>
         ))}

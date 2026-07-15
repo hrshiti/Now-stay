@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { Plus, Edit2, Trash2, Users, CreditCard, Calendar, CheckCircle, Clock } from 'lucide-react';
 import subscriptionService from '../../../services/subscriptionService';
 import { format } from 'date-fns';
+import { api } from '../../../services/apiService';
 
 const AdminSubscriptions = () => {
   const [activeTab, setActiveTab] = useState('plans'); // 'plans' or 'purchases'
@@ -13,12 +14,14 @@ const AdminSubscriptions = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPlan, setFilterPlan] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [dynamicCategories, setDynamicCategories] = useState([]);
 
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     price: '',
-    durationInMonths: ''
+    durationInMonths: '',
+    propertyTemplate: 'all'
   });
   const [editId, setEditId] = useState(null);
 
@@ -28,6 +31,19 @@ const AdminSubscriptions = () => {
     } else {
       fetchPartnerSubscriptions();
     }
+    
+    // Fetch dynamic categories once
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/categories');
+        if (res.data.success) {
+          setDynamicCategories(res.data.categories);
+        }
+      } catch (err) {
+        console.error("Failed to load categories", err);
+      }
+    };
+    fetchCategories();
   }, [activeTab]);
 
   const fetchPlans = async () => {
@@ -105,7 +121,8 @@ const AdminSubscriptions = () => {
       name: plan.name,
       description: plan.description,
       price: Number(plan.price) === 0 ? '' : plan.price,
-      durationInMonths: Number(plan.durationInMonths) === 0 ? '' : plan.durationInMonths
+      durationInMonths: Number(plan.durationInMonths) === 0 ? '' : plan.durationInMonths,
+      propertyTemplate: plan.propertyTemplate || 'all'
     });
     setShowModal(true);
   };
@@ -167,7 +184,7 @@ const AdminSubscriptions = () => {
           <button
             onClick={() => {
               setEditId(null);
-              setFormData({ name: '', description: '', price: '', durationInMonths: '' });
+              setFormData({ name: '', description: '', price: '', durationInMonths: '', propertyTemplate: 'all' });
               setShowModal(true);
             }}
             className="bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors"
@@ -187,8 +204,15 @@ const AdminSubscriptions = () => {
           {plans.map(plan => (
             <div key={plan._id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
-                <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-                  <CreditCard size={24} />
+                <div className="flex gap-2">
+                  <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
+                    <CreditCard size={24} />
+                  </div>
+                  <div className="flex items-center">
+                    <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                      {plan.propertyTemplate}
+                    </span>
+                  </div>
                 </div>
                 {!plan.isActive && (
                   <span className="bg-red-50 text-red-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
@@ -386,6 +410,29 @@ const AdminSubscriptions = () => {
                     required
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Property Type</label>
+                <select
+                  name="propertyTemplate"
+                  value={formData.propertyTemplate}
+                  onChange={handleInputChange}
+                  className="w-full bg-gray-50 border border-gray-100 p-4 rounded-2xl focus:ring-2 focus:ring-black outline-none transition-all font-medium capitalize"
+                >
+                  <option value="all">All Properties</option>
+                  <option value="hotel">Hotel</option>
+                  <option value="villa">Villa</option>
+                  <option value="resort">Resort</option>
+                  <option value="hostel">Hostel</option>
+                  <option value="pg">PG</option>
+                  <option value="homestay">Homestay</option>
+                  <option value="tent">Tent</option>
+                  <option value="apartment">Apartment</option>
+                  {dynamicCategories.map(cat => (
+                    <option key={cat._id} value={cat.slug}>{cat.name}</option>
+                  ))}
+                </select>
               </div>
 
               
