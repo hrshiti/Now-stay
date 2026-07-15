@@ -147,7 +147,9 @@ export const sendOtp = async (req, res) => {
 
     // Send SMS only for non-test numbers
     if (!isTestNumber) {
-      await smsService.sendOTP(phone, otp);
+      console.log(`[authController] Calling smsService.sendOTP for ${phone}...`);
+      const smsResult = await smsService.sendOTP(phone, otp);
+      console.log(`[authController] smsService.sendOTP completed. Success: ${smsResult.success}`);
     } else {
       console.log(`🧪 Test Number Detected: ${phone} - Using default OTP: 1234`);
     }

@@ -42,31 +42,48 @@ class PRPSMSService {
         ]
       };
 
-      console.log(`📨 [PRPSMS] Sending OTP to ${mobileNo}...`);
+      console.log(`📨 [PRPSMS] Starting SMS request to ${mobileNo}...`);
+      console.log(`📨 [PRPSMS] Base URL: ${this.baseUrl}`);
+      console.log(`📨 [PRPSMS] Payload:`, JSON.stringify(payload));
+      
+      const startTime = Date.now();
+      
+      try {
+        const response = await axios.post(this.baseUrl, payload, {
+          headers: {
+            'apikey': apiKey,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000 // 10 seconds strict timeout
+        });
+        
+        const duration = Date.now() - startTime;
+        console.log(`📨 [PRPSMS] Response received in ${duration}ms. Status: ${response.status}`);
+        console.log(`📨 [PRPSMS] Response Data:`, JSON.stringify(response.data));
 
-      const response = await axios.post(this.baseUrl, payload, {
-        headers: {
-          'apikey': apiKey,
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000
-      });
+        // Successful responses vary by provider, checking status or a specific field
+        if (response.status === 200 || response.data?.status === 'success' || response.data?.isSuccess) {
+          console.log('✅ OTP Sent Successfully via PRPSMS');
+          return { success: true, data: response.data };
+        }
 
-      console.log('📨 [PRPSMS] Response:', response.data);
+        console.log('⚠️ [PRPSMS] Provider returned success status but failed payload:', response.data);
+        return { success: false, error: 'PRPSMS failure', detail: response.data };
 
-      // Successful responses vary by provider, checking status or a specific field
-      if (response.status === 200 || response.data?.status === 'success') {
-        console.log('✅ OTP Sent Successfully via PRPSMS');
-        return { success: true, data: response.data };
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        console.error(`❌ [PRPSMS] Service Error after ${duration}ms!`);
+        console.error(`❌ [PRPSMS] Error Message: ${error.message}`);
+        
+        if (error.response) {
+          console.error(`❌ [PRPSMS] Error Response Data:`, error.response.data);
+        } else if (error.request) {
+          console.error(`❌ [PRPSMS] No response received from server. Request hung or timed out.`);
+        }
+        
+        return { success: false, error: error.message };
       }
-
-      return { success: false, error: 'PRPSMS failure', detail: response.data };
-
-    } catch (error) {
-      console.error('❌ PRPSMS Service Error:', error.response?.data || error.message);
-      return { success: false, error: error.message };
     }
-  }
 
   // Generic SMS fallback (PRPSMS uses templates for everything usually)
   async sendSMS(phone, message) {
