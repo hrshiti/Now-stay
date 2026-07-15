@@ -95,6 +95,7 @@ const HotelLoginPage = () => {
     const handleResendOTP = async () => {
         if (!canResend) return;
 
+        try {
             setLoading(true);
             setError('');
             const res = await authService.sendOtp(phone, 'login', 'partner');
@@ -108,7 +109,6 @@ const HotelLoginPage = () => {
             } else {
                 toast.success('OTP sent successfully!');
             }
-            toast.success('OTP sent successfully!');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP');
         } finally {
