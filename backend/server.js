@@ -27,6 +27,7 @@ const io = new Server(server, {
       'http://127.0.0.1:5173',
       'https://nowstay.in',
       'https://nowstay.in',
+      'https://now-stay.vercel.app',
       'https://www.nowstay.in',
       'nowstay.in'
     ],
