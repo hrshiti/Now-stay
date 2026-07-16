@@ -61,14 +61,14 @@ class PRPSMSService {
         console.log(`📨 [PRPSMS] Response received in ${duration}ms. Status: ${response.status}`);
         console.log(`📨 [PRPSMS] Response Data:`, JSON.stringify(response.data));
 
-        // Successful responses vary by provider, checking status or a specific field
-        if (response.status === 200 || response.data?.status === 'success' || response.data?.isSuccess) {
+        // PRPSMS always responds with HTTP 200, even on failure — the real result is in the body
+        if (response.data?.isSuccess === true || response.data?.status === 'success') {
           console.log('✅ OTP Sent Successfully via PRPSMS');
           return { success: true, data: response.data };
         }
 
         console.log('⚠️ [PRPSMS] Provider returned success status but failed payload:', response.data);
-        return { success: false, error: 'PRPSMS failure', detail: response.data };
+        return { success: false, error: response.data?.returnMessage || 'PRPSMS failure', detail: response.data };
 
       } catch (error) {
         const duration = Date.now() - startTime;
