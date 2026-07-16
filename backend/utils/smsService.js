@@ -83,7 +83,11 @@ class PRPSMSService {
         
         return { success: false, error: error.message };
       }
+    } catch (outerError) {
+      console.error(`❌ [PRPSMS] Outer Service Error: ${outerError.message}`);
+      return { success: false, error: outerError.message };
     }
+  }
 
   // Generic SMS fallback (PRPSMS uses templates for everything usually)
   async sendSMS(phone, message) {
