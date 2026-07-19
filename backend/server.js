@@ -27,7 +27,6 @@ const io = new Server(server, {
       'http://127.0.0.1:5173',
       'https://nowstay.in',
       'https://nowstay.in',
-      'https://now-stay.vercel.app',
       'https://www.nowstay.in',
       'nowstay.in'
     ],
@@ -75,10 +74,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
-// Dynamic CORS to allow local network IPs (192.168.x.x) and localhost
+// Dynamic CORS to allow local network IPs (192.168.x.x) and localhost.
+// IMPORTANT: CORS must run BEFORE the body parsers so cross-origin requests are
+// handled/rejected before the server reads the entire request body.
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
@@ -89,9 +87,8 @@ app.use(cors({
       'http://localhost:5173',
       'http://127.0.0.1:5173',
       'https://nowstay.in',
-      'https://nowstay.in',
       'https://www.nowstay.in',
-      'nowstay.in'
+      'https://now-stay.vercel.app'
     ];
     // Add 172.16-31 range (often used by hotspots) and 10.x
     const isLocalNetwork =
@@ -110,6 +107,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Added OPTIONS
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
+
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Routes
 import authRoutes from './routes/authRoutes.js';
@@ -131,6 +131,20 @@ import partnerRoutes from './routes/partnerRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+
+// Fail fast if the database is not connected, instead of letting requests
+// hang until the socket timeout (~60s) and tripping the frontend timeout.
+// mongoose readyState: 0 = disconnected, 1 = connected, 2 = connecting, 3 = disconnecting.
+app.use('/api', (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    console.warn(`⚠️ DB not ready (state ${mongoose.connection.readyState}) - rejecting ${req.method} ${req.originalUrl}`);
+    return res.status(503).json({
+      success: false,
+      message: 'Service temporarily unavailable, please try again in a moment.'
+    });
+  }
+  next();
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -154,6 +168,11 @@ app.use('/api/categories', categoryRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
+  // Blocked cross-origin requests are expected noise (bots, other domains).
+  // Return a clean 403 without dumping a full stack trace on every hit.
+  if (err && err.message === 'Not allowed by CORS') {
+    return res.status(403).json({ success: false, message: 'Origin not allowed' });
+  }
   console.error('❌ Global Error Handler:', err);
   res.status(err.status || 500).json({
     success: false,
@@ -170,9 +189,12 @@ app.get('/', (req, res) => {
 
 // MongoDB Connection Options with retry logic
 const mongoOptions = {
-  serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of 30s
-  socketTimeoutMS: 45000,
-  family: 4, // Use IPv4, skip trying IPv6
+  serverSelectionTimeoutMS: 10000, // Fail server selection after 10s instead of 30s
+  connectTimeoutMS: 10000,
+  socketTimeoutMS: 30000,          // Fail a stuck socket before the 60s frontend timeout
+  maxIdleTimeMS: 60000,            // Recycle idle sockets so NAT/firewall-dropped connections don't linger in the pool (fixes intermittent hangs)
+  heartbeatFrequencyMS: 10000,     // Detect a dead primary sooner
+  family: 4,                       // Use IPv4, skip trying IPv6
   maxPoolSize: 10,
   minPoolSize: 2,
   retryWrites: true,
