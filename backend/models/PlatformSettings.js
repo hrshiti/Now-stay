@@ -44,14 +44,19 @@ const platformSettingsSchema = new mongoose.Schema(
 );
 
 platformSettingsSchema.statics.getSettings = async function () {
-  let settings = await this.findOne();
-  if (!settings) {
-    settings = await this.create({});
-  }
-  return settings;
+  return this.findOneAndUpdate(
+    {},
+    { $setOnInsert: {} },
+    {
+      new: true,
+      upsert: true,
+      setDefaultsOnInsert: true
+    }
+  );
 };
 
 const PlatformSettings = mongoose.model('PlatformSettings', platformSettingsSchema);
 
 export default PlatformSettings;
+
 

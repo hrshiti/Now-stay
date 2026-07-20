@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import 'dotenv/config';
 import cors from 'cors';
+import dns from 'node:dns/promises';
 import { initializeFirebase } from './config/firebase.js';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -12,6 +13,45 @@ initializeFirebase();
 
 // Initialize Cron Jobs
 import './services/cronService.js';
+
+dns.setDefaultResultOrder('ipv4first');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
+const buildMongoConnectionUri = async (rawUri) => {
+  if (!rawUri || !rawUri.startsWith('mongodb+srv://')) {
+    return rawUri;
+  }
+
+  try {
+    const parsed = new URL(rawUri);
+    const srvHost = parsed.hostname;
+    const srvRecords = await dns.resolveSrv(`_mongodb._tcp.${srvHost}`);
+    const txtRecords = await dns.resolveTxt(srvHost).catch(() => []);
+
+    if (!srvRecords.length) {
+      throw new Error(`No SRV records found for ${srvHost}`);
+    }
+
+    const hosts = srvRecords
+      .sort((a, b) => a.priority - b.priority || a.weight - b.weight)
+      .map((record) => `${record.name}:${record.port}`)
+      .join(',');
+
+    const txtOptions = txtRecords
+      .flat()
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .join('&');
+
+    const directUri = `mongodb://${parsed.username}:${parsed.password}@${hosts}${parsed.pathname}${txtOptions ? `?${txtOptions}` : ''}`;
+    console.log(`[DB] Resolved MongoDB Atlas SRV to direct hosts: ${hosts}`);
+    return directUri;
+  } catch (error) {
+    console.warn(`[DB] Failed to resolve MongoDB SRV manually, falling back to original URI. Reason: ${error.message}`);
+    return rawUri;
+  }
+};
+
 
 
 
@@ -225,7 +265,8 @@ const connectWithRetry = async (retries = 5, delay = 5000) => {
 
       return; // Exit function on success
     } catch (err) {
-      console.error(`❌ MongoDB connection attempt ${i + 1} failed:`, err.message);
+      console.error(`? MongoDB connection attempt ${i + 1} failed:`);
+      console.dir(err, { depth: null });
 
       if (i < retries - 1) {
         console.log(`⏳ Retrying in ${delay / 1000} seconds...`);

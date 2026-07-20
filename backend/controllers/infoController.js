@@ -37,6 +37,7 @@ export const getPublicPlatformStatus = async (req, res) => {
       maintenanceMessage: settings.maintenanceMessage
     });
   } catch (error) {
+    console.error('Get Public Platform Status Error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching platform status' });
   }
 };
@@ -54,6 +55,8 @@ export const getFinancialSettings = async (req, res) => {
       platformFeeType: settings.platformFeeType || 'percentage'
     });
   } catch (error) {
+    console.error('Get Financial Settings Error:', error);
     res.status(500).json({ success: false, message: 'Server error fetching financial settings' });
   }
 };
+
