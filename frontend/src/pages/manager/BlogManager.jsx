@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Save, X, Image as ImageIcon, Clock, Layout, BadgeCheck, Type, AlignLeft } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { resolveApiUrl } from '../../utils/apiBase';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = resolveApiUrl();
 
 const BlogManager = () => {
   const [blogs, setBlogs] = useState([]);
@@ -400,3 +401,5 @@ const BlogManager = () => {
 };
 
 export default BlogManager;
+
+

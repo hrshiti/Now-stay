@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { legalService } from '../services/apiService';
+import { resolveApiBase } from '../utils/apiBase';
 
 const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp }) => {
     if (!booking || !property) return null;
@@ -33,7 +34,7 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
     const halfRate = computedTaxRate > 0 ? (computedTaxRate / 2).toFixed(1) : 0;
 
     // Resolve signature URL - handles relative paths from local uploads and full CDN URLs
-    const API_BASE = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace('/api', '');
+    const API_BASE = resolveApiBase();
     const signatureUrl = property.ownerSignature
         ? (property.ownerSignature.startsWith('http') 
             ? property.ownerSignature 
@@ -243,3 +244,6 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
 };
 
 export default BookingInvoice;
+
+
+

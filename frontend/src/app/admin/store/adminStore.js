@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import axios from 'axios';
+import { resolveApiUrl } from '../../../utils/apiBase';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = resolveApiUrl();
+console.log('[Admin API] Base URL:', API_URL);
 
 const axiosInstance = axios.create({
   baseURL: API_URL
@@ -101,3 +103,5 @@ axiosInstance.interceptors.response.use(
 
 export { axiosInstance };
 export default useAdminStore;
+
+

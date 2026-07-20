@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Clock, ArrowLeft, Calendar, Share2, Bookmark, User } from 'lucide-react';
 import axios from 'axios';
 import { Loader2 } from 'lucide-react';
+import { resolveApiUrl } from '../../utils/apiBase';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = resolveApiUrl();
 
 const BlogDetail = () => {
   const { id } = useParams();
@@ -164,3 +165,5 @@ const BlogDetail = () => {
 };
 
 export default BlogDetail;
+
+

@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { resolveApiUrl } from '../utils/apiBase';
 
 // Base URL configuration
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = resolveApiUrl();
 
 export const api = axios.create({
   baseURL: API_URL,
@@ -53,6 +54,13 @@ api.interceptors.response.use(
         }
       }
     }
+    console.error('[API] Request failed:', {
+      method: error.config?.method?.toUpperCase(),
+      url: (error.config?.baseURL || '') + (error.config?.url || ''),
+      status,
+      message: error.message,
+      data: error.response?.data || null
+    });
     return Promise.reject(error);
   }
 );
@@ -921,3 +929,6 @@ export const faqService = {
 };
 
 export default api;
+
+
+

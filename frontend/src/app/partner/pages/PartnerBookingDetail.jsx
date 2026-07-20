@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { bookingService } from '../../../services/apiService';
 import toast from 'react-hot-toast';
+import { resolveApiUrl } from '../../../utils/apiBase';
 import BookingInvoice from '../../../components/BookingInvoice';
 
 const PartnerBookingDetail = () => {
@@ -92,7 +93,7 @@ const PartnerBookingDetail = () => {
   const handleDownloadInvoice = async () => {
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const apiUrl = resolveApiUrl();
       const downloadUrl = `${apiUrl}/bookings/${booking._id}/receipt`;
       
       const response = await fetch(downloadUrl, {
@@ -489,3 +490,5 @@ const PartnerBookingDetail = () => {
 };
 
 export default PartnerBookingDetail;
+
+
