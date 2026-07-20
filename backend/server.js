@@ -114,6 +114,20 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use((req, res, next) => {
+  console.log('========== REQUEST ==========');
+  console.log('Time:', new Date().toISOString());
+  console.log('IP:', req.ip);
+  console.log('X-Forwarded-For:', req.headers['x-forwarded-for']);
+  console.log('Method:', req.method);
+  console.log('URL:', req.originalUrl);
+  console.log('Host:', req.headers.host);
+  console.log('Origin:', req.headers.origin);
+  console.log('User-Agent:', req.headers['user-agent']);
+  console.log('=============================');
+  next();
+});
+
 // Dynamic CORS to allow local network IPs (192.168.x.x) and localhost.
 // IMPORTANT: CORS must run BEFORE the body parsers so cross-origin requests are
 // handled/rejected before the server reads the entire request body.
