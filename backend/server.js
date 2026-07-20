@@ -193,8 +193,6 @@ const mongoOptions = {
   connectTimeoutMS: 10000,
   socketTimeoutMS: 30000,          // Fail a stuck socket before the 60s frontend timeout
   maxIdleTimeMS: 30000,            // Recycle idle sockets sooner so NAT/firewall-dropped connections don't linger in the pool (fixes intermittent hangs)
-  keepAlive: true,                 // Keep TCP connection alive
-  keepAliveInitialDelay: 300000,
   family: 4,                       // Use IPv4, skip trying IPv6
   maxPoolSize: 10,
   minPoolSize: 2,
