@@ -1335,6 +1335,9 @@ export const updatePlatformSettings = async (req, res) => {
     if (req.body.platformFeeType !== undefined) {
       settings.platformFeeType = req.body.platformFeeType;
     }
+    if (req.body.smsProvider !== undefined) {
+      settings.smsProvider = req.body.smsProvider;
+    }
 
     await settings.save();
 

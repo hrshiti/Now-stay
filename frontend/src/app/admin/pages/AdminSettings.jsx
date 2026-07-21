@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
 import {
     Settings, Shield, Bell, CreditCard, ToggleLeft,
-    ToggleRight, Save, Globe, Lock
+    ToggleRight, Save, Globe, Lock, MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useAdminStore from '../store/adminStore';
@@ -48,6 +47,7 @@ const AdminSettings = () => {
     const [commission, setCommission] = useState('');
     const [platformFee, setPlatformFee] = useState('');
     const [platformFeeType, setPlatformFeeType] = useState('percentage');
+    const [smsProvider, setSmsProvider] = useState('SMSINDIAHUB');
 
     const [loadingSettings, setLoadingSettings] = useState(false);
     const [savingProfile, setSavingProfile] = useState(false);
@@ -87,6 +87,7 @@ const AdminSettings = () => {
                     setCommission(Number(res.settings.defaultCommission) === 0 ? '' : res.settings.defaultCommission);
                     setPlatformFee(Number(res.settings.platformFee) === 0 ? '' : res.settings.platformFee);
                     setPlatformFeeType(res.settings.platformFeeType || 'percentage');
+                    setSmsProvider(res.settings.smsProvider || 'SMSINDIAHUB');
                 }
             } catch (error) {
                 toast.error('Failed to load platform settings');
@@ -163,7 +164,8 @@ const AdminSettings = () => {
                 defaultCommission: Number(commission),
 
                 platformFee: Number(platformFee),
-                platformFeeType
+                platformFeeType,
+                smsProvider
             });
             toast.success('Platform settings updated');
         } catch (error) {
@@ -363,6 +365,55 @@ const AdminSettings = () => {
                     </div>
                 </div>
                 <div className="flex justify-end pt-2">
+                    <button
+                        type="button"
+                        onClick={handleSavePlatformSettings}
+                        disabled={savingSettings || loadingSettings}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white text-sm font-bold rounded-xl shadow-md hover:bg-gray-900 active:scale-95 disabled:opacity-60"
+                    >
+                        <Save size={16} />
+                        {savingSettings || loadingSettings ? 'Saving...' : 'Save Configuration'}
+                    </button>
+                </div>
+            </Section>
+
+            <Section title="OTP & SMS Gateway Configuration" icon={MessageSquare}>
+                <div>
+                    <p className="font-medium text-gray-900 mb-1">Active OTP Service Provider</p>
+                    <p className="text-sm text-gray-500 mb-4">Select which SMS Gateway service to use for sending OTP verification messages.</p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div 
+                            onClick={() => setSmsProvider('SMSINDIAHUB')}
+                            className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center justify-between ${smsProvider === 'SMSINDIAHUB' ? 'border-black bg-gray-50 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
+                        >
+                            <div className="space-y-1">
+                                <span className="font-bold text-gray-900 block text-sm">SMS India Hub</span>
+                                <span className="text-xs text-gray-500 block">cloud.smsindiahub.in</span>
+                                <span className="inline-block text-[10px] bg-blue-100 text-blue-700 font-semibold px-2 py-0.5 rounded-full">GET Route API</span>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${smsProvider === 'SMSINDIAHUB' ? 'border-black bg-black' : 'border-gray-300'}`}>
+                                {smsProvider === 'SMSINDIAHUB' && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                        </div>
+
+                        <div 
+                            onClick={() => setSmsProvider('PRP')}
+                            className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center justify-between ${smsProvider === 'PRP' ? 'border-black bg-gray-50 shadow-sm' : 'border-gray-200 hover:border-gray-300 bg-white'}`}
+                        >
+                            <div className="space-y-1">
+                                <span className="font-bold text-gray-900 block text-sm">PRP SMS</span>
+                                <span className="text-xs text-gray-500 block">bulksmsadmin.com</span>
+                                <span className="inline-block text-[10px] bg-purple-100 text-purple-700 font-semibold px-2 py-0.5 rounded-full">Template API</span>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${smsProvider === 'PRP' ? 'border-black bg-black' : 'border-gray-300'}`}>
+                                {smsProvider === 'PRP' && <div className="w-2 h-2 rounded-full bg-white" />}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex justify-end pt-2 border-t border-gray-100 mt-4">
                     <button
                         type="button"
                         onClick={handleSavePlatformSettings}

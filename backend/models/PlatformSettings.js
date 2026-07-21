@@ -38,6 +38,11 @@ const platformSettingsSchema = new mongoose.Schema(
       type: String,
       enum: ['percentage', 'fixed'],
       default: 'percentage'
+    },
+    smsProvider: {
+      type: String,
+      enum: ['SMSINDIAHUB', 'PRP'],
+      default: process.env.SMS_PROVIDER || 'SMSINDIAHUB'
     }
   },
   { timestamps: true }
