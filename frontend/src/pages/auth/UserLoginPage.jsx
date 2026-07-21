@@ -40,12 +40,7 @@ const UserLoginPage = () => {
                 throw new Error("Email login is coming soon. Please use Phone.");
             }
 
-            console.log("Calling authService.sendOtp...");
-            const res = await authService.sendOtp(phone);
-            if (res?.devOtp) {
-                console.log('DEV OTP:', res.devOtp);
-                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
-            }
+            await authService.sendOtp(phone);
             setStep('otp');
         } catch (err) {
             console.error("Login Error:", err);

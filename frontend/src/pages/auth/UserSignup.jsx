@@ -178,11 +178,7 @@ const UserSignup = () => {
 
         try {
             setLoading(true);
-            const res = await authService.sendOtp(formData.phone, 'register', 'user', formData.email);
-            if (res?.devOtp) {
-                console.log('DEV OTP:', res.devOtp);
-                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
-            }
+            await authService.sendOtp(formData.phone, 'register', 'user', formData.email);
             setResendTimer(120);
             setCanResend(false);
             setStep(2);

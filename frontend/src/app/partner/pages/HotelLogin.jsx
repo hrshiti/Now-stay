@@ -46,13 +46,8 @@ const HotelLogin = () => {
         setLoading(true);
         try {
             // Use authService
-            const res = await authService.sendOtp(contact, 'login', 'partner');
-            if (res?.devOtp) {
-                console.log('DEV OTP:', res.devOtp);
-                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
-            } else {
-                toast.success('OTP sent successfully');
-            }
+            await authService.sendOtp(contact, 'login', 'partner');
+            toast.success('OTP sent successfully');
             setStep(2);
 
         } catch (err) {

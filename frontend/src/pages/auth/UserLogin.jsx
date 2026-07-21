@@ -98,11 +98,7 @@ const UserLogin = () => {
 
         try {
             setLoading(true);
-            const res = await authService.sendOtp(phone, 'login');
-            if (res?.devOtp) {
-                console.log('DEV OTP:', res.devOtp);
-                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
-            }
+            await authService.sendOtp(phone, 'login');
             setResendTimer(120);
             setCanResend(false);
             setStep(2);
@@ -143,17 +139,11 @@ const UserLogin = () => {
         try {
             setLoading(true);
             setError('');
-            const res = await authService.sendOtp(phone, 'login');
+            await authService.sendOtp(phone, 'login');
             setResendTimer(120);
             setCanResend(false);
             setOtp(['', '', '', '']); // Clear OTP
-            
-            if (res?.devOtp) {
-                console.log('DEV OTP:', res.devOtp);
-                toast.success('Live Testing OTP: ' + res.devOtp, { duration: 10000 });
-            } else {
-                toast.success('OTP sent successfully!');
-            }
+            toast.success('OTP sent successfully!');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP');
         } finally {
