@@ -1,3 +1,4 @@
+import React, { useState, useEffect } from 'react';
 import {
     Settings, Shield, Bell, CreditCard, ToggleLeft,
     ToggleRight, Save, Globe, Lock, MessageSquare
