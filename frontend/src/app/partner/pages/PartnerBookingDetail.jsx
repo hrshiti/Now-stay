@@ -322,10 +322,20 @@ const PartnerBookingDetail = () => {
             </div>
 
             {/* 5. Booking Commission (Internal) */}
-            <div className="flex justify-between items-center text-xs pt-1">
-              <span className="text-gray-500">Booking Commission</span>
-              <span className="text-gray-900 font-medium">- ₹{booking.adminCommission.toLocaleString()}</span>
-            </div>
+            {(() => {
+              const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+              const commRate = taxableAmount > 0 ? Math.round(((booking.adminCommission || 0) / taxableAmount) * 100) : 0;
+              return (
+                <div className="flex justify-between items-center text-xs pt-1">
+                  <span className="text-gray-500">
+                    Booking Commission {commRate > 0 ? `(${commRate}%)` : '(0%)'}
+                  </span>
+                  <span className="text-gray-900 font-medium">
+                    {(booking.adminCommission || 0) > 0 ? `- ₹${booking.adminCommission.toLocaleString()}` : `₹0`}
+                  </span>
+                </div>
+              );
+            })()}
 
             {/* 6. Partner Earnings (Demoted Visual Priority) */}
             <div className="flex justify-between items-center pt-2 border-t border-gray-100">

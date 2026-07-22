@@ -221,30 +221,60 @@ const AdminBookingDetail = () => {
                 {/* Right Col: Payment */}
                 <div className="space-y-6">
                     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 font-bold uppercase text-gray-500 text-[10px] flex items-center gap-2">
-                            <CreditCard size={14} /> Payment Summary
+                        <div className="bg-gray-50 px-6 py-3 border-b border-gray-200 font-bold uppercase text-gray-500 text-[10px] flex items-center justify-between">
+                            <span className="flex items-center gap-2">
+                                <CreditCard size={14} /> Payment Summary
+                            </span>
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-black tracking-wider uppercase border ${
+                                (booking.adminCommission || 0) === 0 
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                                    : 'bg-orange-50 text-orange-700 border-orange-200'
+                            }`}>
+                                {(booking.adminCommission || 0) === 0 ? 'Subscription Model (0%)' : 'Commission Model'}
+                            </span>
                         </div>
                         <div className="p-6 space-y-3">
                             <div className="flex justify-between text-xs font-bold uppercase">
-                                <span className="text-gray-400">Total Calculation</span>
-                                <span className="text-gray-900">₹{booking.totalAmount?.toLocaleString()}</span>
+                                <span className="text-gray-400">Room Base Price</span>
+                                <span className="text-gray-900">₹{(booking.baseAmount || (booking.totalAmount - (booking.taxes || 0)))?.toLocaleString()}</span>
                             </div>
 
                             <div className="flex justify-between text-xs font-bold uppercase">
                                 <span className="text-gray-400">Taxes & Fees</span>
                                 <span className="text-gray-900">₹{booking.taxes?.toLocaleString() || 0}</span>
                             </div>
+
+                            <div className="pt-2 border-t border-gray-100 flex justify-between text-xs font-bold uppercase">
+                                <span className="text-gray-700">Total Guest Paid</span>
+                                <span className="text-gray-900 font-extrabold">₹{booking.totalAmount?.toLocaleString()}</span>
+                            </div>
+
+                            {(() => {
+                                const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+                                const commRate = taxableAmount > 0 ? Math.round(((booking.adminCommission || 0) / taxableAmount) * 100) : 0;
+                                return (
+                                    <div className="flex justify-between text-xs font-bold uppercase pt-1">
+                                        <span className="text-gray-500">
+                                            Booking Commission {commRate > 0 ? `(${commRate}%)` : '(0%)'}
+                                        </span>
+                                        <span className={`font-extrabold ${(booking.adminCommission || 0) > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                            ₹{(booking.adminCommission || 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                );
+                            })()}
+
                             <div className="flex justify-between text-xs font-bold uppercase">
+                                <span className="text-gray-500">Partner Payout</span>
+                                <span className="text-emerald-700 font-extrabold">
+                                    ₹{(booking.partnerPayout || (booking.totalAmount - (booking.adminCommission || 0)))?.toLocaleString()}
+                                </span>
+                            </div>
+
+                            <div className="pt-2 border-t border-gray-100 flex justify-between text-xs font-bold uppercase">
                                 <span className="text-gray-400">Payment Method</span>
                                 <span className="text-gray-900">{booking.paymentMethod?.replace(/_/g, ' ') || 'N/A'}</span>
                             </div>
-
-                            {booking.paymentMethod === 'pay_at_hotel' && (
-                                <div className="flex justify-between text-xs font-bold uppercase">
-                                    <span className="text-gray-400">Booking Commission</span>
-                                    <span className="text-amber-600">₹{((booking.adminCommission || 0) + (booking.taxes || 0)).toLocaleString()}</span>
-                                </div>
-                            )}
 
                             <div className="flex justify-between text-xs font-bold uppercase">
                                 <span className={booking.paymentStatus === 'paid' ? 'text-emerald-600' : booking.paymentStatus === 'refunded' ? 'text-gray-500' : booking.paymentStatus === 'partial' ? 'text-orange-600' : 'text-amber-600'}>
@@ -267,10 +297,7 @@ const AdminBookingDetail = () => {
                                     </div>
                                 </>
                             )}
-                            <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
-                                <span className="font-bold text-gray-900 uppercase text-xs">Total Amount</span>
-                                <span className="text-xl font-bold text-gray-900">₹{booking.totalAmount?.toLocaleString()}</span>
-                            </div>
+
                             <div className="pt-2">
                                 {booking.paymentStatus === 'paid' ? (
                                     <span className="flex items-center justify-center w-full py-1.5 bg-green-50 text-green-700 text-[10px] font-bold rounded border border-green-100 uppercase">

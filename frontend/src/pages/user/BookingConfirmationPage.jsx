@@ -410,37 +410,55 @@ const BookingConfirmationPage = () => {
                                         <span>₹{booking.extraCharges?.toLocaleString()}</span>
                                     </div>
                                 )}
-                                {booking.taxes > 0 && (
-                                    <>
-                                        {booking.taxType === 'inter' ? (
+                                {booking.taxes > 0 && (() => {
+                                    const taxable = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+                                    const taxRate = taxable > 0 ? Math.round((booking.taxes / taxable) * 100) : 18;
+
+                                    if (booking.taxType === 'inter' && booking.igst) {
+                                        return (
                                             <div className="flex justify-between text-sm text-gray-600">
-                                                <span>GST ({((booking.igst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(0)}%)</span>
-                                                <span>₹{booking.igst?.toLocaleString()}</span>
+                                                <span>IGST ({taxRate}%)</span>
+                                                <span>₹{booking.igst.toLocaleString()}</span>
                                             </div>
-                                        ) : (
+                                        );
+                                    } else if (booking.cgst && booking.sgst) {
+                                        return (
                                             <>
                                                 <div className="flex justify-between text-sm text-gray-600">
-                                                    <span>CGST ({((booking.cgst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(1)}%)</span>
-                                                    <span>₹{booking.cgst?.toLocaleString()}</span>
+                                                    <span>CGST ({(taxRate / 2).toFixed(1)}%)</span>
+                                                    <span>₹{booking.cgst.toLocaleString()}</span>
                                                 </div>
                                                 <div className="flex justify-between text-sm text-gray-600">
-                                                    <span>SGST ({((booking.sgst / (booking.baseAmount + (booking.extraCharges || 0) - (booking.discount || 0))) * 100).toFixed(1)}%)</span>
-                                                    <span>₹{booking.sgst?.toLocaleString()}</span>
+                                                    <span>SGST ({(taxRate / 2).toFixed(1)}%)</span>
+                                                    <span>₹{booking.sgst.toLocaleString()}</span>
                                                 </div>
                                             </>
-                                        )}
-                                    </>
-                                )}
+                                        );
+                                    } else {
+                                        return (
+                                            <div className="flex justify-between text-sm text-gray-600">
+                                                <span>GST / Taxes ({taxRate}%)</span>
+                                                <span>₹{booking.taxes.toLocaleString()}</span>
+                                            </div>
+                                        );
+                                    }
+                                })()}
                                 {(booking.discount > 0) && (
                                     <div className="flex justify-between text-sm text-green-600 font-medium">
                                         <span>Discount</span>
                                         <span>-₹{booking.discount?.toLocaleString()}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between text-sm text-gray-600">
-                                    <span>Platform Fees</span>
-                                    <span>₹{booking.platformFee?.toLocaleString() || 0}</span>
-                                </div>
+                                {(booking.platformFee > 0) && (() => {
+                                    const taxable = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+                                    const pFeeRate = taxable > 0 ? Math.round((booking.platformFee / taxable) * 100) : 0;
+                                    return (
+                                        <div className="flex justify-between text-sm text-gray-600">
+                                            <span>Platform Fees {pFeeRate > 0 ? `(${pFeeRate}%)` : ''}</span>
+                                            <span>₹{booking.platformFee?.toLocaleString()}</span>
+                                        </div>
+                                    );
+                                })()}
                                 <div className="border-t border-gray-100 pt-3 flex justify-between items-center bg-gray-50 -mx-6 px-6 py-4 mt-4">
                                     <span className="font-bold text-gray-900">Total Amount</span>
                                     <span className="text-xl font-black text-gray-900">₹{booking.totalAmount?.toLocaleString()}</span>
