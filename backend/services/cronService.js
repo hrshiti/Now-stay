@@ -41,18 +41,43 @@ class CronService {
       const now = new Date();
       const PartnerSubscription = mongoose.model('PartnerSubscription');
       
-      const result = await PartnerSubscription.updateMany(
-        { 
-          isActive: true, 
-          endDate: { $lte: now } 
-        },
-        { 
-          $set: { isActive: false } 
+      const expiredSubs = await PartnerSubscription.find({
+        isActive: true,
+        endDate: { $lte: now }
+      }).populate('partnerId').populate('planId');
+
+      if (expiredSubs.length > 0) {
+        console.log(`[Cron] Found ${expiredSubs.length} expired subscriptions to deactivate and notify.`);
+        
+        for (const sub of expiredSubs) {
+          sub.isActive = false;
+          await sub.save();
+
+          const partner = sub.partnerId;
+          const plan = sub.planId;
+
+          if (partner && partner._id) {
+            const planName = plan?.name || 'Subscription Plan';
+            const templateName = plan?.propertyTemplate ? plan.propertyTemplate.toUpperCase() : 'Property';
+
+            // Send Push & DB Notification to Partner
+            notificationService.sendToPartner(
+              partner._id,
+              {
+                title: 'Subscription Expired ⚠️',
+                body: `Your ${planName} (${templateName}) subscription has expired. Renew now to enjoy 0% booking commission!`
+              },
+              {
+                type: 'subscription_expired',
+                subscriptionId: String(sub._id),
+                planId: String(plan?._id || ''),
+                url: '/hotel/subscriptions'
+              }
+            ).catch(e => console.error('[Cron Error] Failed to send subscription expiry notification:', e));
+
+            console.log(`[Cron] Deactivated subscription ${sub._id} and notified partner ${partner.name || partner._id}`);
+          }
         }
-      );
-      
-      if (result.modifiedCount > 0) {
-        console.log(`[Cron] Deactivated ${result.modifiedCount} expired subscriptions.`);
       }
     } catch (error) {
       console.error('[Cron Error] processSubscriptionExpiry failed:', error);

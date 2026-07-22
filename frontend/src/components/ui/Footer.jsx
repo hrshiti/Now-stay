@@ -79,7 +79,7 @@ const Footer = () => {
                                     <img src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" alt="Google Play" className="w-4 h-4 object-contain transition-transform group-hover:scale-110" />
                                     <span className="text-xs font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">Google Play</span>
                                 </a>
-                                <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1e293b] border border-gray-700/60 hover:border-[#00d2ad] transition-all group">
+                                <a href="https://apps.apple.com/in/app/nowstay/id6761835038" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1e293b] border border-gray-700/60 hover:border-[#00d2ad] transition-all group">
                                     <img src="/WhatsApp_Image_2026-05-11_at_12.14.22_PM-removebg-preview.png" alt="App Store" className="w-4 h-4 object-contain transition-transform group-hover:scale-110" />
                                     <span className="text-xs font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">App Store</span>
                                 </a>
@@ -94,7 +94,7 @@ const Footer = () => {
                                     <img src="/WhatsApp_Image_2026-05-09_at_1.50.21_PM-removebg-preview.png" alt="Google Play" className="w-4 h-4 object-contain transition-transform group-hover:scale-110" />
                                     <span className="text-xs font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">Google Play</span>
                                 </a>
-                                <a href="https://apps.apple.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1e293b] border border-gray-700/60 hover:border-[#00d2ad] transition-all group">
+                                <a href="https://apps.apple.com/in/app/nowstay-partner/id6761837073" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1e293b] border border-gray-700/60 hover:border-[#00d2ad] transition-all group">
                                     <img src="/WhatsApp_Image_2026-05-11_at_12.14.22_PM-removebg-preview.png" alt="App Store" className="w-4 h-4 object-contain transition-transform group-hover:scale-110" />
                                     <span className="text-xs font-bold text-white group-hover:text-[#00d2ad] whitespace-nowrap">App Store</span>
                                 </a>
