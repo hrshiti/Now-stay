@@ -172,6 +172,13 @@ const PartnerPropertyDetails = () => {
             <span className="px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-md border border-white/20 text-[10px] font-bold uppercase tracking-widest">
               {property.propertyType}
             </span>
+            <span className={`px-2 py-0.5 rounded-md backdrop-blur-md border text-[10px] font-bold uppercase tracking-widest ${
+              property.pricingType === 'Subscription' 
+                ? 'bg-indigo-600/80 text-white border-indigo-400/40' 
+                : 'bg-orange-600/80 text-white border-orange-400/40'
+            }`}>
+              {property.pricingType === 'Subscription' ? 'Subscription' : 'Commission'}
+            </span>
           </div>
           <h1 className="text-2xl font-bold leading-tight mb-1 shadow-black/10 drop-shadow-md">{property.propertyName}</h1>
           <div className="flex items-center gap-1.5 text-xs text-gray-100 font-medium opacity-90">

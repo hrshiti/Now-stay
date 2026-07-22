@@ -392,12 +392,35 @@ export const getAllHotels = async (req, res) => {
       isActive: true,
       startDate: { $lte: new Date() },
       endDate: { $gt: new Date() }
+    }).populate('planId');
+    
+    // Group active subscriptions by partnerId
+    const subscriptionsByPartner = {};
+    activeSubscriptions.forEach(sub => {
+      const pId = sub.partnerId.toString();
+      if (!subscriptionsByPartner[pId]) subscriptionsByPartner[pId] = [];
+      subscriptionsByPartner[pId].push(sub);
     });
     
-    const subscribedPartners = new Set(activeSubscriptions.map(s => s.partnerId.toString()));
-    
     const hotelsWithPricingType = hotels.map(h => {
-      const isSubscribed = h.partnerId && subscribedPartners.has(h.partnerId._id.toString());
+      let isSubscribed = false;
+      if (h.partnerId) {
+        const partnerSubs = subscriptionsByPartner[h.partnerId._id.toString()];
+        if (partnerSubs && partnerSubs.length > 0) {
+          const propCreatedAt = new Date(h.createdAt || h._id.getTimestamp());
+          const propTemplate = h.propertyTemplate;
+          
+          for (const activeSub of partnerSubs) {
+            const subStartDate = new Date(activeSub.startDate);
+            const planTemplate = activeSub.planId?.propertyTemplate;
+            
+            if (propCreatedAt >= subStartDate && (planTemplate === 'all' || planTemplate === propTemplate)) {
+              isSubscribed = true;
+              break;
+            }
+          }
+        }
+      }
       return {
         ...h.toObject(),
         pricingType: isSubscribed ? 'Subscription' : 'Commission'
@@ -1085,19 +1108,35 @@ export const getHotelDetails = async (req, res) => {
       .populate('roomTypeId', 'name')
       .sort({ createdAt: -1 });
 
-    const activeSub = await PartnerSubscription.findOne({
+    const activeSubscriptions = await PartnerSubscription.find({
       partnerId: property.partnerId?._id,
       isActive: true,
       startDate: { $lte: new Date() },
       endDate: { $gt: new Date() }
-    });
+    }).populate('planId');
+
+    let isSubscribed = false;
+    if (activeSubscriptions.length > 0) {
+      const propCreatedAt = new Date(property.createdAt || property._id.getTimestamp());
+      const propTemplate = property.propertyTemplate;
+      
+      for (const activeSub of activeSubscriptions) {
+        const subStartDate = new Date(activeSub.startDate);
+        const planTemplate = activeSub.planId?.propertyTemplate;
+        
+        if (propCreatedAt >= subStartDate && (planTemplate === 'all' || planTemplate === propTemplate)) {
+          isSubscribed = true;
+          break;
+        }
+      }
+    }
 
     res.status(200).json({
       success: true,
       hotel: {
         ...property.toObject(),
         rooms: roomTypes,
-        pricingType: activeSub ? 'Subscription' : 'Commission'
+        pricingType: isSubscribed ? 'Subscription' : 'Commission'
       },
       bookings,
       documents

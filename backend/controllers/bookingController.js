@@ -350,27 +350,47 @@ export const createBooking = async (req, res) => {
     let adminCommission = 0;
     let appliedCommissionRate = commissionRate;
 
-    // Dynamically retrieve PartnerSubscription logic
-    let activeSub = null;
     try {
       const PartnerSubscription = mongoose.model('PartnerSubscription');
-      activeSub = await PartnerSubscription.findOne({
+      // Find ALL active subscriptions for the partner, since they might have multiple for different types
+      const activeSubscriptions = await PartnerSubscription.find({
         partnerId: property.partnerId,
         isActive: true,
         startDate: { $lte: new Date() },
         endDate: { $gt: new Date() }
       }).populate('planId');
+
+      let activeSub = null;
+      if (activeSubscriptions.length > 0) {
+        const propCreatedAt = new Date(property.createdAt || property._id.getTimestamp());
+        const propTemplate = property.propertyTemplate;
+        
+        for (const sub of activeSubscriptions) {
+          const subStartDate = new Date(sub.startDate);
+          const planTemplate = sub.planId?.propertyTemplate;
+          
+          if (propCreatedAt >= subStartDate && (planTemplate === 'all' || planTemplate === propTemplate)) {
+            activeSub = sub; // Valid subscription found
+            break;
+          }
+        }
+      }
+
+      if (activeSub) {
+        // Subscribed Partner -> 0% commission
+        appliedCommissionRate = 0;
+        adminCommission = 0;
+      } else {
+        // Non-Subscribed Partner -> Standard deduction
+        adminCommission = Math.round((taxableAmount * commissionRate) / 100);
+        if (adminCommission < PaymentConfig.minCommission) {
+          adminCommission = PaymentConfig.minCommission;
+        }
+      }
     } catch (err) {
       // If model not loaded or fails, we fallback gracefully
       console.warn("Could not check subscription:", err.message);
-    }
-
-    if (activeSub) {
-      // Subscribed Partner -> 0% commission
-      appliedCommissionRate = 0;
-      adminCommission = 0;
-    } else {
-      // Non-Subscribed Partner -> Standard deduction
+      // Fallback to standard deduction on error
       adminCommission = Math.round((taxableAmount * commissionRate) / 100);
       if (adminCommission < PaymentConfig.minCommission) {
         adminCommission = PaymentConfig.minCommission;
@@ -732,7 +752,21 @@ export const getPartnerBookings = async (req, res) => {
       .populate('roomTypeId', 'name')
       .sort({ createdAt: -1 });
 
-    res.json(bookings);
+    // Inject pricingType to fix frontend mismatch.
+    // If adminCommission is 0, the booking was made under a subscription.
+    const bookingsWithPricing = bookings.map(b => {
+      const bObj = b.toObject();
+      const isSubscription = (bObj.adminCommission || 0) === 0;
+      const pricingType = isSubscription ? 'Subscription' : 'Commission';
+      
+      bObj.pricingType = pricingType;
+      if (bObj.propertyId) {
+        bObj.propertyId.pricingType = pricingType;
+      }
+      return bObj;
+    });
+
+    res.json(bookingsWithPricing);
   } catch (error) {
     console.error('Get Partner Bookings Error:', error);
     res.status(500).json({ message: 'Server error fetching bookings' });

@@ -170,7 +170,14 @@ const PartnerProperties = () => {
                             </span>
                           </p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold uppercase ${
+                            property.pricingType === 'Subscription'
+                              ? 'bg-indigo-100 text-indigo-700 border-indigo-200'
+                              : 'bg-orange-100 text-orange-700 border-orange-200'
+                          }`}>
+                            {property.pricingType === 'Subscription' ? 'Subscription' : 'Commission'}
+                          </span>
                           <span className="text-[10px] px-2 py-0.5 rounded-full border text-gray-600 bg-gray-50 uppercase font-bold">
                             {property.status}
                           </span>

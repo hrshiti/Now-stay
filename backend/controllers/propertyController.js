@@ -8,6 +8,7 @@ import emailService from '../services/emailService.js';
 import notificationService from '../services/notificationService.js';
 import User from '../models/User.js';
 import Admin from '../models/Admin.js';
+import PartnerSubscription from '../models/PartnerSubscription.js';
 
 const notifySubmission = async (property) => {
   try {
@@ -535,7 +536,31 @@ export const getMyProperties = async (req, res) => {
       query.propertyType = String(req.query.type).toLowerCase();
     }
     const properties = await Property.find(query).sort({ createdAt: -1 });
-    res.json({ success: true, properties });
+
+    const activeSubscriptions = await PartnerSubscription.find({
+      partnerId: req.user._id,
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gt: new Date() }
+    }).populate('planId');
+
+    const propertiesWithPricingType = properties.map(p => {
+      const propCreatedAt = new Date(p.createdAt || p._id.getTimestamp());
+      const propTemplate = p.propertyTemplate;
+      
+      const isSubscribed = activeSubscriptions.some(sub => {
+        const subStartDate = new Date(sub.startDate);
+        const planTemplate = sub.planId?.propertyTemplate;
+        return propCreatedAt >= subStartDate && (planTemplate === 'all' || planTemplate === propTemplate);
+      });
+
+      return {
+        ...p.toObject(),
+        pricingType: isSubscribed ? 'Subscription' : 'Commission'
+      };
+    });
+
+    res.json({ success: true, properties: propertiesWithPricingType });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
@@ -548,7 +573,34 @@ export const getPropertyDetails = async (req, res) => {
     if (!property) return res.status(404).json({ message: 'Property not found' });
     const roomTypes = await RoomType.find({ propertyId: id, isActive: true });
     const documents = await PropertyDocument.findOne({ propertyId: id });
-    res.json({ property, roomTypes, documents });
+
+    let isSubscribed = false;
+    try {
+      const activeSubscriptions = await PartnerSubscription.find({
+        partnerId: property.partnerId,
+        isActive: true,
+        startDate: { $lte: new Date() },
+        endDate: { $gt: new Date() }
+      }).populate('planId');
+
+      const propCreatedAt = new Date(property.createdAt || property._id.getTimestamp());
+      const propTemplate = property.propertyTemplate;
+
+      isSubscribed = activeSubscriptions.some(sub => {
+        const subStartDate = new Date(sub.startDate);
+        const planTemplate = sub.planId?.propertyTemplate;
+        return propCreatedAt >= subStartDate && (planTemplate === 'all' || planTemplate === propTemplate);
+      });
+    } catch (err) {
+      console.warn('Could not check property subscription detail:', err.message);
+    }
+
+    const propertyObj = {
+      ...property.toObject(),
+      pricingType: isSubscribed ? 'Subscription' : 'Commission'
+    };
+
+    res.json({ property: propertyObj, roomTypes, documents });
   } catch (e) {
     res.status(500).json({ message: e.message });
   }
