@@ -1590,16 +1590,7 @@ export const getFinanceStats = async (req, res) => {
     // 1. Paid bookings (Online/Wallet) -> Commission & Tax settled.
     // 2. Pay At Hotel bookings (Confirmed) -> Commission & Tax deducted from Partner Wallet upfront.
     const matchStage = {
-      $or: [
-        {
-          paymentStatus: 'paid',
-          bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in'] }
-        },
-        {
-          paymentMethod: 'pay_at_hotel',
-          bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in'] }
-        }
-      ]
+      bookingStatus: { $in: ['confirmed', 'checked_in', 'checked_out', 'completed'] }
     };
 
     const financialsOr = await Booking.aggregate([

@@ -141,7 +141,7 @@ const PartnerBookingDetail = () => {
   const canCheckOut = booking.bookingStatus === 'checked_in';
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="min-h-screen bg-gray-50 pb-32">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-30 px-4 py-3 flex items-center gap-3">
         <button onClick={() => navigate('/hotel/bookings')} className="p-2 hover:bg-gray-100 rounded-full">
@@ -315,6 +315,14 @@ const PartnerBookingDetail = () => {
               <span className="font-bold text-gray-900">+ ₹{booking.taxes.toLocaleString()}</span>
             </div>
 
+            {/* 3.5. Platform Fee */}
+            {(booking.platformFee > 0) && (
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500">Platform Fee</span>
+                <span className="font-bold text-gray-900">+ ₹{booking.platformFee.toLocaleString()}</span>
+              </div>
+            )}
+
             {/* 4. Total Guest Paid */}
             <div className="flex justify-between items-center py-2 border-t border-b border-gray-50 bg-gray-50/50 px-2 -mx-2">
               <span className="text-xs font-bold text-gray-700">Total Guest Paid</span>
@@ -323,7 +331,8 @@ const PartnerBookingDetail = () => {
 
             {/* 5. Booking Commission (Internal) */}
             {(() => {
-              const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+              const totalDisc = (booking.discount || 0) + (booking.prepaidDiscount || 0);
+              const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - totalDisc;
               const commRate = taxableAmount > 0 ? Math.round(((booking.adminCommission || 0) / taxableAmount) * 100) : 0;
               return (
                 <div className="flex justify-between items-center text-xs pt-1">
@@ -346,7 +355,8 @@ const PartnerBookingDetail = () => {
             {/* 6.5. Booking Model Type Note */}
             {(() => {
               const isZeroCommission = (booking.adminCommission || 0) === 0;
-              const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+              const totalDisc = (booking.discount || 0) + (booking.prepaidDiscount || 0);
+              const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - totalDisc;
               const commRate = taxableAmount > 0 ? Math.round(((booking.adminCommission || 0) / taxableAmount) * 100) : 0;
 
               return isZeroCommission ? (
@@ -369,42 +379,47 @@ const PartnerBookingDetail = () => {
             })()}
 
             {/* 7. Collection Status (CRITICAL - HIGH VISIBILITY) */}
-            <div className={`mt-4 p-4 rounded-2xl border-2 space-y-2 shadow-sm ${booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
-              <div className="flex justify-between items-center text-[10px]">
-                <span className="text-gray-500 font-bold uppercase tracking-wider">{booking.remainingAmount === 0 && booking.paymentStatus === 'paid' ? 'Total Paid Online' : 'Already Paid Online'}</span>
-                <span className="text-gray-900 font-bold">₹{(booking.amountPaid > 0 ? booking.amountPaid : (booking.paymentStatus === 'paid' ? booking.totalAmount : 0)).toLocaleString()}</span>
+            {booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? (
+              <div className="mt-4 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/80 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold shrink-0">
+                    <AlertTriangle size={18} />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wide block leading-tight">Collect at Hotel</span>
+                    <span className="text-[10px] font-medium text-amber-700">Already Paid Online: ₹{(booking.amountPaid > 0 ? booking.amountPaid : 0).toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-bold text-amber-700 uppercase tracking-wider block">Due Amount</span>
+                  <span className="text-lg font-black text-amber-900">₹{(booking.remainingAmount > 0 ? booking.remainingAmount : booking.totalAmount).toLocaleString()}</span>
+                </div>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-gray-200/50">
-                <span className={`${booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'text-red-800' : 'text-green-800'} font-black text-sm uppercase tracking-tight`}>
-                  {booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'COLLECT AT HOTEL' : 'BALANCED / PAID'}
-                </span>
-                <span className={`${booking.remainingAmount > 0 || booking.paymentStatus === 'pending' ? 'text-red-600' : 'text-green-600'} font-black text-2xl`}>
-                  ₹{(booking.remainingAmount > 0 ? booking.remainingAmount : (booking.paymentStatus === 'pending' ? booking.totalAmount : 0)).toLocaleString()}
-                </span>
-              </div>
-            </div>
-
-            {/* Status Information */}
-            <div className="flex justify-between items-center text-xs pt-2">
-              <span className="text-gray-500 font-bold uppercase tracking-tight text-[10px]">Payment Status</span>
-              <div className="flex items-center gap-2">
-                <span className={`font-bold px-2.5 py-1 rounded-lg text-[10px] uppercase tracking-wide border ${booking.paymentStatus === 'paid' ? 'bg-green-50 text-green-700 border-green-100' :
-                    booking.paymentStatus === 'partial' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                      'bg-yellow-50 text-yellow-700 border-yellow-100'
-                  }`}>
-                  {booking.paymentStatus === 'partial' ? 'Partial (30% Paid)' : booking.paymentStatus === 'paid' ? 'Fully Paid' : 'Pay At Hotel'}
+            ) : (
+              <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200/80 flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                    <CheckCircle size={18} />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wide block leading-tight">Payment Completed</span>
+                    <span className="text-[10px] font-medium text-emerald-700">Total Paid Online: ₹{booking.totalAmount.toLocaleString()}</span>
+                  </div>
+                </div>
+                <span className="bg-emerald-600 text-white font-bold text-[10px] px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-xs">
+                  Fully Paid
                 </span>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
         {/* Actions Grid */}
-        <div className="grid grid-cols-2 gap-2.5 pt-4 pb-2 border-t border-gray-100">
+        <div className="space-y-2.5 pt-4 pb-2 border-t border-gray-100">
           {canCheckIn && (
             <button
               onClick={handleCheckIn}
-              className="col-span-2 bg-black text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+              className="w-full bg-black text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 text-sm"
             >
               <LogIn size={18} /> Check In Guest
             </button>
@@ -413,29 +428,31 @@ const PartnerBookingDetail = () => {
           {canCheckOut && (
             <button
               onClick={handleCheckOut}
-              className="col-span-2 bg-black text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+              className="w-full bg-black text-white font-bold py-3.5 rounded-xl shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2 text-sm"
             >
               <LogOut size={18} /> Check Out Guest
             </button>
           )}
 
-          {canMarkPaid && (
-            <button
-              onClick={handleMarkPaid}
-              className={`bg-green-600 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 ${canCheckIn || canCheckOut ? 'col-span-1' : 'col-span-2'}`}
-            >
-              <CheckCircle size={16} /> Mark Payment
-            </button>
-          )}
+          <div className="grid grid-cols-2 gap-2.5">
+            {canMarkPaid && (
+              <button
+                onClick={handleMarkPaid}
+                className={`bg-green-600 text-white font-bold py-3 rounded-xl shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 text-xs ${!canMarkNoShow ? 'col-span-2' : ''}`}
+              >
+                <CheckCircle size={16} /> Mark Payment
+              </button>
+            )}
 
-          {canMarkNoShow && (
-            <button
-              onClick={handleNoShow}
-              className={`bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 active:scale-95 transition-transform flex items-center justify-center gap-2 ${canCheckIn || canCheckOut ? 'col-span-1' : 'col-span-2'}`}
-            >
-              <AlertTriangle size={16} /> No Show
-            </button>
-          )}
+            {canMarkNoShow && (
+              <button
+                onClick={handleNoShow}
+                className={`bg-white border border-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-50 active:scale-95 transition-transform flex items-center justify-center gap-2 text-xs ${!canMarkPaid ? 'col-span-2' : ''}`}
+              >
+                <AlertTriangle size={16} /> No Show
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -459,11 +476,11 @@ const PartnerBookingDetail = () => {
 
       {/* Professional Invoice Modal */}
       {showInvoice && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm print:bg-white print:static print:inset-auto print:z-0">
-          <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto sm:rounded-3xl relative print:max-h-none print:overflow-visible print:rounded-none print:shadow-none print:w-full print-area">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm print:bg-white print:static print:inset-auto print:z-0">
+          <div className="bg-white w-full max-w-4xl max-h-[92vh] overflow-y-auto sm:rounded-3xl relative print:max-h-none print:overflow-visible print:rounded-none print:shadow-none print:w-full print-area">
             <button 
               onClick={() => setShowInvoice(false)}
-              className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all z-10 print:hidden"
+              className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all z-20 text-gray-600 print:hidden"
             >
               <X size={20} />
             </button>
@@ -478,18 +495,18 @@ const PartnerBookingDetail = () => {
               />
             </div>
 
-            <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 print:hidden">
+            <div className="p-4 px-5 pb-20 sm:pb-4 border-t border-gray-100 bg-gray-50/90 backdrop-blur-md flex items-center justify-end gap-3 print:hidden">
               <button 
                 onClick={() => setShowInvoice(false)}
-                className="px-6 py-2 text-sm font-bold text-gray-500 uppercase"
+                className="px-4 py-2 text-xs sm:text-sm font-bold text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-200/60 transition-all uppercase tracking-wide"
               >
                 Close
               </button>
               <button 
                 onClick={() => window.print()}
-                className="px-8 py-2 bg-blue-600 text-white rounded-xl text-sm font-black uppercase shadow-lg shadow-blue-900/20 hover:bg-blue-700 transition-all flex items-center gap-2"
+                className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold uppercase shadow-md shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
               >
-                <Printer size={16} /> Print Invoice
+                <Printer size={15} /> Print / Download
               </button>
             </div>
           </div>

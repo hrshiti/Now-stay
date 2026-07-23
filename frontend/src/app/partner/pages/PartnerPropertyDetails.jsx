@@ -233,11 +233,11 @@ const PartnerPropertyDetails = () => {
       {activeSection && (
         <>
           <div
-            className="fixed inset-0 bg-black/60 z-[70] backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/60 z-[99990] backdrop-blur-sm transition-opacity"
             onClick={() => setActiveSection(null)}
           />
           <div
-            className="fixed bottom-0 left-0 right-0 bg-white z-[80] rounded-t-[2rem] shadow-[0_-4px_30px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-out transform h-[85vh] flex flex-col animate-in slide-in-from-bottom-full"
+            className="fixed bottom-0 left-0 right-0 bg-white z-[99999] rounded-t-[2rem] shadow-[0_-4px_30px_rgba(0,0,0,0.15)] transition-transform duration-300 ease-out transform h-[85vh] flex flex-col animate-in slide-in-from-bottom-full"
           >
             <div className="flex-none p-4 pb-2 text-center relative border-b border-gray-50 bg-white rounded-t-[2rem]">
               <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4" />

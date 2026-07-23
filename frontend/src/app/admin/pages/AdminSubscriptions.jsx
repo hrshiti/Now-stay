@@ -220,8 +220,8 @@ const AdminSubscriptions = () => {
                   </span>
                 )}
               </div>
-              <h2 className="text-xl font-bold mb-1">{plan.name}</h2>
-              <p className="text-gray-500 text-sm mb-4 min-h-[40px]">{plan.description}</p>
+              <h2 className="text-xl font-bold mb-1 break-words">{plan.name}</h2>
+              <p className="text-gray-500 text-sm mb-4 min-h-[40px] break-words">{plan.description}</p>
               
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-3xl font-black">₹{plan.price}</span>

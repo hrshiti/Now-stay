@@ -596,7 +596,7 @@ export const createBooking = async (req, res) => {
         if (!partnerWallet) {
           partnerWallet = await Wallet.create({ partnerId: property.partnerId, role: 'partner', balance: 0 });
         }
-        await partnerWallet.debit(amountToDeduct, `Commission & Taxes for Pay at Hotel Booking #${bookingId}`, bookingId, 'commission_deduction');
+        await partnerWallet.debit(amountToDeduct, `Booking Commission & Fee for Pay at Hotel Booking #${bookingId}`, bookingId, 'commission_deduction');
 
         let adminWallet = await Wallet.findOne({ role: 'admin' });
         if (!adminWallet) {
@@ -606,7 +606,7 @@ export const createBooking = async (req, res) => {
           }
         }
         if (adminWallet) {
-          await adminWallet.credit(amountToDeduct, `Commission & Taxes for Pay at Hotel Booking #${bookingId}`, bookingId, 'commission_tax');
+          await adminWallet.credit(amountToDeduct, `Booking Commission & Fee for Pay at Hotel Booking #${bookingId}`, bookingId, 'commission_tax');
         }
       }
     }
@@ -1165,14 +1165,19 @@ export const markBookingAsPaid = async (req, res) => {
     await booking.save();
 
     // --- WALLET SETTLEMENT (Pay at Hotel) ---
-    // The partner collected totalAmount (including tax) at the hotel.
-    // They keep the tax. We only deduct the platform's cut (Commission + Platform Fee).
+    // Note: Commission & Platform Fee are already deducted upfront during booking creation (createBooking).
+    // Check if commission deduction transaction already exists to avoid double deduction.
+    const Transaction = mongoose.model('Transaction');
+    const existingDeduction = await Transaction.findOne({
+      category: 'commission_deduction',
+      reference: { $in: [booking.bookingId, booking._id.toString()] }
+    });
 
     const adminCommission = booking.adminCommission || 0;
     const platformFee = booking.platformFee || 0;
     const totalDeduction = adminCommission + platformFee;
 
-    if (totalDeduction > 0 && booking.propertyId.partnerId) {
+    if (!existingDeduction && totalDeduction > 0 && booking.propertyId?.partnerId) {
       try {
         let partnerWallet = await Wallet.findOne({ partnerId: booking.propertyId.partnerId, role: 'partner' });
         if (!partnerWallet) {
@@ -1183,7 +1188,7 @@ export const markBookingAsPaid = async (req, res) => {
           });
         }
 
-        // Debit Partner for the Platform's cut only
+        // Debit Partner for the Platform's cut only if not debited upfront
         await partnerWallet.debit(
           totalDeduction,
           `Booking Commission & Fee for Booking #${booking.bookingId}`,

@@ -411,7 +411,8 @@ const BookingConfirmationPage = () => {
                                     </div>
                                 )}
                                 {booking.taxes > 0 && (() => {
-                                    const taxable = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+                                    const totalDisc = (booking.discount || 0) + (booking.prepaidDiscount || 0);
+                                    const taxable = (booking.baseAmount || 0) + (booking.extraCharges || 0) - totalDisc;
                                     const taxRate = taxable > 0 ? Math.round((booking.taxes / taxable) * 100) : 18;
 
                                     if (booking.taxType === 'inter' && booking.igst) {
@@ -443,14 +444,15 @@ const BookingConfirmationPage = () => {
                                         );
                                     }
                                 })()}
-                                {(booking.discount > 0) && (
+                                {((booking.discount || 0) + (booking.prepaidDiscount || 0) > 0) && (
                                     <div className="flex justify-between text-sm text-green-600 font-medium">
                                         <span>Discount</span>
-                                        <span>-₹{booking.discount?.toLocaleString()}</span>
+                                        <span>-₹{((booking.discount || 0) + (booking.prepaidDiscount || 0)).toLocaleString()}</span>
                                     </div>
                                 )}
                                 {(booking.platformFee > 0) && (() => {
-                                    const taxable = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+                                    const totalDisc = (booking.discount || 0) + (booking.prepaidDiscount || 0);
+                                    const taxable = (booking.baseAmount || 0) + (booking.extraCharges || 0) - totalDisc;
                                     const pFeeRate = taxable > 0 ? Math.round((booking.platformFee / taxable) * 100) : 0;
                                     return (
                                         <div className="flex justify-between text-sm text-gray-600">
@@ -629,11 +631,11 @@ const BookingConfirmationPage = () => {
 
             {/* Professional Invoice Modal */}
             {showInvoice && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm print:bg-white print:static print:inset-auto print:z-0">
-                    <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto sm:rounded-3xl relative print:max-h-none print:overflow-visible print:rounded-none print:shadow-none print:w-full print-area">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm print:bg-white print:static print:inset-auto print:z-0">
+                    <div className="bg-white w-full max-w-4xl max-h-[92vh] overflow-y-auto sm:rounded-3xl relative print:max-h-none print:overflow-visible print:rounded-none print:shadow-none print:w-full print-area">
                         <button 
                             onClick={() => setShowInvoice(false)}
-                            className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all z-10 print:hidden"
+                            className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all z-20 text-gray-600 print:hidden"
                         >
                             <X size={20} />
                         </button>
@@ -648,18 +650,18 @@ const BookingConfirmationPage = () => {
                             />
                         </div>
 
-                        <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 print:hidden">
+                        <div className="p-4 px-5 pb-20 sm:pb-4 border-t border-gray-100 bg-gray-50/90 backdrop-blur-md flex items-center justify-end gap-3 print:hidden">
                             <button 
                                 onClick={() => setShowInvoice(false)}
-                                className="px-6 py-2 text-sm font-bold text-gray-500 uppercase"
+                                className="px-4 py-2 text-xs sm:text-sm font-bold text-gray-500 hover:text-gray-800 rounded-xl hover:bg-gray-200/60 transition-all uppercase tracking-wide"
                             >
                                 Close
                             </button>
                             <button 
                                 onClick={() => window.print()}
-                                className="px-8 py-2 bg-blue-600 text-white rounded-xl text-sm font-black uppercase shadow-lg shadow-blue-900/20 hover:bg-blue-700 transition-all flex items-center gap-2"
+                                className="px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs sm:text-sm font-bold uppercase shadow-md shadow-blue-600/20 hover:bg-blue-700 active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
                             >
-                                <Printer size={16} /> Print Invoice
+                                <Printer size={15} /> Print / Download
                             </button>
                         </div>
                     </div>

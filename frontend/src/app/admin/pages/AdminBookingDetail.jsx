@@ -250,7 +250,8 @@ const AdminBookingDetail = () => {
                             </div>
 
                             {(() => {
-                                const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - (booking.discount || 0);
+                                const totalDisc = (booking.discount || 0) + (booking.prepaidDiscount || 0);
+                                const taxableAmount = (booking.baseAmount || 0) + (booking.extraCharges || 0) - totalDisc;
                                 const commRate = taxableAmount > 0 ? Math.round(((booking.adminCommission || 0) / taxableAmount) * 100) : 0;
                                 return (
                                     <div className="flex justify-between text-xs font-bold uppercase pt-1">

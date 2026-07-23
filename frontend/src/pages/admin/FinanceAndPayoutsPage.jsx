@@ -110,10 +110,10 @@ const FinanceAndPayoutsPage = () => {
   // Handle Export
   const handleExportReport = () => {
     try {
-      let csvContent = "data:text/csv;charset=utf-8,";
+      let csvContent = "";
       
       if (activeTab === 'overview') {
-        csvContent += "Type,Value\n";
+        csvContent += "Financial Metric,Amount (INR)\n";
         csvContent += `Wallet Balance,${stats?.adminBalance || 0}\n`;
         csvContent += `Total Commission,${stats?.totalEarnings || 0}\n`;
         csvContent += `Total Platform Fees,${stats?.totalPlatformFee || 0}\n`;
@@ -121,31 +121,38 @@ const FinanceAndPayoutsPage = () => {
         csvContent += `Total Payouts,${stats?.totalPayouts || 0}\n\n`;
         
         csvContent += "Recent Financial Transactions\n";
-        csvContent += "Transaction/Booking ID,Date,Gross Amount,Commission,Platform Fee,Tax,Partner Payout,Status\n";
-        transactions.forEach(t => {
-          const date = new Date(t.createdAt).toLocaleDateString();
-          const property = t.propertyId?.propertyName || 'Unknown';
-          csvContent += `"#${t.bookingId} - ${property}","${date}","${t.totalAmount}","${t.adminCommission}","${t.platformFee || 0}","${t.taxes}","${t.partnerPayout}","${t.paymentStatus}"\n`;
-        });
+        csvContent += "Booking ID,Property Name,Date,Gross Amount,Commission,Platform Fee,Tax,Partner Payout,Status\n";
+        if (transactions && transactions.length > 0) {
+          transactions.forEach(t => {
+            const date = t.createdAt ? new Date(t.createdAt).toLocaleDateString() : 'N/A';
+            const propertyName = (t.propertyId?.propertyName || 'Unknown').replace(/"/g, '""');
+            const bookingId = t.bookingId || t._id;
+            csvContent += `"${bookingId}","${propertyName}","${date}",${t.totalAmount || 0},${t.adminCommission || 0},${t.platformFee || 0},${t.taxes || 0},${t.partnerPayout || 0},"${t.paymentStatus || 'N/A'}"\n`;
+          });
+        }
       } else {
         csvContent += "Withdrawal ID,Date,Partner,Amount,Bank,Account,Status,UTR\n";
-        withdrawals.forEach(w => {
-          const date = new Date(w.createdAt).toLocaleDateString();
-          const partner = w.partnerId?.name || 'Unknown';
-          const bank = w.bankDetails?.bankName || '';
-          const account = w.bankDetails?.accountNumber || '';
-          const utr = w.processingDetails?.utrNumber || '';
-          csvContent += `"${w.withdrawalId}","${date}","${partner}","${w.amount}","${bank}","${account}","${w.status}","${utr}"\n`;
-        });
+        if (withdrawals && withdrawals.length > 0) {
+          withdrawals.forEach(w => {
+            const date = w.createdAt ? new Date(w.createdAt).toLocaleDateString() : 'N/A';
+            const partner = (w.partnerId?.name || 'Unknown').replace(/"/g, '""');
+            const bank = (w.bankDetails?.bankName || '').replace(/"/g, '""');
+            const account = (w.bankDetails?.accountNumber || '').replace(/"/g, '""');
+            const utr = (w.processingDetails?.utrNumber || '').replace(/"/g, '""');
+            csvContent += `"${w.withdrawalId}","${date}","${partner}",${w.amount || 0},"${bank}","'${account}","${w.status}","${utr}"\n`;
+          });
+        }
       }
       
-      const encodedUri = encodeURI(csvContent);
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
+      link.setAttribute("href", url);
       link.setAttribute("download", `Finance_Report_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       toast.success('Report exported successfully');
     } catch (error) {
       console.error(error);

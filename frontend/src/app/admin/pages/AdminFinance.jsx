@@ -98,7 +98,7 @@ const AdminFinance = () => {
     // Handle Export
     const handleExportReport = () => {
         try {
-            let csvContent = "data:text/csv;charset=utf-8,";
+            let csvContent = "";
             
             if (activeTab === 'overview') {
                 csvContent += "Type,Value/Count\n";
@@ -107,28 +107,37 @@ const AdminFinance = () => {
                 
                 csvContent += "\nPending Property Requests\n";
                 csvContent += "Property Name,Owner,City,Status\n";
-                filteredRequests.forEach(req => {
-                    csvContent += `"${req.name}","${req.ownerId?.name || ''}","${req.address?.city || ''}","${req.status}"\n`;
-                });
+                if (filteredRequests && filteredRequests.length > 0) {
+                    filteredRequests.forEach(req => {
+                        const name = (req.name || '').replace(/"/g, '""');
+                        const owner = (req.ownerId?.name || '').replace(/"/g, '""');
+                        const city = (req.address?.city || '').replace(/"/g, '""');
+                        csvContent += `"${name}","${owner}","${city}","${req.status || ''}"\n`;
+                    });
+                }
             } else {
                 csvContent += "Withdrawal ID,Date,Partner,Amount,Bank,Account,Status,UTR\n";
-                withdrawals.forEach(w => {
-                    const date = new Date(w.createdAt).toLocaleDateString();
-                    const partner = w.partnerId?.name || 'Unknown';
-                    const bank = w.bankDetails?.bankName || '';
-                    const account = w.bankDetails?.accountNumber || '';
-                    const utr = w.processingDetails?.utrNumber || '';
-                    csvContent += `"${w.withdrawalId}","${date}","${partner}","${w.amount}","${bank}","${account}","${w.status}","${utr}"\n`;
-                });
+                if (withdrawals && withdrawals.length > 0) {
+                    withdrawals.forEach(w => {
+                        const date = w.createdAt ? new Date(w.createdAt).toLocaleDateString() : 'N/A';
+                        const partner = (w.partnerId?.name || 'Unknown').replace(/"/g, '""');
+                        const bank = (w.bankDetails?.bankName || '').replace(/"/g, '""');
+                        const account = (w.bankDetails?.accountNumber || '').replace(/"/g, '""');
+                        const utr = (w.processingDetails?.utrNumber || '').replace(/"/g, '""');
+                        csvContent += `"${w.withdrawalId}","${date}","${partner}",${w.amount || 0},"${bank}","'${account}","${w.status}","${utr}"\n`;
+                    });
+                }
             }
             
-            const encodedUri = encodeURI(csvContent);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
+            link.setAttribute("href", url);
             link.setAttribute("download", `Finance_Report_${activeTab}_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
             toast.success('Report exported successfully');
         } catch (error) {
             console.error(error);

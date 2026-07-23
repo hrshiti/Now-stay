@@ -283,7 +283,7 @@ const PartnerWallet = () => {
             </div>
 
             {/* --- Scrollable Content --- */}
-            <div className="flex-1 overflow-y-auto px-6 pb-24 overscroll-contain">
+            <div className="flex-1 overflow-y-auto px-6 pb-36 overscroll-contain">
                 <div className="max-w-lg mx-auto">
                     {activeTab === 'transactions' ? (
                         <>
@@ -344,7 +344,7 @@ const PartnerWallet = () => {
 
             {/* Modal for Withdraw / Add Money */}
             {activeModal && (
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-end sm:items-center justify-center p-4 animate-fadeIn">
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99999] flex items-end sm:items-center justify-center p-4 animate-fadeIn">
                     <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-sm p-8 shadow-2xl animate-slideUp">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="text-xl font-black text-[#003836]">
@@ -493,14 +493,14 @@ const PartnerWallet = () => {
                             animate={{ opacity: 0.5 }}
                             exit={{ opacity: 0 }}
                             onClick={closeTransaction}
-                            className="fixed inset-0 bg-black z-[80]"
+                            className="fixed inset-0 bg-black z-[99990]"
                         />
                         <motion.div
                             initial={{ y: "100%" }}
                             animate={{ y: 0 }}
                             exit={{ y: "100%" }}
                             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                            className="fixed bottom-0 left-0 right-0 bg-white z-[90] rounded-t-[2rem] p-6 pb-12 shadow-2xl safe-area-bottom"
+                            className="fixed bottom-0 left-0 right-0 bg-white z-[99999] rounded-t-[2rem] p-6 pb-24 max-h-[85vh] overflow-y-auto shadow-2xl safe-area-bottom"
                         >
                             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-6" />
 

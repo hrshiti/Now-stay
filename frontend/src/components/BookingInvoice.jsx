@@ -182,7 +182,7 @@ const BookingInvoice = ({ booking, property, room, user, taxRate: taxRateProp })
                         </tr>
                         <tr>
                             <td className="border border-gray-300 px-4 py-2 font-bold uppercase text-[10px] text-gray-400" style={{ backgroundColor: '#f9fafb' }}>Discount</td>
-                            <td className="border border-gray-300 px-4 py-2 text-right font-bold text-green-600">₹{booking.discount?.toLocaleString() || 0}</td>
+                            <td className="border border-gray-300 px-4 py-2 text-right font-bold text-green-600">₹{((booking.discount || 0) + (booking.prepaidDiscount || 0)).toLocaleString()}</td>
                         </tr>
                         {isInterState ? (
                             <>

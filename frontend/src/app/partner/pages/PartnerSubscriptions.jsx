@@ -126,8 +126,8 @@ const PartnerSubscriptions = () => {
                   {plan.propertyTemplate}
                 </span>
               </div>
-              <h3 className="text-xl font-black text-gray-900 mb-1 capitalize">{plan.name}</h3>
-              <p className="text-xs text-gray-400 mb-4 leading-tight">{plan.description}</p>
+              <h3 className="text-xl font-black text-gray-900 mb-1 capitalize break-words">{plan.name}</h3>
+              <p className="text-xs text-gray-400 mb-4 leading-tight break-words">{plan.description}</p>
 
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-3xl font-black text-gray-900">₹{plan.price}</span>
