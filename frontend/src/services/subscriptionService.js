@@ -22,10 +22,14 @@ const subscriptionService = {
     const response = await apiClient.get('/subscriptions/admin/partner-subscriptions');
     return response.data;
   },
+  adminCancelSubscription: async (id) => {
+    const response = await apiClient.post(`/subscriptions/admin/cancel/${id}`);
+    return response.data;
+  },
 
   // --- PARTNER ---
-  getPartnerPlans: async () => {
-    const response = await apiClient.get('/subscriptions/plans');
+  getPartnerPlans: async (params = {}) => {
+    const response = await apiClient.get('/subscriptions/plans', { params });
     return response.data;
   },
   getMySubscription: async () => {
@@ -45,6 +49,10 @@ const subscriptionService = {
   },
   createSubscriptionOrder: async (planId) => {
     const response = await apiClient.post('/subscriptions/create-order', { planId });
+    return response.data;
+  },
+  cancelSubscription: async (subscriptionId) => {
+    const response = await apiClient.post('/subscriptions/cancel', { subscriptionId });
     return response.data;
   }
 };

@@ -11,7 +11,10 @@ const subscriptionPlanSchema = new mongoose.Schema({
     type: String, 
     default: 'all',
     required: true
-  }
+  },
+  starRatings: [{ type: Number }],
+  hotelCategories: [{ type: String }],
+  resortTypes: [{ type: String }]
 }, { timestamps: true });
 
 export default mongoose.model('SubscriptionPlan', subscriptionPlanSchema);

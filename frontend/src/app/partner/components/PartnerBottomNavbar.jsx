@@ -95,7 +95,7 @@ const PartnerBottomNavbar = () => {
   };
 
   return (
-    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-md z-[1000]">
+    <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-md z-[40] md:hidden">
       <div className="
         bg-white/95 backdrop-blur-2xl 
         border border-white/40 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)]

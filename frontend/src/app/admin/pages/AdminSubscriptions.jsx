@@ -21,9 +21,36 @@ const AdminSubscriptions = () => {
     description: '',
     price: '',
     durationInMonths: '',
-    propertyTemplate: 'all'
+    propertyTemplate: 'all',
+    starRatings: [],
+    hotelCategories: [],
+    resortTypes: []
   });
   const [editId, setEditId] = useState(null);
+
+  const toggleStarRating = (star) => {
+    setFormData(prev => {
+      const current = prev.starRatings || [];
+      const updated = current.includes(star) ? current.filter(s => s !== star) : [...current, star];
+      return { ...prev, starRatings: updated };
+    });
+  };
+
+  const toggleHotelCategory = (cat) => {
+    setFormData(prev => {
+      const current = prev.hotelCategories || [];
+      const updated = current.includes(cat) ? current.filter(c => c !== cat) : [...current, cat];
+      return { ...prev, hotelCategories: updated };
+    });
+  };
+
+  const toggleResortType = (rt) => {
+    setFormData(prev => {
+      const current = prev.resortTypes || [];
+      const updated = current.includes(rt) ? current.filter(r => r !== rt) : [...current, rt];
+      return { ...prev, resortTypes: updated };
+    });
+  };
 
   useEffect(() => {
     if (activeTab === 'plans') {
@@ -83,8 +110,7 @@ const AdminSubscriptions = () => {
   });
 
   const handleInputChange = (e) => {
-    const { name, value, type } = e.target;
-    // Keep it as a string in state to allow empty fields, convert to number only if needed for logic or before sending
+    const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
@@ -97,7 +123,10 @@ const AdminSubscriptions = () => {
       ...formData,
       price: Number(formData.price || 0),
       durationInMonths: Number(formData.durationInMonths || 1),
-      commissionRate: 0
+      commissionRate: 0,
+      starRatings: formData.starRatings || [],
+      hotelCategories: formData.hotelCategories || [],
+      resortTypes: formData.resortTypes || []
     };
 
     try {
@@ -122,9 +151,48 @@ const AdminSubscriptions = () => {
       description: plan.description,
       price: Number(plan.price) === 0 ? '' : plan.price,
       durationInMonths: Number(plan.durationInMonths) === 0 ? '' : plan.durationInMonths,
-      propertyTemplate: plan.propertyTemplate || 'all'
+      propertyTemplate: plan.propertyTemplate || 'all',
+      starRatings: plan.starRatings || [],
+      hotelCategories: plan.hotelCategories || [],
+      resortTypes: plan.resortTypes || []
     });
     setShowModal(true);
+  };
+
+  const handleAdminCancelSubscription = async (subId, partnerName) => {
+    if (!window.confirm(`Are you sure you want to cancel subscription for ${partnerName}? Remaining prorated balance will be credited to partner wallet.`)) {
+      return;
+    }
+    try {
+      const res = await subscriptionService.adminCancelSubscription(subId);
+      toast.success(res.message || 'Subscription cancelled successfully!');
+      fetchPartnerSubscriptions();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to cancel subscription');
+    }
+  };
+
+  const renderStatusBadge = (sub) => {
+    if (sub.paymentStatus === 'cancelled' || !sub.isActive) {
+      return (
+        <span className="bg-red-50 text-red-600 border border-red-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+          Cancelled
+        </span>
+      );
+    }
+    const isExpired = new Date(sub.endDate) < new Date();
+    if (isExpired) {
+      return (
+        <span className="bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+          Expired
+        </span>
+      );
+    }
+    return (
+      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+        Active
+      </span>
+    );
   };
 
   const handleDelete = async (id) => {
@@ -137,19 +205,6 @@ const AdminSubscriptions = () => {
         toast.error('Failed to deactivate plan');
       }
     }
-  };
-
-  const renderStatusBadge = (status) => {
-    const styles = {
-      paid: 'bg-green-100 text-green-700',
-      pending: 'bg-yellow-100 text-yellow-700',
-      failed: 'bg-red-100 text-red-700'
-    };
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${styles[status] || 'bg-gray-100 text-gray-700'}`}>
-        {status?.toUpperCase() || 'UNKNOWN'}
-      </span>
-    );
   };
 
   return (
@@ -184,7 +239,7 @@ const AdminSubscriptions = () => {
           <button
             onClick={() => {
               setEditId(null);
-              setFormData({ name: '', description: '', price: '', durationInMonths: '', propertyTemplate: 'all' });
+              setFormData({ name: '', description: '', price: '', durationInMonths: '', propertyTemplate: 'all', starRatings: [], hotelCategories: [], resortTypes: [] });
               setShowModal(true);
             }}
             className="bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors"
@@ -200,19 +255,17 @@ const AdminSubscriptions = () => {
         </div>
       ) : activeTab === 'plans' ? (
         /* Plans Grid */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {plans.map(plan => (
-            <div key={plan._id} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+            <div key={plan._id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-1.5 items-center">
                   <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
                     <CreditCard size={24} />
                   </div>
-                  <div className="flex items-center">
-                    <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                      {plan.propertyTemplate}
-                    </span>
-                  </div>
+                  <span className="bg-gray-100 text-gray-800 px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                    {plan.propertyTemplate}
+                  </span>
                 </div>
                 {!plan.isActive && (
                   <span className="bg-red-50 text-red-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider">
@@ -220,17 +273,39 @@ const AdminSubscriptions = () => {
                   </span>
                 )}
               </div>
-              <h2 className="text-xl font-bold mb-1 break-words">{plan.name}</h2>
-              <p className="text-gray-500 text-sm mb-4 min-h-[40px] break-words">{plan.description}</p>
+
+              {/* Target Categories / Stars Badges */}
+              {((plan.starRatings && plan.starRatings.length > 0) || (plan.hotelCategories && plan.hotelCategories.length > 0) || (plan.resortTypes && plan.resortTypes.length > 0)) && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {plan.starRatings && plan.starRatings.length > 0 && (
+                    <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1">
+                      ★ {plan.starRatings.join(', ')} Stars
+                    </span>
+                  )}
+                  {plan.hotelCategories && plan.hotelCategories.length > 0 && (
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                      🏢 {plan.hotelCategories.join(', ')}
+                    </span>
+                  )}
+                  {plan.resortTypes && plan.resortTypes.length > 0 && (
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                      🏝️ {plan.resortTypes.join(', ')}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <h2 className="text-base font-bold text-gray-900 mb-1 leading-snug break-words">{plan.name}</h2>
+              <p className="text-xs text-gray-500 mb-3 min-h-[32px] leading-relaxed break-words">{plan.description}</p>
               
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-3xl font-black">₹{plan.price}</span>
-                <span className="text-gray-400 text-sm">/ {plan.durationInMonths} mon</span>
+              <div className="flex items-baseline gap-1 mb-4">
+                <span className="text-2xl font-black text-gray-900">₹{plan.price}</span>
+                <span className="text-gray-400 text-xs font-medium">/ {plan.durationInMonths} mon</span>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock size={16} className="text-blue-500" />
+              <div className="space-y-2 mb-4">
+                <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                  <Clock size={14} className="text-blue-500" />
                   <span>{plan.durationInMonths} Months Validity</span>
                 </div>
               </div>
@@ -287,6 +362,7 @@ const AdminSubscriptions = () => {
               >
                 <option value="all">All Status</option>
                 <option value="paid">Paid</option>
+                <option value="cancelled">Cancelled</option>
                 <option value="pending">Pending</option>
                 <option value="failed">Failed</option>
               </select>
@@ -301,14 +377,15 @@ const AdminSubscriptions = () => {
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Partner</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Plan</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Validity</th>
-                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Payment</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Payment & Refund</th>
                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {filteredSubscriptions.length === 0 ? (
                     <tr>
-                      <td colSpan="5" className="px-6 py-10 text-center text-gray-500">
+                      <td colSpan="6" className="px-6 py-10 text-center text-gray-500">
                         {searchTerm || filterPlan !== 'all' || filterStatus !== 'all' 
                           ? 'No subscriptions match your filters.' 
                           : 'No partner subscriptions found.'}
@@ -339,11 +416,35 @@ const AdminSubscriptions = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600">
-                          <div className="font-semibold text-gray-900">₹{sub.amountPaid}</div>
-                          <div className="text-xs text-gray-400">{sub.paymentMethod} • {sub.paymentId}</div>
+                          <div className="font-semibold text-gray-900">Paid: ₹{sub.amountPaid || 0}</div>
+                          {sub.paymentStatus === 'cancelled' ? (
+                            <div className="mt-1 space-y-0.5 text-xs">
+                              <div className="font-medium text-red-600">Refunded / Remaining: ₹{sub.refundAmount || 0}</div>
+                              <div className="font-medium text-emerald-700">Net Admin Revenue: ₹{Math.max(0, (sub.amountPaid || 0) - (sub.refundAmount || 0))}</div>
+                              {sub.cancelledAt && (
+                                <div className="text-[10px] text-gray-400">
+                                  Cancelled on {format(new Date(sub.cancelledAt), 'dd MMM yyyy, p')} {sub.cancelledBy ? `by ${sub.cancelledBy}` : ''}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-xs text-gray-400">{sub.paymentMethod || 'Online'} • {sub.paymentId || 'N/A'}</div>
+                          )}
                         </td>
                         <td className="px-6 py-4">
-                          {renderStatusBadge(sub.paymentStatus)}
+                          {renderStatusBadge(sub)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          {sub.isActive && sub.paymentStatus !== 'cancelled' && new Date(sub.endDate) > new Date() ? (
+                            <button
+                              onClick={() => handleAdminCancelSubscription(sub._id, sub.partnerId?.name || 'Partner')}
+                              className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-bold transition-all"
+                            >
+                              Cancel & Refund
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400 font-medium">--</span>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -435,7 +536,89 @@ const AdminSubscriptions = () => {
                 </select>
               </div>
 
-              
+              {/* Star Rating & Hotel Scale Selection (Only for Hotel or All) */}
+              {(formData.propertyTemplate === 'all' || formData.propertyTemplate === 'hotel') && (
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                      Target Star Ratings (Leave empty for All Stars)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(star => {
+                        const selected = (formData.starRatings || []).includes(star);
+                        return (
+                          <button
+                            type="button"
+                            key={star}
+                            onClick={() => toggleStarRating(star)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                              selected
+                                ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            {star} ★
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                      Target Hotel Scale / Category (Optional)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {["Small Scale", "Low Budget", "Lodge", "Budget", "Premium", "Luxury"].map(cat => {
+                        const selected = (formData.hotelCategories || []).includes(cat);
+                        return (
+                          <button
+                            type="button"
+                            key={cat}
+                            onClick={() => toggleHotelCategory(cat)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                              selected
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Resort Category Selection (Only for Resort or All) */}
+              {(formData.propertyTemplate === 'all' || formData.propertyTemplate === 'resort') && (
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
+                    Target Resort Type (Optional)
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {["5 Star Resort", "Beach", "Hill", "Jungle", "Desert", "Luxury"].map(rt => {
+                      const selected = (formData.resortTypes || []).includes(rt);
+                      return (
+                        <button
+                          type="button"
+                          key={rt}
+                          onClick={() => toggleResortType(rt)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                            selected
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          {rt}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-3 pt-6">
                 <button
                   type="button"

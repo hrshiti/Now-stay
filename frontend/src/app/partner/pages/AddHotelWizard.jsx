@@ -91,6 +91,8 @@ const AddHotelWizard = () => {
     checkInTime: '',
     checkOutTime: '',
     contactNumber: '',
+    starRating: 3,
+    hotelCategory: 'Budget',
     cancellationPolicy: '',
     suitability: 'none',
     houseRules: [],
@@ -711,6 +713,14 @@ const AddHotelWizard = () => {
       setError('A valid 10-digit contact number is required');
       return;
     }
+    if (!propertyForm.starRating) {
+      setError('Star rating selection is required');
+      return;
+    }
+    if (!propertyForm.hotelCategory) {
+      setError('Hotel category / scale selection is required');
+      return;
+    }
     setStep(2);
   };
 
@@ -854,6 +864,8 @@ const AddHotelWizard = () => {
         propertyTemplate: 'hotel',
         propertyName: propertyForm.propertyName,
         contactNumber: propertyForm.contactNumber,
+        starRating: Number(propertyForm.starRating || 3),
+        hotelCategory: propertyForm.hotelCategory || 'Budget',
         description: propertyForm.description,
         shortDescription: propertyForm.shortDescription,
         coverImage: propertyForm.coverImage,
@@ -1104,6 +1116,42 @@ const AddHotelWizard = () => {
                     </p>
                 )}
               </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Hotel Star Rating *</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(star => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => updatePropertyForm('starRating', star)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                        Number(propertyForm.starRating) === star
+                          ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm scale-105'
+                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      {star} ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-500 mb-1 block">Hotel Category / Scale *</label>
+                <select
+                  className="input w-full"
+                  value={propertyForm.hotelCategory}
+                  onChange={e => updatePropertyForm('hotelCategory', e.target.value)}
+                >
+                  <option value="Small Scale">Small Scale Hotel</option>
+                  <option value="Low Budget">Low Budget Hotel</option>
+                  <option value="Lodge">Lodge / Guest House</option>
+                  <option value="Budget">Budget Hotel</option>
+                  <option value="Premium">Premium Hotel</option>
+                  <option value="Luxury">Luxury Hotel</option>
+                </select>
+              </div>
+
               <div>
                 <label className="text-xs font-semibold text-gray-500 mb-1 block">Suitability (Optional)</label>
                 <select

@@ -71,18 +71,17 @@ const propertySchema = new mongoose.Schema({
   },
 
   resortType: {
-    type: String,
-    enum: ["beach", "hill", "jungle", "desert"]
+    type: String
   },
 
   hotelCategory: {
     type: String,
-    enum: ["Budget", "Premium", "Luxury"]
+    enum: ["Small Scale", "Low Budget", "Lodge", "Budget", "Premium", "Luxury"]
   },
   starRating: {
     type: Number,
     min: 1,
-    max: 5
+    max: 8
   },
 
   activities: [String],

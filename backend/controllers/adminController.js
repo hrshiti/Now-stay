@@ -72,12 +72,12 @@ export const getDashboardStats = async (req, res) => {
       ]),
       // Subscription Revenue
       PartnerSubscription.aggregate([
-        { $match: { paymentStatus: 'paid' } },
-        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+        { $match: { paymentStatus: { $in: ['paid', 'cancelled'] } } },
+        { $group: { _id: null, total: { $sum: { $subtract: ['$amountPaid', { $ifNull: ['$refundAmount', 0] }] } } } }
       ]),
       PartnerSubscription.aggregate([
-        { $match: { paymentStatus: 'paid', createdAt: { $lt: startOfThisMonth } } },
-        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+        { $match: { paymentStatus: { $in: ['paid', 'cancelled'] }, createdAt: { $lt: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: { $subtract: ['$amountPaid', { $ifNull: ['$refundAmount', 0] }] } } } }
       ]),
       // Active Subscribers
       PartnerSubscription.countDocuments({
@@ -122,8 +122,8 @@ export const getDashboardStats = async (req, res) => {
         { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
       ]),
       PartnerSubscription.aggregate([
-        { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
-        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+        { $match: { paymentStatus: { $in: ['paid', 'cancelled'] }, createdAt: { $gte: startOfThisMonth } } },
+        { $group: { _id: null, total: { $sum: { $subtract: ['$amountPaid', { $ifNull: ['$refundAmount', 0] }] } } } }
       ]),
       Booking.aggregate([
         { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
@@ -134,8 +134,8 @@ export const getDashboardStats = async (req, res) => {
         { $group: { _id: null, total: { $sum: { $add: ['$adminCommission', '$taxes', { $ifNull: ['$platformFee', 0] }] } } } }
       ]),
       PartnerSubscription.aggregate([
-        { $match: { paymentStatus: 'paid', createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
-        { $group: { _id: null, total: { $sum: '$amountPaid' } } }
+        { $match: { paymentStatus: { $in: ['paid', 'cancelled'] }, createdAt: { $gte: startOfLastMonth, $lte: endOfLastMonth } } },
+        { $group: { _id: null, total: { $sum: { $subtract: ['$amountPaid', { $ifNull: ['$refundAmount', 0] }] } } } }
       ]),
       Booking.aggregate([
         { $match: { bookingStatus: { $in: ['confirmed', 'checked_out', 'checked_in', 'completed'] }, paymentStatus: 'paid', createdAt: { $gte: startOfThisMonth } } },
@@ -187,8 +187,8 @@ export const getDashboardStats = async (req, res) => {
         { $sort: { _id: 1 } }
       ]),
       PartnerSubscription.aggregate([
-        { $match: { paymentStatus: 'paid', createdAt: { $gte: sixMonthsAgo } } },
-        { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, amount: { $sum: "$amountPaid" } } },
+        { $match: { paymentStatus: { $in: ['paid', 'cancelled'] }, createdAt: { $gte: sixMonthsAgo } } },
+        { $group: { _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }, amount: { $sum: { $subtract: ["$amountPaid", { $ifNull: ["$refundAmount", 0] }] } } } },
         { $sort: { _id: 1 } }
       ])
     ]);

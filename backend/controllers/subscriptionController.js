@@ -1,6 +1,8 @@
 import SubscriptionPlan from '../models/SubscriptionPlan.js';
 import PartnerSubscription from '../models/PartnerSubscription.js';
 import Partner from '../models/Partner.js';
+import Property from '../models/Property.js';
+import Wallet from '../models/Wallet.js';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import PaymentConfig from '../config/payment.config.js';
@@ -11,7 +13,7 @@ import { getRazorpayInstance } from '../utils/razorpay.js';
 
 export const createPlan = async (req, res) => {
   try {
-    const { name, description, price, durationInMonths, commissionRate, propertyTemplate } = req.body;
+    const { name, description, price, durationInMonths, commissionRate, propertyTemplate, starRatings, hotelCategories, resortTypes } = req.body;
     if (!name || price === undefined) {
       return res.status(400).json({ message: 'Name and Price are required' });
     }
@@ -22,7 +24,10 @@ export const createPlan = async (req, res) => {
       price,
       durationInMonths: durationInMonths || 12,
       commissionRate: commissionRate || 0,
-      propertyTemplate: propertyTemplate || 'all'
+      propertyTemplate: propertyTemplate || 'all',
+      starRatings: Array.isArray(starRatings) ? starRatings : [],
+      hotelCategories: Array.isArray(hotelCategories) ? hotelCategories : [],
+      resortTypes: Array.isArray(resortTypes) ? resortTypes : []
     });
 
     await plan.save();
@@ -46,11 +51,16 @@ export const getPlans = async (req, res) => {
 export const updatePlan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, durationInMonths, commissionRate, isActive, propertyTemplate } = req.body;
+    const { name, description, price, durationInMonths, commissionRate, isActive, propertyTemplate, starRatings, hotelCategories, resortTypes } = req.body;
+
+    const updateFields = { name, description, price, durationInMonths, commissionRate, isActive, propertyTemplate };
+    if (starRatings !== undefined) updateFields.starRatings = Array.isArray(starRatings) ? starRatings : [];
+    if (hotelCategories !== undefined) updateFields.hotelCategories = Array.isArray(hotelCategories) ? hotelCategories : [];
+    if (resortTypes !== undefined) updateFields.resortTypes = Array.isArray(resortTypes) ? resortTypes : [];
 
     const plan = await SubscriptionPlan.findByIdAndUpdate(
       id,
-      { name, description, price, durationInMonths, commissionRate, isActive, propertyTemplate },
+      updateFields,
       { new: true }
     );
 
@@ -92,8 +102,60 @@ export const getPartnerSubscriptions = async (req, res) => {
 
 export const getActivePlans = async (req, res) => {
   try {
-    const plans = await SubscriptionPlan.find({ isActive: true });
-    res.status(200).json({ success: true, plans });
+    let { propertyId, propertyTemplate, starRating, hotelCategory, resortType } = req.query;
+
+    if (propertyId) {
+      const property = await Property.findById(propertyId);
+      if (property) {
+        propertyTemplate = propertyTemplate || property.propertyTemplate;
+        starRating = starRating || property.starRating;
+        hotelCategory = hotelCategory || property.hotelCategory;
+        resortType = resortType || property.resortType;
+      }
+    }
+
+    const allPlans = await SubscriptionPlan.find({ isActive: true });
+
+    const filteredPlans = allPlans.filter(plan => {
+      // 1. Property Template check
+      if (plan.propertyTemplate && plan.propertyTemplate !== 'all' && propertyTemplate) {
+        if (plan.propertyTemplate.toLowerCase() !== propertyTemplate.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // 2. Star Rating check
+      if (plan.starRatings && plan.starRatings.length > 0 && starRating) {
+        const numericStar = Number(starRating);
+        if (!plan.starRatings.includes(numericStar)) {
+          return false;
+        }
+      }
+
+      // 3. Hotel Category / Scale check
+      if (plan.hotelCategories && plan.hotelCategories.length > 0 && hotelCategory) {
+        const matchesCategory = plan.hotelCategories.some(
+          cat => cat.toLowerCase() === String(hotelCategory).toLowerCase()
+        );
+        if (!matchesCategory) {
+          return false;
+        }
+      }
+
+      // 4. Resort Type check
+      if (plan.resortTypes && plan.resortTypes.length > 0 && resortType) {
+        const matchesResort = plan.resortTypes.some(
+          rt => rt.toLowerCase() === String(resortType).toLowerCase()
+        );
+        if (!matchesResort) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+
+    res.status(200).json({ success: true, plans: filteredPlans });
   } catch (error) {
     console.error('Get Active Plans Error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -118,11 +180,41 @@ export const getMySubscription = async (req, res) => {
 
 export const createSubscriptionOrder = async (req, res) => {
   try {
-    const { planId } = req.body;
+    const { planId, propertyId } = req.body;
     const plan = await SubscriptionPlan.findById(planId);
 
     if (!plan || !plan.isActive) {
       return res.status(404).json({ message: 'Plan not found or inactive' });
+    }
+
+    // Property Category & Star Rating Condition Check (Only if specific propertyId is provided)
+    let targetProperty = null;
+    if (propertyId) {
+      targetProperty = await Property.findById(propertyId);
+    }
+
+    if (targetProperty) {
+      // Validate Template
+      if (plan.propertyTemplate && plan.propertyTemplate !== 'all' && targetProperty.propertyTemplate) {
+        if (plan.propertyTemplate.toLowerCase() !== targetProperty.propertyTemplate.toLowerCase()) {
+          return res.status(400).json({ message: `This plan is for ${plan.propertyTemplate.toUpperCase()} only, but your property is a ${targetProperty.propertyTemplate.toUpperCase()}` });
+        }
+      }
+
+      // Validate Star Rating
+      if (plan.starRatings && plan.starRatings.length > 0 && targetProperty.starRating) {
+        if (!plan.starRatings.includes(Number(targetProperty.starRating))) {
+          return res.status(400).json({ message: `This plan is restricted to ${plan.starRatings.join(', ')} Star properties. Your property is ${targetProperty.starRating} Star.` });
+        }
+      }
+
+      // Validate Hotel Category
+      if (plan.hotelCategories && plan.hotelCategories.length > 0 && targetProperty.hotelCategory) {
+        const matchesCat = plan.hotelCategories.some(c => c.toLowerCase() === String(targetProperty.hotelCategory).toLowerCase());
+        if (!matchesCat) {
+          return res.status(400).json({ message: `This plan is for ${plan.hotelCategories.join(', ')} categories, but your hotel is categorized as ${targetProperty.hotelCategory}.` });
+        }
+      }
     }
 
     // Case: Online Payment
@@ -330,6 +422,158 @@ export const getSubscriptionStatus = async (req, res) => {
     });
   } catch (error) {
     console.error('Get Subscription Status Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const cancelSubscription = async (req, res) => {
+  try {
+    const { subscriptionId } = req.body;
+    
+    // Find active subscription for the requesting partner
+    const query = { partnerId: req.user._id, isActive: true };
+    if (subscriptionId) {
+      query._id = subscriptionId;
+    }
+
+    const sub = await PartnerSubscription.findOne(query).populate('planId');
+
+    if (!sub) {
+      return res.status(404).json({ message: 'No active subscription found to cancel' });
+    }
+
+    const now = new Date();
+    const start = new Date(sub.startDate);
+    const end = new Date(sub.endDate);
+
+    const oneDayMs = 1000 * 60 * 60 * 24;
+    const totalDays = Math.max(1, Math.round((end - start) / oneDayMs));
+    const remainingDays = Math.max(0, Math.ceil((end - now) / oneDayMs));
+
+    let refundAmount = 0;
+    if (remainingDays > 0) {
+      const baseAmount = sub.amountPaid || sub.planId?.price || 0;
+      if (remainingDays >= totalDays) {
+        refundAmount = baseAmount;
+      } else {
+        refundAmount = Math.max(0, Math.round((remainingDays / totalDays) * baseAmount));
+      }
+    }
+
+    // Deactivate subscription
+    sub.isActive = false;
+    sub.paymentStatus = 'cancelled';
+    sub.refundAmount = refundAmount;
+    sub.cancelledAt = now;
+    sub.cancelledBy = 'partner';
+    await sub.save();
+
+    // Credit refund to partner wallet if refundAmount > 0
+    if (refundAmount > 0) {
+      let wallet = await Wallet.findOne({ partnerId: req.user._id, role: 'partner' });
+      if (!wallet) {
+        wallet = await Wallet.create({ partnerId: req.user._id, role: 'partner', balance: 0, modelType: 'Partner' });
+      }
+      await wallet.credit(
+        refundAmount,
+        `Subscription Cancellation Refund (${sub.planId?.name || 'Plan'})`,
+        sub._id,
+        'refund'
+      );
+    }
+
+    // Send Notification to Admin
+    try {
+      const Admin = mongoose.model('Admin');
+      const Notification = mongoose.model('Notification');
+      const admins = await Admin.find({}).select('_id');
+      const partnerName = req.user.name || req.user.email || 'Partner';
+      const planName = sub.planId?.name || 'Subscription Plan';
+
+      for (const admin of admins) {
+        await Notification.create({
+          userId: admin._id,
+          userType: 'admin',
+          userModel: 'Admin',
+          title: 'Subscription Cancelled ⚠️',
+          body: `Partner "${partnerName}" cancelled plan "${planName}". Refund of ₹${refundAmount} credited to wallet.`,
+          type: 'subscription_cancelled',
+          data: { partnerId: String(req.user._id), subscriptionId: String(sub._id), refundAmount }
+        });
+      }
+    } catch (notifErr) {
+      console.warn('Failed to send admin cancellation notification:', notifErr.message);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Subscription cancelled successfully. ₹${refundAmount} has been credited to your wallet.`,
+      refundAmount,
+      subscription: sub
+    });
+  } catch (error) {
+    console.error('Cancel Subscription Error:', error);
+    res.status(500).json({ message: 'Server error cancelling subscription' });
+  }
+};
+
+export const adminCancelSubscription = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const sub = await PartnerSubscription.findById(id).populate('planId');
+
+    if (!sub || !sub.isActive) {
+      return res.status(404).json({ message: 'Active subscription not found' });
+    }
+
+    const now = new Date();
+    const start = new Date(sub.startDate);
+    const end = new Date(sub.endDate);
+
+    const oneDayMs = 1000 * 60 * 60 * 24;
+    const totalDays = Math.max(1, Math.round((end - start) / oneDayMs));
+    const remainingDays = Math.max(0, Math.ceil((end - now) / oneDayMs));
+
+    let refundAmount = 0;
+    if (remainingDays > 0) {
+      const baseAmount = sub.amountPaid || sub.planId?.price || 0;
+      if (remainingDays >= totalDays) {
+        refundAmount = baseAmount;
+      } else {
+        refundAmount = Math.max(0, Math.round((remainingDays / totalDays) * baseAmount));
+      }
+    }
+
+    // Deactivate subscription
+    sub.isActive = false;
+    sub.paymentStatus = 'cancelled';
+    sub.refundAmount = refundAmount;
+    sub.cancelledAt = now;
+    sub.cancelledBy = 'admin';
+    await sub.save();
+
+    // Credit refund to partner wallet
+    if (refundAmount > 0) {
+      let wallet = await Wallet.findOne({ partnerId: sub.partnerId, role: 'partner' });
+      if (!wallet) {
+        wallet = await Wallet.create({ partnerId: sub.partnerId, role: 'partner', balance: 0, modelType: 'Partner' });
+      }
+      await wallet.credit(
+        refundAmount,
+        `Admin Subscription Cancellation Refund (${sub.planId?.name || 'Plan'})`,
+        sub._id,
+        'refund'
+      );
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Subscription cancelled. ₹${refundAmount} credited to partner wallet.`,
+      refundAmount,
+      subscription: sub
+    });
+  } catch (error) {
+    console.error('Admin Cancel Subscription Error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
