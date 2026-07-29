@@ -818,10 +818,15 @@ const PropertyDetailsPage = () => {
           {/* Title & Badge */}
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-6">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="bg-surface/10 text-surface text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                   {propertyType}
                 </span>
+                {(config?.starRating || property?.starRating) && (
+                  <span className="bg-amber-500/10 text-amber-700 border border-amber-300/60 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+                    ★ {config?.starRating || property?.starRating} Star Hotel
+                  </span>
+                )}
                 {rating !== undefined && rating !== null && (
                   <div className="flex items-center gap-1 bg-honey/10 text-honey-dark px-2 py-0.5 rounded text-[10px] font-bold">
                     {Number(rating) > 0 && <Star size={10} className="fill-honey text-honey" />}
@@ -921,7 +926,7 @@ const PropertyDetailsPage = () => {
                 <h3 className="font-bold text-blue-900 mb-2">Hotel Info</h3>
                 <ul className="text-sm text-blue-800 space-y-1">
                   {config.hotelCategory && <li>Category: {config.hotelCategory}</li>}
-                  {config.starRating && <li>Rating: {config.starRating} Stars</li>}
+                  {(config.starRating || property.starRating) && <li>Star Category: ★ {config.starRating || property.starRating} Star Hotel</li>}
                 </ul>
               </div>
             </div>

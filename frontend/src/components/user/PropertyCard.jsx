@@ -152,8 +152,15 @@ const PropertyCard = ({ property, data, className = "", isSaved: initialIsSaved 
 
         {/* Property Type Badge - Standardized */}
         {typeLabel && (
-          <div className="absolute top-2 left-2 px-2 py-0.5 bg-black/20 backdrop-blur-md border border-white/20 rounded-full text-[9px] uppercase tracking-wider font-bold text-white z-10">
-            {typeLabel}
+          <div className="absolute top-2 left-2 flex items-center gap-1 z-10">
+            <div className="px-2 py-0.5 bg-black/40 backdrop-blur-md border border-white/20 rounded-full text-[9px] uppercase tracking-wider font-bold text-white">
+              {typeLabel}
+            </div>
+            {(item.starRating || item.config?.starRating) && (
+              <div className="px-2 py-0.5 bg-amber-500/90 backdrop-blur-md border border-amber-300/40 rounded-full text-[9px] font-bold text-white flex items-center gap-0.5 shadow-sm">
+                ★ {item.starRating || item.config?.starRating} Star
+              </div>
+            )}
           </div>
         )}
 
