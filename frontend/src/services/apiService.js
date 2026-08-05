@@ -555,6 +555,22 @@ export const hotelService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+  getPropertyTypes: async () => {
+    try {
+      const response = await api.get('/partners/property-types');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+  updatePropertyTypes: async (propertyTypes) => {
+    try {
+      const response = await api.put('/partners/property-types', { propertyTypes });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };
 

@@ -5,7 +5,7 @@ import {
   Palmtree, Hotel, Building, Trees, Mountain, Waves, Umbrella, 
   Coffee, Snowflake, MapPin, Globe, Zap, Shield, Heart, Star, Camera, Compass, Loader2
 } from 'lucide-react';
-import { api } from '../../../services/apiService';
+import { api, hotelService } from '../../../services/apiService';
 import { clearPropertyDrafts } from '../../../utils/localStorageUtils';
 
 const STATIC_ICONS = {
@@ -17,25 +17,34 @@ const STATIC_ICONS = {
 const PartnerJoinPropertyType = () => {
   const navigate = useNavigate();
   const [dynamicCategories, setDynamicCategories] = useState([]);
+  const [partnerPreferredTypes, setPartnerPreferredTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Ensure all previous property drafts are cleared when starting fresh
     clearPropertyDrafts();
     
-    const fetchCategories = async () => {
+    const fetchData = async () => {
       try {
-        const res = await api.get('/categories');
-        if (res.data.success) {
-          setDynamicCategories(res.data.categories);
+        const [categoriesRes, typesData] = await Promise.all([
+            api.get('/categories'),
+            hotelService.getPropertyTypes().catch(() => ({ propertyTypes: [] }))
+        ]);
+        
+        if (categoriesRes.data.success) {
+          setDynamicCategories(categoriesRes.data.categories);
+        }
+        
+        if (typesData && typesData.propertyTypes) {
+            setPartnerPreferredTypes(typesData.propertyTypes);
         }
       } catch (error) {
-        console.error('Failed to fetch categories:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchCategories();
+    fetchData();
   }, []);
 
   const staticTypes = [
@@ -118,6 +127,10 @@ const PartnerJoinPropertyType = () => {
     }))
   ];
 
+  const filteredTypes = partnerPreferredTypes && partnerPreferredTypes.length > 0 
+    ? combinedTypes.filter(type => partnerPreferredTypes.includes(type.key))
+    : combinedTypes;
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans overflow-x-hidden">
       <div className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
@@ -145,7 +158,7 @@ const PartnerJoinPropertyType = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {combinedTypes.map((item) => {
+            {filteredTypes.length > 0 ? filteredTypes.map((item) => {
               const Icon = item.icon;
               return (
                 <button
@@ -178,7 +191,12 @@ const PartnerJoinPropertyType = () => {
                   </div>
                 </button>
               );
-            })}
+            }) : (
+              <div className="col-span-1 sm:col-span-2 py-10 text-center">
+                <p className="text-gray-400 text-sm font-bold uppercase tracking-widest">No property types selected in your profile.</p>
+                <button onClick={() => navigate('/hotel/dashboard')} className="mt-4 px-6 py-2 bg-[#0F172A] text-white text-xs font-bold uppercase tracking-widest rounded-full">Go to Profile</button>
+              </div>
+            )}
           </div>
         )}
       </main>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Mail, Phone, MapPin, Edit, Save, Camera, CreditCard, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { User, Mail, Phone, Edit, Save, Camera, CreditCard, Trash2, AlertTriangle, Loader2, Building2, Plus, X, CheckCircle2 } from 'lucide-react';
 import gsap from 'gsap';
 import usePartnerStore from '../store/partnerStore';
 import { userService, authService, hotelService } from '../../../services/apiService';
@@ -7,6 +8,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import PartnerHeader from '../components/PartnerHeader';
 import { isFlutterApp, openFlutterCamera, uploadBase64Image } from '../../../utils/flutterBridge';
+import PropertyTypeSelector, { STATIC_TYPES } from '../components/PropertyTypeSelector';
 
 const Field = ({ label, value, icon: Icon, isEditing, onChange, error }) => {
     const isValid = value && !error;
@@ -101,13 +103,18 @@ const PartnerProfile = () => {
     const [errors, setErrors] = useState({});
     const fileInputRef = useRef(null);
 
+    // Property Types State
+    const [preferredTypes, setPreferredTypes] = useState([]);
+    const [showTypeSelector, setShowTypeSelector] = useState(false);
+    const [savingTypes, setSavingTypes] = useState(false);
+
     useEffect(() => {
         gsap.fromTo(containerRef.current, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: 'power2.out' });
     }, []);
 
     // Prevent background scrolling when modal is open
     useEffect(() => {
-        if (showDeleteConfirm) {
+        if (showDeleteConfirm || showTypeSelector) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = 'unset';
@@ -115,13 +122,16 @@ const PartnerProfile = () => {
         return () => {
             document.body.style.overflow = 'unset';
         };
-    }, [showDeleteConfirm]);
+    }, [showDeleteConfirm, showTypeSelector]);
 
     useEffect(() => {
         const fetchProfile = async () => {
             try {
                 setLoading(true);
-                const data = await userService.getProfile();
+                const [data, typesData] = await Promise.all([
+                    userService.getProfile(),
+                    hotelService.getPropertyTypes().catch(() => ({ propertyTypes: [] }))
+                ]);
                 const addr = data.address || {};
                 const addrStr = [addr.street, addr.city, addr.state].filter(Boolean).join(', ');
 
@@ -137,6 +147,7 @@ const PartnerProfile = () => {
                 };
 
                 setProfile(profileData);
+                setPreferredTypes(typesData.propertyTypes || data.preferredPropertyTypes || []);
                 setApprovalStatus(data.partnerApprovalStatus || 'pending');
                 setMemberSince(data.createdAt || data.partnerSince || '');
                 setPartnerId(data._id || '');
@@ -158,6 +169,20 @@ const PartnerProfile = () => {
         };
         fetchProfile();
     }, []);
+
+    const handleSavePropertyTypes = async (newTypes) => {
+        setSavingTypes(true);
+        try {
+            await hotelService.updatePropertyTypes(newTypes);
+            setPreferredTypes(newTypes);
+            setShowTypeSelector(false);
+            toast.success('Property types updated!');
+        } catch (err) {
+            toast.error('Failed to save property types');
+        } finally {
+            setSavingTypes(false);
+        }
+    };
 
     const handleChange = (field, e) => {
         let val = e.target.value;
@@ -515,6 +540,97 @@ const PartnerProfile = () => {
                         onChange={() => { }}
                     />
                 </div>
+
+                {/* My Property Types Section */}
+                <div className="mb-6">
+                    <h3 className="font-bold text-[#0F172A] text-[10px] uppercase tracking-[0.2em] mb-3 ml-2">My Property Types</h3>
+                    <div className="bg-white p-6 rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <p className="text-sm font-black text-[#003836]">Listed Property Types</p>
+                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">Subscription plans will match these types</p>
+                            </div>
+                            <button
+                                onClick={() => setShowTypeSelector(true)}
+                                className="flex items-center gap-1.5 px-4 py-2 bg-[#0F172A] text-white rounded-xl text-xs font-black hover:bg-[#003836] transition-all active:scale-95"
+                            >
+                                <Plus size={14} />
+                                Manage
+                            </button>
+                        </div>
+
+                        {preferredTypes.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {preferredTypes.map((typeKey) => {
+                                    const typeInfo = STATIC_TYPES.find(t => t.key === typeKey) || { key: typeKey, label: typeKey, icon: Building2, color: 'bg-indigo-50 text-indigo-600' };
+                                    const Icon = typeInfo.icon;
+                                    return (
+                                        <div key={typeKey} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${typeInfo.color} border-current/10`}>
+                                            <Icon size={14} />
+                                            <span className="text-xs font-black uppercase tracking-tight">{typeInfo.label}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6 border-2 border-dashed border-gray-100 rounded-2xl">
+                                <Building2 size={28} className="text-gray-200 mx-auto mb-2" />
+                                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">No property types selected</p>
+                                <p className="text-[10px] text-gray-300 mt-1">Add types to see relevant subscription plans</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Property Type Selector Modal */}
+                {createPortal(
+                    <AnimatePresence>
+                        {showTypeSelector && (
+                            <motion.div
+                                key="type-selector-modal"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="fixed inset-0 z-[99999] flex items-center justify-center p-2.5 sm:p-6"
+                            >
+                                <div className="absolute inset-0 bg-[#0F172A]/80 backdrop-blur-sm" onClick={() => setShowTypeSelector(false)} />
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                    transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                                    className="relative bg-white rounded-[2rem] w-full h-[95vh] sm:h-auto sm:max-h-[90vh] max-w-lg flex flex-col shadow-2xl overflow-hidden"
+                                >
+                                    <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 shrink-0 bg-white z-10">
+                                        <div>
+                                            <h2 className="font-black text-gray-900 text-lg">Select Property Types</h2>
+                                            <p className="text-[11px] text-gray-400 font-medium">Select all that apply to you</p>
+                                        </div>
+                                        <button onClick={() => setShowTypeSelector(false)} className="p-2.5 rounded-full hover:bg-gray-200 transition-colors bg-gray-100">
+                                            <X size={20} className="text-gray-500" />
+                                        </button>
+                                    </div>
+                                    <div className="overflow-y-auto px-5 pt-5 pb-2 bg-white relative">
+                                        <PropertyTypeSelector
+                                            selectedTypes={preferredTypes}
+                                            onChange={setPreferredTypes}
+                                        />
+                                    </div>
+                                    <div className="px-6 pb-6 pt-3 bg-white z-10">
+                                        <button
+                                            onClick={() => handleSavePropertyTypes(preferredTypes)}
+                                            disabled={savingTypes}
+                                            className="w-full bg-[#0F172A] text-white font-black py-4 rounded-2xl shadow-xl shadow-[#0F172A]/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                                        >
+                                            {savingTypes ? <Loader2 size={18} className="animate-spin" /> : <><CheckCircle2 size={18} /><span>Save {preferredTypes.length > 0 ? `(${preferredTypes.length} selected)` : ''}</span></>}
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>,
+                    document.body
+                )}
 
                 {/* Danger Zone */}
                 <div className="pt-4 mb-6">

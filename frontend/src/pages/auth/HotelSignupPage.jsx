@@ -9,10 +9,12 @@ import { authService, userService } from '../../services/apiService';
 // Updated Steps Components
 import StepUserRegistration from '../../app/partner/steps/StepUserRegistration';
 import StepOwnerDetails from '../../app/partner/steps/StepOwnerDetails';
+import PropertyTypeSelector from '../../app/partner/components/PropertyTypeSelector';
 
 const steps = [
     { id: 1, title: 'Registration', desc: 'Create your partner account' },
     { id: 2, title: 'Owner Details', desc: 'Identity and Address' },
+    { id: 3, title: 'Property Types', desc: 'Select properties you manage' },
 ];
 
 const HotelSignup = () => {
@@ -80,7 +82,7 @@ const HotelSignup = () => {
             }
         }
 
-        // --- STEP 2: OWNER DETAILS SUBMISSION & REGISTRATION ---
+        // --- STEP 2: OWNER DETAILS ---
         else if (currentStep === 2) {
             // Validation
             if (!formData.aadhaar_number || formData.aadhaar_number.length !== 12) return setError('Valid 12-digit Aadhaar Number is required');
@@ -96,6 +98,11 @@ const HotelSignup = () => {
 
             if (!formData.pan_card_image?.url) return setError('PAN Card Image is required');
 
+            nextStep();
+        }
+
+        // --- STEP 3: PROPERTY TYPES & REGISTRATION SUBMISSION ---
+        else if (currentStep === 3) {
             // SUBMIT REGISTRATION TO BACKEND
             setLoading(true);
             try {
@@ -110,14 +117,13 @@ const HotelSignup = () => {
                     pan_number: formData.pan_number,
                     pan_card_image: formData.pan_card_image,
                     termsAccepted: formData.termsAccepted,
+                    preferredPropertyTypes: formData.preferredPropertyTypes || [],
                     role: 'partner'
                 };
 
                 console.log(`[REFERRAL_DEBUG] Partner Registration Payload:`, payload);
                 const response = await authService.registerPartner(payload);
                 setLoading(false);
-
-                // Removed referral handling for partners
 
                 // Show success message
                 alert(response.message || 'Registration successful! Your account is pending admin approval. You can login once approved.');
@@ -143,9 +149,21 @@ const HotelSignup = () => {
 
     const renderStep = () => {
         switch (currentStep) {
-            case 1: return <StepUserRegistration />;
-            case 2: return <StepOwnerDetails />;
-            default: return <div>Unknown Step</div>;
+            case 1:
+                return <StepUserRegistration />;
+            case 2:
+                return <StepOwnerDetails />;
+            case 3:
+                return (
+                    <div className="bg-white rounded-3xl p-2 sm:p-6 shadow-sm border border-gray-100 max-h-[60vh] overflow-y-auto">
+                        <PropertyTypeSelector 
+                            selectedTypes={formData.preferredPropertyTypes || []} 
+                            onChange={(types) => usePartnerStore.getState().updateFormData({ preferredPropertyTypes: types })} 
+                        />
+                    </div>
+                );
+            default:
+                return null;
         }
     };
 

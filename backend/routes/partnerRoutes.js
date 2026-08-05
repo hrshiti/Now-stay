@@ -8,7 +8,9 @@ import {
   updateFcmToken,
   deletePartnerAccount,
   updateNotificationPreference,
-  getPartnerReports
+  getPartnerReports,
+  getPropertyTypes,
+  updatePropertyTypes
 } from '../controllers/partnerController.js';
 
 const router = express.Router();
@@ -19,6 +21,10 @@ router.use(authorizedRoles('partner', 'admin'));
 router.get('/reports', getPartnerReports);
 router.delete('/profile', deletePartnerAccount);
 
+// Property Types Routes
+router.get('/property-types', getPropertyTypes);
+router.put('/property-types', updatePropertyTypes);
+
 // Notification Routes
 router.get('/notifications', getPartnerNotifications);
 router.put('/notifications/read-all', markAllNotificationsRead);
@@ -28,3 +34,4 @@ router.put('/fcm-token', updateFcmToken);
 router.put('/notification-preference', updateNotificationPreference);
 
 export default router;
+

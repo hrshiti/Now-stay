@@ -441,3 +441,49 @@ export const getPartnerReports = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error generating reports' });
   }
 };
+
+/**
+ * @desc    Get partner's preferred property types
+ * @route   GET /api/partners/property-types
+ * @access  Private (Partner)
+ */
+export const getPropertyTypes = async (req, res) => {
+  try {
+    const partner = await Partner.findById(req.user._id).select('preferredPropertyTypes');
+    if (!partner) return res.status(404).json({ message: 'Partner not found' });
+
+    res.json({ success: true, propertyTypes: partner.preferredPropertyTypes || [] });
+  } catch (error) {
+    console.error('Get Property Types Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+/**
+ * @desc    Update partner's preferred property types
+ * @route   PUT /api/partners/property-types
+ * @access  Private (Partner)
+ */
+export const updatePropertyTypes = async (req, res) => {
+  try {
+    const { propertyTypes } = req.body;
+
+    if (!Array.isArray(propertyTypes)) {
+      return res.status(400).json({ message: 'propertyTypes must be an array' });
+    }
+
+    const partner = await Partner.findByIdAndUpdate(
+      req.user._id,
+      { $set: { preferredPropertyTypes: propertyTypes } },
+      { new: true }
+    ).select('preferredPropertyTypes');
+
+    if (!partner) return res.status(404).json({ message: 'Partner not found' });
+
+    res.json({ success: true, propertyTypes: partner.preferredPropertyTypes, message: 'Property types updated successfully' });
+  } catch (error) {
+    console.error('Update Property Types Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

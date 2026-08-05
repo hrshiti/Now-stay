@@ -10,6 +10,7 @@ const INITIAL_DATA = {
     termsAccepted: false,
     otpCode: '', // Shared with auth
     referralCode: '',
+    preferredPropertyTypes: [],
 
     // Owner Details
     aadhaar_number: '',

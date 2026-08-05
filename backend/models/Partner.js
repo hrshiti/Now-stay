@@ -69,6 +69,9 @@ const partnerSchema = new mongoose.Schema({
 
   termsAccepted: { type: Boolean, default: false },
 
+  // Property types partner prefers to list (e.g., 'hotel', 'resort', 'villa', etc.)
+  preferredPropertyTypes: [{ type: String, trim: true }],
+
   // OTP for Login
   otp: {
     type: String,
