@@ -2166,6 +2166,9 @@ const AddHostelWizard = () => {
         onClose={() => setShowOnboardingModal(false)}
         onProceedWithCommission={handleProceedWithCommission}
         redirectUrl={window.location.pathname}
+        propertyDetails={{
+          propertyTemplate: 'hostel'
+        }}
       />
     </div>
   );

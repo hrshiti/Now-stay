@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Edit2, Trash2, Users, CreditCard, Calendar, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, CreditCard, Calendar, CheckCircle, Clock, Waves, Mountain, Trees, Sun } from 'lucide-react';
 import subscriptionService from '../../../services/subscriptionService';
 import { format } from 'date-fns';
 import { api } from '../../../services/apiService';
@@ -145,6 +145,7 @@ const AdminSubscriptions = () => {
   };
 
   const openEditModal = (plan) => {
+    const validCategories = ["Small Scale", "Lodge", "Budget", "Premium", "Luxury"];
     setEditId(plan._id);
     setFormData({
       name: plan.name,
@@ -153,8 +154,8 @@ const AdminSubscriptions = () => {
       durationInMonths: Number(plan.durationInMonths) === 0 ? '' : plan.durationInMonths,
       propertyTemplate: plan.propertyTemplate || 'all',
       starRatings: plan.starRatings || [],
-      hotelCategories: plan.hotelCategories || [],
-      resortTypes: plan.resortTypes || []
+      hotelCategories: (plan.hotelCategories || []).filter(c => validCategories.includes(c)),
+      resortTypes: (plan.resortTypes || []).filter(rt => ["Beach", "Hill", "Jungle", "Desert"].includes(rt))
     });
     setShowModal(true);
   };
@@ -282,14 +283,14 @@ const AdminSubscriptions = () => {
                       ★ {plan.starRatings.join(', ')} Stars
                     </span>
                   )}
-                  {plan.hotelCategories && plan.hotelCategories.length > 0 && (
+                  {plan.hotelCategories && plan.hotelCategories.filter(c => c !== 'Low Budget').length > 0 && (
                     <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                      🏢 {plan.hotelCategories.join(', ')}
+                      🏢 {plan.hotelCategories.filter(c => c !== 'Low Budget').join(', ')}
                     </span>
                   )}
-                  {plan.resortTypes && plan.resortTypes.length > 0 && (
+                  {plan.resortTypes && plan.resortTypes.filter(rt => !["5 Star Resort", "Luxury"].includes(rt)).length > 0 && (
                     <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                      🏝️ {plan.resortTypes.join(', ')}
+                      🏝️ {plan.resortTypes.filter(rt => !["5 Star Resort", "Luxury"].includes(rt)).join(', ')}
                     </span>
                   )}
                 </div>
@@ -536,8 +537,8 @@ const AdminSubscriptions = () => {
                 </select>
               </div>
 
-              {/* Star Rating & Hotel Scale Selection (Only for Hotel or All) */}
-              {(formData.propertyTemplate === 'all' || formData.propertyTemplate === 'hotel') && (
+              {/* Star Rating & Property Scale Selection (For Hotel, Resort, or All) */}
+              {(formData.propertyTemplate === 'all' || formData.propertyTemplate === 'hotel' || formData.propertyTemplate === 'resort') && (
                 <>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
@@ -566,10 +567,10 @@ const AdminSubscriptions = () => {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
-                      Target Hotel Scale / Category (Optional)
+                      Target Scale / Category (Optional)
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      {["Small Scale", "Low Budget", "Lodge", "Budget", "Premium", "Luxury"].map(cat => {
+                      {["Small Scale", "Lodge", "Budget", "Premium", "Luxury"].map(cat => {
                         const selected = (formData.hotelCategories || []).includes(cat);
                         return (
                           <button
@@ -597,21 +598,28 @@ const AdminSubscriptions = () => {
                   <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">
                     Target Resort Type (Optional)
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    {["5 Star Resort", "Beach", "Hill", "Jungle", "Desert", "Luxury"].map(rt => {
-                      const selected = (formData.resortTypes || []).includes(rt);
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    {[
+                      { value: 'Beach', label: 'Beach Resort', icon: Waves },
+                      { value: 'Hill', label: 'Hill Resort', icon: Mountain },
+                      { value: 'Jungle', label: 'Jungle Resort', icon: Trees },
+                      { value: 'Desert', label: 'Desert Resort', icon: Sun }
+                    ].map(rt => {
+                      const selected = (formData.resortTypes || []).includes(rt.value);
                       return (
                         <button
+                          key={rt.value}
                           type="button"
-                          key={rt}
-                          onClick={() => toggleResortType(rt)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                            selected
-                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                          }`}
+                          onClick={() => toggleResortType(rt.value)}
+                          className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${selected
+                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-500'
+                            : 'border-gray-200 hover:border-emerald-200 hover:bg-emerald-50/50 text-gray-600'
+                            }`}
                         >
-                          {rt}
+                          <div className={`p-2 rounded-lg ${selected ? 'bg-white text-emerald-600 shadow-sm' : 'bg-gray-100 text-gray-500'}`}>
+                            <rt.icon size={20} />
+                          </div>
+                          <span className="text-sm font-bold">{rt.label}</span>
                         </button>
                       );
                     })}
