@@ -58,10 +58,30 @@ const PartnerSubscriptions = () => {
   };
 
   const filterPlansByType = (plansList, typeKey, userTypes = preferredTypes) => {
+    const urlTemplate = searchParams.get('template');
+    const urlCategory = searchParams.get('category');
+    const urlStars = searchParams.get('stars');
+    const urlResortType = searchParams.get('resortType');
+
     // If user has no preferred types, we could either show nothing or show all. We'll show all.
     const effectiveTypes = userTypes.length > 0 ? userTypes : [];
 
     return plansList.filter(plan => {
+      // 1. Strict Filter based on URL parameters (from Property Form onboarding)
+      if (urlTemplate && plan.propertyTemplate !== 'all' && plan.propertyTemplate !== urlTemplate) {
+        return false;
+      }
+      if (urlCategory && plan.hotelCategories && plan.hotelCategories.length > 0) {
+        if (!plan.hotelCategories.some(c => c.toLowerCase() === urlCategory.toLowerCase())) return false;
+      }
+      if (urlStars && plan.starRatings && plan.starRatings.length > 0) {
+        if (!plan.starRatings.includes(Number(urlStars))) return false;
+      }
+      if (urlResortType && plan.resortTypes && plan.resortTypes.length > 0) {
+        if (!plan.resortTypes.some(r => r.toLowerCase() === urlResortType.toLowerCase())) return false;
+      }
+
+      // 2. Normal Tab / Preferred Type Filter
       // Always show general plans
       if (!plan.propertyTemplate || plan.propertyTemplate === 'all') return true;
 
@@ -291,14 +311,14 @@ const PartnerSubscriptions = () => {
                         {plan.starRatings.join(', ')} ★
                       </span>
                     )}
-                    {Array.isArray(plan.hotelCategories) && plan.hotelCategories.length > 0 && (
+                    {Array.isArray(plan.hotelCategories) && plan.hotelCategories.filter(c => c !== 'Low Budget').length > 0 && (
                       <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                        {plan.hotelCategories.join(', ')}
+                        {plan.hotelCategories.filter(c => c !== 'Low Budget').join(', ')}
                       </span>
                     )}
-                    {Array.isArray(plan.resortTypes) && plan.resortTypes.length > 0 && (
+                    {Array.isArray(plan.resortTypes) && plan.resortTypes.filter(rt => !["5 Star Resort", "Luxury"].includes(rt)).length > 0 && (
                       <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                        {plan.resortTypes.join(', ')}
+                        {plan.resortTypes.filter(rt => !["5 Star Resort", "Luxury"].includes(rt)).join(', ')}
                       </span>
                     )}
                   </div>

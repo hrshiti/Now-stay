@@ -2304,6 +2304,9 @@ const AddTentWizard = () => {
         onClose={() => setShowOnboardingModal(false)}
         onProceedWithCommission={handleProceedWithCommission}
         redirectUrl={window.location.pathname}
+        propertyDetails={{
+          propertyTemplate: 'tent'
+        }}
       />
     </div>
   );

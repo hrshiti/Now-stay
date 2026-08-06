@@ -2177,6 +2177,9 @@ const AddVillaWizard = () => {
         onClose={() => setShowOnboardingModal(false)}
         onProceedWithCommission={handleProceedWithCommission}
         redirectUrl={window.location.pathname}
+        propertyDetails={{
+          propertyTemplate: 'villa'
+        }}
       />
     </div>
   );

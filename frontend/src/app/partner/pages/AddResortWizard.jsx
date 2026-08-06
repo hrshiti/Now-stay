@@ -100,6 +100,8 @@ const AddResortWizard = () => {
     description: '',
     shortDescription: '',
     resortType: '',
+    hotelCategory: 'Budget',
+    starRating: 3,
     activities: [],
     coverImage: '',
     propertyImages: [],
@@ -683,6 +685,8 @@ const AddResortWizard = () => {
           description: prop.description || '',
           shortDescription: prop.shortDescription || '',
           resortType: prop.resortType || 'beach',
+          hotelCategory: prop.hotelCategory || '',
+          starRating: Number(prop.starRating || 3),
           activities: prop.activities || [],
           coverImage: prop.coverImage || '',
           propertyImages: prop.propertyImages || [],
@@ -762,6 +766,14 @@ const AddResortWizard = () => {
     }
     if (!propertyForm.contactNumber || propertyForm.contactNumber.length !== 10 || !/^[6-9]\d{9}$/.test(propertyForm.contactNumber)) {
       setError('A valid 10-digit contact number is required');
+      return;
+    }
+    if (!propertyForm.hotelCategory) {
+      setError('Resort category / scale selection is required');
+      return;
+    }
+    if (['Budget', 'Premium', 'Luxury'].includes(propertyForm.hotelCategory) && !propertyForm.starRating) {
+      setError('Star rating selection is required');
       return;
     }
     setStep(2);
@@ -926,6 +938,8 @@ const AddResortWizard = () => {
         description: propertyForm.description,
         shortDescription: propertyForm.shortDescription,
         resortType: propertyForm.resortType,
+        hotelCategory: propertyForm.hotelCategory,
+        starRating: Number(propertyForm.starRating || 3),
         activities: propertyForm.activities,
         coverImage: propertyForm.coverImage,
         propertyImages: propertyForm.propertyImages.filter(Boolean),
@@ -1139,6 +1153,59 @@ const AddResortWizard = () => {
                     ))}
                   </div>
                 </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Resort Category / Scale *</label>
+                  <select
+                    className="input w-full"
+                    value={propertyForm.hotelCategory}
+                    onChange={e => {
+                      const newCategory = e.target.value;
+                      updatePropertyForm('hotelCategory', newCategory);
+                      
+                      let allowedStars = [1, 2, 3];
+                      if (newCategory === 'Premium') allowedStars = [4, 5];
+                      else if (newCategory === 'Luxury') allowedStars = [6, 7, 8];
+                      
+                      if (!allowedStars.includes(Number(propertyForm.starRating))) {
+                        updatePropertyForm('starRating', allowedStars[0]);
+                      }
+                    }}
+                  >
+                    <option value="Small Scale">Small Scale Resort</option>
+                    <option value="Lodge">Lodge / Guest House</option>
+                    <option value="Budget">Budget Resort</option>
+                    <option value="Premium">Premium Resort</option>
+                    <option value="Luxury">Luxury Resort</option>
+                  </select>
+                </div>
+
+                {['Budget', 'Premium', 'Luxury'].includes(propertyForm.hotelCategory) && (
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Resort Star Rating *</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {(() => {
+                        let allowedStars = [1, 2, 3];
+                        if (propertyForm.hotelCategory === 'Premium') allowedStars = [4, 5];
+                        else if (propertyForm.hotelCategory === 'Luxury') allowedStars = [6, 7, 8];
+                        return allowedStars;
+                      })().map(star => (
+                        <button
+                          type="button"
+                          key={star}
+                          onClick={() => updatePropertyForm('starRating', star)}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                            Number(propertyForm.starRating) === star
+                              ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm scale-105'
+                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                          }`}
+                        >
+                          {star} ★
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-gray-500">Activities</label>
@@ -2211,6 +2278,12 @@ const AddResortWizard = () => {
         onClose={() => setShowOnboardingModal(false)}
         onProceedWithCommission={handleProceedWithCommission}
         redirectUrl={window.location.pathname}
+        propertyDetails={{
+          propertyTemplate: 'resort',
+          hotelCategory: propertyForm.hotelCategory,
+          starRating: propertyForm.starRating,
+          resortType: propertyForm.resortType
+        }}
       />
     </div>
   );

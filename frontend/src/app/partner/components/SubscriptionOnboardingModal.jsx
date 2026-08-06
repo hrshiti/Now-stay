@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Percent, Sparkles, Crown, ArrowRight, X } from 'lucide-react';
 
-const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission, redirectUrl }) => {
+const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission, redirectUrl, propertyDetails = {} }) => {
   const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState('subscription');
 
@@ -28,7 +28,14 @@ const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission,
   const handleSubscribeClick = () => {
     onClose();
     const encodedRedirect = encodeURIComponent(redirectUrl || window.location.pathname);
-    navigate(`/hotel/subscriptions?redirectBack=${encodedRedirect}`);
+    let navUrl = `/hotel/subscriptions?redirectBack=${encodedRedirect}`;
+    
+    if (propertyDetails.propertyTemplate) navUrl += `&template=${encodeURIComponent(propertyDetails.propertyTemplate)}`;
+    if (propertyDetails.hotelCategory) navUrl += `&category=${encodeURIComponent(propertyDetails.hotelCategory)}`;
+    if (propertyDetails.starRating) navUrl += `&stars=${encodeURIComponent(propertyDetails.starRating)}`;
+    if (propertyDetails.resortType) navUrl += `&resortType=${encodeURIComponent(propertyDetails.resortType)}`;
+    
+    navigate(navUrl);
   };
 
   return (
