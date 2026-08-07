@@ -78,6 +78,7 @@ const propertySchema = new mongoose.Schema({
     type: String,
     enum: ["Small Scale", "Low Budget", "Lodge", "Budget", "Premium", "Luxury"]
   },
+  subCategories: [String],
   starRating: {
     type: Number,
     min: 1,

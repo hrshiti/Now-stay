@@ -13,7 +13,7 @@ import { getRazorpayInstance } from '../utils/razorpay.js';
 
 export const createPlan = async (req, res) => {
   try {
-    const { name, description, price, durationInMonths, commissionRate, propertyTemplate, starRatings, hotelCategories, resortTypes } = req.body;
+    const { name, description, price, durationInMonths, commissionRate, propertyTemplate, starRatings, hotelCategories, subCategories, resortTypes } = req.body;
     if (!name || price === undefined) {
       return res.status(400).json({ message: 'Name and Price are required' });
     }
@@ -27,6 +27,7 @@ export const createPlan = async (req, res) => {
       propertyTemplate: propertyTemplate || 'all',
       starRatings: Array.isArray(starRatings) ? starRatings : [],
       hotelCategories: Array.isArray(hotelCategories) ? hotelCategories : [],
+      subCategories: Array.isArray(subCategories) ? subCategories : [],
       resortTypes: Array.isArray(resortTypes) ? resortTypes : []
     });
 
@@ -51,11 +52,12 @@ export const getPlans = async (req, res) => {
 export const updatePlan = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, price, durationInMonths, commissionRate, isActive, propertyTemplate, starRatings, hotelCategories, resortTypes } = req.body;
+    const { name, description, price, durationInMonths, commissionRate, isActive, propertyTemplate, starRatings, hotelCategories, subCategories, resortTypes } = req.body;
 
     const updateFields = { name, description, price, durationInMonths, commissionRate, isActive, propertyTemplate };
     if (starRatings !== undefined) updateFields.starRatings = Array.isArray(starRatings) ? starRatings : [];
     if (hotelCategories !== undefined) updateFields.hotelCategories = Array.isArray(hotelCategories) ? hotelCategories : [];
+    if (subCategories !== undefined) updateFields.subCategories = Array.isArray(subCategories) ? subCategories : [];
     if (resortTypes !== undefined) updateFields.resortTypes = Array.isArray(resortTypes) ? resortTypes : [];
 
     const plan = await SubscriptionPlan.findByIdAndUpdate(
@@ -102,7 +104,7 @@ export const getPartnerSubscriptions = async (req, res) => {
 
 export const getActivePlans = async (req, res) => {
   try {
-    let { propertyId, propertyTemplate, starRating, hotelCategory, resortType } = req.query;
+    let { propertyId, propertyTemplate, starRating, hotelCategory, subCategories, resortType } = req.query;
 
     if (propertyId) {
       const property = await Property.findById(propertyId);
@@ -110,6 +112,7 @@ export const getActivePlans = async (req, res) => {
         propertyTemplate = propertyTemplate || property.propertyTemplate;
         starRating = starRating || property.starRating;
         hotelCategory = hotelCategory || property.hotelCategory;
+        subCategories = subCategories || property.subCategories;
         resortType = resortType || property.resortType;
       }
     }
@@ -138,6 +141,17 @@ export const getActivePlans = async (req, res) => {
           cat => cat.toLowerCase() === String(hotelCategory).toLowerCase()
         );
         if (!matchesCategory) {
+          return false;
+        }
+      }
+
+      // 3.5. Sub Categories check
+      if (plan.subCategories && plan.subCategories.length > 0 && subCategories && subCategories.length > 0) {
+        const propSubCategories = Array.isArray(subCategories) ? subCategories : [subCategories];
+        const matchesSubCategory = plan.subCategories.some(
+          planSub => propSubCategories.some(propSub => planSub.toLowerCase() === propSub.toLowerCase())
+        );
+        if (!matchesSubCategory) {
           return false;
         }
       }

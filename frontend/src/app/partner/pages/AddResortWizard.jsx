@@ -6,7 +6,7 @@ import SubscriptionOnboardingModal from '../components/SubscriptionOnboardingMod
 // Compression removed - Cloudinary handles optimization
 import {
   CheckCircle, FileText, Mail, Home, Image, Plus, Trash2, MapPin, Search,
-  BedDouble, Wifi, Tv, Snowflake, Coffee, ShowerHead, Umbrella, Waves, Mountain, Trees, Sun, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X, Eye, Upload
+  BedDouble, Wifi, Tv, Snowflake, Coffee, ShowerHead, Umbrella, Waves, Mountain, Trees, Sun, ArrowLeft, ArrowRight, Clock, Loader2, Camera, X, Eye, Upload, Sparkles
 } from 'lucide-react';
 
 
@@ -34,6 +34,14 @@ const ROOM_AMENITIES_OPTIONS = [
   { key: 'geyser', label: 'Geyser', icon: ShowerHead }
 ];
 const HOUSE_RULES_OPTIONS = ["No smoking", "No pets", "No loud music", "ID required at check-in", "Visitors not allowed"];
+
+const RESORT_SUB_CATEGORIES = {
+  "Small Scale": ["Eco Resort", "Farm Stay", "Nature Camp", "Riverside Resort", "Hill View Resort", "Jungle Camp", "Cottage Resort", "Boutique Resort", "Family Resort"],
+  "Lodge": ["Guest House", "Tourist Lodge", "Transit Lodge", "Budget Lodge", "Executive Lodge", "Homestay", "Backpacker Stay", "Dormitory Stay"],
+  "Budget": ["Family Budget Resort", "Couple Resort", "Weekend Resort", "Pool Resort", "Adventure Resort", "Beach Resort", "Hill Resort", "Eco Budget Resort"],
+  "Premium": ["Premium Family Resort", "Premium Pool Resort", "Spa Resort", "Wellness Resort", "Conference Resort", "Business Resort", "Heritage Resort", "Boutique Premium Resort"],
+  "Luxury": ["Luxury Beach Resort", "Luxury Hill Resort", "5-Star Resort", "Private Villa Resort", "Palace Resort", "Golf Resort", "Wellness & Spa Resort", "Honeymoon Resort", "All-Inclusive Luxury Resort"]
+};
 
 const AddResortWizard = () => {
   const navigate = useNavigate();
@@ -101,6 +109,7 @@ const AddResortWizard = () => {
     shortDescription: '',
     resortType: '',
     hotelCategory: 'Budget',
+    subCategories: [],
     starRating: 3,
     activities: [],
     coverImage: '',
@@ -685,7 +694,8 @@ const AddResortWizard = () => {
           description: prop.description || '',
           shortDescription: prop.shortDescription || '',
           resortType: prop.resortType || 'beach',
-          hotelCategory: prop.hotelCategory || '',
+          hotelCategory: prop.hotelCategory || 'Small Scale',
+          subCategories: prop.subCategories || [],
           starRating: Number(prop.starRating || 3),
           activities: prop.activities || [],
           coverImage: prop.coverImage || '',
@@ -939,6 +949,7 @@ const AddResortWizard = () => {
         shortDescription: propertyForm.shortDescription,
         resortType: propertyForm.resortType,
         hotelCategory: propertyForm.hotelCategory,
+        subCategories: propertyForm.subCategories || [],
         starRating: Number(propertyForm.starRating || 3),
         activities: propertyForm.activities,
         coverImage: propertyForm.coverImage,
@@ -1159,9 +1170,10 @@ const AddResortWizard = () => {
                   <select
                     className="input w-full"
                     value={propertyForm.hotelCategory}
-                    onChange={e => {
+                    onChange={(e) => {
                       const newCategory = e.target.value;
                       updatePropertyForm('hotelCategory', newCategory);
+                      updatePropertyForm('subCategories', []);
                       
                       let allowedStars = [1, 2, 3];
                       if (newCategory === 'Premium') allowedStars = [4, 5];
@@ -1180,6 +1192,37 @@ const AddResortWizard = () => {
                   </select>
                 </div>
 
+                {propertyForm.hotelCategory && RESORT_SUB_CATEGORIES[propertyForm.hotelCategory] && (
+                  <div>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Sub Categories (Select multiple)</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {RESORT_SUB_CATEGORIES[propertyForm.hotelCategory].map(sub => {
+                        const isSelected = (propertyForm.subCategories || []).includes(sub);
+                        return (
+                          <button
+                            type="button"
+                            key={sub}
+                            onClick={() => {
+                              const current = propertyForm.subCategories || [];
+                              const updated = isSelected
+                                ? current.filter(s => s !== sub)
+                                : [...current, sub];
+                              updatePropertyForm('subCategories', updated);
+                            }}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                              isSelected
+                                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            {sub}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {['Budget', 'Premium', 'Luxury'].includes(propertyForm.hotelCategory) && (
                   <div>
                     <label className="text-xs font-semibold text-gray-500 mb-1 block">Resort Star Rating *</label>
@@ -1188,21 +1231,22 @@ const AddResortWizard = () => {
                         let allowedStars = [1, 2, 3];
                         if (propertyForm.hotelCategory === 'Premium') allowedStars = [4, 5];
                         else if (propertyForm.hotelCategory === 'Luxury') allowedStars = [6, 7, 8];
-                        return allowedStars;
-                      })().map(star => (
-                        <button
-                          type="button"
-                          key={star}
-                          onClick={() => updatePropertyForm('starRating', star)}
-                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
-                            Number(propertyForm.starRating) === star
-                              ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm scale-105'
-                              : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                          }`}
-                        >
-                          {star} ★
-                        </button>
-                      ))}
+                        
+                        return allowedStars.map(star => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => updatePropertyForm('starRating', star)}
+                            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                              Number(propertyForm.starRating) === star
+                                ? 'bg-[#0F172A] text-white border-[#0F172A] shadow-sm scale-105'
+                                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                            }`}
+                          >
+                            {star} ★
+                          </button>
+                        ));
+                      })()}
                     </div>
                   </div>
                 )}

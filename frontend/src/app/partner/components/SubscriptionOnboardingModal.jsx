@@ -32,6 +32,7 @@ const SubscriptionOnboardingModal = ({ isOpen, onClose, onProceedWithCommission,
     
     if (propertyDetails.propertyTemplate) navUrl += `&template=${encodeURIComponent(propertyDetails.propertyTemplate)}`;
     if (propertyDetails.hotelCategory) navUrl += `&category=${encodeURIComponent(propertyDetails.hotelCategory)}`;
+    if (propertyDetails.subCategories && propertyDetails.subCategories.length > 0) navUrl += `&subCategories=${encodeURIComponent(propertyDetails.subCategories.join(','))}`;
     if (propertyDetails.starRating) navUrl += `&stars=${encodeURIComponent(propertyDetails.starRating)}`;
     if (propertyDetails.resortType) navUrl += `&resortType=${encodeURIComponent(propertyDetails.resortType)}`;
     

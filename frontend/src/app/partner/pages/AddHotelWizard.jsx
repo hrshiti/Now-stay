@@ -8,6 +8,22 @@ import { CheckCircle, FileText, Mail, Home, Image, Plus, Trash2, MapPin, Search,
 
 import { isFlutterApp, openFlutterCamera } from '../../../utils/flutterBridge';
 
+const HOTEL_SUB_CATEGORIES = {
+  "Small Scale": ["Boutique Hotel", "Family Hotel", "Business Hotel", "Transit Hotel", "Highway Hotel", "Heritage Hotel", "Eco Hotel", "Apartment Hotel"],
+  "Lodge": ["Guest House", "Tourist Lodge", "Budget Lodge", "Executive Lodge", "Homestay", "Hostel", "Dormitory", "Backpacker Hostel"],
+  "Budget": ["Economy Hotel", "Family Budget Hotel", "Business Budget Hotel", "Airport Budget Hotel", "Highway Budget Hotel", "City Budget Hotel", "Couple Friendly Hotel"],
+  "Premium": ["Business Hotel", "Boutique Premium Hotel", "Heritage Hotel", "Spa Hotel", "Wellness Hotel", "Convention Hotel", "Family Premium Hotel", "Apartment Hotel"],
+  "Luxury": ["5-Star Hotel", "Luxury Boutique Hotel", "Palace Hotel", "Resort Hotel", "Spa & Wellness Hotel", "Golf Hotel", "Beach Hotel", "Heritage Luxury Hotel", "All-Suite Hotel"]
+};
+
+const RESORT_SUB_CATEGORIES = {
+  "Small Scale": ["Eco Resort", "Farm Stay", "Nature Camp", "Riverside Resort", "Hill View Resort", "Jungle Camp", "Cottage Resort", "Boutique Resort", "Family Resort"],
+  "Lodge": ["Guest House", "Tourist Lodge", "Transit Lodge", "Budget Lodge", "Executive Lodge", "Homestay", "Backpacker Stay", "Dormitory Stay"],
+  "Budget": ["Family Budget Resort", "Couple Resort", "Weekend Resort", "Pool Resort", "Adventure Resort", "Beach Resort", "Hill Resort", "Eco Budget Resort"],
+  "Premium": ["Premium Family Resort", "Premium Pool Resort", "Spa Resort", "Wellness Resort", "Conference Resort", "Business Resort", "Heritage Resort", "Boutique Premium Resort"],
+  "Luxury": ["Luxury Beach Resort", "Luxury Hill Resort", "5-Star Resort", "Private Villa Resort", "Palace Resort", "Golf Resort", "Wellness & Spa Resort", "Honeymoon Resort", "All-Inclusive Luxury Resort"]
+};
+
 const REQUIRED_DOCS_HOTEL = [
   { type: "trade_license", name: "Trade License", required: true },
   { type: "electricity_bill", name: "Electricity Bill", required: true }
@@ -93,6 +109,7 @@ const AddHotelWizard = () => {
     contactNumber: '',
     starRating: 3,
     hotelCategory: 'Budget',
+    subCategories: [],
     cancellationPolicy: '',
     suitability: 'none',
     houseRules: [],
@@ -656,6 +673,9 @@ const AddHotelWizard = () => {
           amenities: prop.amenities || [],
           checkInTime: prop.checkInTime || '',
           checkOutTime: prop.checkOutTime || '',
+          hotelCategory: prop.hotelCategory || 'Budget',
+          starRating: prop.starRating || 3,
+          subCategories: prop.subCategories || [],
           cancellationPolicy: prop.cancellationPolicy || '',
           houseRules: prop.houseRules || [],
           contactNumber: prop.contactNumber || '',
@@ -866,6 +886,7 @@ const AddHotelWizard = () => {
         contactNumber: propertyForm.contactNumber,
         starRating: Number(propertyForm.starRating || 3),
         hotelCategory: propertyForm.hotelCategory || 'Budget',
+        subCategories: propertyForm.subCategories || [],
         description: propertyForm.description,
         shortDescription: propertyForm.shortDescription,
         coverImage: propertyForm.coverImage,
@@ -1124,6 +1145,7 @@ const AddHotelWizard = () => {
                   onChange={e => {
                     const newCategory = e.target.value;
                     updatePropertyForm('hotelCategory', newCategory);
+                    updatePropertyForm('subCategories', []);
                     
                     let allowedStars = [1, 2, 3];
                     if (newCategory === 'Premium') allowedStars = [4, 5];
@@ -1141,6 +1163,39 @@ const AddHotelWizard = () => {
                   <option value="Luxury">Luxury Hotel</option>
                 </select>
               </div>
+
+              {propertyForm.hotelCategory && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Sub Categories (Select multiple)</label>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {(() => {
+                      const queryType = new URLSearchParams(location.search).get('type');
+                      const subsMap = queryType === 'resort' ? RESORT_SUB_CATEGORIES : HOTEL_SUB_CATEGORIES;
+                      const options = subsMap[propertyForm.hotelCategory] || [];
+                      return options.map(sub => (
+                        <button
+                          type="button"
+                          key={sub}
+                          onClick={() => {
+                            const current = propertyForm.subCategories || [];
+                            const updated = current.includes(sub)
+                              ? current.filter(x => x !== sub)
+                              : [...current, sub];
+                            updatePropertyForm('subCategories', updated);
+                          }}
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all border ${
+                            (propertyForm.subCategories || []).includes(sub)
+                              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          {sub}
+                        </button>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )}
 
               {['Budget', 'Premium', 'Luxury'].includes(propertyForm.hotelCategory) && (
                 <div>

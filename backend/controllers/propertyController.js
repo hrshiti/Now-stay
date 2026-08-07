@@ -36,7 +36,7 @@ const notifySubmission = async (property) => {
 
 export const createProperty = async (req, res) => {
   try {
-    const { propertyName, contactNumber, propertyType, propertyTemplate, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, resortType, activities, hotelCategory, starRating, mealsIncluded, foodType, noticePeriod, gstNumber, propertyEmail, ownerSignature, invoiceTerms } = req.body;
+    const { propertyName, contactNumber, propertyType, propertyTemplate, description, shortDescription, coverImage, propertyImages, amenities, address, location, nearbyPlaces, checkInTime, checkOutTime, cancellationPolicy, houseRules, documents, roomTypes, pgType, hostelType, hostLivesOnProperty, resortType, activities, hotelCategory, subCategories, starRating, mealsIncluded, foodType, noticePeriod, gstNumber, propertyEmail, ownerSignature, invoiceTerms } = req.body;
     if (!propertyName || !propertyType || !coverImage) return res.status(400).json({ message: 'Missing required fields' });
 
     // Validate contact number if provided (Indian mobile: 10 digits, starts with 6-9)
@@ -77,8 +77,9 @@ export const createProperty = async (req, res) => {
       hostLivesOnProperty: lowerType === 'homestay' ? hostLivesOnProperty : undefined,
       resortType: lowerType === 'resort' ? resortType : undefined,
       activities: (lowerType === 'resort' || lowerType === 'tent') ? activities : undefined,
-      hotelCategory: lowerType === 'hotel' ? hotelCategory : undefined,
-      starRating: lowerType === 'hotel' ? starRating : undefined,
+      hotelCategory: (lowerType === 'hotel' || lowerType === 'resort') ? hotelCategory : undefined,
+      subCategories: (lowerType === 'hotel' || lowerType === 'resort') ? subCategories : undefined,
+      starRating: (lowerType === 'hotel' || lowerType === 'resort') ? starRating : undefined,
       mealsIncluded: (lowerType === 'pg' || lowerType === 'homestay') ? mealsIncluded : undefined,
       foodType: (lowerType === 'pg' || lowerType === 'homestay') ? foodType : undefined,
       noticePeriod: lowerType === 'pg' ? noticePeriod : undefined,
@@ -170,7 +171,7 @@ export const updateProperty = async (req, res) => {
       'propertyName', 'shortDescription', 'address', 'location', 'nearbyPlaces',
       'amenities', 'coverImage', 'propertyImages', 'checkInTime', 'checkOutTime',
       'cancellationPolicy', 'houseRules', 'pgType', 'hostLivesOnProperty', 'resortType',
-      'activities', 'hotelCategory', 'starRating', 'contactNumber', 'suitability', 'isLive',
+      'activities', 'hotelCategory', 'subCategories', 'starRating', 'contactNumber', 'suitability', 'isLive',
       'mealsIncluded', 'foodType', 'noticePeriod', 'gstNumber', 'gstPercentage', 'propertyEmail', 'ownerSignature', 'invoiceTerms'
     ];
 

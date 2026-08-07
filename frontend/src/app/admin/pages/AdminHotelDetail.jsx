@@ -127,10 +127,22 @@ const OverviewTab = ({ hotel, isEditing, editData, onChange }) => {
                                 <span className="font-bold text-gray-900 uppercase">{hotel.pgType || editData?.pgType}</span>
                             </div>
                         )}
-                        {hotel.propertyType === 'hotel' && (hotel.hotelCategory || editData?.hotelCategory) && (
+                        {(hotel.propertyType === 'hotel' || hotel.propertyType === 'resort') && (hotel.hotelCategory || editData?.hotelCategory) && (
                             <div className="flex justify-between items-center min-h-[32px]">
-                                <span className="text-gray-500 font-bold uppercase text-[10px]">Hotel Category</span>
+                                <span className="text-gray-500 font-bold uppercase text-[10px]">{hotel.propertyType === 'resort' ? 'Resort Category' : 'Hotel Category'}</span>
                                 <span className="font-bold text-gray-900 uppercase">{hotel.hotelCategory || editData?.hotelCategory}</span>
+                            </div>
+                        )}
+                        {(hotel.subCategories?.length > 0 || editData?.subCategories?.length > 0) && (
+                            <div className="flex justify-between items-start min-h-[32px] gap-4">
+                                <span className="text-gray-500 font-bold uppercase text-[10px] shrink-0 pt-1">Sub Categories</span>
+                                <div className="flex flex-wrap gap-1 justify-end">
+                                    {(hotel.subCategories || editData?.subCategories || []).map((sub, i) => (
+                                        <span key={i} className="px-2 py-0.5 bg-gray-100 text-gray-800 rounded-md text-[10px] font-bold">
+                                            {sub}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         )}
                         {hotel.propertyType === 'resort' && (hotel.resortType || editData?.resortType) && (

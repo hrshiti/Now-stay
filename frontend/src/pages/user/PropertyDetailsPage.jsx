@@ -241,6 +241,7 @@ const PropertyDetailsPage = () => {
             mealsIncluded: p.mealsIncluded,
             noticePeriod: p.noticePeriod,
             hotelCategory: p.hotelCategory,
+            subCategories: p.subCategories,
             starRating: p.starRating
           }
         };
@@ -822,11 +823,21 @@ const PropertyDetailsPage = () => {
                 <span className="bg-surface/10 text-surface text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                   {propertyType}
                 </span>
-                {(config?.starRating || property?.starRating) && (
-                  <span className="bg-amber-500/10 text-amber-700 border border-amber-300/60 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1 shadow-2xs">
-                    ★ {config?.starRating || property?.starRating} Star Hotel
+                {config?.hotelCategory && (
+                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                    {config.hotelCategory} {propertyType}
                   </span>
                 )}
+                {(config?.starRating || property?.starRating) && (
+                  <span className="bg-amber-500/10 text-amber-700 border border-amber-300/60 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1 shadow-2xs">
+                    ★ {config?.starRating || property?.starRating} Star {propertyType}
+                  </span>
+                )}
+                {property?.subCategories && Array.isArray(property.subCategories) && property.subCategories.length > 0 && property.subCategories.map((sub, idx) => (
+                  <span key={`sub-${idx}`} className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1">
+                    🏷️ {sub}
+                  </span>
+                ))}
                 {rating !== undefined && rating !== null && (
                   <div className="flex items-center gap-1 bg-honey/10 text-honey-dark px-2 py-0.5 rounded text-[10px] font-bold">
                     {Number(rating) > 0 && <Star size={10} className="fill-honey text-honey" />}
@@ -926,6 +937,7 @@ const PropertyDetailsPage = () => {
                 <h3 className="font-bold text-blue-900 mb-2">Hotel Info</h3>
                 <ul className="text-sm text-blue-800 space-y-1">
                   {config.hotelCategory && <li>Category: {config.hotelCategory}</li>}
+                  {property.subCategories?.length > 0 && <li>Sub Categories: {property.subCategories.join(', ')}</li>}
                   {(config.starRating || property.starRating) && <li>Star Category: ★ {config.starRating || property.starRating} Star Hotel</li>}
                 </ul>
               </div>

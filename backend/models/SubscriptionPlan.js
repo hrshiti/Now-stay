@@ -14,6 +14,7 @@ const subscriptionPlanSchema = new mongoose.Schema({
   },
   starRatings: [{ type: Number }],
   hotelCategories: [{ type: String }],
+  subCategories: [{ type: String }],
   resortTypes: [{ type: String }]
 }, { timestamps: true });
 

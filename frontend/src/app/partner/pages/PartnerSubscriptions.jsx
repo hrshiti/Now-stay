@@ -60,6 +60,7 @@ const PartnerSubscriptions = () => {
   const filterPlansByType = (plansList, typeKey, userTypes = preferredTypes) => {
     const urlTemplate = searchParams.get('template');
     const urlCategory = searchParams.get('category');
+    const urlSubCategories = searchParams.get('subCategories');
     const urlStars = searchParams.get('stars');
     const urlResortType = searchParams.get('resortType');
 
@@ -73,6 +74,11 @@ const PartnerSubscriptions = () => {
       }
       if (urlCategory && plan.hotelCategories && plan.hotelCategories.length > 0) {
         if (!plan.hotelCategories.some(c => c.toLowerCase() === urlCategory.toLowerCase())) return false;
+      }
+      if (urlSubCategories && plan.subCategories && plan.subCategories.length > 0) {
+        const propSubCats = urlSubCategories.split(',').map(s => s.trim().toLowerCase());
+        const matchesSubCat = plan.subCategories.some(planSub => propSubCats.includes(planSub.toLowerCase()));
+        if (!matchesSubCat) return false;
       }
       if (urlStars && plan.starRatings && plan.starRatings.length > 0) {
         if (!plan.starRatings.includes(Number(urlStars))) return false;
@@ -314,6 +320,11 @@ const PartnerSubscriptions = () => {
                     {Array.isArray(plan.hotelCategories) && plan.hotelCategories.filter(c => c !== 'Low Budget').length > 0 && (
                       <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
                         {plan.hotelCategories.filter(c => c !== 'Low Budget').join(', ')}
+                      </span>
+                    )}
+                    {Array.isArray(plan.subCategories) && plan.subCategories.length > 0 && (
+                      <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md text-[10px] font-bold text-left leading-tight break-words max-w-[200px]">
+                        🏷️ {plan.subCategories.join(', ')}
                       </span>
                     )}
                     {Array.isArray(plan.resortTypes) && plan.resortTypes.filter(rt => !["5 Star Resort", "Luxury"].includes(rt)).length > 0 && (

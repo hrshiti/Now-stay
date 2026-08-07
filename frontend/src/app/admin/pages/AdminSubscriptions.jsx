@@ -5,6 +5,22 @@ import subscriptionService from '../../../services/subscriptionService';
 import { format } from 'date-fns';
 import { api } from '../../../services/apiService';
 
+const HOTEL_SUB_CATEGORIES = {
+  "Small Scale": ["Boutique Hotel", "Family Hotel", "Business Hotel", "Transit Hotel", "Highway Hotel", "Heritage Hotel", "Eco Hotel", "Apartment Hotel"],
+  "Lodge": ["Guest House", "Tourist Lodge", "Budget Lodge", "Executive Lodge", "Homestay", "Hostel", "Dormitory", "Backpacker Hostel"],
+  "Budget": ["Economy Hotel", "Family Budget Hotel", "Business Budget Hotel", "Airport Budget Hotel", "Highway Budget Hotel", "City Budget Hotel", "Couple Friendly Hotel"],
+  "Premium": ["Business Hotel", "Boutique Premium Hotel", "Heritage Hotel", "Spa Hotel", "Wellness Hotel", "Convention Hotel", "Family Premium Hotel", "Apartment Hotel"],
+  "Luxury": ["5-Star Hotel", "Luxury Boutique Hotel", "Palace Hotel", "Resort Hotel", "Spa & Wellness Hotel", "Golf Hotel", "Beach Hotel", "Heritage Luxury Hotel", "All-Suite Hotel"]
+};
+
+const RESORT_SUB_CATEGORIES = {
+  "Small Scale": ["Eco Resort", "Farm Stay", "Nature Camp", "Riverside Resort", "Hill View Resort", "Jungle Camp", "Cottage Resort", "Boutique Resort", "Family Resort"],
+  "Lodge": ["Guest House", "Tourist Lodge", "Transit Lodge", "Budget Lodge", "Executive Lodge", "Homestay", "Backpacker Stay", "Dormitory Stay"],
+  "Budget": ["Family Budget Resort", "Couple Resort", "Weekend Resort", "Pool Resort", "Adventure Resort", "Beach Resort", "Hill Resort", "Eco Budget Resort"],
+  "Premium": ["Premium Family Resort", "Premium Pool Resort", "Spa Resort", "Wellness Resort", "Conference Resort", "Business Resort", "Heritage Resort", "Boutique Premium Resort"],
+  "Luxury": ["Luxury Beach Resort", "Luxury Hill Resort", "5-Star Resort", "Private Villa Resort", "Palace Resort", "Golf Resort", "Wellness & Spa Resort", "Honeymoon Resort", "All-Inclusive Luxury Resort"]
+};
+
 const AdminSubscriptions = () => {
   const [activeTab, setActiveTab] = useState('plans'); // 'plans' or 'purchases'
   const [plans, setPlans] = useState([]);
@@ -24,6 +40,7 @@ const AdminSubscriptions = () => {
     propertyTemplate: 'all',
     starRatings: [],
     hotelCategories: [],
+    subCategories: [],
     resortTypes: []
   });
   const [editId, setEditId] = useState(null);
@@ -49,6 +66,14 @@ const AdminSubscriptions = () => {
       const current = prev.resortTypes || [];
       const updated = current.includes(rt) ? current.filter(r => r !== rt) : [...current, rt];
       return { ...prev, resortTypes: updated };
+    });
+  };
+
+  const toggleSubCategory = (sub) => {
+    setFormData(prev => {
+      const current = prev.subCategories || [];
+      const updated = current.includes(sub) ? current.filter(s => s !== sub) : [...current, sub];
+      return { ...prev, subCategories: updated };
     });
   };
 
@@ -126,6 +151,7 @@ const AdminSubscriptions = () => {
       commissionRate: 0,
       starRatings: formData.starRatings || [],
       hotelCategories: formData.hotelCategories || [],
+      subCategories: formData.subCategories || [],
       resortTypes: formData.resortTypes || []
     };
 
@@ -155,6 +181,7 @@ const AdminSubscriptions = () => {
       propertyTemplate: plan.propertyTemplate || 'all',
       starRatings: plan.starRatings || [],
       hotelCategories: (plan.hotelCategories || []).filter(c => validCategories.includes(c)),
+      subCategories: plan.subCategories || [],
       resortTypes: (plan.resortTypes || []).filter(rt => ["Beach", "Hill", "Jungle", "Desert"].includes(rt))
     });
     setShowModal(true);
@@ -240,7 +267,7 @@ const AdminSubscriptions = () => {
           <button
             onClick={() => {
               setEditId(null);
-              setFormData({ name: '', description: '', price: '', durationInMonths: '', propertyTemplate: 'all', starRatings: [], hotelCategories: [], resortTypes: [] });
+              setFormData({ name: '', description: '', price: '', durationInMonths: '', propertyTemplate: 'all', starRatings: [], hotelCategories: [], subCategories: [], resortTypes: [] });
               setShowModal(true);
             }}
             className="bg-black text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-colors"
@@ -276,7 +303,7 @@ const AdminSubscriptions = () => {
               </div>
 
               {/* Target Categories / Stars Badges */}
-              {((plan.starRatings && plan.starRatings.length > 0) || (plan.hotelCategories && plan.hotelCategories.length > 0) || (plan.resortTypes && plan.resortTypes.length > 0)) && (
+              {((plan.starRatings && plan.starRatings.length > 0) || (plan.hotelCategories && plan.hotelCategories.length > 0) || (plan.subCategories && plan.subCategories.length > 0) || (plan.resortTypes && plan.resortTypes.length > 0)) && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {plan.starRatings && plan.starRatings.length > 0 && (
                     <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md text-[10px] font-bold flex items-center gap-1">
@@ -286,6 +313,11 @@ const AdminSubscriptions = () => {
                   {plan.hotelCategories && plan.hotelCategories.filter(c => c !== 'Low Budget').length > 0 && (
                     <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
                       🏢 {plan.hotelCategories.filter(c => c !== 'Low Budget').join(', ')}
+                    </span>
+                  )}
+                  {plan.subCategories && plan.subCategories.length > 0 && (
+                    <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                      🏷️ {plan.subCategories.join(', ')}
                     </span>
                   )}
                   {plan.resortTypes && plan.resortTypes.filter(rt => !["5 Star Resort", "Luxury"].includes(rt)).length > 0 && (
@@ -589,6 +621,51 @@ const AdminSubscriptions = () => {
                       })}
                     </div>
                   </div>
+
+                  {formData.hotelCategories && formData.hotelCategories.length > 0 && (
+                    <div className="flex flex-col gap-3">
+                      <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest">
+                        Target Sub Categories (Optional)
+                      </label>
+                      {formData.hotelCategories.map(cat => {
+                        let options = [];
+                        if (formData.propertyTemplate === 'resort' || formData.propertyTemplate === 'all') {
+                            options = [...options, ...(RESORT_SUB_CATEGORIES[cat] || [])];
+                        }
+                        if (formData.propertyTemplate === 'hotel' || formData.propertyTemplate === 'all') {
+                            options = [...options, ...(HOTEL_SUB_CATEGORIES[cat] || [])];
+                        }
+                        options = [...new Set(options)]; // Remove duplicates
+                        
+                        if (options.length === 0) return null;
+
+                        return (
+                          <div key={cat} className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
+                            <h4 className="text-[10px] font-black text-gray-800 uppercase tracking-wider mb-2 border-b border-gray-100 pb-2">{cat}</h4>
+                            <div className="flex flex-wrap gap-2">
+                              {options.map(sub => {
+                                const selected = (formData.subCategories || []).includes(sub);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={sub}
+                                    onClick={() => toggleSubCategory(sub)}
+                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all border ${
+                                      selected
+                                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                                    }`}
+                                  >
+                                    {sub}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </>
               )}
 

@@ -64,7 +64,9 @@ const PartnerPropertyDetails = () => {
       id: 'basic',
       label: 'Basic Info',
       icon: Info,
-      desc: property?.propertyType || 'Property Details'
+      desc: (property?.propertyType === 'resort' || property?.propertyType === 'hotel') && property?.hotelCategory 
+        ? `${property.hotelCategory} ${property.propertyType}` 
+        : property?.propertyType || 'Property Details'
     },
     {
       id: 'location',
@@ -259,6 +261,31 @@ const PartnerPropertyDetails = () => {
                     <h3 className="text-xs font-bold text-gray-500 uppercase">Property Name</h3>
                     <p className="text-lg font-medium text-gray-900">{property.propertyName}</p>
                   </div>
+                  {(property.propertyType === 'resort' || property.propertyType === 'hotel') && property.hotelCategory && (
+                    <div className="bg-white p-4 rounded-xl border border-gray-100 space-y-2 shadow-sm">
+                      <h3 className="text-xs font-bold text-gray-500 uppercase">{property.propertyType === 'resort' ? 'Resort Category' : 'Hotel Category'}</h3>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900">{property.hotelCategory}</p>
+                        {property.starRating && (
+                          <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md text-[10px] font-bold">
+                            {property.starRating} ★
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {property.subCategories?.length > 0 && (
+                    <div className="bg-white p-4 rounded-xl border border-gray-100 space-y-2 shadow-sm">
+                      <h3 className="text-xs font-bold text-gray-500 uppercase">Sub Categories</h3>
+                      <div className="flex flex-wrap gap-1">
+                        {property.subCategories.map((sub, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md text-[10px] font-bold">
+                            {sub}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="bg-white p-4 rounded-xl border border-gray-100 space-y-2 shadow-sm">
                     <h3 className="text-xs font-bold text-gray-500 uppercase">Description</h3>
                     <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap">{property.shortDescription || property.description}</p>
