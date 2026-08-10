@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { propertyService, hotelService } from '../../../services/apiService';
 import subscriptionService from '../../../services/subscriptionService';
 import SubscriptionOnboardingModal from '../components/SubscriptionOnboardingModal';
@@ -47,7 +48,13 @@ const AddHotelWizard = () => {
   const initialStep = location.state?.initialStep || 1;
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setErrorRaw] = useState('');
+  const setError = (msg) => {
+    setErrorRaw(msg);
+    if (msg) {
+      toast.error(msg, { id: 'hotel-wizard-error' });
+    }
+  };
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   const checkSubscriptionAndSubmit = async () => {
@@ -741,6 +748,10 @@ const AddHotelWizard = () => {
       setError('Hotel category / scale selection is required');
       return;
     }
+    if (!propertyForm.subCategories || propertyForm.subCategories.length === 0) {
+      setError('Please select at least one sub category');
+      return;
+    }
     setStep(2);
   };
 
@@ -1082,7 +1093,6 @@ const AddHotelWizard = () => {
                 <Home size={18} className="text-[#0F172A]" />
                 <h2 className="text-lg font-bold">Basic Info</h2>
               </div>
-              {error && <div className="text-red-600 text-sm mb-3">{error}</div>}
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-semibold text-gray-500 mb-1 block">Hotel Name</label>
@@ -1166,7 +1176,7 @@ const AddHotelWizard = () => {
 
               {propertyForm.hotelCategory && (
                 <div>
-                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Sub Categories (Select multiple)</label>
+                  <label className="text-xs font-semibold text-gray-500 mb-1 block">Sub Categories (Select multiple) *</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {(() => {
                       const queryType = new URLSearchParams(location.search).get('type');

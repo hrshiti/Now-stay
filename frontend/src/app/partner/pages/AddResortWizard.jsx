@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { propertyService, hotelService } from '../../../services/apiService';
 import subscriptionService from '../../../services/subscriptionService';
 import SubscriptionOnboardingModal from '../components/SubscriptionOnboardingModal';
@@ -51,7 +52,13 @@ const AddResortWizard = () => {
   const initialStep = location.state?.initialStep || 1;
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setErrorRaw] = useState('');
+  const setError = (msg) => {
+    setErrorRaw(msg);
+    if (msg) {
+      toast.error(msg, { id: 'resort-wizard-error' });
+    }
+  };
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   const checkSubscriptionAndSubmit = async () => {
@@ -786,6 +793,10 @@ const AddResortWizard = () => {
       setError('Star rating selection is required');
       return;
     }
+    if (!propertyForm.subCategories || propertyForm.subCategories.length === 0) {
+      setError('Please select at least one sub category');
+      return;
+    }
     setStep(2);
   };
   const nextFromLocation = () => {
@@ -1135,7 +1146,6 @@ const AddResortWizard = () => {
         <div className="bg-white md:p-6 md:rounded-2xl md:shadow-sm md:border md:border-gray-100 space-y-6">
           {step === 1 && (
             <div className="space-y-6">
-              {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg">{error}</div>}
 
               <div className="space-y-4">
                 <div className="space-y-1">
@@ -1194,7 +1204,7 @@ const AddResortWizard = () => {
 
                 {propertyForm.hotelCategory && RESORT_SUB_CATEGORIES[propertyForm.hotelCategory] && (
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Sub Categories (Select multiple)</label>
+                    <label className="text-xs font-semibold text-gray-500 mb-1 block">Sub Categories (Select multiple) *</label>
                     <div className="flex flex-wrap gap-2 mb-2">
                       {RESORT_SUB_CATEGORIES[propertyForm.hotelCategory].map(sub => {
                         const isSelected = (propertyForm.subCategories || []).includes(sub);

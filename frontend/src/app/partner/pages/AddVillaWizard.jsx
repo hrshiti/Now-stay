@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { propertyService, hotelService } from '../../../services/apiService';
 import subscriptionService from '../../../services/subscriptionService';
 import SubscriptionOnboardingModal from '../components/SubscriptionOnboardingModal';
@@ -30,7 +31,13 @@ const AddVillaWizard = () => {
   const initialStep = location.state?.initialStep || 1;
   const [step, setStep] = useState(initialStep);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setErrorRaw] = useState('');
+  const setError = (msg) => {
+    setErrorRaw(msg);
+    if (msg) {
+      toast.error(msg, { id: 'villa-wizard-error' });
+    }
+  };
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
   const checkSubscriptionAndSubmit = async () => {
