@@ -185,61 +185,40 @@ const ImageUploader = ({ label, value, onChange, placeholder = "Upload Image", o
 
         </div>
       ) : (
-        <div className="space-y-2">
-          {/* Flutter Camera Button */}
-          {isFlutter && (
-            <button
-              type="button"
-              onClick={handleCameraCapture}
-              disabled={uploading}
-              className="w-full border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors border-[#0F172A] bg-[#0F172A]/5 hover:bg-[#0F172A]/10 disabled:opacity-50"
-            >
-              {uploading ? (
-                <Loader2 size={24} className="text-[#0F172A] animate-spin" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-[#0F172A] flex items-center justify-center shadow-sm text-white">
-                  <Camera size={20} />
-                </div>
-              )}
-              <div className="text-center">
-                <p className="text-xs font-bold text-[#0F172A]">
-                  {uploading ? 'Uploading...' : 'Take Photo'}
-                </p>
-                <p className="text-[10px] text-gray-500 mt-1">Use your camera</p>
+        <div className="relative">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleFileChange}
+            onClick={(e) => {
+              if (isFlutter && window.flutter_inappwebview) {
+                e.preventDefault();
+                handleCameraCapture();
+              }
+            }}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+            disabled={uploading}
+          />
+          <div className={`
+             border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors
+             ${error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-[#0F172A] hover:bg-[#0F172A]/5 bg-gray-50'}
+          `}>
+            {uploading ? (
+              <Loader2 size={24} className="text-[#0F172A] animate-spin" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400">
+                <Upload size={16} />
               </div>
-            </button>
-          )}
-
-          {/* File Upload Input */}
-          <div className="relative">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-              disabled={uploading}
-            />
-            <div className={`
-               border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center gap-2 transition-colors
-               ${error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-[#0F172A] hover:bg-[#0F172A]/5 bg-gray-50'}
-            `}>
-              {uploading ? (
-                <Loader2 size={24} className="text-[#0F172A] animate-spin" />
+            )}
+            <div className="text-center">
+              <p className="text-xs font-bold text-gray-600">
+                {uploading ? 'Uploading...' : placeholder}
+              </p>
+              {error ? (
+                <p className="text-[10px] text-red-500 mt-1">{error}</p>
               ) : (
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400">
-                  <Upload size={16} />
-                </div>
+                <p className="text-[10px] text-gray-400 mt-1">Tap to select or take photo</p>
               )}
-              <div className="text-center">
-                <p className="text-xs font-bold text-gray-600">
-                  {uploading ? 'Uploading...' : placeholder}
-                </p>
-                {error ? (
-                  <p className="text-[10px] text-red-500 mt-1">{error}</p>
-                ) : (
-                  <p className="text-[10px] text-gray-400 mt-1">{isFlutter ? 'Or select from gallery' : 'Tap to select'}</p>
-                )}
-              </div>
             </div>
           </div>
         </div>

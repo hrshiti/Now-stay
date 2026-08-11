@@ -337,8 +337,9 @@ const PartnerProfile = () => {
                 throw new Error('Upload failed: server error');
             }
         } catch (err) {
-            console.error('Camera upload failed:', err);
-            toast.error(err.message || 'Camera upload failed');
+            console.error('Camera upload failed, launching file picker fallback:', err);
+            // Fallback to web file picker if Flutter native bridge is missing/fails
+            fileInputRef.current?.click();
         } finally {
             setUploading(false);
         }
@@ -447,15 +448,22 @@ const PartnerProfile = () => {
 
                         {/* Permanent Camera Button */}
                         <button
-                            onClick={() => isFlutterApp() ? handleCameraCapture() : fileInputRef.current?.click()}
+                            type="button"
+                            onClick={() => {
+                                if (isFlutterApp() && window.flutter_inappwebview) {
+                                    handleCameraCapture();
+                                } else {
+                                    fileInputRef.current?.click();
+                                }
+                            }}
                             disabled={uploading}
-                            className="absolute bottom-1 right-1 w-9 h-9 bg-white text-[#0F172A] rounded-full flex items-center justify-center shadow-lg border border-gray-100 hover:scale-110 active:scale-95 transition-all z-10"
+                            className="absolute bottom-1 right-1 w-9 h-9 bg-white text-[#0F172A] rounded-full flex items-center justify-center shadow-lg border border-gray-100 hover:scale-110 active:scale-95 transition-all z-10 cursor-pointer"
                         >
                             <Camera size={18} />
                         </button>
                     </div>
 
-                    {/* Hidden File Input (Only for Web) */}
+                    {/* Hidden File Input */}
                     <input
                         type="file"
                         ref={fileInputRef}
