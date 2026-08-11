@@ -59,11 +59,11 @@ const HotelSignup = () => {
             const nameRegex = /^[A-Za-z\s]+$/;
             const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 
-            if (!formData.full_name || formData.full_name.trim().length < 3) return setError('Please enter a valid full name (min 3 chars)');
+            if (!formData?.full_name || formData.full_name.trim().length < 3) return setError('Please enter a valid full name (min 3 chars)');
             if (!nameRegex.test(formData.full_name)) return setError('Full name should only contain alphabets');
-            if (!formData.email || !emailRegex.test(formData.email)) return setError('Please enter a valid Gmail address (e.g., name@gmail.com)');
-            if (!formData.phone || formData.phone.length !== 10) return setError('Please enter a valid 10-digit phone number');
-            if (!formData.termsAccepted) return setError('You must accept the Terms & Conditions');
+            if (!formData?.email || !emailRegex.test(formData.email)) return setError('Please enter a valid Gmail address (e.g., name@gmail.com)');
+            if (!formData?.phone || formData.phone.length !== 10) return setError('Please enter a valid 10-digit phone number');
+            if (!formData?.termsAccepted) return setError('You must accept the Terms & Conditions');
 
             setLoading(true);
             try {
@@ -85,10 +85,10 @@ const HotelSignup = () => {
         // --- STEP 2: OWNER DETAILS ---
         else if (currentStep === 2) {
             // Validation
-            if (!formData.aadhaar_number || formData.aadhaar_number.length !== 12) return setError('Valid 12-digit Aadhaar Number is required');
-            if (!formData.aadhaar_front?.url) return setError('Aadhaar Front Image is required');
-            if (!formData.aadhaar_back?.url) return setError('Aadhaar Back Image is required');
-            if (!formData.pan_number || formData.pan_number.length !== 10) return setError('Valid 10-digit PAN Number is required');
+            if (!formData?.aadhaar_number || formData.aadhaar_number.length !== 12) return setError('Valid 12-digit Aadhaar Number is required');
+            if (!formData?.aadhaar_front?.url) return setError('Aadhaar Front Image is required');
+            if (!formData?.aadhaar_back?.url) return setError('Aadhaar Back Image is required');
+            if (!formData?.pan_number || formData.pan_number.length !== 10) return setError('Valid 10-digit PAN Number is required');
 
             // PAN Regex Validation
             const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;

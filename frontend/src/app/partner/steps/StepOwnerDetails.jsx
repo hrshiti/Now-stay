@@ -303,7 +303,7 @@ const StepOwnerDetails = () => {
             placeholder="XXXX XXXX XXXX"
             maxLength={12}
             onFocus={handleFocus}
-            value={formData.aadhaar_number}
+            value={formData?.aadhaar_number || ''}
             onChange={e => handleChange('aadhaar_number', e.target.value.replace(/\D/g, '').slice(0, 12))}
           />
         </div>
@@ -311,14 +311,14 @@ const StepOwnerDetails = () => {
         <div className="grid grid-cols-2 gap-3">
           <ImageUploader
             label="Front Image"
-            value={formData.aadhaar_front}
+            value={formData?.aadhaar_front}
             onChange={(url) => handleChange('aadhaar_front', url)}
             onView={setPreviewImage}
             placeholder="Front Side"
           />
           <ImageUploader
             label="Back Image"
-            value={formData.aadhaar_back}
+            value={formData?.aadhaar_back}
             onChange={(url) => handleChange('aadhaar_back', url)}
             onView={setPreviewImage}
             placeholder="Back Side"
@@ -338,7 +338,7 @@ const StepOwnerDetails = () => {
               placeholder="ABCDE1234F"
               maxLength={10}
               onFocus={handleFocus}
-              value={formData.pan_number}
+              value={formData?.pan_number || ''}
               onChange={e => {
                 const val = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
                 handleChange('pan_number', val.slice(0, 10));
@@ -347,7 +347,7 @@ const StepOwnerDetails = () => {
           </div>
           <ImageUploader
             label="PAN Card Image"
-            value={formData.pan_card_image}
+            value={formData?.pan_card_image}
             onChange={(url) => handleChange('pan_card_image', url)}
             onView={setPreviewImage}
             placeholder="Upload PAN"
