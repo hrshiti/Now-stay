@@ -185,6 +185,7 @@ import partnerRoutes from './routes/partnerRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import subscriptionRoutes from './routes/subscriptionRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import appLinkRoutes from './routes/appLinkRoutes.js';
 
 // Fail fast if the database is not connected, instead of letting requests
 // hang until the socket timeout (~60s) and tripping the frontend timeout.
@@ -219,6 +220,7 @@ app.use('/api/partners', partnerRoutes);
 app.use('/api/blogs', blogRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/app-links', appLinkRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
