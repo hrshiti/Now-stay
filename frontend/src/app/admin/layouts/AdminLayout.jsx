@@ -3,7 +3,7 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, Building2, Calendar, Wallet,
-    Settings, Bell, Search, LogOut, Menu, X, DollarSign, ClipboardCheck, Star, Tag, FileText, MessageSquare, CircleHelp, Home, ShieldCheck
+    Settings, Bell, Search, LogOut, Menu, X, DollarSign, ClipboardCheck, Star, Tag, FileText, MessageSquare, CircleHelp, Home, ShieldCheck, Smartphone
 } from 'lucide-react';
 
 import NowStayLogo from '../../../components/ui/NowStayLogo';
@@ -77,6 +77,7 @@ const AdminLayout = () => {
         { icon: Bell, label: 'Notifications', path: '/admin/notifications', badge: unreadCount > 0 },
         { icon: Wallet, label: 'Finance & Payouts', path: '/admin/finance' },
         { icon: Tag, label: 'Offers & Coupons', path: '/admin/offers' },
+        { icon: Smartphone, label: 'App Links', path: '/admin/app-links' },
         { icon: FileText, label: 'Legal & Content', path: '/admin/legal' },
         { icon: MessageSquare, label: 'Contact Messages', path: '/admin/contact-messages' },
         { icon: Tag, label: 'Categories', path: '/admin/categories' },

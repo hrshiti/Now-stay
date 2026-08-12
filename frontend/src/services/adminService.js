@@ -255,6 +255,42 @@ const adminService = {
   deleteCategory: async (id) => {
     const response = await axiosInstance.delete(`/categories/${id}`);
     return response.data;
+  },
+
+  // App Links
+  getAppLinks: async () => {
+    const response = await axiosInstance.get('/app-links/admin/all');
+    return response.data;
+  },
+  createAppLink: async (formDataOrObject) => {
+    let response;
+    if (formDataOrObject instanceof FormData) {
+      response = await axiosInstance.post('/app-links/admin/create', formDataOrObject, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    } else {
+      response = await axiosInstance.post('/app-links/admin/create', formDataOrObject);
+    }
+    return response.data;
+  },
+  updateAppLink: async (id, formDataOrObject) => {
+    let response;
+    if (formDataOrObject instanceof FormData) {
+      response = await axiosInstance.put(`/app-links/admin/update/${id}`, formDataOrObject, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    } else {
+      response = await axiosInstance.put(`/app-links/admin/update/${id}`, formDataOrObject);
+    }
+    return response.data;
+  },
+  deleteAppLink: async (id) => {
+    const response = await axiosInstance.delete(`/app-links/admin/delete/${id}`);
+    return response.data;
+  },
+  toggleAppLinkStatus: async (id) => {
+    const response = await axiosInstance.patch(`/app-links/admin/toggle/${id}`);
+    return response.data;
   }
 };
 
