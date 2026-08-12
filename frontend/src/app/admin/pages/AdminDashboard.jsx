@@ -13,41 +13,65 @@ import adminService from '../../../services/adminService';
 import toast from 'react-hot-toast';
 
 
-const DashboardCard = ({ title, value, trend, icon: Icon, color, loading, onClick }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden h-full flex flex-col justify-between ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
-        onClick={onClick}
-    >
-        <div className={`absolute top-0 right-0 p-4 opacity-5 ${color}`}>
-            <Icon size={80} />
-        </div>
+const getCardStyles = (colorClass) => {
+    const colorMatch = colorClass?.match(/text-([a-z]+)-\d+/);
+    const colorName = colorMatch ? colorMatch[1] : 'gray';
 
-        <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-2xl ${color.replace('text-', 'bg-').replace('500', '100')} ${color}`}>
-                    <Icon size={24} />
+    const map = {
+        emerald: { iconBg: 'bg-emerald-100 text-emerald-600', watermark: 'text-emerald-500' },
+        blue: { iconBg: 'bg-blue-100 text-blue-600', watermark: 'text-blue-500' },
+        amber: { iconBg: 'bg-amber-100 text-amber-600', watermark: 'text-amber-500' },
+        indigo: { iconBg: 'bg-indigo-100 text-indigo-600', watermark: 'text-indigo-500' },
+        orange: { iconBg: 'bg-orange-100 text-orange-600', watermark: 'text-orange-500' },
+        purple: { iconBg: 'bg-purple-100 text-purple-600', watermark: 'text-purple-500' },
+    };
+    return map[colorName] || { iconBg: 'bg-gray-100 text-gray-700', watermark: 'text-gray-400' };
+};
+
+const DashboardCard = ({ title, value, trend, icon: Icon, color, loading, onClick }) => {
+    const styles = getCardStyles(color);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`bg-white p-5 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden h-full flex flex-col justify-between group transition-all duration-200 ${
+                onClick ? 'cursor-pointer hover:shadow-md hover:border-gray-200' : ''
+            }`}
+            onClick={onClick}
+        >
+            {/* Watermark Icon positioned cleanly at bottom-right without overflowing or colliding with trend pill */}
+            <div className={`absolute -bottom-4 -right-4 opacity-10 pointer-events-none select-none ${styles.watermark} transition-transform duration-300 group-hover:scale-110`}>
+                <Icon size={90} />
+            </div>
+
+            <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4 gap-2">
+                    <div className={`p-3 rounded-2xl flex items-center justify-center shrink-0 ${styles.iconBg}`}>
+                        <Icon size={24} />
+                    </div>
+                    {!loading && trend !== undefined && (
+                        <span className={`flex items-center text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${
+                            trend >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                        }`}>
+                            {trend >= 0 ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowDownRight size={14} className="mr-1" />}
+                            {Math.abs(trend).toFixed(1)}%
+                        </span>
+                    )}
                 </div>
-                {!loading && trend !== undefined && (
-                    <span className={`flex items-center text-xs font-bold px-2 py-1 rounded-full ${trend >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        {trend >= 0 ? <ArrowUpRight size={14} className="mr-1" /> : <ArrowDownRight size={14} className="mr-1" />}
-                        {Math.abs(trend).toFixed(1)}%
-                    </span>
-                )}
-            </div>
 
-            <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-                {loading ? (
-                    <div className="h-8 w-24 bg-gray-100 animate-pulse rounded-md" />
-                ) : (
-                    <h3 className="text-3xl font-bold text-gray-900 tracking-tight">{value}</h3>
-                )}
+                <div>
+                    <p className="text-xs sm:text-sm font-medium text-gray-500 mb-1 truncate">{title}</p>
+                    {loading ? (
+                        <div className="h-8 w-24 bg-gray-100 animate-pulse rounded-md" />
+                    ) : (
+                        <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight truncate">{value}</h3>
+                    )}
+                </div>
             </div>
-        </div>
-    </motion.div>
-);
+        </motion.div>
+    );
+};
 
 const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -115,7 +139,7 @@ const AdminDashboard = () => {
             </div>
 
             {/* Row 1: KPI Grid - Financials */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                 <DashboardCard
                     title="Total Platform Revenue"
                     value={formatCurrency(stats.totalRevenue)}
@@ -163,7 +187,7 @@ const AdminDashboard = () => {
                 />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <DashboardCard
                     title="Total Bookings"
                     value={stats.totalBookings}
